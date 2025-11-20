@@ -1,0 +1,6 @@
+my-project/node_modules/
+my-project/dist/
+my-project/coverage/
+my-project/.env
+my-project/.DS_Store
+
