@@ -102,7 +102,7 @@ describe('Event Data Transformation Tests', () => {
 
     it('should NOT calculate goals with legacy GOAL format', () => {
         // This should NOT work (legacy format)
-        const legacyEvents = [
+        const legacyEvents: Array<{ category: string; teamId: string; action?: string }> = [
             { category: 'GOAL', teamId: 'team-1' },
             { category: 'MISS', teamId: 'team-1' },
         ];
