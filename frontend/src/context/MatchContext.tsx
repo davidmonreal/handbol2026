@@ -81,7 +81,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
             position: event.position,
             distance: event.distance,
             isCollective: event.isCollective,
-            goalZone: event.zone,
+            goalZone: event.goalZoneTag,
             sanctionType: event.sanctionType,
           }),
         });
