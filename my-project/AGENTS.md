@@ -24,6 +24,8 @@
 - Follow SOLID principles; keep modules small, cohesive, and loosely coupled.
 - Prefer established design patterns where they clarify intent (e.g., Strategy, Factory, Dependency Injection).
 - All new code must include unit tests; update or add tests when modifying behavior.
+- Verify all new features are covered by tests.
+- Do not accept a feature as complete until all tests pass.
 
 ## Testing Guidelines
 - Suggested stack: Vitest or Jest with `ts-jest`/ESM support.
