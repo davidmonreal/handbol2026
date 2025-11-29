@@ -3,10 +3,16 @@ import { Request, Response } from 'express';
 import healthRouter from './routes/health';
 import clubRouter from './routes/clubs';
 
+import seasonRouter from './routes/seasons';
+import playerRouter from './routes/players';
+
+import cors from 'cors';
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware setup
+app.use(cors()); // Enable CORS for frontend
 app.use(express.json());
 
 // Sample route
@@ -14,9 +20,11 @@ app.get('/', (req: Request, res: Response) => {
   res.send('Hello, World!');
 });
 
-// Health route
-app.use('/health', healthRouter);
-app.use('/clubs', clubRouter);
+// API routes with /api prefix
+app.use('/api/health', healthRouter);
+app.use('/api/clubs', clubRouter);
+app.use('/api/seasons', seasonRouter);
+app.use('/api/players', playerRouter);
 
 // Start the server
 app.listen(PORT, () => {

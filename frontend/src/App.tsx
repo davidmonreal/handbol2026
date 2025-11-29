@@ -41,14 +41,26 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 const HomeView = () => <div className="p-8 text-center text-gray-500">Home View (Coming Soon)</div>;
 const MatchView = () => <MatchTracker />;
 const StatsView = () => <Statistics />;
-const AdminView = () => (
-  <AdminLayout>
-    <ClubsManagement />
-  </AdminLayout>
-);
+import { SeasonsManagement } from './components/admin/SeasonsManagement';
+import { PlayersManagement } from './components/admin/PlayersManagement';
 
 function App() {
   const [currentView, setCurrentView] = useState<'home' | 'match' | 'stats' | 'admin'>('home');
+  const [adminView, setAdminView] = useState('clubs');
+
+  const AdminView = () => (
+    <AdminLayout 
+      onNavigateHome={() => setCurrentView('match')}
+      onNavigate={setAdminView}
+      currentView={adminView}
+    >
+      {adminView === 'clubs' && <ClubsManagement />}
+      {adminView === 'seasons' && <SeasonsManagement />}
+      {adminView === 'players' && <PlayersManagement />}
+      {adminView === 'teams' && <div className="p-8 text-center text-gray-500">Teams Management (Coming Soon)</div>}
+      {adminView === 'matches' && <div className="p-8 text-center text-gray-500">Matches Management (Coming Soon)</div>}
+    </AdminLayout>
+  );
 
   return (
     <ErrorBoundary>

@@ -11,6 +11,8 @@ export const ClubsManagement = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingClub, setEditingClub] = useState<Club | null>(null);
   const [formData, setFormData] = useState({ name: '' });
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     fetchClubs();
@@ -23,26 +25,29 @@ export const ClubsManagement = () => {
       setClubs(data);
     } catch (error) {
       console.error('Error fetching clubs:', error);
+      setError('Failed to connect to the server. Please ensure the backend is running.');
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setIsLoading(true);
     
     try {
-      if (editingClub) {
-        await fetch(`http://localhost:3000/api/clubs/${editingClub.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
-        });
-      } else {
-        await fetch('http://localhost:3000/api/clubs', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
-        });
-      }
+      const url = editingClub 
+        ? `http://localhost:3000/api/clubs/${editingClub.id}`
+        : 'http://localhost:3000/api/clubs';
+        
+      const method = editingClub ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error('Failed to save club');
       
       fetchClubs();
       setIsFormOpen(false);
@@ -50,6 +55,9 @@ export const ClubsManagement = () => {
       setFormData({ name: '' });
     } catch (error) {
       console.error('Error saving club:', error);
+      setError('Failed to save club. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -89,6 +97,12 @@ export const ClubsManagement = () => {
         </button>
       </div>
 
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
+
       {/* Form Modal */}
       {isFormOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -119,9 +133,10 @@ export const ClubsManagement = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                 >
-                  {editingClub ? 'Update' : 'Create'}
+                  {isLoading ? 'Saving...' : (editingClub ? 'Update' : 'Create')}
                 </button>
               </div>
             </form>
