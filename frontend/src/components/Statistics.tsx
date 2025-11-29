@@ -303,6 +303,26 @@ const Statistics = () => {
 
   // Helper to get player info
   const getPlayerInfo = (playerId: string) => {
+      // 1. Try to find in matchData (API structure)
+      if (matchId && matchData) {
+          // API returns team.players as array of { player: { id, name, number } }
+          const findInTeam = (team: any) => team?.players?.find((p: any) => p.player?.id === playerId)?.player;
+          
+          const homePlayer = findInTeam(matchData.homeTeam);
+          if (homePlayer) return { name: homePlayer.name, number: homePlayer.number };
+          
+          const awayPlayer = findInTeam(matchData.awayTeam);
+          if (awayPlayer) return { name: awayPlayer.name, number: awayPlayer.number };
+      }
+
+      // 2. Try to find in events (since we added playerName/playerNumber to them)
+      const sourceEvents = matchId ? matchEvents : events;
+      const eventWithPlayer = sourceEvents.find(e => e.playerId === playerId && e.playerName);
+      if (eventWithPlayer) {
+          return { name: eventWithPlayer.playerName!, number: eventWithPlayer.playerNumber || 0 };
+      }
+
+      // 3. Fallback to context/mock data
       const team = activeTeamId === HOME_TEAM.id ? HOME_TEAM : VISITOR_TEAM;
       const player = team.players.find((p: any) => p.id === playerId);
       return player ? { name: player.name, number: player.number } : { name: 'Unknown', number: 0 };
