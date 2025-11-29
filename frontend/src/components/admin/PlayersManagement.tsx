@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, BarChart3, X } from 'lucide-react';
+import { REVERSE_GOAL_TARGET_MAP } from '../../config/constants';
 
 interface Player {
   id: string;
@@ -27,6 +28,9 @@ export const PlayersManagement = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
+  const [selectedPlayerForStats, setSelectedPlayerForStats] = useState<Player | null>(null);
+  const [playerStats, setPlayerStats] = useState<any>(null);
 
   useEffect(() => {
     fetchPlayers();
@@ -115,6 +119,43 @@ export const PlayersManagement = () => {
     setEditingPlayer(null);
     setFormData({ name: '', number: '', handedness: 'RIGHT' });
     setError(null);
+  };
+
+  const fetchPlayerStats = async (playerId: string) => {
+    try {
+      // Fetch all game events for this player
+      const response = await fetch(`http://localhost:3000/api/game-events`);
+      const allEvents = await response.json();
+      
+      // Filter events for this specific player
+      const playerEvents = allEvents.filter((e: any) => e.playerId === playerId);
+      
+      // Calculate statistics
+      const shots = playerEvents.filter((e: any) => e.type === 'Shot');
+      const goals = shots.filter((e: any) => e.subtype === 'Goal');
+      const saves = shots.filter((e: any) => e.subtype === 'Save');
+      const misses = shots.filter((e: any) => e.subtype === 'Miss');
+      const posts = shots.filter((e: any) => e.subtype === 'Post');
+      
+      setPlayerStats({
+        events: playerEvents,
+        shots: shots.length,
+        goals: goals.length,
+        saves: saves.length,
+        misses: misses.length,
+        posts: posts.length,
+        efficiency: shots.length > 0 ? ((goals.length / shots.length) * 100).toFixed(1) : '0'
+      });
+    } catch (error) {
+      console.error('Error fetching player stats:', error);
+      setPlayerStats(null);
+    }
+  };
+
+  const handleViewStats = async (player: Player) => {
+    setSelectedPlayerForStats(player);
+    setIsStatsModalOpen(true);
+    await fetchPlayerStats(player.id);
   };
 
   const filteredPlayers = players.filter(player => {
@@ -280,6 +321,13 @@ export const PlayersManagement = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
+                    onClick={() => handleViewStats(player)}
+                    className="text-green-600 hover:text-green-900 mr-4"
+                    title="View Statistics"
+                  >
+                    <BarChart3 size={18} />
+                  </button>
+                  <button
                     onClick={() => handleEdit(player)}
                     className="text-indigo-600 hover:text-indigo-900 mr-4"
                   >
@@ -302,6 +350,188 @@ export const PlayersManagement = () => {
           </div>
         )}
       </div>
+
+      {/* Player Statistics Modal */}
+      {isStatsModalOpen && selectedPlayerForStats && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  {selectedPlayerForStats.name} - Statistics
+                </h2>
+                <p className="text-sm text-gray-500">#{selectedPlayerForStats.number} • All Time Stats</p>
+              </div>
+              <button
+                onClick={() => {
+                  setIsStatsModalOpen(false);
+                  setSelectedPlayerForStats(null);
+                  setPlayerStats(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              {playerStats ? (
+                <div className="space-y-6">
+                  {/* Stats Summary Cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <div className="text-sm text-blue-600 font-medium">Shots</div>
+                      <div className="text-2xl font-bold text-blue-800">{playerStats.shots}</div>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-4">
+                      <div className="text-sm text-green-600 font-medium">Goals</div>
+                      <div className="text-2xl font-bold text-green-800">{playerStats.goals}</div>
+                    </div>
+                    <div className="bg-purple-50 rounded-lg p-4">
+                      <div className="text-sm text-purple-600 font-medium">Efficiency</div>
+                      <div className="text-2xl font-bold text-purple-800">{playerStats.efficiency}%</div>
+                    </div>
+                    <div className="bg-yellow-50 rounded-lg p-4">
+                      <div className="text-sm text-yellow-600 font-medium">Saves</div>
+                      <div className="text-2xl font-bold text-yellow-800">{playerStats.saves}</div>
+                    </div>
+                    <div className="bg-orange-50 rounded-lg p-4">
+                      <div className="text-sm text-orange-600 font-medium">Misses</div>
+                      <div className="text-2xl font-bold text-orange-800">{playerStats.misses}</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="text-sm text-gray-600 font-medium">Posts</div>
+                      <div className="text-2xl font-bold text-gray-800">{playerStats.posts}</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Goal Heatmap */}
+                    <div className="bg-white rounded-xl shadow-lg p-6">
+                      <h3 className="text-lg font-bold text-gray-800 mb-4">Goal Distribution (Target Zones)</h3>
+                      <div className="grid grid-cols-3 grid-rows-3 gap-1 h-64 relative">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(target => {
+                          const goals = playerStats.events.filter((e: any) => 
+                            e.type === 'Shot' && 
+                            e.subtype === 'Goal' && 
+                            e.goalZone && 
+                            REVERSE_GOAL_TARGET_MAP[e.goalZone] === target
+                          ).length;
+                          
+                          const shots = playerStats.events.filter((e: any) => 
+                            e.type === 'Shot' && 
+                            e.goalZone && 
+                            REVERSE_GOAL_TARGET_MAP[e.goalZone] === target
+                          ).length;
+                          
+                          const efficiency = shots > 0 ? (goals / shots) * 100 : 0;
+                          const bgOpacity = Math.min(efficiency / 100, 0.8);
+                          
+                          return (
+                            <div
+                              key={target}
+                              className="border-2 border-gray-300 rounded-lg flex flex-col items-center justify-center relative"
+                              style={{
+                                backgroundColor: `rgba(34, 197, 94, ${bgOpacity})`
+                              }}
+                            >
+                              <span className="text-2xl font-bold text-gray-800">{goals}</span>
+                              <span className="text-xs text-gray-600">{shots > 0 ? `${efficiency.toFixed(0)}%` : '-'}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2 text-center">Goal view (shooter perspective)</p>
+                    </div>
+
+                    {/* Zone Distribution (Court Zones) */}
+                    <div className="bg-white rounded-xl shadow-lg p-6">
+                      <h3 className="text-lg font-bold text-gray-800 mb-4">Shot Distribution (Court Zones)</h3>
+                      <div className="space-y-2">
+                        {['6m', '9m', '7m'].map(distance => {
+                          const distanceShots = playerStats.events.filter((e: any) => 
+                            e.type === 'Shot' && e.distance === distance.toUpperCase()
+                          );
+                          const distanceGoals = distanceShots.filter((e: any) => e.subtype === 'Goal');
+                          
+                          if (distanceShots.length === 0) return null;
+                          
+                          const efficiency = (distanceGoals.length / distanceShots.length) * 100;
+                          
+                          return (
+                            <div key={distance} className="border border-gray-200 rounded-lg p-3">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="font-medium text-gray-700">{distance}</span>
+                                <span className="text-sm text-gray-500">
+                                  {distanceGoals.length}/{distanceShots.length} ({efficiency.toFixed(0)}%)
+                                </span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div
+                                  className="bg-green-500 h-2 rounded-full"
+                                  style={{ width: `${efficiency}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Detailed Stats Table */}
+                  <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statistic</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Value</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        <tr>
+                          <td className="px-6 py-4 text-sm text-gray-900">Total Events</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-medium">{playerStats.events.length}</td>
+                        </tr>
+                        <tr>
+                          <td className="px-6 py-4 text-sm text-gray-900">Total Shots</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-medium">{playerStats.shots}</td>
+                        </tr>
+                        <tr className="bg-green-50">
+                          <td className="px-6 py-4 text-sm font-semibold text-green-900">Goals</td>
+                          <td className="px-6 py-4 text-sm text-green-900 text-right font-bold">{playerStats.goals}</td>
+                        </tr>
+                        <tr>
+                          <td className="px-6 py-4 text-sm text-gray-900">Goals vs Goalkeeper (Saves)</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-medium">{playerStats.saves}</td>
+                        </tr>
+                        <tr>
+                          <td className="px-6 py-4 text-sm text-gray-900">Missed Shots</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-medium">{playerStats.misses}</td>
+                        </tr>
+                        <tr>
+                          <td className="px-6 py-4 text-sm text-gray-900">Posts</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-medium">{playerStats.posts}</td>
+                        </tr>
+                        <tr className="bg-purple-50">
+                          <td className="px-6 py-4 text-sm font-semibold text-purple-900">Shooting Efficiency</td>
+                          <td className="px-6 py-4 text-sm text-purple-900 text-right font-bold">{playerStats.efficiency}%</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  Loading statistics...
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
