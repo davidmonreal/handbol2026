@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Calendar } from 'lucide-react';
+import { Plus, Edit2, Trash2, Calendar, Search } from 'lucide-react';
 
 interface Match {
   id: string;
@@ -32,6 +32,7 @@ export const MatchesManagement = () => {
   
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchMatches();
@@ -147,6 +148,16 @@ export const MatchesManagement = () => {
     });
   };
 
+  const filteredMatches = matches.filter(match => {
+    const searchLower = searchTerm.toLowerCase();
+    const dateFormatted = formatDate(match.date).toLowerCase();
+    return (
+      match.homeTeam.name.toLowerCase().includes(searchLower) ||
+      match.awayTeam.name.toLowerCase().includes(searchLower) ||
+      dateFormatted.includes(searchLower)
+    );
+  });
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
@@ -158,6 +169,20 @@ export const MatchesManagement = () => {
           <Plus size={20} />
           New Match
         </button>
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <input
+            type="text"
+            placeholder="Search matches by team name or date..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          />
+        </div>
       </div>
 
       {error && (
@@ -281,7 +306,7 @@ export const MatchesManagement = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {matches.map((match) => (
+            {filteredMatches.map((match) => (
               <tr key={match.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   <div className="flex items-center gap-2">
@@ -318,7 +343,7 @@ export const MatchesManagement = () => {
             ))}
           </tbody>
         </table>
-        {matches.length === 0 && (
+        {filteredMatches.length === 0 && (
           <div className="text-center py-12 text-gray-500">
             No matches found. Schedule your first match!
           </div>

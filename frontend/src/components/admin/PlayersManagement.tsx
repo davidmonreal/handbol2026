@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search } from 'lucide-react';
 
 interface Player {
   id: string;
@@ -26,6 +26,7 @@ export const PlayersManagement = () => {
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchPlayers();
@@ -116,6 +117,16 @@ export const PlayersManagement = () => {
     setError(null);
   };
 
+  const filteredPlayers = players.filter(player => {
+    const searchLower = searchTerm.toLowerCase();
+    const clubName = player.teams?.[0]?.team?.club?.name || '';
+    return (
+      player.name.toLowerCase().includes(searchLower) ||
+      player.number.toString().includes(searchLower) ||
+      clubName.toLowerCase().includes(searchLower)
+    );
+  });
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
@@ -127,6 +138,20 @@ export const PlayersManagement = () => {
           <Plus size={20} />
           New Player
         </button>
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <input
+            type="text"
+            placeholder="Search players by name, number or club..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          />
+        </div>
       </div>
 
       {error && (
@@ -229,7 +254,7 @@ export const PlayersManagement = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {players.map((player) => (
+            {filteredPlayers.map((player) => (
               <tr key={player.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {player.name}
