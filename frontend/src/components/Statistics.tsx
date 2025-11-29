@@ -353,7 +353,7 @@ const Statistics = () => {
           
           {/* Navigation buttons (only for match view) */}
           {matchId && matchData && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 ml-auto">
               {/* Back to Match button */}
               <button
                 onClick={() => window.location.href = `/match-tracker/${matchId}`}
