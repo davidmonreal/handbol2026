@@ -4,6 +4,17 @@ import prisma from '../lib/prisma';
 export class PlayerRepository {
     async findAll(): Promise<Player[]> {
         return prisma.player.findMany({
+            include: {
+                teams: {
+                    include: {
+                        team: {
+                            include: {
+                                club: true
+                            }
+                        }
+                    }
+                }
+            },
             orderBy: { name: 'asc' }
         });
     }
