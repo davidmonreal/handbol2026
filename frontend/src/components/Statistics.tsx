@@ -78,15 +78,6 @@ const Statistics = () => {
             },
             defenseFormation: undefined,
           }));
-          console.log('Transformed Events Debug:', transformedEvents.map(e => ({ 
-            id: e.id, 
-            type: e.category, 
-            zone: e.zone, 
-            target: e.goalTarget,
-            rawPosition: (data.find((d: any) => d.id === e.id) as any)?.position,
-            rawDistance: (data.find((d: any) => d.id === e.id) as any)?.distance,
-            rawGoalZone: (data.find((d: any) => d.id === e.id) as any)?.goalZone
-          })));
           setMatchEvents(transformedEvents);
         });
     }
