@@ -171,11 +171,15 @@ const Statistics = () => {
 
   // 5. Player Stats (Based on Filtered Events)
   const playerStats = useMemo(() => {
-    const map = new Map<string, { 
-      name: string; 
-      number: number; 
-      shots: number; 
+    interface PlayerStats {
+      name: string;
+      number: number;
+      shots: number;
       goals: number;
+      misses: number;
+      saves: number;
+      posts: number;
+      blocks: number;
       shots6m: number;
       goals6m: number;
       shots9m: number;
@@ -195,7 +199,9 @@ const Statistics = () => {
       goalsCounter: number;
       shotsStatic: number;
       goalsStatic: number;
-    }>();
+    }
+
+    const map = new Map<string, PlayerStats>();
     
     filteredEvents.forEach(e => {
         if (e.playerId) {
