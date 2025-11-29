@@ -577,6 +577,18 @@ const Statistics = () => {
         </div>
       </div>
 
+      {/* DEBUG SECTION */}
+      <div className="bg-gray-100 p-4 rounded-lg overflow-auto max-h-96 text-xs font-mono">
+        <h3 className="font-bold mb-2">Debug Info</h3>
+        <pre>{JSON.stringify({
+          totalEvents: matchEvents.length,
+          filteredEvents: filteredEvents.length,
+          sampleEvent: matchEvents[0],
+          goalHeatmap: Array.from(goalHeatmap.entries()),
+          reverseMap: REVERSE_GOAL_TARGET_MAP
+        }, null, 2)}</pre>
+      </div>
+
       {/* 2. ZONE MAP (Middle) */}
       <div className="bg-white rounded-xl shadow-lg p-6">
         <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
