@@ -9,7 +9,11 @@ export class PlayerController {
             const players = await this.playerService.getAll();
             res.json(players);
         } catch (error) {
-            res.status(500).json({ error: 'Failed to fetch players' });
+            console.error('Error fetching players:', error);
+            res.status(500).json({
+                error: 'Failed to fetch players',
+                details: error instanceof Error ? error.message : String(error)
+            });
         }
     };
 

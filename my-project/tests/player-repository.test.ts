@@ -32,6 +32,17 @@ describe('PlayerRepository', () => {
     const result = await repository.findAll();
 
     expect(prisma.player.findMany).toHaveBeenCalledWith({
+      include: {
+        teams: {
+          include: {
+            team: {
+              include: {
+                club: true
+              }
+            }
+          }
+        }
+      },
       orderBy: { name: 'asc' },
     });
     expect(result).toEqual(mockPlayers);

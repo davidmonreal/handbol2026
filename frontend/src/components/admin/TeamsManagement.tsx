@@ -150,18 +150,16 @@ export const TeamsManagement = () => {
   };
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterClub, setFilterClub] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
 
   // ... (useEffect and fetch functions)
 
   const filteredTeams = teams.filter(team => {
-    const matchesSearch = team.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          team.club.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesClub = filterClub ? team.clubId === filterClub : true;
-    const matchesCategory = filterCategory ? team.category === filterCategory : true;
-    
-    return matchesSearch && matchesClub && matchesCategory;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      team.name.toLowerCase().includes(searchLower) || 
+      team.club.name.toLowerCase().includes(searchLower) ||
+      (team.category && team.category.toLowerCase().includes(searchLower))
+    );
   });
 
   const handleEdit = (team: Team) => {
@@ -269,55 +267,17 @@ export const TeamsManagement = () => {
         </button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6 justify-between items-end md:items-center">
-        <div className="flex flex-col md:flex-row gap-4 flex-1 w-full">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search teams..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            />
-          </div>
-          
-          {/* Filters */}
-          <select
-            value={filterClub}
-            onChange={(e) => setFilterClub(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
-          >
-            <option value="">All Clubs</option>
-            {clubs.map(club => (
-              <option key={club.id} value={club.id}>{club.name}</option>
-            ))}
-          </select>
-
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
-          >
-            <option value="">All Categories</option>
-            {CATEGORIES.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
+      <div className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <input
+            type="text"
+            placeholder="Search teams by name, club or category..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          />
         </div>
-
-        <button
-          onClick={() => {
-            setEditingTeam(null);
-            setFormData({ name: '', category: 'SENIOR', clubId: '', seasonId: '', isMyTeam: false });
-            setIsFormOpen(true);
-          }}
-          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap"
-        >
-          <Plus size={20} />
-          Add Team
-        </button>
       </div>
 
       {error && (
