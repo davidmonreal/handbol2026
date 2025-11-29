@@ -46,6 +46,10 @@ async function main() {
 
   // Create Players
   const players = [
+    { name: 'Martí Monreal', number: 21, handedness: 'RIGHT' },
+    { name: 'Guillem Cuartero', number: 31, handedness: 'LEFT' },
+    { name: 'Pol Rossell', number: 30, handedness: 'RIGHT' },
+    { name: 'Guim', number: 33, handedness: 'RIGHT' },
     { name: 'Marc Garcia', number: 7, handedness: 'RIGHT' },
     { name: 'Joan López', number: 10, handedness: 'LEFT' },
     { name: 'Albert Martínez', number: 15, handedness: 'RIGHT' },

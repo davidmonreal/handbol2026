@@ -43,6 +43,7 @@ const MatchView = () => <MatchTracker />;
 const StatsView = () => <Statistics />;
 import { SeasonsManagement } from './components/admin/SeasonsManagement';
 import { PlayersManagement } from './components/admin/PlayersManagement';
+import { TeamsManagement } from './components/admin/TeamsManagement';
 
 function App() {
   const [currentView, setCurrentView] = useState<'home' | 'match' | 'stats' | 'admin'>('home');
@@ -57,7 +58,7 @@ function App() {
       {adminView === 'clubs' && <ClubsManagement />}
       {adminView === 'seasons' && <SeasonsManagement />}
       {adminView === 'players' && <PlayersManagement />}
-      {adminView === 'teams' && <div className="p-8 text-center text-gray-500">Teams Management (Coming Soon)</div>}
+      {adminView === 'teams' && <TeamsManagement />}
       {adminView === 'matches' && <div className="p-8 text-center text-gray-500">Matches Management (Coming Soon)</div>}
     </AdminLayout>
   );
