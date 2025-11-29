@@ -247,7 +247,8 @@ describe('Integration Tests: Match Event Flow', () => {
         expect(dbEvent?.distance).toBe(completeEvent.distance);
         expect(dbEvent?.isCollective).toBe(completeEvent.isCollective);
         expect(dbEvent?.goalZone).toBe(completeEvent.goalZone);
-        expect(dbEvent?.player.id).toBe(testPlayerId);
+        expect(dbEvent?.player).toBeDefined();
+        expect(dbEvent?.player?.id).toBe(testPlayerId);
 
         // Cleanup
         await prisma.gameEvent.delete({ where: { id: apiEvent.id } });
