@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search } from 'lucide-react';
 
 interface Club {
   id: string;
@@ -13,6 +13,7 @@ export const ClubsManagement = () => {
   const [formData, setFormData] = useState({ name: '' });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchClubs();
@@ -84,6 +85,11 @@ export const ClubsManagement = () => {
     setFormData({ name: '' });
   };
 
+  const filteredClubs = clubs.filter(club => {
+    const searchLower = searchTerm.toLowerCase();
+    return club.name.toLowerCase().includes(searchLower);
+  });
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
@@ -95,6 +101,20 @@ export const ClubsManagement = () => {
           <Plus size={20} />
           New Club
         </button>
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <input
+            type="text"
+            placeholder="Search clubs by name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          />
+        </div>
       </div>
 
       {error && (
@@ -158,7 +178,7 @@ export const ClubsManagement = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {clubs.map((club) => (
+            {filteredClubs.map((club) => (
               <tr key={club.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {club.name}
@@ -181,7 +201,7 @@ export const ClubsManagement = () => {
             ))}
           </tbody>
         </table>
-        {clubs.length === 0 && (
+        {filteredClubs.length === 0 && (
           <div className="text-center py-12 text-gray-500">
             No clubs found. Create your first club!
           </div>
