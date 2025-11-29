@@ -5,6 +5,7 @@ import type { ZoneType, MatchEvent } from '../types';
 import { Users, Target, Filter, X, Activity, Shield, Zap, ArrowLeftRight } from 'lucide-react';
 import { HOME_TEAM, VISITOR_TEAM } from '../data/mockData';
 import { ZONE_CONFIG } from '../config/zones';
+import { REVERSE_GOAL_TARGET_MAP, DISTANCES } from '../config/constants';
 
 const Statistics = () => {
   const [searchParams] = useSearchParams();
