@@ -125,6 +125,14 @@ const MatchTracker = () => {
       }
     }
 
+    // Map target index to goal zone tag
+    const targetToZoneMap: Record<number, string> = {
+      1: 'TL', 2: 'TM', 3: 'TR',
+      4: 'ML', 5: 'MM', 6: 'MR',
+      7: 'BL', 8: 'BM', 9: 'BR'
+    };
+    const goalZoneTag = targetIndex ? targetToZoneMap[targetIndex] : undefined;
+
     const newEvent: MatchEvent = {
       id: Date.now().toString(),
       timestamp: time,
@@ -136,6 +144,7 @@ const MatchTracker = () => {
       position: position,
       distance: distance,
       goalTarget: targetIndex,
+      goalZoneTag: goalZoneTag,
       context: flowType === 'Shot' ? {
         isCollective: (zoneOverride || selectedZone) === ZONE_CONFIG.penalty.zone ? false : isCollective,
         hasOpposition: (zoneOverride || selectedZone) === ZONE_CONFIG.penalty.zone ? false : hasOpposition,
