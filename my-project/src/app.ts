@@ -2,11 +2,11 @@ import express from 'express';
 import { Request, Response } from 'express';
 import healthRouter from './routes/health';
 import clubRouter from './routes/clubs';
-
 import seasonRouter from './routes/seasons';
 import playerRouter from './routes/players';
 import teamRouter from './routes/teams';
 import matchRouter from './routes/matches';
+import gameEventRouter from './routes/game-events';
 
 import cors from 'cors';
 
@@ -29,6 +29,7 @@ app.use('/api/seasons', seasonRouter);
 app.use('/api/players', playerRouter);
 app.use('/api/teams', teamRouter);
 app.use('/api/matches', matchRouter);
+app.use('/api/game-events', gameEventRouter);
 
 // Start the server
 app.listen(PORT, () => {
