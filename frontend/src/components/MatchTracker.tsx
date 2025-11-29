@@ -5,6 +5,7 @@ import type { Team } from '../data/mockData';
 import { useMatch } from '../context/MatchContext';
 import type { FlowType, ZoneType, MatchEvent, ShotResult, TurnoverType, SanctionType, DefenseType } from '../types';
 import { ZONE_CONFIG } from '../config/zones';
+import { FLOW_CONFIG } from '../config/flows';
 
 const MatchTracker = () => {
   // Use Context
@@ -72,9 +73,9 @@ const MatchTracker = () => {
       zone: zoneOverride || selectedZone || undefined,
       goalTarget: targetIndex,
       context: flowType === 'Shot' ? {
-        isCollective,
-        hasOpposition,
-        isCounterAttack
+        isCollective: (zoneOverride || selectedZone) === ZONE_CONFIG.penalty.zone ? false : isCollective,
+        hasOpposition: (zoneOverride || selectedZone) === ZONE_CONFIG.penalty.zone ? false : hasOpposition,
+        isCounterAttack: (zoneOverride || selectedZone) === ZONE_CONFIG.penalty.zone ? false : isCounterAttack
       } : undefined,
       defenseFormation: defenseFormation
     };
@@ -363,48 +364,50 @@ const MatchTracker = () => {
                           </div>
                       ) : (
                           <>
-                            {/* Context Toggles */}
-                            <div className="grid grid-cols-3 gap-3 mb-6">
-                                <button
-                                onClick={() => setIsCollective(!isCollective)}
-                                className={`p-4 rounded-xl font-bold border-2 transition-all flex flex-col items-center gap-2 ${
-                                    isCollective 
-                                        ? 'border-purple-500 bg-purple-50 text-purple-700 shadow-md' 
-                                        : 'border-gray-200 text-gray-400 hover:bg-gray-50'
-                                }`}
-                                >
-                                {isCollective ? <Users size={24} /> : <User size={24} />}
-                                <span className="text-xs uppercase tracking-wider">{isCollective ? 'Collective' : 'Individual'}</span>
-                                </button>
-                                
-                                <button
-                                onClick={() => setHasOpposition(!hasOpposition)}
-                                className={`p-4 rounded-xl font-bold border-2 transition-all flex flex-col items-center gap-2 ${
-                                    hasOpposition 
-                                        ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-md' 
-                                        : 'border-gray-200 text-gray-400 hover:bg-gray-50'
-                                }`}
-                                >
-                                {hasOpposition ? <Shield size={24} /> : <Unlock size={24} />}
-                                <span className="text-xs uppercase tracking-wider">{hasOpposition ? 'Opposition' : 'Free'}</span>
-                                </button>
-                                
-                                <button
-                                onClick={() => setIsCounterAttack(!isCounterAttack)}
-                                className={`p-4 rounded-xl font-bold border-2 transition-all flex flex-col items-center gap-2 ${
-                                    isCounterAttack 
-                                        ? 'border-cyan-500 bg-cyan-50 text-cyan-700 shadow-md' 
-                                        : 'border-gray-200 text-gray-400 hover:bg-gray-50'
-                                }`}
-                                >
-                                {isCounterAttack ? <Zap size={24} /> : <Anchor size={24} />}
-                                <span className="text-xs uppercase tracking-wider">{isCounterAttack ? 'Counter' : 'Static'}</span>
-                                </button>
-                            </div>
+                            {/* Context Toggles - Driven by Config */}
+                            {FLOW_CONFIG.Shot.showContext(selectedZone) && (
+                                <div className="grid grid-cols-3 gap-3 mb-6">
+                                    <button
+                                    onClick={() => setIsCollective(!isCollective)}
+                                    className={`p-4 rounded-xl font-bold border-2 transition-all flex flex-col items-center gap-2 ${
+                                        isCollective 
+                                            ? 'border-purple-500 bg-purple-50 text-purple-700 shadow-md' 
+                                            : 'border-gray-200 text-gray-400 hover:bg-gray-50'
+                                    }`}
+                                    >
+                                    {isCollective ? <Users size={24} /> : <User size={24} />}
+                                    <span className="text-xs uppercase tracking-wider">{isCollective ? 'Collective' : 'Individual'}</span>
+                                    </button>
+                                    
+                                    <button
+                                    onClick={() => setHasOpposition(!hasOpposition)}
+                                    className={`p-4 rounded-xl font-bold border-2 transition-all flex flex-col items-center gap-2 ${
+                                        hasOpposition 
+                                            ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-md' 
+                                            : 'border-gray-200 text-gray-400 hover:bg-gray-50'
+                                    }`}
+                                    >
+                                    {hasOpposition ? <Shield size={24} /> : <Unlock size={24} />}
+                                    <span className="text-xs uppercase tracking-wider">{hasOpposition ? 'Opposition' : 'Free'}</span>
+                                    </button>
+                                    
+                                    <button
+                                    onClick={() => setIsCounterAttack(!isCounterAttack)}
+                                    className={`p-4 rounded-xl font-bold border-2 transition-all flex flex-col items-center gap-2 ${
+                                        isCounterAttack 
+                                            ? 'border-cyan-500 bg-cyan-50 text-cyan-700 shadow-md' 
+                                            : 'border-gray-200 text-gray-400 hover:bg-gray-50'
+                                    }`}
+                                    >
+                                    {isCounterAttack ? <Zap size={24} /> : <Anchor size={24} />}
+                                    <span className="text-xs uppercase tracking-wider">{isCounterAttack ? 'Counter' : 'Static'}</span>
+                                    </button>
+                                </div>
+                            )}
 
-                            {/* Result Buttons */}
+                            {/* Result Buttons - Driven by Config */}
                             <div className="grid grid-cols-5 gap-2 mb-6">
-                                {['Goal', 'Save', 'Miss', 'Post', 'Block'].map((action) => (
+                                {FLOW_CONFIG.Shot.getAvailableActions(selectedZone).map((action) => (
                                 <button
                                     key={action}
                                     onClick={() => setSelectedAction(action)}
@@ -469,11 +472,24 @@ const MatchTracker = () => {
                     <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 animate-fade-in">
                       <h3 className="text-lg font-bold text-gray-800 mb-4">2. Select Severity</h3>
                       <div className="grid grid-cols-2 gap-4">
-                        <button onClick={() => setSelectedAction('Foul')} className="p-4 bg-gray-100 text-gray-800 font-bold rounded-lg hover:bg-gray-200 border-2 border-gray-200 col-span-2">Common Foul</button>
-                        <button onClick={() => setSelectedAction('Yellow')} className="p-4 bg-yellow-400 text-yellow-900 font-bold rounded-lg hover:opacity-90">Yellow Card</button>
-                        <button onClick={() => setSelectedAction('2min')} className="p-4 bg-gray-800 text-white font-bold rounded-lg hover:opacity-90">2 Minutes</button>
-                        <button onClick={() => setSelectedAction('Red')} className="p-4 bg-red-600 text-white font-bold rounded-lg hover:opacity-90">Red Card</button>
-                        <button onClick={() => setSelectedAction('Blue Card')} className="p-4 bg-blue-600 text-white font-bold rounded-lg hover:opacity-90">Blue Card</button>
+                        {FLOW_CONFIG.Sanction.actions.map((action) => (
+                            <button 
+                                key={action}
+                                onClick={() => { setSelectedAction(action); }}
+                                className={`p-4 font-bold rounded-lg hover:opacity-90 ${
+                                    action === 'Foul' ? 'bg-gray-100 text-gray-800 border-2 border-gray-200 col-span-2' :
+                                    action === 'Yellow' ? 'bg-yellow-400 text-yellow-900' :
+                                    action === '2min' ? 'bg-gray-800 text-white' :
+                                    action === 'Red' ? 'bg-red-600 text-white' :
+                                    'bg-blue-600 text-white'
+                                }`}
+                            >
+                                {action === 'Foul' ? 'Common Foul' : 
+                                 action === '2min' ? '2 Minutes' : 
+                                 action === 'Yellow' ? 'Yellow Card' :
+                                 action + (action.includes('Card') ? '' : ' Card')}
+                            </button>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -518,7 +534,7 @@ const MatchTracker = () => {
                 <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 animate-fade-in">
                   <h3 className="text-lg font-bold text-gray-800 mb-4">2. Select Error Type</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {['Pass', 'Catch', 'Dribble', 'Steps', 'Area', 'Offensive Foul'].map((type) => (
+                    {FLOW_CONFIG.Turnover.actions.map((type) => (
                       <button
                         key={type}
                         onClick={() => {
