@@ -357,7 +357,8 @@ async function main() {
       const teamId = isHomeTeam ? match.homeTeamId : match.awayTeamId;
       const player = teamPlayers[Math.floor(Math.random() * teamPlayers.length)];
 
-      const eventTypes = ['GOAL', 'MISS', 'TURNOVER', 'SANCTION'];
+      // Use frontend-compatible event types
+      const eventTypes = ['Shot', 'Shot', 'Turnover', 'Sanction']; // More shots than other events
       const eventType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
 
       const eventData: any = {
@@ -369,18 +370,19 @@ async function main() {
         isCollective: Math.random() > 0.6,
       };
 
-      if (eventType === 'GOAL' || eventType === 'MISS') {
+      if (eventType === 'Shot') {
         eventData.position = positions[Math.floor(Math.random() * positions.length)];
         eventData.distance = distances[Math.floor(Math.random() * distances.length)];
         eventData.goalZone = goalZones[Math.floor(Math.random() * goalZones.length)];
 
-        if (eventType === 'MISS') {
-          eventData.subtype = missSubtypes[Math.floor(Math.random() * missSubtypes.length)];
-        }
-      } else if (eventType === 'TURNOVER') {
-        eventData.subtype = ['PASS', 'STEPS', 'DOUBLE', 'AREA'][Math.floor(Math.random() * 4)];
-      } else if (eventType === 'SANCTION') {
+        // Randomly decide if it's a goal or miss
+        const shotResults = ['Goal', 'Save', 'Miss', 'Post'];
+        eventData.subtype = shotResults[Math.floor(Math.random() * shotResults.length)];
+      } else if (eventType === 'Turnover') {
+        eventData.subtype = ['Pass', 'Steps', 'Double', 'Area'][Math.floor(Math.random() * 4)];
+      } else if (eventType === 'Sanction') {
         eventData.sanctionType = sanctionTypes[Math.floor(Math.random() * sanctionTypes.length)];
+        eventData.subtype = 'Foul'; // Add subtype for consistency
       }
 
       await prisma.gameEvent.create({ data: eventData });

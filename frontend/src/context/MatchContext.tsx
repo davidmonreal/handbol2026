@@ -55,7 +55,8 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
   const [visitorTeam, setVisitorTeam] = useState<Team | null>(null);
   const [matchId, setMatchId] = useState<string | null>(null);
 
-  const addEvent = (event: MatchEvent) => {
+  const addEvent = async (event: MatchEvent) => {
+    // Add to local state immediately for UI responsiveness
     setEvents(prev => [event, ...prev]);
     
     // Update Score Logic
@@ -63,17 +64,91 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
       if (event.teamId === homeTeam?.id) setHomeScore(s => s + 1);
       else if (event.teamId === visitorTeam?.id) setVisitorScore(s => s + 1);
     }
+
+    // Persist to backend if we have a matchId
+    if (matchId) {
+      try {
+        const response = await fetch('http://localhost:3000/api/game-events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            matchId,
+            timestamp: event.timestamp,
+            playerId: event.playerId,
+            teamId: event.teamId,
+            type: event.category,
+            subtype: event.action,
+            position: event.position,
+            distance: event.distance,
+            isCollective: event.isCollective,
+            goalZone: event.zone,
+            sanctionType: event.sanctionType,
+          }),
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to save event to backend');
+        }
+      } catch (error) {
+        console.error('Error saving event:', error);
+      }
+    }
   };
 
-  const setMatchData = useCallback((id: string, home: Team, visitor: Team) => {
+  const setMatchData = useCallback(async (id: string, home: Team, visitor: Team) => {
     console.log('setMatchData called with:', { id, home, visitor });
     setMatchId(id);
     setHomeTeam(home);
     setVisitorTeam(visitor);
-    // Reset game state if needed or load existing events
-    setEvents([]); // Assuming events should be reset when new match data is loaded
-    setHomeScore(0);
-    setVisitorScore(0);
+    
+    // Load existing events from backend
+    try {
+      const response = await fetch(`http://localhost:3000/api/game-events/match/${id}`);
+      if (response.ok) {
+        const backendEvents = await response.json();
+        
+        // Transform backend events to MatchEvent format
+        const transformedEvents: MatchEvent[] = backendEvents.map((e: any) => ({
+          id: e.id,
+          timestamp: e.timestamp,
+          playerId: e.playerId,
+          playerName: e.player?.name || 'Unknown',
+          playerNumber: e.player?.number || 0,
+          teamId: e.teamId,
+          category: e.type,
+          action: e.subtype || e.type,
+          position: e.position,
+          distance: e.distance,
+          isCollective: e.isCollective || false,
+          zone: e.goalZone,
+          sanctionType: e.sanctionType,
+        }));
+        
+        setEvents(transformedEvents);
+        
+        // Calculate scores from events
+        const homeGoals = transformedEvents.filter(e => 
+          e.category === 'GOAL' && e.teamId === home.id
+        ).length;
+        const visitorGoals = transformedEvents.filter(e => 
+          e.category === 'GOAL' && e.teamId === visitor.id
+        ).length;
+        
+        setHomeScore(homeGoals);
+        setVisitorScore(visitorGoals);
+      } else {
+        // No events yet, start fresh
+        setEvents([]);
+        setHomeScore(0);
+        setVisitorScore(0);
+      }
+    } catch (error) {
+      console.error('Error loading events:', error);
+      setEvents([]);
+      setHomeScore(0);
+      setVisitorScore(0);
+    }
+    
     setTime(0);
     setIsPlaying(false);
     setActiveTeamId(null);
