@@ -3,8 +3,8 @@ import type { LucideIcon } from 'lucide-react';
 interface SplitToggleProps {
   value: boolean;
   onChange: (value: boolean) => void;
-  leftOption: { label: string; icon: LucideIcon };
-  rightOption: { label: string; icon: LucideIcon };
+  leftOption: { label: string; icon: LucideIcon | LucideIcon[] };
+  rightOption: { label: string; icon: LucideIcon | LucideIcon[] };
   colorClass: 'purple' | 'orange' | 'cyan';
 }
 
@@ -49,7 +49,13 @@ export const SplitToggle = ({
         onClick={() => onChange(false)}
         className={`p-4 font-bold border-2 border-r-0 rounded-l-xl transition-all flex flex-col items-center gap-2 ${getStateClasses(!value)}`}
       >
-        <leftOption.icon size={24} />
+        {Array.isArray(leftOption.icon) ? (
+          <div className="flex items-center gap-1">
+            {leftOption.icon.map((Icon, idx) => <Icon key={idx} size={24} />)}
+          </div>
+        ) : (
+          <leftOption.icon size={24} />
+        )}
         <span className="text-xs uppercase tracking-wider">{leftOption.label}</span>
       </button>
 
@@ -57,7 +63,13 @@ export const SplitToggle = ({
         onClick={() => onChange(true)}
         className={`p-4 font-bold border-2 rounded-r-xl transition-all flex flex-col items-center gap-2 ${getStateClasses(value)}`}
       >
-        <rightOption.icon size={24} />
+        {Array.isArray(rightOption.icon) ? (
+          <div className="flex items-center gap-1">
+            {rightOption.icon.map((Icon, idx) => <Icon key={idx} size={24} />)}
+          </div>
+        ) : (
+          <rightOption.icon size={24} />
+        )}
         <span className="text-xs uppercase tracking-wider">{rightOption.label}</span>
       </button>
     </div>
