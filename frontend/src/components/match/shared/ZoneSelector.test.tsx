@@ -63,4 +63,30 @@ describe('ZoneSelector', () => {
     const button = screen.getByText(selected.label);
     expect(button).toHaveClass('bg-indigo-600');
   });
+
+  it('calls onZoneSelect with 9m zone', () => {
+    const handleSelect = vi.fn();
+    render(
+      <ZoneSelector 
+        selectedZone={null} 
+        onZoneSelect={handleSelect} 
+      />
+    );
+
+    fireEvent.click(screen.getByText(ZONE_CONFIG.nineMeter[0].label));
+    expect(handleSelect).toHaveBeenCalledWith(ZONE_CONFIG.nineMeter[0].zone);
+  });
+
+  it('calls onZoneSelect with penalty zone', () => {
+    const handleSelect = vi.fn();
+    render(
+      <ZoneSelector 
+        selectedZone={null} 
+        onZoneSelect={handleSelect} 
+      />
+    );
+
+    fireEvent.click(screen.getByText(ZONE_CONFIG.penalty.label));
+    expect(handleSelect).toHaveBeenCalledWith(ZONE_CONFIG.penalty.zone);
+  });
 });

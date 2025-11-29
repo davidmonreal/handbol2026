@@ -50,4 +50,29 @@ describe('SplitToggle', () => {
     expect(screen.getByText('Individual').closest('button')).toHaveClass('bg-gray-50', 'text-gray-400', 'border-purple-500');
     expect(screen.getByText('Collective').closest('button')).toHaveClass('bg-purple-50', 'text-purple-700', 'border-purple-500');
   });
+
+  it('renders with orange color class', () => {
+    render(<SplitToggle {...defaultProps} colorClass="orange" value={true} />);
+    const activeButton = screen.getByText('Collective').closest('button');
+    expect(activeButton).toHaveClass('border-orange-500', 'bg-orange-50', 'text-orange-700');
+  });
+
+  it('renders with cyan color class', () => {
+    render(<SplitToggle {...defaultProps} colorClass="cyan" value={true} />);
+    const activeButton = screen.getByText('Collective').closest('button');
+    expect(activeButton).toHaveClass('border-cyan-500', 'bg-cyan-50', 'text-cyan-700');
+  });
+
+  it('renders multiple icons when icon is an array', () => {
+    render(
+      <SplitToggle 
+        {...defaultProps} 
+        rightOption={{ label: 'Multiple', icon: [User, Users] }}
+        value={true}
+      />
+    );
+    // Should render a div with multiple icons
+    const button = screen.getByText('Multiple').closest('button');
+    expect(button).toBeInTheDocument();
+  });
 });
