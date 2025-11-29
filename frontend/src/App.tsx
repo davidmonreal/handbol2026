@@ -3,6 +3,8 @@ import type { ErrorInfo, ReactNode } from 'react';
 import MatchTracker from './components/MatchTracker';
 import Statistics from './components/Statistics';
 import { MatchProvider } from './context/MatchContext';
+import { AdminLayout } from './components/admin/AdminLayout';
+import { ClubsManagement } from './components/admin/ClubsManagement';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -39,7 +41,11 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 const HomeView = () => <div className="p-8 text-center text-gray-500">Home View (Coming Soon)</div>;
 const MatchView = () => <MatchTracker />;
 const StatsView = () => <Statistics />;
-const AdminView = () => <div className="p-8 text-center text-gray-500">Admin View (Coming Soon)</div>;
+const AdminView = () => (
+  <AdminLayout>
+    <ClubsManagement />
+  </AdminLayout>
+);
 
 function App() {
   const [currentView, setCurrentView] = useState<'home' | 'match' | 'stats' | 'admin'>('home');
