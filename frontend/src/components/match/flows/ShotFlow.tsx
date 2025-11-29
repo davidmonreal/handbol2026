@@ -1,9 +1,10 @@
-import { Target, Check, Users, User, Shield, Unlock, Zap, Anchor, Activity } from 'lucide-react';
+import { Target, Check, Users, User, Activity, ArrowUp, ArrowLeftRight, UserRoundX } from 'lucide-react';
 import type { ZoneType } from '../../../types';
 import { ZONE_CONFIG } from '../../../config/zones';
 import { FLOW_CONFIG } from '../../../config/flows';
 import { CollapsedStep } from '../shared/CollapsedStep';
 import { ZoneSelector } from '../shared/ZoneSelector';
+import { SplitToggle } from '../shared/SplitToggle';
 
 interface ShotFlowProps {
   selectedZone: ZoneType | null;
@@ -69,42 +70,30 @@ export const ShotFlow = ({
           <>
             {/* Context Toggles - Driven by Config */}
             {FLOW_CONFIG.Shot.showContext(selectedZone) && (
-              <div className="grid grid-cols-3 gap-3 mb-6">
-                <button
-                  onClick={onToggleCollective}
-                  className={`p-4 rounded-xl font-bold border-2 transition-all flex flex-col items-center gap-2 ${
-                    isCollective 
-                      ? 'border-purple-500 bg-purple-50 text-purple-700 shadow-md' 
-                      : 'border-gray-200 text-gray-400 hover:bg-gray-50'
-                  }`}
-                >
-                  {isCollective ? <Users size={24} /> : <User size={24} />}
-                  <span className="text-xs uppercase tracking-wider">{isCollective ? 'Collective' : 'Individual'}</span>
-                </button>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <SplitToggle
+                  value={isCollective}
+                  onChange={(val) => !val ? onToggleCollective() : onToggleCollective()} // Toggle logic needs to match boolean
+                  leftOption={{ label: 'Individual', icon: User }}
+                  rightOption={{ label: 'Collective', icon: Users }}
+                  colorClass="purple"
+                />
                 
-                <button
-                  onClick={onToggleOpposition}
-                  className={`p-4 rounded-xl font-bold border-2 transition-all flex flex-col items-center gap-2 ${
-                    hasOpposition 
-                      ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-md' 
-                      : 'border-gray-200 text-gray-400 hover:bg-gray-50'
-                  }`}
-                >
-                  {hasOpposition ? <Shield size={24} /> : <Unlock size={24} />}
-                  <span className="text-xs uppercase tracking-wider">{hasOpposition ? 'Opposition' : 'Free'}</span>
-                </button>
+                <SplitToggle
+                  value={hasOpposition}
+                  onChange={(val) => !val ? onToggleOpposition() : onToggleOpposition()}
+                  leftOption={{ label: 'Free', icon: User }}
+                  rightOption={{ label: 'Opposition', icon: UserRoundX }}
+                  colorClass="orange"
+                />
                 
-                <button
-                  onClick={onToggleCounter}
-                  className={`p-4 rounded-xl font-bold border-2 transition-all flex flex-col items-center gap-2 ${
-                    isCounterAttack 
-                      ? 'border-cyan-500 bg-cyan-50 text-cyan-700 shadow-md' 
-                      : 'border-gray-200 text-gray-400 hover:bg-gray-50'
-                  }`}
-                >
-                  {isCounterAttack ? <Zap size={24} /> : <Anchor size={24} />}
-                  <span className="text-xs uppercase tracking-wider">{isCounterAttack ? 'Counter' : 'Static'}</span>
-                </button>
+                <SplitToggle
+                  value={isCounterAttack}
+                  onChange={(val) => !val ? onToggleCounter() : onToggleCounter()}
+                  leftOption={{ label: 'Static', icon: ArrowLeftRight }}
+                  rightOption={{ label: 'Counter', icon: ArrowUp }}
+                  colorClass="cyan"
+                />
               </div>
             )}
 

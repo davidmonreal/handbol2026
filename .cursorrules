@@ -6,3 +6,5 @@ When you implement a solution:
 1. Prioritize clean, modular, and testable code.
 2. If you apply a Design Pattern, briefly explain why it fits this specific scenario.
 3. If a violation of SOLID principles is detected in existing code, propose a refactor to fix it.
+4. Use TDD (Test-Driven Development) approach to implement new features and refactor existing code.
+5. After implementing a feature, run all tests to ensure they pass.
