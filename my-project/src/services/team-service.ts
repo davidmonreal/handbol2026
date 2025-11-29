@@ -13,7 +13,7 @@ export class TeamService {
     return this.repository.findById(id);
   }
 
-  async create(data: { name: string; clubId: string; seasonId: string; isMyTeam?: boolean }): Promise<Team> {
+  async create(data: { name: string; category: string; clubId: string; seasonId: string; isMyTeam?: boolean }): Promise<Team> {
     // Validate club exists
     const club = await prisma.club.findUnique({ where: { id: data.clubId } });
     if (!club) throw new Error('Club not found');

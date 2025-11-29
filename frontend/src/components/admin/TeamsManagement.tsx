@@ -149,6 +149,21 @@ export const TeamsManagement = () => {
     }
   };
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterClub, setFilterClub] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+
+  // ... (useEffect and fetch functions)
+
+  const filteredTeams = teams.filter(team => {
+    const matchesSearch = team.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          team.club.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesClub = filterClub ? team.clubId === filterClub : true;
+    const matchesCategory = filterCategory ? team.category === filterCategory : true;
+    
+    return matchesSearch && matchesClub && matchesCategory;
+  });
+
   const handleEdit = (team: Team) => {
     setEditingTeam(team);
     setFormData({ 
@@ -251,6 +266,57 @@ export const TeamsManagement = () => {
         >
           <Plus size={20} />
           New Team
+        </button>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-4 mb-6 justify-between items-end md:items-center">
+        <div className="flex flex-col md:flex-row gap-4 flex-1 w-full">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Search teams..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+          </div>
+          
+          {/* Filters */}
+          <select
+            value={filterClub}
+            onChange={(e) => setFilterClub(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+          >
+            <option value="">All Clubs</option>
+            {clubs.map(club => (
+              <option key={club.id} value={club.id}>{club.name}</option>
+            ))}
+          </select>
+
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+          >
+            <option value="">All Categories</option>
+            {CATEGORIES.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+
+        <button
+          onClick={() => {
+            setEditingTeam(null);
+            setFormData({ name: '', category: 'SENIOR', clubId: '', seasonId: '', isMyTeam: false });
+            setIsFormOpen(true);
+          }}
+          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap"
+        >
+          <Plus size={20} />
+          Add Team
         </button>
       </div>
 
@@ -455,11 +521,16 @@ export const TeamsManagement = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {teams.map((team) => (
+            {filteredTeams.map((team) => (
               <tr key={team.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 flex items-center gap-2">
                   {team.name}
                   {team.isMyTeam && <Star size={16} className="text-yellow-500 fill-yellow-500" />}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                    {team.category || 'SENIOR'}
+                  </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.club.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.season.name}</td>
@@ -495,9 +566,9 @@ export const TeamsManagement = () => {
             ))}
           </tbody>
         </table>
-        {teams.length === 0 && (
+        {filteredTeams.length === 0 && (
           <div className="text-center py-12 text-gray-500">
-            No teams found. Create your first team!
+            No teams found matching your filters.
           </div>
         )}
       </div>
