@@ -106,6 +106,25 @@ const MatchTracker = () => {
   const handleFinalizeEvent = (targetIndex?: number, zoneOverride?: ZoneType) => {
     if (!activeTeamId || !selectedPlayerId || !flowType || !selectedAction) return;
 
+    const finalZone = zoneOverride || selectedZone || undefined;
+    
+    // Parse zone to get position and distance
+    let position: string | undefined;
+    let distance: string | undefined;
+
+    if (finalZone) {
+      if (finalZone === '7m') {
+        distance = '7M';
+        position = undefined; // Or '7M' if backend expects it
+      } else {
+        const parts = finalZone.split('-');
+        if (parts.length === 2) {
+          distance = parts[0] === '6m' ? '6M' : '9M';
+          position = parts[1];
+        }
+      }
+    }
+
     const newEvent: MatchEvent = {
       id: Date.now().toString(),
       timestamp: time,
@@ -113,7 +132,9 @@ const MatchTracker = () => {
       playerId: selectedPlayerId,
       category: flowType,
       action: selectedAction,
-      zone: zoneOverride || selectedZone || undefined,
+      zone: finalZone,
+      position: position,
+      distance: distance,
       goalTarget: targetIndex,
       context: flowType === 'Shot' ? {
         isCollective: (zoneOverride || selectedZone) === ZONE_CONFIG.penalty.zone ? false : isCollective,
