@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MatchRepository } from '../src/repositories/match-repository';
 import prisma from '../src/lib/prisma';

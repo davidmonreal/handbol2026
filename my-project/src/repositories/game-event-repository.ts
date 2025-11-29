@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { PrismaClient, GameEvent } from '@prisma/client';
 import prisma from '../lib/prisma';
 

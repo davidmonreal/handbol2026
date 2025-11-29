@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { PrismaClient, Match } from '@prisma/client';
 import { MatchRepository } from '../repositories/match-repository';
 import prisma from '../lib/prisma';

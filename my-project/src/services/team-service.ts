@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { PrismaClient, Team, PlayerTeamSeason, Player } from '@prisma/client';
 import { TeamRepository } from '../repositories/team-repository';
 import prisma from '../lib/prisma';

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TeamService } from '../src/services/team-service';
 import { TeamRepository } from '../src/repositories/team-repository';

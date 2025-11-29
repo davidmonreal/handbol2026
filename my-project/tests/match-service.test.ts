@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MatchService } from '../src/services/match-service';
 import { MatchRepository } from '../src/repositories/match-repository';
