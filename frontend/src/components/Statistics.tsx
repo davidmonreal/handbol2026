@@ -5,7 +5,7 @@ import type { ZoneType, MatchEvent } from '../types';
 import { Users, Target, Filter, X, Activity, Shield, Zap, ArrowLeftRight } from 'lucide-react';
 import { HOME_TEAM, VISITOR_TEAM } from '../data/mockData';
 import { ZONE_CONFIG } from '../config/zones';
-import { REVERSE_GOAL_TARGET_MAP, DISTANCES } from '../config/constants';
+import { REVERSE_GOAL_TARGET_MAP } from '../config/constants';
 
 const Statistics = () => {
   const [searchParams] = useSearchParams();
@@ -575,18 +575,6 @@ const Statistics = () => {
                 </div>
             </div>
         </div>
-      </div>
-
-      {/* DEBUG SECTION */}
-      <div className="bg-gray-100 p-4 rounded-lg overflow-auto max-h-96 text-xs font-mono">
-        <h3 className="font-bold mb-2">Debug Info</h3>
-        <pre>{JSON.stringify({
-          totalEvents: matchEvents.length,
-          filteredEvents: filteredEvents.length,
-          sampleEvent: matchEvents[0],
-          goalHeatmap: Array.from(goalHeatmap.entries()),
-          reverseMap: REVERSE_GOAL_TARGET_MAP
-        }, null, 2)}</pre>
       </div>
 
       {/* 2. ZONE MAP (Middle) */}
