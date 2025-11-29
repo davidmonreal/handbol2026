@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Users, Search, X, Check } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Search, X } from 'lucide-react';
 
 interface Team {
   id: string;
@@ -336,7 +336,7 @@ export const TeamsManagement = () => {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 flex-1 overflow-hidden">
+            <div className="grid grid-cols-2 gap-6 flex-1">
               {/* Available Players */}
               <div className="flex flex-col h-full">
                 <h3 className="font-semibold mb-2">Available Players</h3>
