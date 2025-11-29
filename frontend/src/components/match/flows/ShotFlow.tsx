@@ -1,4 +1,4 @@
-import { Target, Check, Users, User, Activity, ArrowUp, ArrowLeftRight, UserRoundX } from 'lucide-react';
+import { Target, Check, Users, User, Activity, ArrowUp, ArrowLeftRight } from 'lucide-react';
 import type { ZoneType } from '../../../types';
 import { ZONE_CONFIG } from '../../../config/zones';
 import { FLOW_CONFIG } from '../../../config/flows';
@@ -83,7 +83,7 @@ export const ShotFlow = ({
                   value={hasOpposition}
                   onChange={(val) => !val ? onToggleOpposition() : onToggleOpposition()}
                   leftOption={{ label: 'Free', icon: User }}
-                  rightOption={{ label: 'Opposition', icon: UserRoundX }}
+                  rightOption={{ label: 'Opposition', icon: Users }}
                   colorClass="orange"
                 />
                 
