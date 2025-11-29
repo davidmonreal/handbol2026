@@ -1,22 +1,56 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useMatch } from '../context/MatchContext';
-import type { ZoneType } from '../types';
-import { Users, Target, Filter, X, Activity, Shield, Zap } from 'lucide-react';
+import type { ZoneType, MatchEvent } from '../types';
+import { Users, Target, Filter, X, Activity, Shield, Zap, ArrowLeftRight } from 'lucide-react';
 import { HOME_TEAM, VISITOR_TEAM } from '../data/mockData';
 import { ZONE_CONFIG } from '../config/zones';
 
 const Statistics = () => {
+  const [searchParams] = useSearchParams();
+  const matchId = searchParams.get('matchId');
+  
   const { events, activeTeamId } = useMatch();
   const [filterZone, setFilterZone] = useState<ZoneType | null>(null);
   const [filterPlayer, setFilterPlayer] = useState<string | null>(null);
-  const [filterOpposition, setFilterOpposition] = useState<boolean | null>(null); // true = with, false = without, null = all
-  const [filterCollective, setFilterCollective] = useState<boolean | null>(null); // true = collective, false = individual, null = all
-  const [filterCounterAttack, setFilterCounterAttack] = useState<boolean | null>(null); // true = counter, false = static, null = all
+  const [filterOpposition, setFilterOpposition] = useState<boolean | null>(null);
+  const [filterCollective, setFilterCollective] = useState<boolean | null>(null);
+  const [filterCounterAttack, setFilterCounterAttack] = useState<boolean | null>(null);
+  
+  // Match-specific state
+  const [matchData, setMatchData] = useState<any>(null);
+  const [matchEvents, setMatchEvents] = useState<MatchEvent[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
-  // 1. Base Data: Events for the active team
+  // Load match data if matchId is provided
+  useEffect(() => {
+    if (matchId) {
+      // Load match details
+      fetch(`http://localhost:3000/api/matches/${matchId}`)
+        .then(res => res.json())
+        .then(data => {
+          setMatchData(data);
+          setSelectedTeamId(data.homeTeamId); // Default to home team
+        });
+      
+      // Load match events
+      fetch(`http://localhost:3000/api/game-events/match/${matchId}`)
+        .then(res => res.json())
+        .then(data => {
+          setMatchEvents(data);
+        });
+    }
+  }, [matchId]);
+
+  // 1. Base Data: Events for the active/selected team
   const teamEvents = useMemo(() => {
+    // If viewing match stats, use match events and selected team
+    if (matchId && selectedTeamId) {
+      return matchEvents.filter(e => e.teamId === selectedTeamId);
+    }
+    // Otherwise use context events and active team
     return events.filter(e => e.teamId === activeTeamId);
-  }, [events, activeTeamId]);
+  }, [matchId, selectedTeamId, matchEvents, events, activeTeamId]);
 
   // 2. Filtered Data: Events matching all filters
   const filteredEvents = useMemo(() => {
@@ -233,9 +267,38 @@ const Statistics = () => {
       return player ? { name: player.name, number: player.number } : { name: 'Unknown', number: 0 };
   };
 
-  if (!activeTeamId) {
-      return <div className="p-8 text-center text-gray-500">Please select a team in the Match tab first.</div>;
+  if (!matchId && !activeTeamId) {
+      return <div className="p-8 text-center text-gray-500">Please select a team in the Match tab first or navigate from a match.</div>;
   }
+
+  // Get current team name for display
+  const currentTeamName = useMemo(() => {
+    if (matchId && matchData && selectedTeamId) {
+      return selectedTeamId === matchData.homeTeamId 
+        ? matchData.homeTeam.name 
+        : matchData.awayTeam.name;
+    }
+    return activeTeamId === HOME_TEAM.id ? HOME_TEAM.name : VISITOR_TEAM.name;
+  }, [matchId, matchData, selectedTeamId, activeTeamId]);
+
+  const otherTeamName = useMemo(() => {
+    if (matchId && matchData && selectedTeamId) {
+      return selectedTeamId === matchData.homeTeamId 
+        ? matchData.awayTeam.name 
+        : matchData.homeTeam.name;
+    }
+    return null;
+  }, [matchId, matchData, selectedTeamId]);
+
+  const toggleTeam = () => {
+    if (matchData && selectedTeamId) {
+      setSelectedTeamId(
+        selectedTeamId === matchData.homeTeamId 
+          ? matchData.awayTeamId 
+          : matchData.homeTeamId
+      );
+    }
+  };
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
@@ -243,7 +306,20 @@ const Statistics = () => {
       {/* Header / Filter Status */}
       <div className="space-y-4">
         <div className="flex justify-between items-center flex-wrap gap-2">
-          <h2 className="text-2xl font-bold text-gray-800">Match Statistics</h2>
+          <h2 className="text-2xl font-bold text-gray-800">
+            {matchId ? `Match Statistics: ${currentTeamName}` : 'Match Statistics'}
+          </h2>
+          
+          {/* Team Switcher (only for match view) */}
+          {matchId && matchData && otherTeamName && (
+            <button
+              onClick={toggleTeam}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              <ArrowLeftRight size={18} />
+              Switch to {otherTeamName}
+            </button>
+          )}
           
           {/* Active Filters Display */}
           <div className="flex flex-wrap gap-2">
