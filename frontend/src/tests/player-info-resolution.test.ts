@@ -35,8 +35,7 @@ describe('Player Info Resolution Tests', () => {
         matchData: any,
         matchEvents: any[],
         events: any[],
-        activeTeamId: string | null,
-        homeTeamId: string
+        activeTeamId: string | null
     ) => {
         // 1. Try to find in matchData (API structure)
         if (matchId && matchData) {
@@ -66,31 +65,31 @@ describe('Player Info Resolution Tests', () => {
     };
 
     it('should resolve player from matchData home team', () => {
-        const info = getPlayerInfo('p1', 'match-1', mockMatchData, [], [], null, 'home-id');
+        const info = getPlayerInfo('p1', 'match-1', mockMatchData, [], [], null);
         expect(info.name).toBe('Home Player 1');
         expect(info.number).toBe(10);
     });
 
     it('should resolve player from matchData away team', () => {
-        const info = getPlayerInfo('p3', 'match-1', mockMatchData, [], [], null, 'home-id');
+        const info = getPlayerInfo('p3', 'match-1', mockMatchData, [], [], null);
         expect(info.name).toBe('Away Player 1');
         expect(info.number).toBe(30);
     });
 
     it('should resolve player from events if not in matchData', () => {
-        const info = getPlayerInfo('p5', 'match-1', mockMatchData, mockEvents, [], null, 'home-id');
+        const info = getPlayerInfo('p5', 'match-1', mockMatchData, mockEvents, [], null);
         expect(info.name).toBe('Event Player 5');
         expect(info.number).toBe(50);
     });
 
     it('should fallback to context data if no matchId', () => {
-        const info = getPlayerInfo('p1', null, null, [], [], 'active-team', 'home-id');
+        const info = getPlayerInfo('p1', null, null, [], [], 'active-team');
         expect(info.name).toBe('Context Player 1');
         expect(info.number).toBe(10);
     });
 
     it('should return Unknown if player not found anywhere', () => {
-        const info = getPlayerInfo('non-existent', 'match-1', mockMatchData, [], [], null, 'home-id');
+        const info = getPlayerInfo('non-existent', 'match-1', mockMatchData, [], [], null);
         expect(info.name).toBe('Unknown');
         expect(info.number).toBe(0);
     });
