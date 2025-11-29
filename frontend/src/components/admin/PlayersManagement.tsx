@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, BarChart3, X } from 'lucide-react';
 import { REVERSE_GOAL_TARGET_MAP } from '../../config/constants';
+import { ZONE_CONFIG } from '../../config/zones';
 
 interface Player {
   id: string;
@@ -449,34 +450,94 @@ export const PlayersManagement = () => {
                     {/* Zone Distribution (Court Zones) */}
                     <div className="bg-white rounded-xl shadow-lg p-6">
                       <h3 className="text-lg font-bold text-gray-800 mb-4">Shot Distribution (Court Zones)</h3>
-                      <div className="space-y-2">
-                        {['6m', '9m', '7m'].map(distance => {
-                          const distanceShots = playerStats.events.filter((e: any) => 
-                            e.type === 'Shot' && e.distance === distance.toUpperCase()
-                          );
-                          const distanceGoals = distanceShots.filter((e: any) => e.subtype === 'Goal');
-                          
-                          if (distanceShots.length === 0) return null;
-                          
-                          const efficiency = (distanceGoals.length / distanceShots.length) * 100;
-                          
-                          return (
-                            <div key={distance} className="border border-gray-200 rounded-lg p-3">
-                              <div className="flex justify-between items-center mb-2">
-                                <span className="font-medium text-gray-700">{distance}</span>
-                                <span className="text-sm text-gray-500">
-                                  {distanceGoals.length}/{distanceShots.length} ({efficiency.toFixed(0)}%)
-                                </span>
-                              </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="space-y-3">
+                        {/* 6m Line */}
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 mb-2">6 METRE LINE</p>
+                          <div className="grid grid-cols-5 gap-2">
+                            {ZONE_CONFIG.sixMeter.map(({ zone, label }) => {
+                              const zoneShots = playerStats.events.filter((e: any) => 
+                                e.type === 'Shot' && 
+                                e.position === label &&
+                                e.distance === '6M'
+                              );
+                              const zoneGoals = zoneShots.filter((e: any) => e.subtype === 'Goal');
+                              const efficiency = zoneShots.length > 0 ? (zoneGoals.length / zoneShots.length) * 100 : 0;
+                              const percentage = playerStats.shots > 0 ? Math.round((zoneShots.length / playerStats.shots) * 100) : 0;
+                              
+                              return (
                                 <div
-                                  className="bg-green-500 h-2 rounded-full"
-                                  style={{ width: `${efficiency}%` }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
+                                  key={zone}
+                                  className="p-3 rounded-lg border-2 border-gray-200 bg-gray-50 flex flex-col items-center"
+                                >
+                                  <span className="text-xs font-bold text-gray-500 mb-1">{label}</span>
+                                  <span className="text-xl font-bold text-gray-800">{percentage}%</span>
+                                  <span className="text-xs text-gray-400">({zoneShots.length})</span>
+                                  {zoneShots.length > 0 && (
+                                    <span className="text-xs text-green-600 mt-1">{efficiency.toFixed(0)}% eff</span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* 9m Line */}
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 mb-2">9 METRE LINE</p>
+                          <div className="grid grid-cols-3 gap-2 max-w-md mx-auto">
+                            {ZONE_CONFIG.nineMeter.map(({ zone, label }) => {
+                              const zoneShots = playerStats.events.filter((e: any) => 
+                                e.type === 'Shot' && 
+                                e.position === label &&
+                                e.distance === '9M'
+                              );
+                              const zoneGoals = zoneShots.filter((e: any) => e.subtype === 'Goal');
+                              const efficiency = zoneShots.length > 0 ? (zoneGoals.length / zoneShots.length) * 100 : 0;
+                              const percentage = playerStats.shots > 0 ? Math.round((zoneShots.length / playerStats.shots) * 100) : 0;
+                              
+                              return (
+                                <div
+                                  key={zone}
+                                  className="p-3 rounded-lg border-2 border-gray-200 bg-gray-50 flex flex-col items-center"
+                                >
+                                  <span className="text-xs font-bold text-gray-500 mb-1">{label}</span>
+                                  <span className="text-xl font-bold text-gray-800">{percentage}%</span>
+                                  <span className="text-xs text-gray-400">({zoneShots.length})</span>
+                                  {zoneShots.length > 0 && (
+                                    <span className="text-xs text-green-600 mt-1">{efficiency.toFixed(0)}% eff</span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* 7m Penalty */}
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 mb-2">PENALTY</p>
+                          <div className="max-w-xs mx-auto">
+                            {(() => {
+                              const penaltyShots = playerStats.events.filter((e: any) => 
+                                e.type === 'Shot' && e.distance === '7M'
+                              );
+                              const penaltyGoals = penaltyShots.filter((e: any) => e.subtype === 'Goal');
+                              const efficiency = penaltyShots.length > 0 ? (penaltyGoals.length / penaltyShots.length) * 100 : 0;
+                              const percentage = playerStats.shots > 0 ? Math.round((penaltyShots.length / playerStats.shots) * 100) : 0;
+                              
+                              return (
+                                <div className="p-3 rounded-lg border-2 border-gray-200 bg-gray-50 flex flex-col items-center">
+                                  <span className="text-xs font-bold text-gray-500 mb-1">{ZONE_CONFIG.penalty.label}</span>
+                                  <span className="text-xl font-bold text-gray-800">{percentage}%</span>
+                                  <span className="text-xs text-gray-400">({penaltyShots.length})</span>
+                                  {penaltyShots.length > 0 && (
+                                    <span className="text-xs text-green-600 mt-1">{efficiency.toFixed(0)}% eff</span>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
