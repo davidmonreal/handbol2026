@@ -37,7 +37,24 @@ const Statistics = () => {
       fetch(`http://localhost:3000/api/game-events/match/${matchId}`)
         .then(res => res.json())
         .then(data => {
-          setMatchEvents(data);
+          // Transform backend events to MatchEvent format
+          const transformedEvents: MatchEvent[] = data.map((e: any) => ({
+            id: e.id,
+            timestamp: e.timestamp,
+            playerId: e.playerId,
+            teamId: e.teamId,
+            category: e.type, // 'Shot', 'Turnover', 'Sanction'
+            action: e.subtype || e.type, // 'Goal', 'Save', 'Miss', etc.
+            zone: e.goalZone,
+            goalTarget: undefined,
+            context: {
+              isCollective: e.isCollective,
+              hasOpposition: e.hasOpposition,
+              isCounterAttack: e.isCounterAttack,
+            },
+            defenseFormation: undefined,
+          }));
+          setMatchEvents(transformedEvents);
         });
     }
   }, [matchId]);

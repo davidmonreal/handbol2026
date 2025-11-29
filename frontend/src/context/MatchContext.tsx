@@ -128,10 +128,10 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
         
         // Calculate scores from events
         const homeGoals = transformedEvents.filter(e => 
-          e.category === 'GOAL' && e.teamId === home.id
+          e.category === 'Shot' && e.action === 'Goal' && e.teamId === home.id
         ).length;
         const visitorGoals = transformedEvents.filter(e => 
-          e.category === 'GOAL' && e.teamId === visitor.id
+          e.category === 'Shot' && e.action === 'Goal' && e.teamId === visitor.id
         ).length;
         
         setHomeScore(homeGoals);
