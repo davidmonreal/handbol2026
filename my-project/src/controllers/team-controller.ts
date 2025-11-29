@@ -27,8 +27,8 @@ export class TeamController {
 
   create = async (req: Request, res: Response) => {
     try {
-      const { name, clubId, seasonId, isMyTeam } = req.body;
-      const team = await this.teamService.create({ name, clubId, seasonId, isMyTeam });
+      const { name, category, clubId, seasonId, isMyTeam } = req.body;
+      const team = await this.teamService.create({ name, category, clubId, seasonId, isMyTeam });
       res.status(201).json(team);
     } catch (error) {
       if (
@@ -43,9 +43,10 @@ export class TeamController {
 
   update = async (req: Request, res: Response) => {
     try {
-      const { name, clubId, seasonId, isMyTeam } = req.body;
+      const { name, category, clubId, seasonId, isMyTeam } = req.body;
       const updateData: any = {};
       if (name) updateData.name = name;
+      if (category) updateData.category = category;
       if (clubId) updateData.clubId = clubId;
       if (seasonId) updateData.seasonId = seasonId;
       if (isMyTeam !== undefined) updateData.isMyTeam = isMyTeam;

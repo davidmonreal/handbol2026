@@ -27,7 +27,7 @@ export class TeamService {
 
   async update(
     id: string,
-    data: Partial<{ name: string; clubId: string; seasonId: string; isMyTeam?: boolean }>,
+    data: Partial<{ name: string; category: string; clubId: string; seasonId: string; isMyTeam?: boolean }>,
   ): Promise<Team> {
     // Validate club if provided
     if (data.clubId) {

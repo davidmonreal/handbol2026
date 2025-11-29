@@ -32,7 +32,7 @@ export class TeamRepository {
     });
   }
 
-  async create(data: { name: string; clubId: string; seasonId: string; isMyTeam?: boolean }): Promise<Team> {
+  async create(data: { name: string; category: string; clubId: string; seasonId: string; isMyTeam?: boolean }): Promise<Team> {
     return prisma.team.create({
       data: {
         ...data,
@@ -52,7 +52,7 @@ export class TeamRepository {
 
   async update(
     id: string,
-    data: Partial<{ name: string; clubId: string; seasonId: string; isMyTeam: boolean }>,
+    data: Partial<{ name: string; category: string; clubId: string; seasonId: string; isMyTeam: boolean }>,
   ): Promise<Team> {
     return prisma.team.update({
       where: { id },

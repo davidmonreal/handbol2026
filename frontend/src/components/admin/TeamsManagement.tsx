@@ -4,6 +4,7 @@ import { Plus, Edit2, Trash2, Users, Search, X, Star } from 'lucide-react';
 interface Team {
   id: string;
   name: string;
+  category: string;
   clubId: string;
   seasonId: string;
   club: { id: string; name: string };
@@ -42,11 +43,13 @@ export const TeamsManagement = () => {
   
   const [formData, setFormData] = useState({ 
     name: '', 
+    category: 'SENIOR',
     clubId: '', 
-
     seasonId: '',
     isMyTeam: false
   });
+
+  const CATEGORIES = ['BENJAMI', 'ALEVI', 'INFANTIL', 'CADET', 'JUVENIL', 'SENIOR'];
   
   const [playerSearch, setPlayerSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -150,6 +153,7 @@ export const TeamsManagement = () => {
     setEditingTeam(team);
     setFormData({ 
       name: team.name,
+      category: team.category || 'SENIOR',
       clubId: team.clubId,
       seasonId: team.seasonId,
       isMyTeam: team.isMyTeam
@@ -160,7 +164,7 @@ export const TeamsManagement = () => {
   const handleCancel = () => {
     setIsFormOpen(false);
     setEditingTeam(null);
-    setFormData({ name: '', clubId: '', seasonId: '', isMyTeam: false });
+    setFormData({ name: '', category: 'SENIOR', clubId: '', seasonId: '', isMyTeam: false });
     setError(null);
   };
 
@@ -238,7 +242,11 @@ export const TeamsManagement = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Teams Management</h1>
         <button
-          onClick={() => setIsFormOpen(true)}
+          onClick={() => {
+            setEditingTeam(null);
+            setFormData({ name: '', category: 'SENIOR', clubId: '', seasonId: '', isMyTeam: false });
+            setIsFormOpen(true);
+          }}
           className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
         >
           <Plus size={20} />
@@ -256,10 +264,13 @@ export const TeamsManagement = () => {
       {isFormOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-2xl font-bold mb-4">
-              {editingTeam ? 'Edit Team' : 'New Team'}
-            </h2>
-            <form onSubmit={handleSubmit}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">{editingTeam ? 'Edit Team' : 'New Team'}</h2>
+              <button onClick={() => setIsFormOpen(false)} className="text-gray-500 hover:text-gray-700">
+                <X size={24} />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Team Name
@@ -272,6 +283,19 @@ export const TeamsManagement = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   required
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  required
+                >
+                  {CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -305,15 +329,16 @@ export const TeamsManagement = () => {
                   ))}
                 </select>
               </div>
-              <div className="mb-4">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.isMyTeam}
-                    onChange={(e) => setFormData({ ...formData, isMyTeam: e.target.checked })}
-                    className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
-                  />
-                  <span className="text-sm font-medium text-gray-700">My Team</span>
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="isMyTeam"
+                  checked={formData.isMyTeam}
+                  onChange={(e) => setFormData({ ...formData, isMyTeam: e.target.checked })}
+                  className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                />
+                <label htmlFor="isMyTeam" className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                  Is My Team <Star size={14} className="text-yellow-500 fill-yellow-500" />
                 </label>
               </div>
               <div className="flex gap-3 justify-end">
@@ -340,18 +365,15 @@ export const TeamsManagement = () => {
       {/* Players Assignment Modal */}
       {isPlayersModalOpen && selectedTeamForPlayers && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl h-[80vh] flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <h2 className="text-2xl font-bold">Manage Players</h2>
-                <p className="text-gray-500">{selectedTeamForPlayers.name} ({selectedTeamForPlayers.season.name})</p>
-              </div>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl h-[80vh] flex flex-col p-6 overflow-hidden">
+            <div className="flex justify-between items-center mb-6 flex-shrink-0">
+              <h2 className="text-xl font-bold">Manage Players - {selectedTeamForPlayers.name}</h2>
               <button onClick={() => setIsPlayersModalOpen(false)} className="text-gray-500 hover:text-gray-700">
                 <X size={24} />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 flex-1">
+            <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
               {/* Available Players */}
               <div className="flex flex-col h-full">
                 <h3 className="font-semibold mb-2">Available Players</h3>
