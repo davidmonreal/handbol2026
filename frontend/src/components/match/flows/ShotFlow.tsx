@@ -114,8 +114,8 @@ export const ShotFlow = ({
           </>
         )}
 
-        {/* Goal Grid - Show for Goal and Safe */}
-        {(selectedAction === 'Goal' || selectedAction === 'Safe') && (
+        {/* Goal Grid - Show for Goal and Save */}
+        {(selectedAction === 'Goal' || selectedAction === 'Save') && (
           <div className="animate-fade-in">
             <h4 className="text-sm font-bold text-gray-500 mb-2 text-center">
               {selectedAction === 'Goal' ? 'Select Target to Confirm' : 'Select Shot Target (Saved)'}
@@ -134,8 +134,8 @@ export const ShotFlow = ({
           </div>
         )}
         
-        {/* Confirm button - Only for non-Goal and non-Safe actions */}
-        {selectedAction && selectedAction !== 'Goal' && selectedAction !== 'Safe' && (
+        {/* Confirm button - Only for non-Goal and non-Save actions */}
+        {selectedAction && selectedAction !== 'Goal' && selectedAction !== 'Save' && (
           <div className="animate-fade-in mt-4">
             <button 
               onClick={() => onFinalizeEvent()}
