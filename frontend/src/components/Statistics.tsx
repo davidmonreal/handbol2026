@@ -112,6 +112,14 @@ const Statistics = () => {
       goalsWithOpp: number;
       shotsNoOpp: number;
       goalsNoOpp: number;
+      shotsCollective: number;
+      goalsCollective: number;
+      shotsIndividual: number;
+      goalsIndividual: number;
+      shotsCounter: number;
+      goalsCounter: number;
+      shotsStatic: number;
+      goalsStatic: number;
     }>();
     
     filteredEvents.forEach(e => {
@@ -132,6 +140,14 @@ const Statistics = () => {
               goalsWithOpp: 0,
               shotsNoOpp: 0,
               goalsNoOpp: 0,
+              shotsCollective: 0,
+              goalsCollective: 0,
+              shotsIndividual: 0,
+              goalsIndividual: 0,
+              shotsCounter: 0,
+              goalsCounter: 0,
+              shotsStatic: 0,
+              goalsStatic: 0,
             };
             current.shots++;
             if (e.action === 'Goal') current.goals++;
@@ -156,6 +172,24 @@ const Statistics = () => {
               current.shotsNoOpp++;
               if (e.action === 'Goal') current.goalsNoOpp++;
             }
+
+            // Breakdown by collective/individual
+            if (e.context?.isCollective) {
+              current.shotsCollective++;
+              if (e.action === 'Goal') current.goalsCollective++;
+            } else {
+              current.shotsIndividual++;
+              if (e.action === 'Goal') current.goalsIndividual++;
+            }
+
+            // Breakdown by counter/static
+            if (e.context?.isCounterAttack) {
+              current.shotsCounter++;
+              if (e.action === 'Goal') current.goalsCounter++;
+            } else {
+              current.shotsStatic++;
+              if (e.action === 'Goal') current.goalsStatic++;
+            }
             
             map.set(e.playerId, current);
         } else if (e.category === 'Turnover') {
@@ -175,6 +209,14 @@ const Statistics = () => {
               goalsWithOpp: 0,
               shotsNoOpp: 0,
               goalsNoOpp: 0,
+              shotsCollective: 0,
+              goalsCollective: 0,
+              shotsIndividual: 0,
+              goalsIndividual: 0,
+              shotsCounter: 0,
+              goalsCounter: 0,
+              shotsStatic: 0,
+              goalsStatic: 0,
             };
             current.turnovers++;
             map.set(e.playerId, current);
@@ -199,14 +241,16 @@ const Statistics = () => {
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
       
       {/* Header / Filter Status */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex justify-between items-center flex-wrap gap-2">
           <h2 className="text-2xl font-bold text-gray-800">Match Statistics</h2>
+          
+          {/* Active Filters Display */}
           <div className="flex flex-wrap gap-2">
             {filterZone && (
                 <button 
                     onClick={() => setFilterZone(null)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors text-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors text-sm font-medium"
                 >
                     <Filter size={14} />
                     {filterZone}
@@ -216,7 +260,7 @@ const Statistics = () => {
             {filterPlayer && (
                 <button 
                     onClick={() => setFilterPlayer(null)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium"
                 >
                     <Users size={14} />
                     {getPlayerInfo(filterPlayer).name}
@@ -226,7 +270,7 @@ const Statistics = () => {
             {filterOpposition !== null && (
                 <button 
                     onClick={() => setFilterOpposition(null)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-sm font-medium"
                 >
                     <Shield size={14} />
                     {filterOpposition ? 'With Opposition' : 'No Opposition'}
@@ -236,7 +280,7 @@ const Statistics = () => {
             {filterCollective !== null && (
                 <button 
                     onClick={() => setFilterCollective(null)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-medium"
                 >
                     <Users size={14} />
                     {filterCollective ? 'Collective' : 'Individual'}
@@ -246,7 +290,7 @@ const Statistics = () => {
             {filterCounterAttack !== null && (
                 <button 
                     onClick={() => setFilterCounterAttack(null)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-100 text-cyan-700 rounded-lg hover:bg-cyan-200 transition-colors text-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-100 text-cyan-700 rounded-lg hover:bg-cyan-200 transition-colors text-sm font-medium"
                 >
                     <Zap size={14} />
                     {filterCounterAttack ? 'Counter-attack' : 'Static'}
@@ -257,70 +301,82 @@ const Statistics = () => {
         </div>
         
         {/* Context Filter Buttons */}
-        <div className="flex flex-wrap gap-2">
-          <div className="flex gap-2 items-center">
-            <span className="text-xs font-semibold text-gray-500 uppercase">Context:</span>
+        <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
+          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Filters:</span>
+          
+          {/* Opposition Group */}
+          <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
             <button
               onClick={() => setFilterOpposition(filterOpposition === true ? null : true)}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 filterOpposition === true
-                  ? 'bg-orange-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-white text-orange-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              <Shield size={12} className="inline mr-1" />
+              <Shield size={12} />
               With Opp.
             </button>
             <button
               onClick={() => setFilterOpposition(filterOpposition === false ? null : false)}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 filterOpposition === false
-                  ? 'bg-orange-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-white text-orange-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               No Opp.
             </button>
-            <span className="text-gray-300">|</span>
+          </div>
+
+          <div className="w-px h-6 bg-gray-200"></div>
+
+          {/* Collective Group */}
+          <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
             <button
               onClick={() => setFilterCollective(filterCollective === true ? null : true)}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 filterCollective === true
-                  ? 'bg-purple-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-white text-purple-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              <Users size={12} className="inline mr-1" />
+              <Users size={12} />
               Collective
             </button>
             <button
               onClick={() => setFilterCollective(filterCollective === false ? null : false)}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 filterCollective === false
-                  ? 'bg-purple-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-white text-purple-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               Individual
             </button>
-            <span className="text-gray-300">|</span>
+          </div>
+
+          <div className="w-px h-6 bg-gray-200"></div>
+
+          {/* Counter Group */}
+          <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
             <button
               onClick={() => setFilterCounterAttack(filterCounterAttack === true ? null : true)}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 filterCounterAttack === true
-                  ? 'bg-cyan-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-white text-cyan-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              <Zap size={12} className="inline mr-1" />
+              <Zap size={12} />
               Counter
             </button>
             <button
               onClick={() => setFilterCounterAttack(filterCounterAttack === false ? null : false)}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 filterCounterAttack === false
-                  ? 'bg-cyan-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-white text-cyan-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               Static
@@ -485,6 +541,10 @@ const Statistics = () => {
                         <th className="pb-3 font-semibold text-center bg-purple-50 px-2">7m Eff%</th>
                         <th className="pb-3 font-semibold text-center bg-orange-50 px-2">With Opp</th>
                         <th className="pb-3 font-semibold text-center bg-orange-50 px-2">No Opp</th>
+                        <th className="pb-3 font-semibold text-center bg-purple-50 px-2">Collective</th>
+                        <th className="pb-3 font-semibold text-center bg-purple-50 px-2">Individual</th>
+                        <th className="pb-3 font-semibold text-center bg-cyan-50 px-2">Counter</th>
+                        <th className="pb-3 font-semibold text-center bg-cyan-50 px-2">Static</th>
                         <th className="pb-3 font-semibold text-center bg-red-50 px-2">Turnovers</th>
                     </tr>
                 </thead>
@@ -605,6 +665,66 @@ const Statistics = () => {
                                     )}
                                     <div className="text-xs text-gray-400 mt-0.5">{stat.goalsNoOpp}/{stat.shotsNoOpp}</div>
                                 </td>
+
+                                {/* Collective/Individual Stats */}
+                                <td className="py-3 text-center bg-purple-50 px-2">
+                                    {stat.shotsCollective > 0 ? (
+                                        <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((stat.goalsCollective / stat.shotsCollective) * 100) >= 50 
+                                                ? 'bg-green-100 text-green-700' 
+                                                : 'bg-red-100 text-red-700'
+                                        }`}>
+                                            {Math.round((stat.goalsCollective / stat.shotsCollective) * 100)}%
+                                        </span>
+                                    ) : (
+                                        <span className="text-gray-300 text-xs">-</span>
+                                    )}
+                                    <div className="text-xs text-gray-400 mt-0.5">{stat.goalsCollective}/{stat.shotsCollective}</div>
+                                </td>
+                                <td className="py-3 text-center bg-purple-50 px-2">
+                                    {stat.shotsIndividual > 0 ? (
+                                        <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((stat.goalsIndividual / stat.shotsIndividual) * 100) >= 50 
+                                                ? 'bg-green-100 text-green-700' 
+                                                : 'bg-red-100 text-red-700'
+                                        }`}>
+                                            {Math.round((stat.goalsIndividual / stat.shotsIndividual) * 100)}%
+                                        </span>
+                                    ) : (
+                                        <span className="text-gray-300 text-xs">-</span>
+                                    )}
+                                    <div className="text-xs text-gray-400 mt-0.5">{stat.goalsIndividual}/{stat.shotsIndividual}</div>
+                                </td>
+
+                                {/* Counter/Static Stats */}
+                                <td className="py-3 text-center bg-cyan-50 px-2">
+                                    {stat.shotsCounter > 0 ? (
+                                        <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((stat.goalsCounter / stat.shotsCounter) * 100) >= 50 
+                                                ? 'bg-green-100 text-green-700' 
+                                                : 'bg-red-100 text-red-700'
+                                        }`}>
+                                            {Math.round((stat.goalsCounter / stat.shotsCounter) * 100)}%
+                                        </span>
+                                    ) : (
+                                        <span className="text-gray-300 text-xs">-</span>
+                                    )}
+                                    <div className="text-xs text-gray-400 mt-0.5">{stat.goalsCounter}/{stat.shotsCounter}</div>
+                                </td>
+                                <td className="py-3 text-center bg-cyan-50 px-2">
+                                    {stat.shotsStatic > 0 ? (
+                                        <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((stat.goalsStatic / stat.shotsStatic) * 100) >= 50 
+                                                ? 'bg-green-100 text-green-700' 
+                                                : 'bg-red-100 text-red-700'
+                                        }`}>
+                                            {Math.round((stat.goalsStatic / stat.shotsStatic) * 100)}%
+                                        </span>
+                                    ) : (
+                                        <span className="text-gray-300 text-xs">-</span>
+                                    )}
+                                    <div className="text-xs text-gray-400 mt-0.5">{stat.goalsStatic}/{stat.shotsStatic}</div>
+                                </td>
                                 
                                 {/* Turnovers */}
                                 <td className="py-3 text-center bg-red-50 px-2">
@@ -615,7 +735,7 @@ const Statistics = () => {
                     })}
                     {playerStats.length === 0 && (
                         <tr>
-                            <td colSpan={11} className="py-8 text-center text-gray-400 italic">
+                            <td colSpan={15} className="py-8 text-center text-gray-400 italic">
                                 No data recorded {filterZone ? `from ${filterZone}` : ''} yet.
                             </td>
                         </tr>
