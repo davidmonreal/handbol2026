@@ -78,6 +78,14 @@ const Statistics = () => {
             },
             defenseFormation: undefined,
           }));
+          
+          console.log('DEBUG STATISTICS:');
+          console.log('Raw Data Sample:', data[0]);
+          console.log('Transformed Event Sample:', transformedEvents[0]);
+          console.log('REVERSE_GOAL_TARGET_MAP:', REVERSE_GOAL_TARGET_MAP);
+          console.log('Goal Zone Sample:', data[0]?.goalZone);
+          console.log('Mapped Target:', goalZoneToTarget(data[0]?.goalZone));
+          
           setMatchEvents(transformedEvents);
         });
     }
