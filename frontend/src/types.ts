@@ -10,17 +10,18 @@ export type ZoneType = '6m-LW' | '6m-LB' | '6m-CB' | '6m-RB' | '6m-RW' | '9m-LB'
 export interface MatchEvent {
     id: string;
     timestamp: number;
+    playerId: string | null;
+    playerName?: string;
+    playerNumber?: number;
     teamId: string;
-    playerId: string;
-    category: FlowType;
-    action: ShotResult | TurnoverType | SanctionType | string;
+    category: string; // 'Shot', 'Turnover', 'Sanction'
+    action: string; // 'Goal', 'Save', 'Miss', 'Post', 'Pass', 'Steps', 'Double', 'Area', 'Yellow', '2min', 'Red', 'Blue'
     zone?: ZoneType;
     goalTarget?: number; // 1-9
     context?: {
         isCollective?: boolean;
         hasOpposition?: boolean;
-        assistPlayerId?: string;
         isCounterAttack?: boolean;
     };
-    defenseFormation?: DefenseType;
+    defenseFormation?: string;
 }
