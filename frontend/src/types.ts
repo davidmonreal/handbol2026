@@ -20,6 +20,7 @@ export interface MatchEvent {
     position?: string;
     distance?: string;
     goalTarget?: number; // 1-9
+    goalZoneTag?: string; // 'TL', 'TM', 'TR', etc.
     context?: {
         isCollective?: boolean;
         hasOpposition?: boolean;
