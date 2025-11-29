@@ -48,15 +48,28 @@ const Statistics = () => {
             return zoneMap[zone];
           };
 
+          // Helper function to convert position+distance to zone format
+          const positionDistanceToZone = (position: string | null, distance: string | null): any => {
+            if (!position || !distance) return undefined;
+            
+            // Map backend position+distance to frontend zone format
+            if (distance === '7M') return '7m';
+            
+            const distancePrefix = distance === '6M' ? '6m' : '9m';
+            return `${distancePrefix}-${position}` as any;
+          };
+
           // Transform backend events to MatchEvent format
           const transformedEvents: MatchEvent[] = data.map((e: any) => ({
             id: e.id,
             timestamp: e.timestamp,
             playerId: e.playerId,
+            playerName: e.player?.name,
+            playerNumber: e.player?.number,
             teamId: e.teamId,
             category: e.type, // 'Shot', 'Turnover', 'Sanction'
             action: e.subtype || e.type, // 'Goal', 'Save', 'Miss', etc.
-            zone: e.goalZone,
+            zone: positionDistanceToZone(e.position, e.distance), // Convert position+distance to zone
             goalTarget: goalZoneToTarget(e.goalZone), // Convert goalZone to number 1-9
             context: {
               isCollective: e.isCollective,
