@@ -6,6 +6,7 @@ import clubRouter from './routes/clubs';
 import seasonRouter from './routes/seasons';
 import playerRouter from './routes/players';
 import teamRouter from './routes/teams';
+import matchRouter from './routes/matches';
 
 import cors from 'cors';
 
@@ -27,6 +28,7 @@ app.use('/api/clubs', clubRouter);
 app.use('/api/seasons', seasonRouter);
 app.use('/api/players', playerRouter);
 app.use('/api/teams', teamRouter);
+app.use('/api/matches', matchRouter);
 
 // Start the server
 app.listen(PORT, () => {

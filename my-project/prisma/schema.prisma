@@ -27,6 +27,7 @@ model Season {
 model Team {
   id        String   @id @default(uuid())
   name      String   // e.g., "Cadet A"
+  isMyTeam  Boolean  @default(false)
   clubId    String
   club      Club     @relation(fields: [clubId], references: [id])
   seasonId  String

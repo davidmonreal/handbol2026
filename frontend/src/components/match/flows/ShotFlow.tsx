@@ -114,10 +114,12 @@ export const ShotFlow = ({
           </>
         )}
 
-        {/* Goal Grid */}
-        {selectedAction === 'Goal' && (
+        {/* Goal Grid - Show for Goal and Safe */}
+        {(selectedAction === 'Goal' || selectedAction === 'Safe') && (
           <div className="animate-fade-in">
-            <h4 className="text-sm font-bold text-gray-500 mb-2 text-center">Select Target to Confirm</h4>
+            <h4 className="text-sm font-bold text-gray-500 mb-2 text-center">
+              {selectedAction === 'Goal' ? 'Select Target to Confirm' : 'Select Shot Target (Saved)'}
+            </h4>
             <div className="max-w-[200px] mx-auto aspect-square bg-gray-100 rounded-lg p-2 border-4 border-gray-200">
               <div className="grid grid-cols-3 grid-rows-3 gap-2 h-full">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((target) => (
@@ -132,8 +134,8 @@ export const ShotFlow = ({
           </div>
         )}
         
-        {/* Confirm button */}
-        {selectedAction && selectedAction !== 'Goal' && (
+        {/* Confirm button - Only for non-Goal and non-Safe actions */}
+        {selectedAction && selectedAction !== 'Goal' && selectedAction !== 'Safe' && (
           <div className="animate-fade-in mt-4">
             <button 
               onClick={() => onFinalizeEvent()}

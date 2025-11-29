@@ -1,9 +1,9 @@
-import { Team, PlayerTeamSeason } from '@prisma/client';
+import { PrismaClient, Team, PlayerTeamSeason, Player } from '@prisma/client';
 import { TeamRepository } from '../repositories/team-repository';
 import prisma from '../lib/prisma';
 
 export class TeamService {
-  constructor(private repository: TeamRepository) {}
+  constructor(private repository: TeamRepository) { }
 
   async getAll(): Promise<Team[]> {
     return this.repository.findAll();
@@ -13,25 +13,21 @@ export class TeamService {
     return this.repository.findById(id);
   }
 
-  async create(data: { name: string; clubId: string; seasonId: string }): Promise<Team> {
+  async create(data: { name: string; clubId: string; seasonId: string; isMyTeam?: boolean }): Promise<Team> {
     // Validate club exists
     const club = await prisma.club.findUnique({ where: { id: data.clubId } });
-    if (!club) {
-      throw new Error('Club not found');
-    }
+    if (!club) throw new Error('Club not found');
 
     // Validate season exists
     const season = await prisma.season.findUnique({ where: { id: data.seasonId } });
-    if (!season) {
-      throw new Error('Season not found');
-    }
+    if (!season) throw new Error('Season not found');
 
     return this.repository.create(data);
   }
 
   async update(
     id: string,
-    data: Partial<{ name: string; clubId: string; seasonId: string }>,
+    data: Partial<{ name: string; clubId: string; seasonId: string; isMyTeam?: boolean }>,
   ): Promise<Team> {
     // Validate club if provided
     if (data.clubId) {

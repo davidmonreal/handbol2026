@@ -1,19 +1,14 @@
-import { Home, Users, Calendar, Trophy, FileText } from 'lucide-react';
+import { Home, Users, Calendar, Trophy, FileText, LayoutDashboard } from 'lucide-react';
+import { NavLink, Outlet, Link } from 'react-router-dom';
 
-interface AdminLayoutProps {
-  children: React.ReactNode;
-  onNavigateHome?: () => void;
-  onNavigate?: (view: string) => void;
-  currentView?: string;
-}
-
-export const AdminLayout = ({ children, onNavigateHome, onNavigate, currentView }: AdminLayoutProps) => {
+export const AdminLayout = () => {
   const navItems = [
-    { id: 'clubs', label: 'Clubs', icon: Trophy },
-    { id: 'seasons', label: 'Seasons', icon: Calendar },
-    { id: 'players', label: 'Players', icon: Users },
-    { id: 'teams', label: 'Teams', icon: Users },
-    { id: 'matches', label: 'Matches', icon: FileText },
+    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/clubs', label: 'Clubs', icon: Trophy },
+    { path: '/seasons', label: 'Seasons', icon: Calendar },
+    { path: '/players', label: 'Players', icon: Users },
+    { path: '/teams', label: 'Teams', icon: Users },
+    { path: '/matches', label: 'Matches', icon: FileText },
   ];
 
   return (
@@ -23,16 +18,15 @@ export const AdminLayout = ({ children, onNavigateHome, onNavigate, currentView 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <button
-                onClick={onNavigateHome}
-                className="flex items-center gap-2 text-gray-700 hover:text-indigo-600"
-              >
+              <Link to="/" className="flex items-center gap-2 text-indigo-600 hover:text-indigo-700">
                 <Home size={20} />
-                <span className="font-medium">Back to Match Tracker</span>
-              </button>
+                <span className="font-bold text-xl">Handbol 2026</span>
+              </Link>
             </div>
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-800">Admin Panel</h1>
+            <div className="flex items-center space-x-4">
+              <Link to="/statistics" className="text-gray-600 hover:text-indigo-600 font-medium">
+                Statistics
+              </Link>
             </div>
           </div>
         </div>
@@ -40,33 +34,33 @@ export const AdminLayout = ({ children, onNavigateHome, onNavigate, currentView 
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-white shadow-sm min-h-[calc(100vh-4rem)]">
+        <aside className="w-64 bg-white shadow-sm min-h-[calc(100vh-4rem)] hidden md:block">
           <nav className="p-4 space-y-2">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = currentView === item.id;
-              
               return (
-                <button
-                  key={item.id}
-                  onClick={() => onNavigate?.(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-indigo-50 text-indigo-700 font-medium'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-indigo-50 text-indigo-700 font-medium'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`
+                  }
                 >
                   <Icon size={20} />
                   {item.label}
-                </button>
+                </NavLink>
               );
             })}
           </nav>
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1">
-          {children}
+        <main className="flex-1 p-6">
+          <Outlet />
         </main>
       </div>
     </div>

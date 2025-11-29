@@ -9,7 +9,7 @@ describe('SplitToggle', () => {
     onChange: vi.fn(),
     leftOption: { label: 'Individual', icon: User },
     rightOption: { label: 'Collective', icon: Users },
-    colorClass: 'purple'
+    colorClass: 'purple' as const,
   };
 
   it('renders both options', () => {

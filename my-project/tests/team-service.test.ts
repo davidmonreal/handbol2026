@@ -42,20 +42,18 @@ describe('TeamService', () => {
   });
 
   it('create validates club and season exist', async () => {
-    const newTeamData = { name: 'Juvenil B', clubId: 'c1', seasonId: 's1' };
-    const mockClub = { id: 'c1', name: 'Mataró' };
-    const mockSeason = { id: 's1', name: '2024-2025' };
-    const createdTeam = { id: 't1', ...newTeamData };
+    const data = { name: 'New Team', clubId: 'c1', seasonId: 's1', isMyTeam: true };
+    const createdTeam = { id: '1', ...data };
 
-    vi.mocked(prisma.club.findUnique).mockResolvedValue(mockClub);
-    vi.mocked(prisma.season.findUnique).mockResolvedValue(mockSeason);
-    vi.mocked(repository.create).mockResolvedValue(createdTeam);
+    vi.mocked(prisma.club.findUnique).mockResolvedValue({ id: 'c1' } as any);
+    vi.mocked(prisma.season.findUnique).mockResolvedValue({ id: 's1' } as any);
+    vi.mocked(repository.create).mockResolvedValue(createdTeam as any);
 
-    const result = await service.create(newTeamData);
+    const result = await service.create(data);
 
     expect(prisma.club.findUnique).toHaveBeenCalledWith({ where: { id: 'c1' } });
     expect(prisma.season.findUnique).toHaveBeenCalledWith({ where: { id: 's1' } });
-    expect(repository.create).toHaveBeenCalledWith(newTeamData);
+    expect(repository.create).toHaveBeenCalledWith(data);
     expect(result).toEqual(createdTeam);
   });
 

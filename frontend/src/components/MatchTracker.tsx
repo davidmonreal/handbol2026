@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import { HOME_TEAM, VISITOR_TEAM } from '../data/mockData';
-import type { Team } from '../data/mockData';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useMatch } from '../context/MatchContext';
 import type { FlowType, ZoneType, MatchEvent } from '../types';
 import { ZONE_CONFIG } from '../config/zones';
@@ -13,6 +12,9 @@ import { SanctionFlow } from './match/flows/SanctionFlow';
 import { TurnoverFlow } from './match/flows/TurnoverFlow';
 
 const MatchTracker = () => {
+  const { matchId } = useParams<{ matchId: string }>();
+  const navigate = useNavigate();
+  
   // Use Context
   const { 
     homeScore, setHomeScore, 
@@ -22,8 +24,44 @@ const MatchTracker = () => {
     events, setEvents,
     activeTeamId, setActiveTeamId,
     defenseFormation, setDefenseFormation,
-    addEvent
+    addEvent,
+    homeTeam, visitorTeam, setMatchData
   } = useMatch();
+
+  // Fetch Match Data
+  useEffect(() => {
+    if (matchId) {
+      fetch(`http://localhost:3000/api/matches/${matchId}`)
+        .then(res => res.json())
+        .then(data => {
+          console.log('API Response:', data);
+          console.log('HomeTeam players:', data.homeTeam?.players);
+          console.log('AwayTeam players:', data.awayTeam?.players);
+          
+          // Transform API data to Context format
+          const transformTeam = (teamData: any, color: string) => ({
+            id: teamData.id,
+            name: teamData.name,
+            color: color,
+            players: (teamData.players || []).map((p: any) => ({
+              id: p.player.id,
+              number: p.player.number,
+              name: p.player.name,
+              position: p.role || 'Player'
+            }))
+          });
+
+          const home = transformTeam(data.homeTeam, 'bg-yellow-400');
+          const visitor = transformTeam(data.awayTeam, 'bg-white');
+          
+          console.log('Transformed home team:', home);
+          console.log('Transformed visitor team:', visitor);
+          
+          setMatchData(data.id, home, visitor);
+        })
+        .catch(err => console.error('Error fetching match:', err));
+    }
+  }, [matchId, setMatchData]);
 
   // Local Selection State (Transient)
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
@@ -92,20 +130,45 @@ const MatchTracker = () => {
     resetPlayState();
   };
 
-  const getActiveTeam = (): Team | null => {
-    if (activeTeamId === HOME_TEAM.id) return HOME_TEAM;
-    if (activeTeamId === VISITOR_TEAM.id) return VISITOR_TEAM;
+  const getActiveTeam = () => {
+    if (activeTeamId === homeTeam?.id) return homeTeam;
+    if (activeTeamId === visitorTeam?.id) return visitorTeam;
     return null;
   };
 
   const activeTeam = getActiveTeam();
 
+  if (!homeTeam || !visitorTeam) {
+    return <div className="p-8 text-center">Loading match data...</div>;
+  }
+
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Navigation */}
+      <nav className="bg-white shadow-sm border-b border-gray-200 mb-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16 items-center">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center text-gray-600 hover:text-indigo-600 font-medium"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to Dashboard
+            </button>
+            <h1 className="text-lg font-semibold text-gray-900">
+              {homeTeam.name} vs {visitorTeam.name}
+            </h1>
+          </div>
+        </div>
+      </nav>
+
+      <div className="p-4 md:p-6 max-w-7xl mx-auto">
       {/* Scoreboard */}
       <Scoreboard
-        homeTeam={HOME_TEAM}
-        visitorTeam={VISITOR_TEAM}
+        homeTeam={homeTeam}
+        visitorTeam={visitorTeam}
         homeScore={homeScore}
         visitorScore={visitorScore}
         time={time}
@@ -226,6 +289,7 @@ const MatchTracker = () => {
               <span className="text-gray-500"> [Def: {e.defenseFormation}]</span>
             </div>
         ))}
+      </div>
       </div>
     </div>
   );

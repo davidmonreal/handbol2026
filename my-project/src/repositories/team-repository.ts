@@ -32,19 +32,27 @@ export class TeamRepository {
     });
   }
 
-  async create(data: { name: string; clubId: string; seasonId: string }): Promise<Team> {
+  async create(data: { name: string; clubId: string; seasonId: string; isMyTeam?: boolean }): Promise<Team> {
     return prisma.team.create({
-      data,
+      data: {
+        ...data,
+        isMyTeam: data.isMyTeam ?? false
+      },
       include: {
         club: true,
         season: true,
-      },
+        players: {
+          include: {
+            player: true
+          }
+        }
+      }
     });
   }
 
   async update(
     id: string,
-    data: Partial<{ name: string; clubId: string; seasonId: string }>,
+    data: Partial<{ name: string; clubId: string; seasonId: string; isMyTeam: boolean }>,
   ): Promise<Team> {
     return prisma.team.update({
       where: { id },
@@ -52,7 +60,12 @@ export class TeamRepository {
       include: {
         club: true,
         season: true,
-      },
+        players: {
+          include: {
+            player: true
+          }
+        }
+      }
     });
   }
 

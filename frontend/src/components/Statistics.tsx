@@ -3,7 +3,7 @@ import { useMatch } from '../context/MatchContext';
 import type { ZoneType } from '../types';
 import { Users, Target, Filter, X, Activity, Shield, Zap } from 'lucide-react';
 import { HOME_TEAM, VISITOR_TEAM } from '../data/mockData';
-import { ZONE_CONFIG, getZoneLabel } from '../config/zones';
+import { ZONE_CONFIG } from '../config/zones';
 
 const Statistics = () => {
   const { events, activeTeamId } = useMatch();

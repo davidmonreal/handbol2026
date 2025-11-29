@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { TeamService } from '../services/team-service';
 
 export class TeamController {
-  constructor(private teamService: TeamService) {}
+  constructor(private teamService: TeamService) { }
 
   getAll = async (req: Request, res: Response) => {
     try {
@@ -27,8 +27,8 @@ export class TeamController {
 
   create = async (req: Request, res: Response) => {
     try {
-      const { name, clubId, seasonId } = req.body;
-      const team = await this.teamService.create({ name, clubId, seasonId });
+      const { name, clubId, seasonId, isMyTeam } = req.body;
+      const team = await this.teamService.create({ name, clubId, seasonId, isMyTeam });
       res.status(201).json(team);
     } catch (error) {
       if (
@@ -43,11 +43,12 @@ export class TeamController {
 
   update = async (req: Request, res: Response) => {
     try {
-      const { name, clubId, seasonId } = req.body;
-      const updateData: Record<string, string> = {};
+      const { name, clubId, seasonId, isMyTeam } = req.body;
+      const updateData: any = {};
       if (name) updateData.name = name;
       if (clubId) updateData.clubId = clubId;
       if (seasonId) updateData.seasonId = seasonId;
+      if (isMyTeam !== undefined) updateData.isMyTeam = isMyTeam;
 
       const team = await this.teamService.update(req.params.id, updateData);
       res.json(team);

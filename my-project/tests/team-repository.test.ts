@@ -81,15 +81,15 @@ describe('TeamRepository', () => {
   });
 
   it('create creates a new team', async () => {
-    const newTeamData = { name: 'Juvenil B', clubId: 'c1', seasonId: 's1' };
-    const createdTeam = { id: '2', ...newTeamData, club: {}, season: {} };
-    vi.mocked(prisma.team.create).mockResolvedValue(createdTeam);
+    const newTeamData = { name: 'Cadet A', clubId: 'c1', seasonId: 's1', isMyTeam: true };
+    const createdTeam = { id: '1', ...newTeamData, players: [] };
+    vi.mocked(prisma.team.create).mockResolvedValue(createdTeam as any);
 
     const result = await repository.create(newTeamData);
 
     expect(prisma.team.create).toHaveBeenCalledWith({
-      data: newTeamData,
-      include: { club: true, season: true },
+      data: { ...newTeamData, isMyTeam: true },
+      include: { club: true, season: true, players: { include: { player: true } } }
     });
     expect(result).toEqual(createdTeam);
   });

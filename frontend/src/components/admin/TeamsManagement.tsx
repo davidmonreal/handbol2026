@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Users, Search, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Search, X, Star } from 'lucide-react';
 
 interface Team {
   id: string;
@@ -9,6 +9,7 @@ interface Team {
   club: { id: string; name: string };
   season: { id: string; name: string };
   players: { player: Player; role: string }[];
+  isMyTeam: boolean;
 }
 
 interface Club {
@@ -42,7 +43,9 @@ export const TeamsManagement = () => {
   const [formData, setFormData] = useState({ 
     name: '', 
     clubId: '', 
-    seasonId: '' 
+
+    seasonId: '',
+    isMyTeam: false
   });
   
   const [playerSearch, setPlayerSearch] = useState('');
@@ -148,7 +151,8 @@ export const TeamsManagement = () => {
     setFormData({ 
       name: team.name,
       clubId: team.clubId,
-      seasonId: team.seasonId
+      seasonId: team.seasonId,
+      isMyTeam: team.isMyTeam
     });
     setIsFormOpen(true);
   };
@@ -156,7 +160,7 @@ export const TeamsManagement = () => {
   const handleCancel = () => {
     setIsFormOpen(false);
     setEditingTeam(null);
-    setFormData({ name: '', clubId: '', seasonId: '' });
+    setFormData({ name: '', clubId: '', seasonId: '', isMyTeam: false });
     setError(null);
   };
 
@@ -301,6 +305,17 @@ export const TeamsManagement = () => {
                   ))}
                 </select>
               </div>
+              <div className="mb-4">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.isMyTeam}
+                    onChange={(e) => setFormData({ ...formData, isMyTeam: e.target.checked })}
+                    className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                  />
+                  <span className="text-sm font-medium text-gray-700">My Team</span>
+                </label>
+              </div>
               <div className="flex gap-3 justify-end">
                 <button
                   type="button"
@@ -420,7 +435,10 @@ export const TeamsManagement = () => {
           <tbody className="divide-y divide-gray-200">
             {teams.map((team) => (
               <tr key={team.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{team.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 flex items-center gap-2">
+                  {team.name}
+                  {team.isMyTeam && <Star size={16} className="text-yellow-500 fill-yellow-500" />}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.club.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.season.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

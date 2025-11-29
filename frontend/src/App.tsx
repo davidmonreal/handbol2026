@@ -1,10 +1,16 @@
-import { useState, Component } from 'react';
-import type { ErrorInfo, ReactNode } from 'react';
-import MatchTracker from './components/MatchTracker';
-import Statistics from './components/Statistics';
+import { Component } from 'react';
+import type { ReactNode } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { MatchProvider } from './context/MatchContext';
 import { AdminLayout } from './components/admin/AdminLayout';
+import Dashboard from './components/Dashboard';
+import MatchTracker from './components/MatchTracker';
+import Statistics from './components/Statistics';
 import { ClubsManagement } from './components/admin/ClubsManagement';
+import { SeasonsManagement } from './components/admin/SeasonsManagement';
+import { PlayersManagement } from './components/admin/PlayersManagement';
+import { TeamsManagement } from './components/admin/TeamsManagement';
+import { MatchesManagement } from './components/admin/MatchesManagement';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -16,7 +22,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
   }
 
@@ -37,97 +43,24 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 }
 
-// Placeholder Components
-const HomeView = () => <div className="p-8 text-center text-gray-500">Home View (Coming Soon)</div>;
-const MatchView = () => <MatchTracker />;
-const StatsView = () => <Statistics />;
-import { SeasonsManagement } from './components/admin/SeasonsManagement';
-import { PlayersManagement } from './components/admin/PlayersManagement';
-import { TeamsManagement } from './components/admin/TeamsManagement';
-
 function App() {
-  const [currentView, setCurrentView] = useState<'home' | 'match' | 'stats' | 'admin'>('home');
-  const [adminView, setAdminView] = useState('clubs');
-
-  const AdminView = () => (
-    <AdminLayout 
-      onNavigateHome={() => setCurrentView('match')}
-      onNavigate={setAdminView}
-      currentView={adminView}
-    >
-      {adminView === 'clubs' && <ClubsManagement />}
-      {adminView === 'seasons' && <SeasonsManagement />}
-      {adminView === 'players' && <PlayersManagement />}
-      {adminView === 'teams' && <TeamsManagement />}
-      {adminView === 'matches' && <div className="p-8 text-center text-gray-500">Matches Management (Coming Soon)</div>}
-    </AdminLayout>
-  );
-
   return (
     <ErrorBoundary>
       <MatchProvider>
-        <div className="min-h-screen bg-gray-50">
-          {/* Navigation */}
-          <nav className="bg-white shadow-sm border-b border-gray-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between h-16">
-                <div className="flex items-center">
-                  <h1 className="text-2xl font-bold text-blue-600">🤾 Handbol 2026</h1>
-                </div>
-                <div className="flex space-x-4 items-center">
-                  <button
-                    onClick={() => setCurrentView('home')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      currentView === 'home'
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    Inici
-                  </button>
-                  <button
-                    onClick={() => setCurrentView('match')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      currentView === 'match'
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    Partit
-                  </button>
-                  <button
-                    onClick={() => setCurrentView('stats')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      currentView === 'stats'
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    Estadístiques
-                  </button>
-                  <button
-                    onClick={() => setCurrentView('admin')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      currentView === 'admin'
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    Gestió
-                  </button>
-                </div>
-              </div>
-            </div>
-          </nav>
-
-          {/* Main Content */}
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {currentView === 'home' && <HomeView />}
-            {currentView === 'match' && <MatchView />}
-            {currentView === 'stats' && <StatsView />}
-            {currentView === 'admin' && <AdminView />}
-          </main>
-        </div>
+        <Router>
+          <Routes>
+            <Route path="/" element={<AdminLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="clubs" element={<ClubsManagement />} />
+              <Route path="seasons" element={<SeasonsManagement />} />
+              <Route path="players" element={<PlayersManagement />} />
+              <Route path="teams" element={<TeamsManagement />} />
+              <Route path="matches" element={<MatchesManagement />} />
+              <Route path="statistics" element={<Statistics />} />
+            </Route>
+            <Route path="/match-tracker/:matchId" element={<MatchTracker />} />
+          </Routes>
+        </Router>
       </MatchProvider>
     </ErrorBoundary>
   );
