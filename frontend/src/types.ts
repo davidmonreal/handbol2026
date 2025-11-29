@@ -17,6 +17,8 @@ export interface MatchEvent {
     category: string; // 'Shot', 'Turnover', 'Sanction'
     action: string; // 'Goal', 'Save', 'Miss', 'Post', 'Pass', 'Steps', 'Double', 'Area', 'Yellow', '2min', 'Red', 'Blue'
     zone?: ZoneType;
+    position?: string;
+    distance?: string;
     goalTarget?: number; // 1-9
     context?: {
         isCollective?: boolean;
