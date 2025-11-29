@@ -327,15 +327,31 @@ const Statistics = () => {
             {matchId ? `Match Statistics: ${currentTeamName}` : 'Match Statistics'}
           </h2>
           
-          {/* Team Switcher (only for match view) */}
-          {matchId && matchData && otherTeamName && (
-            <button
-              onClick={toggleTeam}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              <ArrowLeftRight size={18} />
-              Switch to {otherTeamName}
-            </button>
+          {/* Navigation buttons (only for match view) */}
+          {matchId && matchData && (
+            <div className="flex items-center gap-3">
+              {/* Back to Match button */}
+              <button
+                onClick={() => window.location.href = `/match/${matchId}`}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Match
+              </button>
+              
+              {/* Team Switcher */}
+              {otherTeamName && (
+                <button
+                  onClick={toggleTeam}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  <ArrowLeftRight size={18} />
+                  Switch to {otherTeamName}
+                </button>
+              )}
+            </div>
           )}
           
           {/* Active Filters Display */}
