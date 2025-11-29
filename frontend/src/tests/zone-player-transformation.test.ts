@@ -140,7 +140,14 @@ describe('Zone and Player Data Transformation Tests', () => {
         });
 
         it('should handle events without player data', () => {
-            const backendEvent = {
+            const backendEvent: {
+                id: string;
+                type: string;
+                subtype: string;
+                playerId: null;
+                teamId: string;
+                player: null | { name: string; number: number };
+            } = {
                 id: 'event-1',
                 type: 'Shot',
                 subtype: 'Goal',
