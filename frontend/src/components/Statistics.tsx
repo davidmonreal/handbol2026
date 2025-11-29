@@ -198,12 +198,16 @@ const Statistics = () => {
     }>();
     
     filteredEvents.forEach(e => {
-        if (e.category === 'Shot') {
+        if (e.playerId) {
             const current = map.get(e.playerId) || { 
               name: 'Unknown', 
               number: 0, 
               shots: 0, 
               goals: 0,
+              misses: 0,
+              saves: 0,
+              posts: 0,
+              blocks: 0,
               shots6m: 0,
               goals6m: 0,
               shots9m: 0,
@@ -224,76 +228,57 @@ const Statistics = () => {
               shotsStatic: 0,
               goalsStatic: 0,
             };
-            current.shots++;
-            if (e.action === 'Goal') current.goals++;
-            
-            // Breakdown by distance
-            if (e.zone?.startsWith('6m')) {
-              current.shots6m++;
-              if (e.action === 'Goal') current.goals6m++;
-            } else if (e.zone?.startsWith('9m')) {
-              current.shots9m++;
-              if (e.action === 'Goal') current.goals9m++;
-            } else if (e.zone === '7m') {
-              current.shots7m++;
-              if (e.action === 'Goal') current.goals7m++;
-            }
-            
-            // Breakdown by opposition
-            if (e.context?.hasOpposition) {
-              current.shotsWithOpp++;
-              if (e.action === 'Goal') current.goalsWithOpp++;
-            } else {
-              current.shotsNoOpp++;
-              if (e.action === 'Goal') current.goalsNoOpp++;
-            }
 
-            // Breakdown by collective/individual
-            if (e.context?.isCollective) {
-              current.shotsCollective++;
-              if (e.action === 'Goal') current.goalsCollective++;
-            } else {
-              current.shotsIndividual++;
-              if (e.action === 'Goal') current.goalsIndividual++;
-            }
+            if (e.category === 'Shot') {
+                current.shots++;
+                
+                // Breakdown by distance (shots)
+                if (e.zone?.startsWith('6m')) current.shots6m++;
+                else if (e.zone?.startsWith('9m')) current.shots9m++;
+                else if (e.zone === '7m') current.shots7m++;
+                
+                // Breakdown by opposition (shots)
+                if (e.context?.hasOpposition) current.shotsWithOpp++;
+                else current.shotsNoOpp++;
 
-            // Breakdown by counter/static
-            if (e.context?.isCounterAttack) {
-              current.shotsCounter++;
-              if (e.action === 'Goal') current.goalsCounter++;
-            } else {
-              current.shotsStatic++;
-              if (e.action === 'Goal') current.goalsStatic++;
+                // Breakdown by collective/individual (shots)
+                if (e.context?.isCollective) current.shotsCollective++;
+                else current.shotsIndividual++;
+
+                // Breakdown by counter/static (shots)
+                if (e.context?.isCounterAttack) current.shotsCounter++;
+                else current.shotsStatic++;
+
+                if (e.action === 'Goal') {
+                    current.goals++;
+                    // Breakdown by distance (goals)
+                    if (e.zone?.startsWith('6m')) current.goals6m++;
+                    else if (e.zone?.startsWith('9m')) current.goals9m++;
+                    else if (e.zone === '7m') current.goals7m++;
+                    
+                    // Breakdown by opposition (goals)
+                    if (e.context?.hasOpposition) current.goalsWithOpp++;
+                    else current.goalsNoOpp++;
+
+                    // Breakdown by collective/individual (goals)
+                    if (e.context?.isCollective) current.goalsCollective++;
+                    else current.goalsIndividual++;
+
+                    // Breakdown by counter/static (goals)
+                    if (e.context?.isCounterAttack) current.goalsCounter++;
+                    else current.goalsStatic++;
+
+                } else {
+                    // Missed shots logic
+                    if (e.action === 'Miss') current.misses++;
+                    else if (e.action === 'Save') current.saves++;
+                    else if (e.action === 'Post') current.posts++;
+                    else if (e.action === 'Block') current.blocks++;
+                }
+            } else if (e.category === 'Turnover') {
+                current.turnovers++;
             }
             
-            map.set(e.playerId, current);
-        } else if (e.category === 'Turnover') {
-            const current = map.get(e.playerId) || { 
-              name: 'Unknown', 
-              number: 0, 
-              shots: 0, 
-              goals: 0,
-              shots6m: 0,
-              goals6m: 0,
-              shots9m: 0,
-              goals9m: 0,
-              shots7m: 0,
-              goals7m: 0,
-              turnovers: 0,
-              shotsWithOpp: 0,
-              goalsWithOpp: 0,
-              shotsNoOpp: 0,
-              goalsNoOpp: 0,
-              shotsCollective: 0,
-              goalsCollective: 0,
-              shotsIndividual: 0,
-              goalsIndividual: 0,
-              shotsCounter: 0,
-              goalsCounter: 0,
-              shotsStatic: 0,
-              goalsStatic: 0,
-            };
-            current.turnovers++;
             map.set(e.playerId, current);
         }
     });
