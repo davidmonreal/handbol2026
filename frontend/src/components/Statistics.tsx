@@ -37,6 +37,17 @@ const Statistics = () => {
       fetch(`http://localhost:3000/api/game-events/match/${matchId}`)
         .then(res => res.json())
         .then(data => {
+          // Helper function to convert goalZone to goalTarget (1-9)
+          const goalZoneToTarget = (zone: string | null): number | undefined => {
+            if (!zone) return undefined;
+            const zoneMap: Record<string, number> = {
+              'TL': 1, 'TM': 2, 'TR': 3,
+              'ML': 4, 'MM': 5, 'MR': 6,
+              'BL': 7, 'BM': 8, 'BR': 9,
+            };
+            return zoneMap[zone];
+          };
+
           // Transform backend events to MatchEvent format
           const transformedEvents: MatchEvent[] = data.map((e: any) => ({
             id: e.id,
@@ -46,7 +57,7 @@ const Statistics = () => {
             category: e.type, // 'Shot', 'Turnover', 'Sanction'
             action: e.subtype || e.type, // 'Goal', 'Save', 'Miss', etc.
             zone: e.goalZone,
-            goalTarget: undefined,
+            goalTarget: goalZoneToTarget(e.goalZone), // Convert goalZone to number 1-9
             context: {
               isCollective: e.isCollective,
               hasOpposition: e.hasOpposition,
