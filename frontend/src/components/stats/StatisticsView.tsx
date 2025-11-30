@@ -98,6 +98,9 @@ export function StatisticsView({
   };
 
   const handlePlayerClick = (playerId: string | null) => {
+    // Don't apply filter in player context (already viewing single player)
+    if (context === 'player') return;
+    
     setFilterPlayer(playerId);
     onPlayerClick?.(playerId);
   };
@@ -114,18 +117,19 @@ export function StatisticsView({
 
       {/* Team Switcher (only for match context) */}
       {context === 'match' && matchData && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">Viewing:</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-600">Viewing:</span>
           <button
             onClick={() => setSelectedTeamId(
               selectedTeamId === matchData.homeTeamId ? matchData.awayTeamId : matchData.homeTeamId
             )}
-            className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200 hover:border-green-500 transition-colors"
+            className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
           >
-            <span className="font-semibold text-gray-800">
+            <span className="font-semibold text-gray-900">
               {selectedTeamId === matchData.homeTeamId ? matchData.homeTeam.name : matchData.awayTeam.name}
             </span>
-            <span className="text-xs text-gray-400">
+            {' '}
+            <span className="text-gray-500">
               (Click to switch to {selectedTeamId === matchData.homeTeamId ? matchData.awayTeam.name : matchData.homeTeam.name})
             </span>
           </button>
