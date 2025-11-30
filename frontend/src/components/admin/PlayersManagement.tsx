@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, BarChart3, X } from 'lucide-react';
-import { StatisticsPanel, PlayerStatisticsTable, FiltersBar } from '../stats';
+import { StatisticsView } from '../stats';
 
 import { type MatchEvent } from '../../types';
 import { REVERSE_GOAL_TARGET_MAP } from '../../config/constants';
@@ -44,11 +44,6 @@ export const PlayersManagement = () => {
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
   const [selectedPlayerForStats, setSelectedPlayerForStats] = useState<Player | null>(null);
   const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
-  
-  // Filter state for player stats modal
-  const [filterOpposition, setFilterOpposition] = useState<boolean | null>(null);
-  const [filterCollective, setFilterCollective] = useState<boolean | null>(null);
-  const [filterCounterAttack, setFilterCounterAttack] = useState<boolean | null>(null);
 
   useEffect(() => {
     fetchPlayers();
@@ -423,10 +418,6 @@ export const PlayersManagement = () => {
                   setIsStatsModalOpen(false);
                   setSelectedPlayerForStats(null);
                   setPlayerStats(null);
-                  // Reset filters
-                  setFilterOpposition(null);
-                  setFilterCollective(null);
-                  setFilterCounterAttack(null);
                 }}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -434,45 +425,15 @@ export const PlayersManagement = () => {
               </button>
             </div>
 
-
-
             {/* Content */}
             <div className="p-6">
-              {playerStats ? (() => {
-                // Filter events based on context filters
-                const filteredEvents = playerStats.events.filter((e: MatchEvent) => {
-                  if (filterOpposition !== null && e.context?.hasOpposition !== filterOpposition) return false;
-                  if (filterCollective !== null && e.context?.isCollective !== filterCollective) return false;
-                  if (filterCounterAttack !== null && e.context?.isCounterAttack !== filterCounterAttack) return false;
-                  return true;
-                });
-
-                return (
-                  <>
-                    {/* Filters */}
-                    <div className="mb-6">
-                      <FiltersBar
-                        filterOpposition={filterOpposition}
-                        filterCollective={filterCollective}
-                        filterCounterAttack={filterCounterAttack}
-                        setFilterOpposition={setFilterOpposition}
-                        setFilterCollective={setFilterCollective}
-                        setFilterCounterAttack={setFilterCounterAttack}
-                      />
-                    </div>
-
-                    <StatisticsPanel
-                      data={{
-                        events: filteredEvents,
-                        title: '', // Already in header
-                        context: 'player',
-                      }}
-                    />
-                    {/* Player Statistics Table */}
-                    <PlayerStatisticsTable events={filteredEvents} subtitle="• All Time Stats" />
-                  </>
-                );
-              })() : (
+              {playerStats ? (
+                <StatisticsView
+                  events={playerStats.events}
+                  subtitle="• All Time Stats"
+                  context="player"
+                />
+              ) : (
                 <div className="text-center py-12 text-gray-500">
                   Loading statistics...
                 </div>

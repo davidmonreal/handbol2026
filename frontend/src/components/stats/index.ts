@@ -1,3 +1,6 @@
+// Complete view (recommended - includes filters, cards, heatmap, zones, table)
+export { StatisticsView } from './StatisticsView';
+
 // Main component
 export { StatisticsPanel } from './StatisticsPanel';
 
