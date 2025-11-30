@@ -75,8 +75,8 @@ export const MatchesManagement = () => {
 
     try {
       const url = editingMatch
-        ? `${API_BASE_URL} /api/matches / ${editingMatch.id} `
-        : `${API_BASE_URL} /api/matches`;
+        ? `${API_BASE_URL}/api/matches/${editingMatch.id}`
+        : `${API_BASE_URL}/api/matches`;
 
       const method = editingMatch ? 'PUT' : 'POST';
 
