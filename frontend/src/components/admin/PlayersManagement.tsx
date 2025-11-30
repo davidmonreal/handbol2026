@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, BarChart3, X } from 'lucide-react';
-import { StatisticsPanel, StatsTable, useStatisticsCalculator } from '../stats';
+import { StatisticsPanel, PlayerStatisticsTable } from '../stats';
 
 import { type MatchEvent } from '../../types';
 import { REVERSE_GOAL_TARGET_MAP } from '../../config/constants';
@@ -200,16 +200,6 @@ export const PlayersManagement = () => {
       console.error('Error fetching player stats:', error);
       setPlayerStats(null);
     }
-  };
-
-  // Helper component to properly use hooks (can't be called conditionally)
-  const PlayerStatsTable = ({ events }: { events: MatchEvent[] }) => {
-    const stats = useStatisticsCalculator(events);
-    return (
-      <div className="mt-6">
-        <StatsTable stats={stats} context="player" />
-      </div>
-    );
   };
 
   const handleViewStats = async (player: Player) => {
@@ -448,7 +438,7 @@ export const PlayersManagement = () => {
                     }}
                   />
                   {/* Player Statistics Table */}
-                  <PlayerStatsTable events={playerStats.events} />
+                  <PlayerStatisticsTable events={playerStats.events} subtitle="• All Time Stats" />
                 </>
               ) : (
                 <div className="text-center py-12 text-gray-500">

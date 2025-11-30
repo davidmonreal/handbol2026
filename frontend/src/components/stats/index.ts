@@ -6,6 +6,7 @@ export { StatCard } from './StatCard';
 export { GoalHeatmap } from './GoalHeatmap';
 export { ZoneDistribution } from './ZoneDistribution';
 export { StatsTable } from './StatsTable';
+export { PlayerStatisticsTable } from './PlayerStatisticsTable';
 
 // Hooks
 export { useStatisticsCalculator } from './hooks/useStatisticsCalculator';
