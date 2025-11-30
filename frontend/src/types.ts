@@ -22,6 +22,8 @@ export interface MatchEvent {
     goalTarget?: number; // 1-9
     goalZoneTag?: string; // 'TL', 'TM', 'TR', etc.
     isCollective?: boolean;
+    hasOpposition?: boolean;
+    isCounterAttack?: boolean;
     sanctionType?: SanctionType;
     context?: {
         isCollective?: boolean;
