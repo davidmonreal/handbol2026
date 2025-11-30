@@ -146,6 +146,11 @@ const MatchTracker = () => {
       distance: distance,
       goalTarget: targetIndex,
       goalZoneTag: goalZoneTag,
+      // Root level context fields
+      isCollective: flowType === 'Shot' ? ((zoneOverride || selectedZone) === ZONE_CONFIG.penalty.zone ? false : isCollective) : undefined,
+      hasOpposition: flowType === 'Shot' ? ((zoneOverride || selectedZone) === ZONE_CONFIG.penalty.zone ? false : hasOpposition) : undefined,
+      isCounterAttack: flowType === 'Shot' ? ((zoneOverride || selectedZone) === ZONE_CONFIG.penalty.zone ? false : isCounterAttack) : undefined,
+
       context: flowType === 'Shot' ? {
         isCollective: (zoneOverride || selectedZone) === ZONE_CONFIG.penalty.zone ? false : isCollective,
         hasOpposition: (zoneOverride || selectedZone) === ZONE_CONFIG.penalty.zone ? false : hasOpposition,

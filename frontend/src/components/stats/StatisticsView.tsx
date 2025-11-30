@@ -107,9 +107,9 @@ export function StatisticsView({
       if (context === 'match' && selectedTeamId && e.teamId !== selectedTeamId) return false;
       if (filterZone && e.zone !== filterZone) return false;
       if (filterPlayer && e.playerId !== filterPlayer) return false;
-      if (filterOpposition !== null && e.context?.hasOpposition !== filterOpposition) return false;
-      if (filterCollective !== null && e.context?.isCollective !== filterCollective) return false;
-      if (filterCounterAttack !== null && e.context?.isCounterAttack !== filterCounterAttack) return false;
+      if (filterOpposition !== null && (e.hasOpposition ?? e.context?.hasOpposition) !== filterOpposition) return false;
+      if (filterCollective !== null && (e.isCollective ?? e.context?.isCollective) !== filterCollective) return false;
+      if (filterCounterAttack !== null && (e.isCounterAttack ?? e.context?.isCounterAttack) !== filterCounterAttack) return false;
       return true;
     });
 
