@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, BarChart3, X } from 'lucide-react';
-import { StatisticsPanel } from '../stats';
+import { StatisticsPanel, StatsTable, useStatisticsCalculator } from '../stats';
 
 import { type MatchEvent } from '../../types';
 import { REVERSE_GOAL_TARGET_MAP } from '../../config/constants';
@@ -428,13 +428,22 @@ export const PlayersManagement = () => {
             {/* Content */}
             <div className="p-6">
               {playerStats ? (
-                <StatisticsPanel
-                  data={{
-                    events: playerStats.events,
-                    title: '', // Already in header
-                    context: 'player',
-                  }}
-                />
+                <>
+                  <StatisticsPanel
+                    data={{
+                      events: playerStats.events,
+                      title: '', // Already in header
+                      context: 'player',
+                    }}
+                  />
+                  {/* Player Statistics Table */}
+                  <div className="mt-6">
+                    <StatsTable 
+                      stats={useStatisticsCalculator(playerStats.events)} 
+                      context="player" 
+                    />
+                  </div>
+                </>
               ) : (
                 <div className="text-center py-12 text-gray-500">
                   Loading statistics...

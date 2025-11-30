@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMatch } from '../context/MatchContext';
 import type { ZoneType, MatchEvent } from '../types';
-import { Users, Filter, X, Shield, Zap, ArrowLeftRight } from 'lucide-react';
+import { Users, Filter, X, Shield, ArrowLeftRight, Activity, TrendingUp, User } from 'lucide-react';
 import { HOME_TEAM, VISITOR_TEAM } from '../data/mockData';
 import { ZONE_CONFIG } from '../config/zones';
 import { REVERSE_GOAL_TARGET_MAP } from '../config/constants';
@@ -423,6 +423,17 @@ const Statistics = () => {
           {/* Opposition Group */}
           <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
             <button
+              onClick={() => setFilterOpposition(filterOpposition === false ? null : false)}
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+                filterOpposition === false
+                  ? 'bg-white text-orange-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <User size={12} />
+              Free
+            </button>
+            <button
               onClick={() => setFilterOpposition(filterOpposition === true ? null : true)}
               className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 filterOpposition === true
@@ -431,18 +442,7 @@ const Statistics = () => {
               }`}
             >
               <Shield size={12} />
-              With Opp.
-            </button>
-            <button
-              onClick={() => setFilterOpposition(filterOpposition === false ? null : false)}
-              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
-                filterOpposition === false
-                  ? 'bg-white text-orange-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Shield size={12} />
-              No Opp.
+              Opposition
             </button>
           </div>
 
@@ -450,6 +450,17 @@ const Statistics = () => {
 
           {/* Collective Group */}
           <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
+            <button
+              onClick={() => setFilterCollective(filterCollective === false ? null : false)}
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+                filterCollective === false
+                  ? 'bg-white text-purple-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <User size={12} />
+              Individual
+            </button>
             <button
               onClick={() => setFilterCollective(filterCollective === true ? null : true)}
               className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
@@ -461,34 +472,12 @@ const Statistics = () => {
               <Users size={12} />
               Collective
             </button>
-            <button
-              onClick={() => setFilterCollective(filterCollective === false ? null : false)}
-              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
-                filterCollective === false
-                  ? 'bg-white text-purple-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Users size={12} />
-              Individual
-            </button>
           </div>
 
           <div className="w-px h-6 bg-gray-200"></div>
 
           {/* Counter Group */}
           <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
-            <button
-              onClick={() => setFilterCounterAttack(filterCounterAttack === true ? null : true)}
-              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
-                filterCounterAttack === true
-                  ? 'bg-white text-cyan-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Zap size={12} />
-              Counter
-            </button>
             <button
               onClick={() => setFilterCounterAttack(filterCounterAttack === false ? null : false)}
               className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
@@ -497,8 +486,19 @@ const Statistics = () => {
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              <Zap size={12} />
+              <Activity size={12} />
               Static
+            </button>
+            <button
+              onClick={() => setFilterCounterAttack(filterCounterAttack === true ? null : true)}
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+                filterCounterAttack === true
+                  ? 'bg-white text-cyan-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <TrendingUp size={12} />
+              Counter
             </button>
           </div>
         </div>
