@@ -3,6 +3,8 @@ import { Plus, Edit2, Trash2, Search, BarChart3, X } from 'lucide-react';
 import { REVERSE_GOAL_TARGET_MAP } from '../../config/constants';
 import { ZONE_CONFIG } from '../../config/zones';
 
+import { type MatchEvent, type ZoneType } from '../../types';
+
 interface Player {
   id: string;
   name: string;
@@ -15,6 +17,16 @@ interface Player {
       }
     }
   }[];
+}
+
+interface PlayerStats {
+  events: MatchEvent[];
+  shots: number;
+  goals: number;
+  saves: number;
+  misses: number;
+  posts: number;
+  efficiency: string;
 }
 
 export const PlayersManagement = () => {
@@ -31,7 +43,7 @@ export const PlayersManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
   const [selectedPlayerForStats, setSelectedPlayerForStats] = useState<Player | null>(null);
-  const [playerStats, setPlayerStats] = useState<any>(null);
+  const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
 
   useEffect(() => {
     fetchPlayers();
@@ -149,7 +161,7 @@ export const PlayersManagement = () => {
       const playerBackendEvents = allEvents.filter((e: any) => e.playerId === playerId);
       
       // Transform to frontend format (same as Statistics.tsx)
-      const transformedEvents = playerBackendEvents.map((e: any) => ({
+      const transformedEvents: MatchEvent[] = playerBackendEvents.map((e: any) => ({
         id: e.id,
         timestamp: e.timestamp,
         playerId: e.playerId,
@@ -169,11 +181,11 @@ export const PlayersManagement = () => {
       }));
       
       // Calculate statistics using transformed events
-      const shots = transformedEvents.filter((e: any) => e.category === 'Shot');
-      const goals = shots.filter((e: any) => e.action === 'Goal');
-      const saves = shots.filter((e: any) => e.action === 'Save');
-      const misses = shots.filter((e: any) => e.action === 'Miss');
-      const posts = shots.filter((e: any) => e.action === 'Post');
+      const shots = transformedEvents.filter(e => e.category === 'Shot');
+      const goals = shots.filter(e => e.action === 'Goal');
+      const saves = shots.filter(e => e.action === 'Save');
+      const misses = shots.filter(e => e.action === 'Miss');
+      const posts = shots.filter(e => e.action === 'Post');
       
       setPlayerStats({
         events: transformedEvents, // Store transformed events
@@ -451,13 +463,13 @@ export const PlayersManagement = () => {
                       <h3 className="text-lg font-bold text-gray-800 mb-4">Goal Distribution (Target Zones)</h3>
                       <div className="grid grid-cols-3 grid-rows-3 gap-1 h-64 relative">
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(target => {
-                          const goals = playerStats.events.filter((e: any) => 
+                          const goals = playerStats.events.filter(e => 
                             e.category === 'Shot' && 
                             e.action === 'Goal' && 
                             e.goalTarget === target
                           ).length;
                           
-                          const shots = playerStats.events.filter((e: any) => 
+                          const shots = playerStats.events.filter(e => 
                             e.category === 'Shot' && 
                             e.goalTarget === target
                           ).length;
@@ -491,10 +503,10 @@ export const PlayersManagement = () => {
                           <p className="text-xs font-semibold text-gray-500 mb-2">6 METRE LINE</p>
                           <div className="grid grid-cols-5 gap-2">
                             {ZONE_CONFIG.sixMeter.map(({ zone, label }) => {
-                              const zoneShots = playerStats.events.filter((e: any) => 
+                              const zoneShots = playerStats.events.filter(e => 
                                 e.category === 'Shot' && e.zone === zone
                               );
-                              const zoneGoals = zoneShots.filter((e: any) => e.action === 'Goal');
+                              const zoneGoals = zoneShots.filter(e => e.action === 'Goal');
                               const efficiency = zoneShots.length > 0 ? (zoneGoals.length / zoneShots.length) * 100 : 0;
                               const percentage = playerStats.shots > 0 ? Math.round((zoneShots.length / playerStats.shots) * 100) : 0;
                               
@@ -520,10 +532,10 @@ export const PlayersManagement = () => {
                           <p className="text-xs font-semibold text-gray-500 mb-2">9 METRE LINE</p>
                           <div className="grid grid-cols-3 gap-2 max-w-md mx-auto">
                             {ZONE_CONFIG.nineMeter.map(({ zone, label }) => {
-                              const zoneShots = playerStats.events.filter((e: any) => 
+                              const zoneShots = playerStats.events.filter(e => 
                                 e.category === 'Shot' && e.zone === zone
                               );
-                              const zoneGoals = zoneShots.filter((e: any) => e.action === 'Goal');
+                              const zoneGoals = zoneShots.filter(e => e.action === 'Goal');
                               const efficiency = zoneShots.length > 0 ? (zoneGoals.length / zoneShots.length) * 100 : 0;
                               const percentage = playerStats.shots > 0 ? Math.round((zoneShots.length / playerStats.shots) * 100) : 0;
                               
@@ -549,10 +561,10 @@ export const PlayersManagement = () => {
                           <p className="text-xs font-semibold text-gray-500 mb-2">PENALTY</p>
                           <div className="max-w-xs mx-auto">
                             {(() => {
-                              const penaltyShots = playerStats.events.filter((e: any) => 
+                              const penaltyShots = playerStats.events.filter(e => 
                                 e.category === 'Shot' && e.zone === '7m'
                               );
-                              const penaltyGoals = penaltyShots.filter((e: any) => e.action === 'Goal');
+                              const penaltyGoals = penaltyShots.filter(e => e.action === 'Goal');
                               const efficiency = penaltyShots.length > 0 ? (penaltyGoals.length / penaltyShots.length) * 100 : 0;
                               const percentage = playerStats.shots > 0 ? Math.round((penaltyShots.length / playerStats.shots) * 100) : 0;
                               
