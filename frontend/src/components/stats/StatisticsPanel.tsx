@@ -38,7 +38,11 @@ export function StatisticsPanel({
   
   console.log('[StatisticsPanel] Received data:', {
     eventsCount: data.events.length,
-    calculatedStats: stats
+    eventCategories: data.events.reduce((acc: any, e: any) => {
+      acc[e.category] = (acc[e.category] || 0) + 1;
+      return acc;
+    }, {}),
+    sampleEvents: data.events.slice(0, 3)
   });
 
   // Filter events by selected zone
