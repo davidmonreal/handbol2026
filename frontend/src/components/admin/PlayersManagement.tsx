@@ -202,6 +202,16 @@ export const PlayersManagement = () => {
     }
   };
 
+  // Helper component to properly use hooks (can't be called conditionally)
+  const PlayerStatsTable = ({ events }: { events: MatchEvent[] }) => {
+    const stats = useStatisticsCalculator(events);
+    return (
+      <div className="mt-6">
+        <StatsTable stats={stats} context="player" />
+      </div>
+    );
+  };
+
   const handleViewStats = async (player: Player) => {
     setSelectedPlayerForStats(player);
     setIsStatsModalOpen(true);
@@ -425,6 +435,7 @@ export const PlayersManagement = () => {
               </button>
             </div>
 
+
             {/* Content */}
             <div className="p-6">
               {playerStats ? (
@@ -437,12 +448,7 @@ export const PlayersManagement = () => {
                     }}
                   />
                   {/* Player Statistics Table */}
-                  <div className="mt-6">
-                    <StatsTable 
-                      stats={useStatisticsCalculator(playerStats.events)} 
-                      context="player" 
-                    />
-                  </div>
+                  <PlayerStatsTable events={playerStats.events} />
                 </>
               ) : (
                 <div className="text-center py-12 text-gray-500">
