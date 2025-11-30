@@ -4,7 +4,6 @@ import { useStatisticsCalculator } from './hooks/useStatisticsCalculator';
 import { StatCard } from './StatCard';
 import { GoalHeatmap } from './GoalHeatmap';
 import { ZoneDistribution } from './ZoneDistribution';
-import { StatsTable } from './StatsTable';
 import type { StatisticsPanelProps } from './types';
 
 /**
@@ -81,9 +80,6 @@ export function StatisticsPanel({
           selectedZone={selectedZone}
         />
       </div>
-
-      {/* Detailed Stats Table */}
-      <StatsTable stats={filteredStats} context={data.context} />
     </div>
   );
 }
