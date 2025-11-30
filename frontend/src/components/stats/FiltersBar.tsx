@@ -18,7 +18,7 @@ export function FiltersBar({
   setFilterCounterAttack,
 }: FiltersBarProps) {
   return (
-    <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
+    <>
       <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Filters:</span>
       
       {/* Opposition Group */}
@@ -102,6 +102,6 @@ export function FiltersBar({
           Counter
         </button>
       </div>
-    </div>
+    </>
   );
 }
