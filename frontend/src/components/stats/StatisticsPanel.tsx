@@ -35,6 +35,11 @@ export function StatisticsPanel({
 
   // Calculate all statistics from events
   const stats = useStatisticsCalculator(data.events, comparison);
+  
+  console.log('[StatisticsPanel] Received data:', {
+    eventsCount: data.events.length,
+    calculatedStats: stats
+  });
 
   // Filter events by selected zone
   const filteredEvents = selectedZone

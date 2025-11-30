@@ -81,7 +81,14 @@ export function StatisticsView({
 
   // Apply all filters
   const filteredEvents = useMemo(() => {
-    return events.filter(e => {
+    console.log('[StatisticsView] Filtering events:', {
+      totalEvents: events.length,
+      context,
+      selectedTeamId,
+      sampleEvent: events[0]
+    });
+    
+    const filtered = events.filter(e => {
       // Filter by team in match context
       if (context === 'match' && selectedTeamId && e.teamId !== selectedTeamId) return false;
       if (filterZone && e.zone !== filterZone) return false;
@@ -91,6 +98,9 @@ export function StatisticsView({
       if (filterCounterAttack !== null && e.context?.isCounterAttack !== filterCounterAttack) return false;
       return true;
     });
+    
+    console.log('[StatisticsView] Filtered result:', { filteredCount: filtered.length });
+    return filtered;
   }, [events, context, selectedTeamId, filterZone, filterPlayer, filterOpposition, filterCollective, filterCounterAttack]);
 
   const handleZoneFilter = (zone: ZoneType | '7m' | null) => {
