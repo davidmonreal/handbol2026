@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Users, Search, X, Star } from 'lucide-react';
-
+import { Plus, Edit2, Trash2, Users, Search, X, Star, BarChart3 } from 'lucide-react';
+import { StatisticsView } from '../stats';
+import type { MatchEvent } from '../../types';
 interface Team {
   id: string;
   name: string;
@@ -40,6 +41,12 @@ export const TeamsManagement = () => {
   const [isPlayersModalOpen, setIsPlayersModalOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [selectedTeamForPlayers, setSelectedTeamForPlayers] = useState<Team | null>(null);
+  const [assignedPlayers, setAssignedPlayers] = useState<Player[]>([]);
+  
+  // Statistics modal state
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
+  const [selectedTeamForStats, setSelectedTeamForStats] = useState<Team | null>(null);
+  const [teamEvents, setTeamEvents] = useState<MatchEvent[]>([]);
   
   const [formData, setFormData] = useState({ 
     name: '', 
@@ -235,6 +242,21 @@ export const TeamsManagement = () => {
     } catch (error) {
       console.error('Error unassigning player:', error);
       alert('Failed to unassign player');
+    }
+  };
+
+  const handleViewStats = async (team: Team) => {
+    setSelectedTeamForStats(team);
+    setIsStatsModalOpen(true);
+    
+    try {
+      // Fetch all events for this team (from all matches)
+      const response = await fetch(`http://localhost:3000/api/game-events?teamId=${team.id}`);
+      const events = await response.json();
+      setTeamEvents(events);
+    } catch (error) {
+      console.error('Error fetching team events:', error);
+      setTeamEvents([]);
     }
   };
 
@@ -502,8 +524,15 @@ export const TeamsManagement = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
-                    onClick={() => openPlayersModal(team)}
+                    onClick={() => handleViewStats(team)}
                     className="text-green-600 hover:text-green-900 mr-4"
+                    title="View Statistics"
+                  >
+                    <BarChart3 size={18} />
+                  </button>
+                  <button
+                    onClick={() => openPlayersModal(team)}
+                    className="text-blue-600 hover:text-blue-900 mr-4"
                     title="Manage Players"
                   >
                     <Users size={18} />
@@ -533,6 +562,50 @@ export const TeamsManagement = () => {
           </div>
         )}
       </div>
+
+      {/* Statistics Modal */}
+      {isStatsModalOpen && selectedTeamForStats && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  {selectedTeamForStats.name} - Statistics
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {selectedTeamForStats.club.name} • {selectedTeamForStats.category} • All Matches
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setIsStatsModalOpen(false);
+                  setSelectedTeamForStats(null);
+                  setTeamEvents([]);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              {teamEvents.length > 0 ? (
+                <StatisticsView
+                  events={teamEvents}
+                  context="team"
+                  showComparison={false}
+                />
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  Loading statistics...
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
