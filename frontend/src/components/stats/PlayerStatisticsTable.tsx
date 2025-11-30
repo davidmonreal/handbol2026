@@ -7,6 +7,7 @@ interface PlayerStatisticsTableProps {
   onPlayerClick?: (playerId: string | null) => void;
   selectedPlayerId?: string | null;
   subtitle?: string;
+  getPlayerInfo?: (playerId: string) => { name: string; number: number };
 }
 
 interface PlayerStat {
@@ -40,7 +41,8 @@ export function PlayerStatisticsTable({
   events,
   onPlayerClick,
   selectedPlayerId,
-  subtitle = '(Overall)'
+  subtitle = '(Overall)',
+  getPlayerInfo
 }: PlayerStatisticsTableProps) {
   
   const playerStats = useMemo(() => {
@@ -50,10 +52,15 @@ export function PlayerStatisticsTable({
       if (!e.playerId) return;
 
       if (!statsMap.has(e.playerId)) {
+        // Get player info (use provided function or fallback to event data)
+        const playerInfo = getPlayerInfo 
+          ? getPlayerInfo(e.playerId)
+          : { name: e.playerName || 'Unknown', number: e.playerNumber || 0 };
+        
         statsMap.set(e.playerId, {
           id: e.playerId,
-          name: e.playerName || 'Unknown',
-          number: e.playerNumber || 0,
+          name: playerInfo.name,
+          number: playerInfo.number,
           totalShots: 0,
           totalGoals: 0,
           shots6m: 0,

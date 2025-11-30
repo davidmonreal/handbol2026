@@ -15,6 +15,12 @@ interface StatisticsViewProps {
   selectedPlayerId?: string | null;
   showComparison?: boolean;
   teamId?: string | null;
+  matchData?: {
+    homeTeam: { id: string; name: string; players: any[] };
+    awayTeam: { id: string; name: string; players: any[] };
+    homeTeamId: string;
+    awayTeamId: string;
+  };
 }
 
 export function StatisticsView({
@@ -26,6 +32,7 @@ export function StatisticsView({
   selectedPlayerId,
   showComparison = false,
   teamId,
+  matchData,
 }: StatisticsViewProps) {
   // Filter state
   const [filterZone, setFilterZone] = useState<ZoneType | '7m' | null>(null);
@@ -33,6 +40,28 @@ export function StatisticsView({
   const [filterOpposition, setFilterOpposition] = useState<boolean | null>(null);
   const [filterCollective, setFilterCollective] = useState<boolean | null>(null);
   const [filterCounterAttack, setFilterCounterAttack] = useState<boolean | null>(null);
+  
+  // Team selection for match context
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(
+    matchData ? matchData.homeTeamId : null
+  );
+
+  // Player info lookup function
+  const getPlayerInfo = (playerId: string): { name: string; number: number } => {
+    if (matchData) {
+      // Look in home team
+      const homePlayer = matchData.homeTeam.players.find((p: any) => p.player.id === playerId);
+      if (homePlayer) return { name: homePlayer.player.name, number: homePlayer.player.number };
+      
+      // Look in away team
+      const awayPlayer = matchData.awayTeam.players.find((p: any) => p.player.id === playerId);
+      if (awayPlayer) return { name: awayPlayer.player.name, number: awayPlayer.player.number };
+    }
+    
+    // Fallback to event data
+    const event = events.find(e => e.playerId === playerId);
+    return { name: event?.playerName || 'Unknown', number: event?.playerNumber || 0 };
+  };
 
   // Calculate baselines if comparison is enabled
   const playerBaselines = usePlayerBaselines(
@@ -43,6 +72,8 @@ export function StatisticsView({
   // Apply all filters
   const filteredEvents = useMemo(() => {
     return events.filter(e => {
+      // Filter by team in match context
+      if (context === 'match' && selectedTeamId && e.teamId !== selectedTeamId) return false;
       if (filterZone && e.zone !== filterZone) return false;
       if (filterPlayer && e.playerId !== filterPlayer) return false;
       if (filterOpposition !== null && e.context?.hasOpposition !== filterOpposition) return false;
@@ -50,7 +81,7 @@ export function StatisticsView({
       if (filterCounterAttack !== null && e.context?.isCounterAttack !== filterCounterAttack) return false;
       return true;
     });
-  }, [events, filterZone, filterPlayer, filterOpposition, filterCollective, filterCounterAttack]);
+  }, [events, context, selectedTeamId, filterZone, filterPlayer, filterOpposition, filterCollective, filterCounterAttack]);
 
   const handleZoneFilter = (zone: ZoneType | '7m' | null) => {
     setFilterZone(zone);
@@ -71,8 +102,38 @@ export function StatisticsView({
         </div>
       )}
 
+      {/* Team Switcher (only for match context) */}
+      {context === 'match' && matchData && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">Viewing:</span>
+          <button
+            onClick={() => setSelectedTeamId(
+              selectedTeamId === matchData.homeTeamId ? matchData.awayTeamId : matchData.homeTeamId
+            )}
+            className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200 hover:border-green-500 transition-colors"
+          >
+            <span className="font-semibold text-gray-800">
+              {selectedTeamId === matchData.homeTeamId ? matchData.homeTeam.name : matchData.awayTeam.name}
+            </span>
+            <span className="text-xs text-gray-400">
+              (Click to switch to {selectedTeamId === matchData.homeTeamId ? matchData.awayTeam.name : matchData.homeTeam.name})
+            </span>
+          </button>
+        </div>
+      )}
+
       {/* Filters Bar */}
       <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
+        {/* Context Filters (includes FILTERS: label) */}
+        <FiltersBar
+          filterOpposition={filterOpposition}
+          filterCollective={filterCollective}
+          filterCounterAttack={filterCounterAttack}
+          setFilterOpposition={setFilterOpposition}
+          setFilterCollective={setFilterCollective}
+          setFilterCounterAttack={setFilterCounterAttack}
+        />
+        
         {/* Player Filter Badge */}
         {filterPlayer && (
           <button 
@@ -96,16 +157,6 @@ export function StatisticsView({
             <X size={14} />
           </button>
         )}
-        
-        {/* Context Filters */}
-        <FiltersBar
-          filterOpposition={filterOpposition}
-          filterCollective={filterCollective}
-          filterCounterAttack={filterCounterAttack}
-          setFilterOpposition={setFilterOpposition}
-          setFilterCollective={setFilterCollective}
-          setFilterCounterAttack={setFilterCounterAttack}
-        />
       </div>
 
       {/* Statistics Panel (Cards + Heatmap + Zones) */}
@@ -125,6 +176,7 @@ export function StatisticsView({
         onPlayerClick={handlePlayerClick}
         selectedPlayerId={filterPlayer}
         subtitle={filterZone ? `(from ${filterZone})` : subtitle || '(Overall)'}
+        getPlayerInfo={matchData ? getPlayerInfo : undefined}
       />
     </div>
   );
