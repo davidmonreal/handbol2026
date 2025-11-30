@@ -366,7 +366,7 @@ const Statistics = () => {
           
           {/* Navigation buttons (only for match view) */}
           {matchId && matchData && (
-            <div className="flex items-center gap-3 ml-auto">
+            <div className="flex items-center gap-3">
               {/* Back to Match button */}
               <button
                 onClick={() => window.location.href = `/match-tracker/${matchId}`}
@@ -390,65 +390,35 @@ const Statistics = () => {
               )}
             </div>
           )}
-          
-          {/* Active Filters Display */}
-          <div className="flex flex-wrap gap-2">
-            {filterZone && (
-                <button 
-                    onClick={() => setFilterZone(null)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors text-sm font-medium"
-                >
-                    <Filter size={14} />
-                    {filterZone}
-                    <X size={14} />
-                </button>
-            )}
-            {filterPlayer && (
-                <button 
-                    onClick={() => setFilterPlayer(null)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium"
-                >
-                    <Users size={14} />
-                    {getPlayerInfo(filterPlayer).name}
-                    <X size={14} />
-                </button>
-            )}
-            {filterOpposition !== null && (
-                <button 
-                    onClick={() => setFilterOpposition(null)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-sm font-medium"
-                >
-                    <Shield size={14} />
-                    {filterOpposition ? 'With Opposition' : 'No Opposition'}
-                    <X size={14} />
-                </button>
-            )}
-            {filterCollective !== null && (
-                <button 
-                    onClick={() => setFilterCollective(null)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-medium"
-                >
-                    <Users size={14} />
-                    {filterCollective ? 'Collective' : 'Individual'}
-                    <X size={14} />
-                </button>
-            )}
-            {filterCounterAttack !== null && (
-                <button 
-                    onClick={() => setFilterCounterAttack(null)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-100 text-cyan-700 rounded-lg hover:bg-cyan-200 transition-colors text-sm font-medium"
-                >
-                    <Zap size={14} />
-                    {filterCounterAttack ? 'Counter-attack' : 'Static'}
-                    <X size={14} />
-                </button>
-            )}
-          </div>
         </div>
         
         {/* Context Filter Buttons */}
         <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Filters:</span>
+          
+          {/* Player Filter */}
+          {filterPlayer && (
+            <button 
+              onClick={() => setFilterPlayer(null)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium"
+            >
+              <Users size={14} />
+              {getPlayerInfo(filterPlayer).name}
+              <X size={14} />
+            </button>
+          )}
+
+          {/* Zone Filter */}
+          {filterZone && (
+            <button 
+              onClick={() => setFilterZone(null)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors text-sm font-medium"
+            >
+              <Filter size={14} />
+              {filterZone}
+              <X size={14} />
+            </button>
+          )}
           
           {/* Opposition Group */}
           <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
@@ -471,6 +441,7 @@ const Statistics = () => {
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
+              <Shield size={12} />
               No Opp.
             </button>
           </div>
@@ -498,6 +469,7 @@ const Statistics = () => {
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
+              <Users size={12} />
               Individual
             </button>
           </div>
@@ -525,6 +497,7 @@ const Statistics = () => {
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
+              <Zap size={12} />
               Static
             </button>
           </div>
