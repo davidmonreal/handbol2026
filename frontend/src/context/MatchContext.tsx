@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import type { MatchEvent, DefenseType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 interface Player {
   id: string;
@@ -58,7 +59,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
   const addEvent = async (event: MatchEvent) => {
     // Add to local state immediately for UI responsiveness
     setEvents(prev => [event, ...prev]);
-    
+
     // Update Score Logic
     if (event.category === 'Shot' && event.action === 'Goal') {
       if (event.teamId === homeTeam?.id) setHomeScore(s => s + 1);
@@ -68,7 +69,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     // Persist to backend if we have a matchId
     if (matchId) {
       try {
-        const response = await fetch('http://localhost:3000/api/game-events', {
+        const response = await fetch(`${API_BASE_URL}/api/game-events`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -85,7 +86,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
             sanctionType: event.sanctionType,
           }),
         });
-        
+
         if (!response.ok) {
           console.error('Failed to save event to backend');
         }
@@ -100,13 +101,13 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     setMatchId(id);
     setHomeTeam(home);
     setVisitorTeam(visitor);
-    
+
     // Load existing events from backend
     try {
-      const response = await fetch(`http://localhost:3000/api/game-events/match/${id}`);
+      const response = await fetch(`${API_BASE_URL}/api/game-events/match/${id}`);
       if (response.ok) {
         const backendEvents = await response.json();
-        
+
         // Transform backend events to MatchEvent format
         const transformedEvents: MatchEvent[] = backendEvents.map((e: any) => ({
           id: e.id,
@@ -123,17 +124,17 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
           zone: e.goalZone,
           sanctionType: e.sanctionType,
         }));
-        
+
         setEvents(transformedEvents);
-        
+
         // Calculate scores from events
-        const homeGoals = transformedEvents.filter(e => 
+        const homeGoals = transformedEvents.filter(e =>
           e.category === 'Shot' && e.action === 'Goal' && e.teamId === home.id
         ).length;
-        const visitorGoals = transformedEvents.filter(e => 
+        const visitorGoals = transformedEvents.filter(e =>
           e.category === 'Shot' && e.action === 'Goal' && e.teamId === visitor.id
         ).length;
-        
+
         setHomeScore(homeGoals);
         setVisitorScore(visitorGoals);
       } else {
@@ -148,7 +149,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
       setHomeScore(0);
       setVisitorScore(0);
     }
-    
+
     setTime(0);
     setIsPlaying(false);
     setActiveTeamId(null);

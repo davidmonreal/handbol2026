@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Calendar, Clock, MapPin, ChevronRight, Play, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { API_BASE_URL } from '../config/api';
 
 interface Team {
   id: string;
@@ -34,7 +35,7 @@ const Dashboard = () => {
 
   const fetchMatches = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/matches');
+      const response = await fetch(`${API_BASE_URL} /api/matches`);
       if (response.ok) {
         const data = await response.json();
         const pending = data.filter((m: Match) => !m.isFinished).sort((a: Match, b: Match) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -60,7 +61,7 @@ const Dashboard = () => {
         </div>
         {isPending ? (
           <button
-            onClick={() => navigate(`/match-tracker/${match.id}`)}
+            onClick={() => navigate(`/ match - tracker / ${match.id} `)}
             className="flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors"
           >
             <Play size={12} className="mr-1.5" />
@@ -68,7 +69,7 @@ const Dashboard = () => {
           </button>
         ) : (
           <button
-            onClick={() => navigate(`/match-tracker/${match.id}`)}
+            onClick={() => navigate(`/ match - tracker / ${match.id} `)}
             className="flex items-center px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"
           >
             <Edit2 size={12} className="mr-1.5" />
@@ -82,7 +83,7 @@ const Dashboard = () => {
           <div className="font-semibold text-gray-900 truncate">{match.homeTeam?.name || 'Unknown Team'}</div>
           <div className="text-xs text-gray-500 truncate">{match.homeTeam?.club?.name || 'Unknown Club'}</div>
         </div>
-        
+
         {isPending ? (
           <div className="px-4 text-gray-400 font-medium">VS</div>
         ) : (
@@ -140,14 +141,14 @@ const Dashboard = () => {
             <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
             Upcoming Matches
           </h2>
-          <button 
+          <button
             onClick={() => navigate('/matches')}
             className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center"
           >
             View All <ChevronRight size={16} />
           </button>
         </div>
-        
+
         {pendingMatches.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {pendingMatches.map(match => (
@@ -177,7 +178,7 @@ const Dashboard = () => {
             Recent History
           </h2>
         </div>
-        
+
         {pastMatches.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {pastMatches.map(match => (

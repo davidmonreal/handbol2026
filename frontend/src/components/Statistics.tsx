@@ -5,6 +5,7 @@ import type { MatchEvent } from '../types';
 import { HOME_TEAM } from '../data/mockData';
 import { transformBackendEvents } from '../utils/eventTransformers';
 import { StatisticsView } from './stats';
+import { API_BASE_URL } from '../config/api';
 
 
 const Statistics = () => {
@@ -29,24 +30,24 @@ const Statistics = () => {
       try {
         if (matchId) {
           // Load match details
-          const matchRes = await fetch(`http://localhost:3000/api/matches/${matchId}`);
+          const matchRes = await fetch(`${API_BASE_URL}/api/matches/${matchId}`);
           const matchData = await matchRes.json();
           setData(matchData);
           setSelectedTeamId(matchData.homeTeamId);
 
           // Load match events
-          const eventsRes = await fetch(`http://localhost:3000/api/game-events/match/${matchId}`);
+          const eventsRes = await fetch(`${API_BASE_URL}/api/game-events/match/${matchId}`);
           const eventsData = await eventsRes.json();
           setStatsEvents(transformBackendEvents(eventsData));
         } else if (playerId) {
           // Load player details
-          const playerRes = await fetch(`http://localhost:3000/api/players/${playerId}`);
+          const playerRes = await fetch(`${API_BASE_URL}/api/players/${playerId}`);
           const playerData = await playerRes.json();
           setData(playerData);
 
           // Load all events and filter by player (replicating PlayersManagement logic)
           // Ideally backend should support /api/game-events?playerId=...
-          const eventsRes = await fetch(`http://localhost:3000/api/game-events`);
+          const eventsRes = await fetch(`${API_BASE_URL}/api/game-events`);
           const allEvents = await eventsRes.json();
           const playerEvents = allEvents.filter((e: any) => e.playerId === playerId);
 
@@ -55,12 +56,12 @@ const Statistics = () => {
           setStatsEvents(transformBackendEvents(playerEvents));
         } else if (teamId) {
           // Load team details
-          const teamRes = await fetch(`http://localhost:3000/api/teams/${teamId}`);
+          const teamRes = await fetch(`${API_BASE_URL}/api/teams/${teamId}`);
           const teamData = await teamRes.json();
           setData(teamData);
 
           // Load team events
-          const eventsRes = await fetch(`http://localhost:3000/api/game-events?teamId=${teamId}`);
+          const eventsRes = await fetch(`${API_BASE_URL}/api/game-events?teamId=${teamId}`);
           const eventsData = await eventsRes.json();
           setStatsEvents(transformBackendEvents(eventsData));
         }

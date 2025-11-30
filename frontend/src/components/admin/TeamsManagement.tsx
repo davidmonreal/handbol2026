@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Users, Search, X, Star, BarChart3 } from 'lucide-react';
+import { API_BASE_URL } from '../../config/api';
 
 interface Team {
   id: string;
@@ -69,7 +70,7 @@ export const TeamsManagement = () => {
 
   const fetchTeams = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/teams');
+      const response = await fetch(`${API_BASE_URL}/api/teams`);
       const data = await response.json();
       setTeams(data);
     } catch (error) {
@@ -80,7 +81,7 @@ export const TeamsManagement = () => {
 
   const fetchClubs = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/clubs');
+      const response = await fetch(`${API_BASE_URL}/api/clubs`);
       const data = await response.json();
       setClubs(data);
     } catch (error) {
@@ -90,7 +91,7 @@ export const TeamsManagement = () => {
 
   const fetchSeasons = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/seasons');
+      const response = await fetch(`${API_BASE_URL}/api/seasons`);
       const data = await response.json();
       setSeasons(data);
     } catch (error) {
@@ -100,7 +101,7 @@ export const TeamsManagement = () => {
 
   const fetchPlayers = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/players');
+      const response = await fetch(`${API_BASE_URL}/api/players`);
       const data = await response.json();
       setPlayers(data);
     } catch (error) {
@@ -115,8 +116,8 @@ export const TeamsManagement = () => {
 
     try {
       const url = editingTeam
-        ? `http://localhost:3000/api/teams/${editingTeam.id}`
-        : 'http://localhost:3000/api/teams';
+        ? `${API_BASE_URL}/api/teams/${editingTeam.id}`
+        : `${API_BASE_URL}/api/teams`;
 
       const method = editingTeam ? 'PUT' : 'POST';
 
@@ -145,7 +146,7 @@ export const TeamsManagement = () => {
     if (!confirm('Are you sure you want to delete this team?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/teams/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${API_BASE_URL}/api/teams/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete team');
       fetchTeams();
     } catch (error) {
@@ -196,7 +197,7 @@ export const TeamsManagement = () => {
     if (!selectedTeamForPlayers) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/teams/${selectedTeamForPlayers.id}/players`, {
+      const response = await fetch(`${API_BASE_URL}/api/teams/${selectedTeamForPlayers.id}/players`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ playerId, role: 'Player' }),
@@ -211,7 +212,7 @@ export const TeamsManagement = () => {
       await fetchTeams();
 
       // Update local state for the modal
-      const updatedTeam = await fetch(`http://localhost:3000/api/teams/${selectedTeamForPlayers.id}`).then(res => res.json());
+      const updatedTeam = await fetch(`${API_BASE_URL}/api/teams/${selectedTeamForPlayers.id}`).then(res => res.json());
       setSelectedTeamForPlayers(updatedTeam);
 
     } catch (error) {
@@ -224,7 +225,7 @@ export const TeamsManagement = () => {
     if (!selectedTeamForPlayers) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/teams/${selectedTeamForPlayers.id}/players/${playerId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/teams/${selectedTeamForPlayers.id}/players/${playerId}`, {
         method: 'DELETE',
       });
 
@@ -234,7 +235,7 @@ export const TeamsManagement = () => {
       await fetchTeams();
 
       // Update local state
-      const updatedTeam = await fetch(`http://localhost:3000/api/teams/${selectedTeamForPlayers.id}`).then(res => res.json());
+      const updatedTeam = await fetch(`${API_BASE_URL}/api/teams/${selectedTeamForPlayers.id}`).then(res => res.json());
       setSelectedTeamForPlayers(updatedTeam);
 
     } catch (error) {

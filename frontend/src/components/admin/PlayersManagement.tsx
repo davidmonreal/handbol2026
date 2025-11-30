@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Search, BarChart3 } from 'lucide-react';
+import { API_BASE_URL } from '../../config/api';
 
 
 
@@ -41,7 +42,7 @@ export const PlayersManagement = () => {
 
   const fetchPlayers = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/players');
+      const response = await fetch(`${API_BASE_URL}/api/players`);
       const data = await response.json();
       console.log('Players API response:', data);
 
@@ -68,8 +69,8 @@ export const PlayersManagement = () => {
 
     try {
       const url = editingPlayer
-        ? `http://localhost:3000/api/players/${editingPlayer.id}`
-        : 'http://localhost:3000/api/players';
+        ? `${API_BASE_URL}/api/players/${editingPlayer.id}`
+        : `${API_BASE_URL}/api/players`;
 
       const method = editingPlayer ? 'PUT' : 'POST';
 
@@ -98,7 +99,7 @@ export const PlayersManagement = () => {
     if (!confirm('Are you sure you want to delete this player?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/players/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${API_BASE_URL}/api/players/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete player');
       fetchPlayers();
     } catch (error) {

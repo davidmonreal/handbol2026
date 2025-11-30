@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search } from 'lucide-react';
+import { API_BASE_URL } from '../../config/api';
 
 interface Club {
   id: string;
@@ -21,7 +22,7 @@ export const ClubsManagement = () => {
 
   const fetchClubs = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/clubs');
+      const response = await fetch(`${API_BASE_URL}/api/clubs`);
       const data = await response.json();
       setClubs(data);
     } catch (error) {
@@ -34,12 +35,12 @@ export const ClubsManagement = () => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
-    
+
     try {
-      const url = editingClub 
-        ? `http://localhost:3000/api/clubs/${editingClub.id}`
-        : 'http://localhost:3000/api/clubs';
-        
+      const url = editingClub
+        ? `${API_BASE_URL}/api/clubs/${editingClub.id}`
+        : `${API_BASE_URL}/api/clubs`;
+
       const method = editingClub ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -49,7 +50,7 @@ export const ClubsManagement = () => {
       });
 
       if (!response.ok) throw new Error('Failed to save club');
-      
+
       fetchClubs();
       setIsFormOpen(false);
       setEditingClub(null);
@@ -64,9 +65,9 @@ export const ClubsManagement = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this club?')) return;
-    
+
     try {
-      await fetch(`http://localhost:3000/api/clubs/${id}`, { method: 'DELETE' });
+      await fetch(`${API_BASE_URL}/api/clubs/${id}`, { method: 'DELETE' });
       fetchClubs();
     } catch (error) {
       console.error('Error deleting club:', error);

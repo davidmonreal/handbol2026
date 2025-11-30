@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { API_BASE_URL } from '../../config/api';
 
 interface Season {
   id: string;
@@ -12,10 +13,10 @@ export const SeasonsManagement = () => {
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSeason, setEditingSeason] = useState<Season | null>(null);
-  const [formData, setFormData] = useState({ 
-    name: '', 
-    startDate: '', 
-    endDate: '' 
+  const [formData, setFormData] = useState({
+    name: '',
+    startDate: '',
+    endDate: ''
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,7 +27,7 @@ export const SeasonsManagement = () => {
 
   const fetchSeasons = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/seasons');
+      const response = await fetch(`${API_BASE_URL}/api/seasons`);
       const data = await response.json();
       setSeasons(data);
     } catch (error) {
@@ -39,12 +40,12 @@ export const SeasonsManagement = () => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
-    
+
     try {
-      const url = editingSeason 
-        ? `http://localhost:3000/api/seasons/${editingSeason.id}`
-        : 'http://localhost:3000/api/seasons';
-        
+      const url = editingSeason
+        ? `${API_BASE_URL}/api/seasons/${editingSeason.id}`
+        : `${API_BASE_URL}/api/seasons`;
+
       const method = editingSeason ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -57,7 +58,7 @@ export const SeasonsManagement = () => {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to save season');
       }
-      
+
       fetchSeasons();
       handleCancel();
     } catch (error) {
@@ -70,9 +71,9 @@ export const SeasonsManagement = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this season?')) return;
-    
+
     try {
-      const response = await fetch(`http://localhost:3000/api/seasons/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${API_BASE_URL}/api/seasons/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete season');
       fetchSeasons();
     } catch (error) {
@@ -83,7 +84,7 @@ export const SeasonsManagement = () => {
 
   const handleEdit = (season: Season) => {
     setEditingSeason(season);
-    setFormData({ 
+    setFormData({
       name: season.name,
       startDate: new Date(season.startDate).toISOString().split('T')[0],
       endDate: new Date(season.endDate).toISOString().split('T')[0]
