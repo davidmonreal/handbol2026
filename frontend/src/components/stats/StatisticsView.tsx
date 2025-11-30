@@ -117,21 +117,21 @@ export function StatisticsView({
 
       {/* Team Switcher (only for match context) */}
       {context === 'match' && matchData && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600">Viewing:</span>
+          <span className="font-semibold text-gray-900">
+            {selectedTeamId === matchData.homeTeamId ? matchData.homeTeam.name : matchData.awayTeam.name}
+          </span>
           <button
             onClick={() => setSelectedTeamId(
               selectedTeamId === matchData.homeTeamId ? matchData.awayTeamId : matchData.homeTeamId
             )}
-            className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
           >
-            <span className="font-semibold text-gray-900">
-              {selectedTeamId === matchData.homeTeamId ? matchData.homeTeam.name : matchData.awayTeam.name}
-            </span>
-            {' '}
-            <span className="text-gray-500">
-              (Click to switch to {selectedTeamId === matchData.homeTeamId ? matchData.awayTeam.name : matchData.homeTeam.name})
-            </span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+            Switch to {selectedTeamId === matchData.homeTeamId ? matchData.awayTeam.name : matchData.homeTeam.name}
           </button>
         </div>
       )}
