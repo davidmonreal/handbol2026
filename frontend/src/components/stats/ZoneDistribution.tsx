@@ -18,7 +18,6 @@ export function ZoneDistribution({
       <div className="space-y-3">
         {/* 6m Line */}
         <div>
-          <p className="text-xs font-semibold text-gray-500 mb-2">6 METRE LINE</p>
           <div className="grid grid-cols-5 gap-2">
             {ZONE_CONFIG.sixMeter.map(({ zone, label }) => {
               const stats = zoneStats.get(zone);
@@ -58,7 +57,6 @@ export function ZoneDistribution({
 
         {/* 9m Line */}
         <div>
-          <p className="text-xs font-semibold text-gray-500 mb-2">9 METRE LINE</p>
           <div className="grid grid-cols-3 gap-2 max-w-md mx-auto">
             {ZONE_CONFIG.nineMeter.map(({ zone, label }) => {
               const stats = zoneStats.get(zone);
@@ -98,7 +96,6 @@ export function ZoneDistribution({
 
         {/* 7m Penalty */}
         <div>
-          <p className="text-xs font-semibold text-gray-500 mb-2">PENALTY</p>
           <div className="max-w-xs mx-auto">
             {(() => {
               const stats = zoneStats.get('7m');
