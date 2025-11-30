@@ -2,10 +2,11 @@ import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMatch } from '../context/MatchContext';
 import type { ZoneType, MatchEvent } from '../types';
-import { Users, Target, Filter, X, Activity, Shield, Zap, ArrowLeftRight } from 'lucide-react';
+import { Users, Filter, X, Shield, Zap, ArrowLeftRight } from 'lucide-react';
 import { HOME_TEAM, VISITOR_TEAM } from '../data/mockData';
 import { ZONE_CONFIG } from '../config/zones';
 import { REVERSE_GOAL_TARGET_MAP } from '../config/constants';
+import { StatisticsPanel, usePlayerBaselines } from './stats';
 
 const Statistics = () => {
   const [searchParams] = useSearchParams();
@@ -22,6 +23,57 @@ const Statistics = () => {
   const [matchData, setMatchData] = useState<any>(null);
   const [matchEvents, setMatchEvents] = useState<MatchEvent[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [allPlayerEvents, setAllPlayerEvents] = useState<MatchEvent[]>([]); // For baseline comparison
+
+  // Load all player events for baseline comparison (team-filtered)
+  useEffect(() => {
+    if (matchId && selectedTeamId) {
+      // Load ALL events for players from the selected team (not just this match)
+      fetch(`http://localhost:3000/api/game-events`)
+        .then(res => res.json())
+        .then(data => {
+          // Helper functions for transformation (same as match events)
+          const goalZoneToTarget = (zone: string | null): number | undefined => {
+            if (!zone) return undefined;
+            const zoneMap: Record<string, number> = {
+              'TL': 1, 'TM': 2, 'TR': 3,
+              'ML': 4, 'MM': 5, 'MR': 6,
+              'BL': 7, 'BM': 8, 'BR': 9,
+            };
+            return zoneMap[zone];
+          };
+
+          const positionDistanceToZone = (position: string | null, distance: string | null): any => {
+            if (!position || !distance) return undefined;
+            if (distance === '7M') return '7m';
+            const distancePrefix = distance === '6M' ? '6m' : '9m';
+            return `${distancePrefix}-${position}` as any;
+          };
+
+          // Transform backend events to MatchEvent format
+          const transformedEvents: MatchEvent[] = data.map((e: any) => ({
+            id: e.id,
+            timestamp: e.timestamp,
+            playerId: e.playerId,
+            playerName: e.player?.name,
+            playerNumber: e.player?.number,
+            teamId: e.teamId,
+            category: e.type,
+            action: e.subtype || e.type,
+            zone: positionDistanceToZone(e.position, e.distance),
+            goalTarget: goalZoneToTarget(e.goalZone),
+            context: {
+              isCollective: e.isCollective,
+              hasOpposition: e.hasOpposition,
+              isCounterAttack: e.isCounterAttack,
+            },
+            defenseFormation: undefined,
+          }));
+
+          setAllPlayerEvents(transformedEvents);
+        });
+    }
+  }, [matchId, selectedTeamId]);
 
   // Load match data if matchId is provided
   useEffect(() => {
@@ -113,72 +165,13 @@ const Statistics = () => {
     return filtered;
   }, [teamEvents, filterZone, filterPlayer, filterOpposition, filterCollective, filterCounterAttack]);
 
-  // 3. Goal Heatmap Data (Based on Filtered Events)
-  const goalHeatmap = useMemo(() => {
-    const map = new Map<number, { goals: number; shots: number }>();
-    // Initialize 1-9
-    for (let i = 1; i <= 9; i++) map.set(i, { goals: 0, shots: 0 });
+  // Calculate player baselines for comparison (team-filtered when in match context)
+  const playerBaselines = usePlayerBaselines(
+    allPlayerEvents.length > 0 ? allPlayerEvents : events, // Use all events if available, otherwise context events
+    matchId ? selectedTeamId : null // Filter by team only in match context
+  );
 
-    filteredEvents.forEach(e => {
-      if (e.category === 'Shot' && e.goalTarget) {
-        const current = map.get(e.goalTarget)!;
-        current.shots++;
-        if (e.action === 'Goal') current.goals++;
-      }
-    });
-    return map;
-  }, [filteredEvents]);
-
-  // 4. Zone Stats (Based on Filtered Events - updates when filters change)
-  const zoneStats = useMemo(() => {
-    const map = new Map<ZoneType, { shots: number; goals: number }>();
-    // Initialize all zones
-    ZONE_CONFIG.sixMeter.forEach(z => map.set(z.zone, { shots: 0, goals: 0 }));
-    ZONE_CONFIG.nineMeter.forEach(z => map.set(z.zone, { shots: 0, goals: 0 }));
-    map.set(ZONE_CONFIG.penalty.zone, { shots: 0, goals: 0 });
-
-    filteredEvents.forEach(e => {
-      if (e.category === 'Shot' && e.zone) {
-        const current = map.get(e.zone as ZoneType);
-        if (current) {
-          current.shots++;
-          if (e.action === 'Goal') current.goals++;
-        }
-      }
-    });
-    return map;
-  }, [filteredEvents]);
-
-  // Rank zones by goals for color coding (handle ties)
-  const zoneRankings = useMemo(() => {
-    // Group zones by goal count
-    const goalGroups = new Map<number, ZoneType[]>();
-    zoneStats.forEach((stats, zone) => {
-      if (stats.goals > 0) {
-        const existing = goalGroups.get(stats.goals) || [];
-        existing.push(zone);
-        goalGroups.set(stats.goals, existing);
-      }
-    });
-    
-    // Sort goal counts descending
-    const sortedGoalCounts = Array.from(goalGroups.keys()).sort((a, b) => b - a);
-    
-    // Assign colors: top goal count = red, next 2 counts = orange
-    const colorMap = new Map<ZoneType, 'red' | 'orange' | 'default'>();
-    
-    sortedGoalCounts.forEach((goalCount, index) => {
-      const zones = goalGroups.get(goalCount)!;
-      const color = index === 0 ? 'red' : (index === 1 || index === 2) ? 'orange' : 'default';
-      zones.forEach(zone => colorMap.set(zone, color));
-    });
-    
-    return colorMap;
-  }, [zoneStats]);
-
-  const totalFilteredShots = filteredEvents.filter(e => e.category === 'Shot').length;
-
-  // 5. Player Stats (Based on Filtered Events)
+  // Player Stats (Based on Filtered Events) - still needed for the detailed table below
   const playerStats = useMemo(() => {
     interface PlayerStats {
       name: string;
@@ -538,141 +531,19 @@ const Statistics = () => {
         </div>
       </div>
 
-      {/* 1. GOAL HEATMAP (Top) */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <Target className="text-blue-600" />
-            Goal Distribution {filterZone ? `(from ${filterZone})` : '(All Zones)'}
-        </h3>
-        {/* Handball goal proportions: 3m wide x 2m tall = 1.5:1 ratio */}
-        <div className="max-w-xl mx-auto">
-            <div className="relative bg-gray-100 rounded-lg p-4 border-4 border-gray-300" style={{ aspectRatio: '1.5 / 1' }}>
-                {/* Goal Frame Visual */}
-                <div className="absolute top-0 left-0 right-0 h-full border-x-8 border-t-8 border-red-800 opacity-20 pointer-events-none"></div>
-                
-                <div className="grid grid-cols-3 grid-rows-3 gap-1 h-full relative z-10">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(target => {
-                        const stats = goalHeatmap.get(target)!;
-                        const efficiency = stats.shots > 0 ? Math.round((stats.goals / stats.shots) * 100) : 0;
-                        const intensity = stats.shots > 0 ? Math.min(stats.shots / 5, 1) : 0;
-                        
-                        return (
-                            <div 
-                                key={target}
-                                className="flex flex-col items-center justify-center rounded border border-gray-200 transition-all"
-                                style={{
-                                    backgroundColor: `rgba(59, 130, 246, ${intensity * 0.5 + 0.1})`,
-                                }}
-                            >
-                                <span className="text-xl md:text-2xl font-bold text-gray-800">{stats.goals}</span>
-                                <span className="text-xs text-gray-500">{stats.shots} shots</span>
-                                <span className={`text-xs font-bold ${efficiency > 50 ? 'text-green-600' : 'text-orange-600'}`}>
-                                    {efficiency}%
-                                </span>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-        </div>
-      </div>
 
-      {/* 2. ZONE MAP (Middle) */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <Activity className="text-indigo-600" />
-            Shot Zones (Click to Filter)
-        </h3>
-        <div className="max-w-2xl mx-auto">
-            <div className="space-y-3">
-                {/* 6m Line */}
-                <div className="grid grid-cols-5 gap-2">
-                    {ZONE_CONFIG.sixMeter.map(({ zone, label }) => {
-                        const stats = zoneStats.get(zone)!;
-                        const percentage = totalFilteredShots > 0 ? Math.round((stats.shots / totalFilteredShots) * 100) : 0;
-                        const isSelected = filterZone === zone;
-                        const color = zoneRankings.get(zone) || 'default';
-                        
-                        // Color coding based on goal productivity
-                        let bgColor = 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50';
-                        if (isSelected) {
-                            bgColor = 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200';
-                        } else if (color === 'red' && stats.goals > 0) {
-                            bgColor = 'border-red-500 bg-red-100 hover:border-red-600 shadow-sm';
-                        } else if (color === 'orange' && stats.goals > 0) {
-                            bgColor = 'border-orange-400 bg-orange-50 hover:border-orange-500';
-                        }
-
-                        return (
-                            <button
-                                key={zone}
-                                onClick={() => setFilterZone(isSelected ? null : zone)}
-                                className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center ${bgColor}`}
-                            >
-                                <span className="text-xs font-bold text-gray-500 mb-1">{label}</span>
-                                <span className="text-xl font-bold text-gray-800">{percentage}%</span>
-                                <span className="text-xs text-gray-400">({stats.shots})</span>
-                            </button>
-                        );
-                    })}
-                </div>
-                
-                {/* 9m Line */}
-                <div className="grid grid-cols-3 gap-2 max-w-md mx-auto">
-                    {ZONE_CONFIG.nineMeter.map(({ zone, label }) => {
-                        const stats = zoneStats.get(zone)!;
-                        const percentage = totalFilteredShots > 0 ? Math.round((stats.shots / totalFilteredShots) * 100) : 0;
-                        const isSelected = filterZone === zone;
-                        const color = zoneRankings.get(zone) || 'default';
-                        
-                        let bgColor = 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50';
-                        if (isSelected) {
-                            bgColor = 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200';
-                        } else if (color === 'red') {
-                            bgColor = 'border-red-500 bg-red-100 hover:border-red-600 shadow-sm';
-                        } else if (color === 'orange') {
-                            bgColor = 'border-orange-400 bg-orange-50 hover:border-orange-500';
-                        }
-
-                        return (
-                            <button
-                                key={zone}
-                                onClick={() => setFilterZone(isSelected ? null : zone)}
-                                className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center ${bgColor}`}
-                            >
-                                <span className="text-xs font-bold text-gray-500 mb-1">{label}</span>
-                                <span className="text-xl font-bold text-gray-800">{percentage}%</span>
-                                <span className="text-xs text-gray-400">({stats.shots})</span>
-                            </button>
-                        );
-                    })}
-                </div>
-
-                {/* 7m Penalty */}
-                <div className="max-w-xs mx-auto">
-                    <button
-                        onClick={() => setFilterZone(filterZone === ZONE_CONFIG.penalty.zone ? null : ZONE_CONFIG.penalty.zone)}
-                        className={`w-full p-3 rounded-lg border-2 transition-all flex flex-col items-center ${
-                            filterZone === ZONE_CONFIG.penalty.zone
-                                ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200' 
-                                : (() => {
-                                    const color = zoneRankings.get(ZONE_CONFIG.penalty.zone) || 'default';
-                                    if (color === 'red') return 'border-red-500 bg-red-100 hover:border-red-600 shadow-sm';
-                                    if (color === 'orange') return 'border-orange-400 bg-orange-50 hover:border-orange-500';
-                                    return 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50';
-                                })()
-                        }`}
-                    >
-                        <span className="text-xs font-bold text-gray-500 mb-1">{ZONE_CONFIG.penalty.label}</span>
-                        <span className="text-xl font-bold text-gray-800">
-                             {totalFilteredShots > 0 ? Math.round(((zoneStats.get(ZONE_CONFIG.penalty.zone)?.shots || 0) / totalFilteredShots) * 100) : 0}%
-                        </span>
-                        <span className="text-xs text-gray-400">({zoneStats.get(ZONE_CONFIG.penalty.zone)?.shots || 0})</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-      </div>
+      {/* Statistics Panel - Heatmap, Zones, and Summary */}
+      <StatisticsPanel
+        data={{
+          events: filteredEvents,
+          title: '', // Title is handled by header above
+          context: 'match',
+        }}
+        comparison={{
+          playerAverages: playerBaselines,
+        }}
+        onZoneFilter={(zone: ZoneType | '7m' | null) => setFilterZone(zone as ZoneType | null)}
+      />
 
       {/* 3. PLAYER LIST (Bottom) */}
       <div className="bg-white rounded-xl shadow-lg p-6">

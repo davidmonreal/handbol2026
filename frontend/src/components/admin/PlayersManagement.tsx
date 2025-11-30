@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, BarChart3, X } from 'lucide-react';
-import { StatisticsPanel } from '../statistics';
+import { StatisticsPanel } from '../stats';
 
 import { type MatchEvent } from '../../types';
 
