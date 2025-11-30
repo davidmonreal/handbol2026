@@ -21,6 +21,9 @@ interface StatisticsViewProps {
     homeTeamId: string;
     awayTeamId: string;
   };
+  teamData?: {
+    players: any[];
+  };
 }
 
 export function StatisticsView({
@@ -33,6 +36,7 @@ export function StatisticsView({
   showComparison = false,
   teamId,
   matchData,
+  teamData,
 }: StatisticsViewProps) {
   // Filter state
   const [filterZone, setFilterZone] = useState<ZoneType | '7m' | null>(null);
@@ -56,6 +60,12 @@ export function StatisticsView({
       // Look in away team
       const awayPlayer = matchData.awayTeam.players.find((p: any) => p.player.id === playerId);
       if (awayPlayer) return { name: awayPlayer.player.name, number: awayPlayer.player.number };
+    }
+    
+    if (teamData) {
+      // Look in team players
+      const teamPlayer = teamData.players.find((p: any) => p.player.id === playerId);
+      if (teamPlayer) return { name: teamPlayer.player.name, number: teamPlayer.player.number };
     }
     
     // Fallback to event data
@@ -176,7 +186,7 @@ export function StatisticsView({
         onPlayerClick={handlePlayerClick}
         selectedPlayerId={filterPlayer}
         subtitle={filterZone ? `(from ${filterZone})` : subtitle || '(Overall)'}
-        getPlayerInfo={matchData ? getPlayerInfo : undefined}
+        getPlayerInfo={matchData || teamData ? getPlayerInfo : undefined}
       />
     </div>
   );

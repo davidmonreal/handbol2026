@@ -250,12 +250,19 @@ export const TeamsManagement = () => {
     setIsStatsModalOpen(true);
     
     try {
-      // Fetch all events for this team (from all matches)
-      const response = await fetch(`http://localhost:3000/api/game-events?teamId=${team.id}`);
-      const events = await response.json();
+      // Fetch both events and full team data (with players)
+      const [eventsResponse, teamResponse] = await Promise.all([
+        fetch(`http://localhost:3000/api/game-events?teamId=${team.id}`),
+        fetch(`http://localhost:3000/api/teams/${team.id}`)
+      ]);
+      
+      const events = await eventsResponse.json();
+      const fullTeamData = await teamResponse.json();
+      
       setTeamEvents(events);
+      setSelectedTeamForStats(fullTeamData); // Update with full data including players
     } catch (error) {
-      console.error('Error fetching team events:', error);
+      console.error('Error fetching team data:', error);
       setTeamEvents([]);
     }
   };
@@ -596,6 +603,7 @@ export const TeamsManagement = () => {
                   events={teamEvents}
                   context="team"
                   showComparison={false}
+                  teamData={selectedTeamForStats as any}
                 />
               ) : (
                 <div className="text-center py-12 text-gray-500">
