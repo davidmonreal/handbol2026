@@ -16,7 +16,11 @@ interface Match {
   awayTeam: Team;
   isFinished: boolean;
   location?: string;
+  homeScore?: number;
+  awayScore?: number;
 }
+
+// ...
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -74,14 +78,24 @@ const Dashboard = () => {
       </div>
 
       <div className="flex items-center justify-between mb-3">
-        <div className="flex-1 text-right">
-          <div className="font-semibold text-gray-900">{match.homeTeam?.name || 'Unknown Team'}</div>
-          <div className="text-xs text-gray-500">{match.homeTeam?.club?.name || 'Unknown Club'}</div>
+        <div className="flex-1 text-right min-w-0">
+          <div className="font-semibold text-gray-900 truncate">{match.homeTeam?.name || 'Unknown Team'}</div>
+          <div className="text-xs text-gray-500 truncate">{match.homeTeam?.club?.name || 'Unknown Club'}</div>
         </div>
-        <div className="px-4 text-gray-400 font-medium">VS</div>
-        <div className="flex-1 text-left">
-          <div className="font-semibold text-gray-900">{match.awayTeam?.name || 'Unknown Team'}</div>
-          <div className="text-xs text-gray-500">{match.awayTeam?.club?.name || 'Unknown Club'}</div>
+        
+        {isPending ? (
+          <div className="px-4 text-gray-400 font-medium">VS</div>
+        ) : (
+          <div className="px-4 flex items-center justify-center gap-3 min-w-[100px]">
+            <span className="text-3xl font-bold text-gray-900">{match.homeScore ?? 0}</span>
+            <span className="text-gray-400 text-xs uppercase tracking-wider font-medium">vs</span>
+            <span className="text-3xl font-bold text-gray-900">{match.awayScore ?? 0}</span>
+          </div>
+        )}
+
+        <div className="flex-1 text-left min-w-0">
+          <div className="font-semibold text-gray-900 truncate">{match.awayTeam?.name || 'Unknown Team'}</div>
+          <div className="text-xs text-gray-500 truncate">{match.awayTeam?.club?.name || 'Unknown Club'}</div>
         </div>
       </div>
 

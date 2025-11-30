@@ -80,8 +80,8 @@ export function StatisticsPanel({
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-        <StatCard label="Shots" value={filteredStats.totalShots} color="blue" />
         <StatCard label="Goals" value={filteredStats.totalGoals} color="green" />
+        <StatCard label="Shots" value={filteredStats.totalShots} color="blue" />
         <StatCard
           label="Efficiency"
           value={`${filteredStats.efficiency.toFixed(1)}%`}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Users, Search, X, Star, BarChart3 } from 'lucide-react';
-import { StatisticsView } from '../stats';
-import type { MatchEvent } from '../../types';
+
 interface Team {
   id: string;
   name: string;
@@ -32,32 +32,30 @@ interface Player {
 }
 
 export const TeamsManagement = () => {
+  const navigate = useNavigate();
   const [teams, setTeams] = useState<Team[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
-  
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isPlayersModalOpen, setIsPlayersModalOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [selectedTeamForPlayers, setSelectedTeamForPlayers] = useState<Team | null>(null);
-  const [assignedPlayers, setAssignedPlayers] = useState<Player[]>([]);
-  
-  // Statistics modal state
-  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
-  const [selectedTeamForStats, setSelectedTeamForStats] = useState<Team | null>(null);
-  const [teamEvents, setTeamEvents] = useState<MatchEvent[]>([]);
-  
-  const [formData, setFormData] = useState({ 
-    name: '', 
+
+
+
+
+  const [formData, setFormData] = useState({
+    name: '',
     category: 'SENIOR',
-    clubId: '', 
+    clubId: '',
     seasonId: '',
     isMyTeam: false
   });
 
   const CATEGORIES = ['BENJAMI', 'ALEVI', 'INFANTIL', 'CADET', 'JUVENIL', 'SENIOR'];
-  
+
   const [playerSearch, setPlayerSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -114,12 +112,12 @@ export const TeamsManagement = () => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
-    
+
     try {
-      const url = editingTeam 
+      const url = editingTeam
         ? `http://localhost:3000/api/teams/${editingTeam.id}`
         : 'http://localhost:3000/api/teams';
-        
+
       const method = editingTeam ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -132,7 +130,7 @@ export const TeamsManagement = () => {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to save team');
       }
-      
+
       fetchTeams();
       handleCancel();
     } catch (error) {
@@ -145,7 +143,7 @@ export const TeamsManagement = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this team?')) return;
-    
+
     try {
       const response = await fetch(`http://localhost:3000/api/teams/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete team');
@@ -163,7 +161,7 @@ export const TeamsManagement = () => {
   const filteredTeams = teams.filter(team => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      team.name.toLowerCase().includes(searchLower) || 
+      team.name.toLowerCase().includes(searchLower) ||
       team.club.name.toLowerCase().includes(searchLower) ||
       (team.category && team.category.toLowerCase().includes(searchLower))
     );
@@ -171,7 +169,7 @@ export const TeamsManagement = () => {
 
   const handleEdit = (team: Team) => {
     setEditingTeam(team);
-    setFormData({ 
+    setFormData({
       name: team.name,
       category: team.category || 'SENIOR',
       clubId: team.clubId,
@@ -211,11 +209,11 @@ export const TeamsManagement = () => {
 
       // Refresh teams to get updated players list
       await fetchTeams();
-      
+
       // Update local state for the modal
       const updatedTeam = await fetch(`http://localhost:3000/api/teams/${selectedTeamForPlayers.id}`).then(res => res.json());
       setSelectedTeamForPlayers(updatedTeam);
-      
+
     } catch (error) {
       console.error('Error assigning player:', error);
       alert(error instanceof Error ? error.message : 'Failed to assign player');
@@ -245,37 +243,19 @@ export const TeamsManagement = () => {
     }
   };
 
-  const handleViewStats = async (team: Team) => {
-    setSelectedTeamForStats(team);
-    setIsStatsModalOpen(true);
-    
-    try {
-      // Fetch both events and full team data (with players)
-      const [eventsResponse, teamResponse] = await Promise.all([
-        fetch(`http://localhost:3000/api/game-events?teamId=${team.id}`),
-        fetch(`http://localhost:3000/api/teams/${team.id}`)
-      ]);
-      
-      const events = await eventsResponse.json();
-      const fullTeamData = await teamResponse.json();
-      
-      setTeamEvents(events);
-      setSelectedTeamForStats(fullTeamData); // Update with full data including players
-    } catch (error) {
-      console.error('Error fetching team data:', error);
-      setTeamEvents([]);
-    }
+  const handleViewStats = (team: Team) => {
+    navigate(`/statistics?teamId=${team.id}`);
   };
 
   const filteredPlayers = players.filter(player => {
     const searchLower = playerSearch.toLowerCase();
-    const matchesSearch = 
-      player.name.toLowerCase().includes(searchLower) || 
+    const matchesSearch =
+      player.name.toLowerCase().includes(searchLower) ||
       player.number.toString().includes(searchLower);
-    
+
     // Filter out players already assigned to this team
     const isAssigned = selectedTeamForPlayers?.players.some(p => p.player.id === player.id);
-    
+
     return matchesSearch && !isAssigned;
   });
 
@@ -570,50 +550,7 @@ export const TeamsManagement = () => {
         )}
       </div>
 
-      {/* Statistics Modal */}
-      {isStatsModalOpen && selectedTeamForStats && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">
-                  {selectedTeamForStats.name} - Statistics
-                </h2>
-                <p className="text-sm text-gray-500">
-                  {selectedTeamForStats.club.name} • {selectedTeamForStats.category} • All Matches
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setIsStatsModalOpen(false);
-                  setSelectedTeamForStats(null);
-                  setTeamEvents([]);
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={24} />
-              </button>
-            </div>
 
-            {/* Content */}
-            <div className="p-6">
-              {teamEvents.length > 0 ? (
-                <StatisticsView
-                  events={teamEvents}
-                  context="team"
-                  showComparison={false}
-                  teamData={selectedTeamForStats as any}
-                />
-              ) : (
-                <div className="text-center py-12 text-gray-500">
-                  Loading statistics...
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

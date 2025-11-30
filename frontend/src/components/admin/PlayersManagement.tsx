@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Search, BarChart3, X } from 'lucide-react';
-import { StatisticsView } from '../stats';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Edit2, Trash2, Search, BarChart3 } from 'lucide-react';
 
-import { type MatchEvent } from '../../types';
-import { REVERSE_GOAL_TARGET_MAP } from '../../config/constants';
+
 
 interface Player {
   id: string;
@@ -19,31 +18,22 @@ interface Player {
   }[];
 }
 
-interface PlayerStats {
-  events: MatchEvent[];
-  shots: number;
-  goals: number;
-  saves: number;
-  misses: number;
-  posts: number;
-  efficiency: string;
-}
+
 
 export const PlayersManagement = () => {
+  const navigate = useNavigate();
   const [players, setPlayers] = useState<Player[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
-  const [formData, setFormData] = useState({ 
-    name: '', 
-    number: '', 
-    handedness: 'RIGHT' 
+  const [formData, setFormData] = useState({
+    name: '',
+    number: '',
+    handedness: 'RIGHT'
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
-  const [selectedPlayerForStats, setSelectedPlayerForStats] = useState<Player | null>(null);
-  const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
+
 
   useEffect(() => {
     fetchPlayers();
@@ -54,7 +44,7 @@ export const PlayersManagement = () => {
       const response = await fetch('http://localhost:3000/api/players');
       const data = await response.json();
       console.log('Players API response:', data);
-      
+
       if (Array.isArray(data)) {
         setPlayers(data);
       } else {
@@ -75,12 +65,12 @@ export const PlayersManagement = () => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
-    
+
     try {
-      const url = editingPlayer 
+      const url = editingPlayer
         ? `http://localhost:3000/api/players/${editingPlayer.id}`
         : 'http://localhost:3000/api/players';
-        
+
       const method = editingPlayer ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -93,7 +83,7 @@ export const PlayersManagement = () => {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to save player');
       }
-      
+
       fetchPlayers();
       handleCancel();
     } catch (error) {
@@ -106,7 +96,7 @@ export const PlayersManagement = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this player?')) return;
-    
+
     try {
       const response = await fetch(`http://localhost:3000/api/players/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete player');
@@ -119,7 +109,7 @@ export const PlayersManagement = () => {
 
   const handleEdit = (player: Player) => {
     setEditingPlayer(player);
-    setFormData({ 
+    setFormData({
       name: player.name,
       number: player.number.toString(),
       handedness: player.handedness
@@ -134,78 +124,8 @@ export const PlayersManagement = () => {
     setError(null);
   };
 
-  const fetchPlayerStats = async (playerId: string) => {
-    try {
-      // Fetch all game events for this player
-      const response = await fetch(`http://localhost:3000/api/game-events`);
-      const allEvents = await response.json();
-      
-      // Helper function to convert goalZone to goalTarget (1-9)
-      const goalZoneToTarget = (zone: string | null): number | undefined => {
-        if (!zone) return undefined;
-        return REVERSE_GOAL_TARGET_MAP[zone];
-      };
-
-      // Helper function to convert position+distance to zone format
-      const positionDistanceToZone = (position: string | null, distance: string | null): any => {
-        if (!position || !distance) return undefined;
-        
-        // Map backend position+distance to frontend zone format
-        if (distance === '7M') return '7m';
-        
-        const distancePrefix = distance === '6M' ? '6m' : '9m';
-        return `${distancePrefix}-${position}` as any;
-      };
-
-      // Filter and transform events for this specific player
-      const playerBackendEvents = allEvents.filter((e: any) => e.playerId === playerId);
-      
-      // Transform to frontend format (same as Statistics.tsx)
-      const transformedEvents: MatchEvent[] = playerBackendEvents.map((e: any) => ({
-        id: e.id,
-        timestamp: e.timestamp,
-        playerId: e.playerId,
-        playerName: e.player?.name,
-        playerNumber: e.player?.number,
-        teamId: e.teamId,
-        category: e.type, // 'Shot', 'Turnover', 'Sanction'
-        action: e.subtype || e.type, // 'Goal', 'Save', 'Miss', etc.
-        zone: positionDistanceToZone(e.position, e.distance), // Convert position+distance to zone
-        goalTarget: goalZoneToTarget(e.goalZone), // Convert goalZone to number 1-9
-        context: {
-          isCollective: e.isCollective,
-          hasOpposition: e.hasOpposition,
-          isCounterAttack: e.isCounterAttack,
-        },
-        defenseFormation: undefined,
-      }));
-      
-      // Calculate statistics using transformed events
-      const shots = transformedEvents.filter(e => e.category === 'Shot');
-      const goals = shots.filter(e => e.action === 'Goal');
-      const saves = shots.filter(e => e.action === 'Save');
-      const misses = shots.filter(e => e.action === 'Miss');
-      const posts = shots.filter(e => e.action === 'Post');
-      
-      setPlayerStats({
-        events: transformedEvents, // Store transformed events
-        shots: shots.length,
-        goals: goals.length,
-        saves: saves.length,
-        misses: misses.length,
-        posts: posts.length,
-        efficiency: shots.length > 0 ? ((goals.length / shots.length) * 100).toFixed(1) : '0'
-      });
-    } catch (error) {
-      console.error('Error fetching player stats:', error);
-      setPlayerStats(null);
-    }
-  };
-
-  const handleViewStats = async (player: Player) => {
-    setSelectedPlayerForStats(player);
-    setIsStatsModalOpen(true);
-    await fetchPlayerStats(player.id);
+  const handleViewStats = (player: Player) => {
+    navigate(`/statistics?playerId=${player.id}`);
   };
 
   const filteredPlayers = players.filter(player => {
@@ -401,47 +321,7 @@ export const PlayersManagement = () => {
         )}
       </div>
 
-      {/* Player Statistics Modal */}
-      {isStatsModalOpen && selectedPlayerForStats && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">
-                  {selectedPlayerForStats.name} - Statistics
-                </h2>
-                <p className="text-sm text-gray-500">#{selectedPlayerForStats.number} • All Time Stats</p>
-              </div>
-              <button
-                onClick={() => {
-                  setIsStatsModalOpen(false);
-                  setSelectedPlayerForStats(null);
-                  setPlayerStats(null);
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={24} />
-              </button>
-            </div>
 
-            {/* Content */}
-            <div className="p-6">
-              {playerStats ? (
-                <StatisticsView
-                  events={playerStats.events}
-                  subtitle="• All Time Stats"
-                  context="player"
-                />
-              ) : (
-                <div className="text-center py-12 text-gray-500">
-                  Loading statistics...
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
