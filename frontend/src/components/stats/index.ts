@@ -7,6 +7,7 @@ export { GoalHeatmap } from './GoalHeatmap';
 export { ZoneDistribution } from './ZoneDistribution';
 export { StatsTable } from './StatsTable';
 export { PlayerStatisticsTable } from './PlayerStatisticsTable';
+export { FiltersBar } from './FiltersBar';
 
 // Hooks
 export { useStatisticsCalculator } from './hooks/useStatisticsCalculator';
