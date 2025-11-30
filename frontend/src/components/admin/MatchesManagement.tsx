@@ -159,11 +159,19 @@ export const MatchesManagement = () => {
     setIsStatsModalOpen(true);
     
     try {
-      const response = await fetch(`http://localhost:3000/api/game-events?matchId=${match.id}`);
-      const events = await response.json();
+      // Fetch both events and full match data (with players)
+      const [eventsResponse, matchResponse] = await Promise.all([
+        fetch(`http://localhost:3000/api/game-events?matchId=${match.id}`),
+        fetch(`http://localhost:3000/api/matches/${match.id}`)
+      ]);
+      
+      const events = await eventsResponse.json();
+      const fullMatchData = await matchResponse.json();
+      
       setMatchEvents(events);
+      setSelectedMatchForStats(fullMatchData); // Update with full data including players
     } catch (error) {
-      console.error('Error fetching match events:', error);
+      console.error('Error fetching match data:', error);
       setMatchEvents([]);
     }
   };
@@ -410,6 +418,7 @@ export const MatchesManagement = () => {
                   events={matchEvents}
                   context="match"
                   showComparison={false}
+                  matchData={selectedMatchForStats as any}
                 />
               ) : (
                 <div className="text-center py-12 text-gray-500">
