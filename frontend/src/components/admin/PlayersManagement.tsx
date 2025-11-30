@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, Search, BarChart3, X } from 'lucide-react';
 import { StatisticsPanel } from '../stats';
 
 import { type MatchEvent } from '../../types';
+import { REVERSE_GOAL_TARGET_MAP } from '../../config/constants';
 
 interface Player {
   id: string;
