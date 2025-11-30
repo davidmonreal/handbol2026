@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Club {
+  id        String   @id @default(uuid())
+  name      String
+  teams     Team[]
+}
+
+model Season {
+  id        String   @id @default(uuid())
+  name      String   // e.g., "2024-2025"
+  startDate DateTime
+  endDate   DateTime
+  teams     Team[]
+}
+
+model Team {
+  id        String   @id @default(uuid())
+  name      String   // e.g., "Cadet A"
+  category  String   @default("SENIOR") // BENJAMI, ALEVI, INFANTIL, CADET, JUVENIL, SENIOR
+  isMyTeam  Boolean  @default(false)
+  clubId    String
+  club      Club     @relation(fields: [clubId], references: [id])
+  seasonId  String
+  season    Season   @relation(fields: [seasonId], references: [id])
+  players   PlayerTeamSeason[]
+  homeMatches Match[] @relation("HomeTeam")
+  awayMatches Match[] @relation("AwayTeam")
+}
+
+model Player {
+  id        String   @id @default(uuid())
+  name      String
+  number    Int      // Default number
+  handedness String  @default("RIGHT") // "LEFT" or "RIGHT"
+  teams     PlayerTeamSeason[]
+  events    GameEvent[]
+}
+
+// Handles the "Player plays in multiple teams per season" requirement
+model PlayerTeamSeason {
+  id        String   @id @default(uuid())
+  playerId  String
+  teamId    String
+  player    Player   @relation(fields: [playerId], references: [id])
+  team      Team     @relation(fields: [teamId], references: [id])
+  role      String   // e.g., "Player", "Captain"
+  
+  @@unique([playerId, teamId])
+}
+
+model Match {
+  id          String   @id @default(uuid())
+  date        DateTime
+  homeTeamId  String
+  awayTeamId  String
+  homeTeam    Team     @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam    Team     @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  events      GameEvent[]
+  isFinished  Boolean  @default(false)
+  homeScore   Int      @default(0)
+  awayScore   Int      @default(0)
+}
+
+model GameEvent {
+  id          String   @id @default(uuid())
+  matchId     String
+  match       Match    @relation(fields: [matchId], references: [id])
+  timestamp   Int      // Seconds from start
+  
+  // Who
+  playerId    String?
+  player      Player?  @relation(fields: [playerId], references: [id])
+  teamId      String   // To know which side the event belongs to
+  
+  // What
+  type        String   // GOAL, MISS, TURNOVER, SANCTION
+  subtype     String?  // For Miss: "OUT", "SAVED", "POST". For Turnover: "PASS", "STEPS", "DOUBLE", "AREA"
+  
+  // Context - Where the shot was taken from
+  position    String?  // LW, LB, CB, RB, RW, PIVOT
+  distance    String?  // 6M, 9M, 7M
+  isCollective Boolean @default(false)
+  hasOpposition Boolean @default(true)
+  isCounterAttack Boolean @default(false)
+  
+  // Goal Zone - Where the shot was aimed (9 quadrants)
+  // Format: TL, TM, TR, ML, MM, MR, BL, BM, BR
+  goalZone    String?  // Only for GOAL and MISS types
+  
+  // Sanction specifics
+  sanctionType String? // YELLOW, 2MIN, RED
+}

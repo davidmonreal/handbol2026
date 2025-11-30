@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+cd "$(dirname -- "$0")/.." || exit 1
+echo "Running lint-staged (in $(pwd))..."
+npx --no-install lint-staged --config lint-staged.config.mjs --cwd . || {
+  echo "lint-staged failed; aborting commit." >&2
+  exit 1
+}

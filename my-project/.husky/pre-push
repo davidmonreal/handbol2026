@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+cd "$(dirname -- "$0")/.." || exit 1
+echo "Running pre-push checks in $(pwd) (lint, typecheck, test, build)..."
+npm run -s lint || { echo "Lint failed" >&2; exit 1; }
+npm run -s typecheck || { echo "Typecheck failed" >&2; exit 1; }
+npm run -s test || { echo "Tests failed" >&2; exit 1; }
+npm run -s build || { echo "Build failed" >&2; exit 1; }

@@ -1,6 +1,9 @@
-my-project/node_modules/
-my-project/dist/
-my-project/coverage/
-my-project/.env
-my-project/.DS_Store
+node_modules/
+dist/
+coverage/
+.env
+.DS_Store
 
+/src/generated/prisma
+*.db
+*.db-journal
