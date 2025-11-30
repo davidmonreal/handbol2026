@@ -11,7 +11,6 @@ import gameEventRouter from './routes/game-events';
 import cors from 'cors';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Middleware setup
 app.use(cors()); // Enable CORS for frontend
@@ -31,7 +30,12 @@ app.use('/api/teams', teamRouter);
 app.use('/api/matches', matchRouter);
 app.use('/api/game-events', gameEventRouter);
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+// Start the server only if not in serverless environment
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+  });
+}
+
+export default app;
