@@ -40,8 +40,8 @@ app.use('/api/teams', teamRouter);
 app.use('/api/matches', matchRouter);
 app.use('/api/game-events', gameEventRouter);
 
-// Start the server only if not in serverless environment
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+// Start the server only if not in serverless environment and not in test mode
+if ((process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') || (!process.env.VERCEL && process.env.NODE_ENV !== 'test')) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);

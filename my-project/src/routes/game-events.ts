@@ -2,10 +2,12 @@ import { Router } from 'express';
 import { GameEventController } from '../controllers/game-event-controller';
 import { GameEventService } from '../services/game-event-service';
 import { GameEventRepository } from '../repositories/game-event-repository';
+import { MatchRepository } from '../repositories/match-repository';
 
 const router = Router();
 const repository = new GameEventRepository();
-const service = new GameEventService(repository);
+const matchRepository = new MatchRepository();
+const service = new GameEventService(repository, matchRepository);
 const controller = new GameEventController(service);
 
 // Get all game events

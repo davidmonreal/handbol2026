@@ -37,7 +37,14 @@ export class MatchRepository {
 
   async update(
     id: string,
-    data: Partial<{ date: Date; homeTeamId: string; awayTeamId: string; isFinished: boolean }>,
+    data: Partial<{
+      date: Date;
+      homeTeamId: string;
+      awayTeamId: string;
+      isFinished: boolean;
+      homeScore: number;
+      awayScore: number;
+    }>,
   ): Promise<Match> {
     return prisma.match.update({
       where: { id },

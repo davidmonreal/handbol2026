@@ -1,8 +1,12 @@
 import { GameEvent } from '@prisma/client';
 import { GameEventRepository } from '../repositories/game-event-repository';
+import { MatchRepository } from '../repositories/match-repository';
 
 export class GameEventService {
-  constructor(private repository: GameEventRepository) {}
+  constructor(
+    private repository: GameEventRepository,
+    private matchRepository: MatchRepository,
+  ) { }
 
   async getAll(filters?: { teamId?: string; playerId?: string }): Promise<GameEvent[]> {
     return this.repository.findAll(filters);
@@ -31,7 +35,21 @@ export class GameEventService {
     hasOpposition?: boolean;
     isCounterAttack?: boolean;
   }): Promise<GameEvent> {
-    return this.repository.create(data);
+    const event = await this.repository.create(data);
+
+    // Update match score if it's a goal
+    if (data.type === 'Shot' && data.subtype === 'Goal') {
+      const match = await this.matchRepository.findById(data.matchId);
+      if (match) {
+        if (data.teamId === match.homeTeamId) {
+          await this.matchRepository.update(match.id, { homeScore: match.homeScore + 1 });
+        } else if (data.teamId === match.awayTeamId) {
+          await this.matchRepository.update(match.id, { awayScore: match.awayScore + 1 });
+        }
+      }
+    }
+
+    return event;
   }
 
   async update(
