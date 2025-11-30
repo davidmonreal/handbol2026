@@ -9,6 +9,7 @@ export { StatsTable } from './StatsTable';
 
 // Hooks
 export { useStatisticsCalculator } from './hooks/useStatisticsCalculator';
+export { usePlayerBaselines } from './hooks/usePlayerBaselines';
 
 // Types
 export type {
