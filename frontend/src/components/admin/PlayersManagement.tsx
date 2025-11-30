@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, BarChart3, X } from 'lucide-react';
-import { REVERSE_GOAL_TARGET_MAP } from '../../config/constants';
-import { ZONE_CONFIG } from '../../config/zones';
+import { StatisticsPanel } from '../statistics';
 
-import { type MatchEvent, type ZoneType } from '../../types';
+import { type MatchEvent } from '../../types';
 
 interface Player {
   id: string;
@@ -406,7 +405,7 @@ export const PlayersManagement = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
             {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
               <div>
                 <h2 className="text-2xl font-bold text-gray-800">
                   {selectedPlayerForStats.name} - Statistics
@@ -428,205 +427,13 @@ export const PlayersManagement = () => {
             {/* Content */}
             <div className="p-6">
               {playerStats ? (
-                <div className="space-y-6">
-                  {/* Stats Summary Cards */}
-                  <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                    <div className="bg-blue-50 rounded-lg p-4">
-                      <div className="text-sm text-blue-600 font-medium">Shots</div>
-                      <div className="text-2xl font-bold text-blue-800">{playerStats.shots}</div>
-                    </div>
-                    <div className="bg-green-50 rounded-lg p-4">
-                      <div className="text-sm text-green-600 font-medium">Goals</div>
-                      <div className="text-2xl font-bold text-green-800">{playerStats.goals}</div>
-                    </div>
-                    <div className="bg-purple-50 rounded-lg p-4">
-                      <div className="text-sm text-purple-600 font-medium">Efficiency</div>
-                      <div className="text-2xl font-bold text-purple-800">{playerStats.efficiency}%</div>
-                    </div>
-                    <div className="bg-yellow-50 rounded-lg p-4">
-                      <div className="text-sm text-yellow-600 font-medium">Saves</div>
-                      <div className="text-2xl font-bold text-yellow-800">{playerStats.saves}</div>
-                    </div>
-                    <div className="bg-orange-50 rounded-lg p-4">
-                      <div className="text-sm text-orange-600 font-medium">Misses</div>
-                      <div className="text-2xl font-bold text-orange-800">{playerStats.misses}</div>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="text-sm text-gray-600 font-medium">Posts</div>
-                      <div className="text-2xl font-bold text-gray-800">{playerStats.posts}</div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Goal Heatmap */}
-                    <div className="bg-white rounded-xl shadow-lg p-6">
-                      <h3 className="text-lg font-bold text-gray-800 mb-4">Goal Distribution (Target Zones)</h3>
-                      <div className="grid grid-cols-3 grid-rows-3 gap-1 h-64 relative">
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(target => {
-                          const goals = playerStats.events.filter(e => 
-                            e.category === 'Shot' && 
-                            e.action === 'Goal' && 
-                            e.goalTarget === target
-                          ).length;
-                          
-                          const shots = playerStats.events.filter(e => 
-                            e.category === 'Shot' && 
-                            e.goalTarget === target
-                          ).length;
-                          
-                          const efficiency = shots > 0 ? (goals / shots) * 100 : 0;
-                          const bgOpacity = Math.min(efficiency / 100, 0.8);
-                          
-                          return (
-                            <div
-                              key={target}
-                              className="border-2 border-gray-300 rounded-lg flex flex-col items-center justify-center relative"
-                              style={{
-                                backgroundColor: `rgba(34, 197, 94, ${bgOpacity})`
-                              }}
-                            >
-                              <span className="text-2xl font-bold text-gray-800">{goals}</span>
-                              <span className="text-xs text-gray-600">{shots > 0 ? `${efficiency.toFixed(0)}%` : '-'}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-2 text-center">Goal view (shooter perspective)</p>
-                    </div>
-
-                    {/* Zone Distribution (Court Zones) */}
-                    <div className="bg-white rounded-xl shadow-lg p-6">
-                      <h3 className="text-lg font-bold text-gray-800 mb-4">Shot Distribution (Court Zones)</h3>
-                      <div className="space-y-3">
-                        {/* 6m Line */}
-                        <div>
-                          <p className="text-xs font-semibold text-gray-500 mb-2">6 METRE LINE</p>
-                          <div className="grid grid-cols-5 gap-2">
-                            {ZONE_CONFIG.sixMeter.map(({ zone, label }) => {
-                              const zoneShots = playerStats.events.filter(e => 
-                                e.category === 'Shot' && e.zone === zone
-                              );
-                              const zoneGoals = zoneShots.filter(e => e.action === 'Goal');
-                              const efficiency = zoneShots.length > 0 ? (zoneGoals.length / zoneShots.length) * 100 : 0;
-                              const percentage = playerStats.shots > 0 ? Math.round((zoneShots.length / playerStats.shots) * 100) : 0;
-                              
-                              return (
-                                <div
-                                  key={zone}
-                                  className="p-3 rounded-lg border-2 border-gray-200 bg-gray-50 flex flex-col items-center"
-                                >
-                                  <span className="text-xs font-bold text-gray-500 mb-1">{label}</span>
-                                  <span className="text-xl font-bold text-gray-800">{percentage}%</span>
-                                  <span className="text-xs text-gray-400">({zoneShots.length})</span>
-                                  {zoneShots.length > 0 && (
-                                    <span className="text-xs text-green-600 mt-1">{efficiency.toFixed(0)}% eff</span>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* 9m Line */}
-                        <div>
-                          <p className="text-xs font-semibold text-gray-500 mb-2">9 METRE LINE</p>
-                          <div className="grid grid-cols-3 gap-2 max-w-md mx-auto">
-                            {ZONE_CONFIG.nineMeter.map(({ zone, label }) => {
-                              const zoneShots = playerStats.events.filter(e => 
-                                e.category === 'Shot' && e.zone === zone
-                              );
-                              const zoneGoals = zoneShots.filter(e => e.action === 'Goal');
-                              const efficiency = zoneShots.length > 0 ? (zoneGoals.length / zoneShots.length) * 100 : 0;
-                              const percentage = playerStats.shots > 0 ? Math.round((zoneShots.length / playerStats.shots) * 100) : 0;
-                              
-                              return (
-                                <div
-                                  key={zone}
-                                  className="p-3 rounded-lg border-2 border-gray-200 bg-gray-50 flex flex-col items-center"
-                                >
-                                  <span className="text-xs font-bold text-gray-500 mb-1">{label}</span>
-                                  <span className="text-xl font-bold text-gray-800">{percentage}%</span>
-                                  <span className="text-xs text-gray-400">({zoneShots.length})</span>
-                                  {zoneShots.length > 0 && (
-                                    <span className="text-xs text-green-600 mt-1">{efficiency.toFixed(0)}% eff</span>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* 7m Penalty */}
-                        <div>
-                          <p className="text-xs font-semibold text-gray-500 mb-2">PENALTY</p>
-                          <div className="max-w-xs mx-auto">
-                            {(() => {
-                              const penaltyShots = playerStats.events.filter(e => 
-                                e.category === 'Shot' && e.zone === '7m'
-                              );
-                              const penaltyGoals = penaltyShots.filter(e => e.action === 'Goal');
-                              const efficiency = penaltyShots.length > 0 ? (penaltyGoals.length / penaltyShots.length) * 100 : 0;
-                              const percentage = playerStats.shots > 0 ? Math.round((penaltyShots.length / playerStats.shots) * 100) : 0;
-                              
-                              return (
-                                <div className="p-3 rounded-lg border-2 border-gray-200 bg-gray-50 flex flex-col items-center">
-                                  <span className="text-xs font-bold text-gray-500 mb-1">{ZONE_CONFIG.penalty.label}</span>
-                                  <span className="text-xl font-bold text-gray-800">{percentage}%</span>
-                                  <span className="text-xs text-gray-400">({penaltyShots.length})</span>
-                                  {penaltyShots.length > 0 && (
-                                    <span className="text-xs text-green-600 mt-1">{efficiency.toFixed(0)}% eff</span>
-                                  )}
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Detailed Stats Table */}
-                  <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                    <table className="w-full">
-                      <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statistic</th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Value</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        <tr>
-                          <td className="px-6 py-4 text-sm text-gray-900">Total Events</td>
-                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-medium">{playerStats.events.length}</td>
-                        </tr>
-                        <tr>
-                          <td className="px-6 py-4 text-sm text-gray-900">Total Shots</td>
-                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-medium">{playerStats.shots}</td>
-                        </tr>
-                        <tr className="bg-green-50">
-                          <td className="px-6 py-4 text-sm font-semibold text-green-900">Goals</td>
-                          <td className="px-6 py-4 text-sm text-green-900 text-right font-bold">{playerStats.goals}</td>
-                        </tr>
-                        <tr>
-                          <td className="px-6 py-4 text-sm text-gray-900">Goals vs Goalkeeper (Saves)</td>
-                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-medium">{playerStats.saves}</td>
-                        </tr>
-                        <tr>
-                          <td className="px-6 py-4 text-sm text-gray-900">Missed Shots</td>
-                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-medium">{playerStats.misses}</td>
-                        </tr>
-                        <tr>
-                          <td className="px-6 py-4 text-sm text-gray-900">Posts</td>
-                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-medium">{playerStats.posts}</td>
-                        </tr>
-                        <tr className="bg-purple-50">
-                          <td className="px-6 py-4 text-sm font-semibold text-purple-900">Shooting Efficiency</td>
-                          <td className="px-6 py-4 text-sm text-purple-900 text-right font-bold">{playerStats.efficiency}%</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                <StatisticsPanel
+                  data={{
+                    events: playerStats.events,
+                    title: '', // Already in header
+                    context: 'player',
+                  }}
+                />
               ) : (
                 <div className="text-center py-12 text-gray-500">
                   Loading statistics...
