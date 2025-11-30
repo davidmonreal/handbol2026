@@ -60,7 +60,7 @@ export const MatchesManagement = () => {
 
   const fetchTeams = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL} /api/teams`);
+      const response = await fetch(`${API_BASE_URL}/api/teams`);
       const data = await response.json();
       setTeams(data);
     } catch (error) {
