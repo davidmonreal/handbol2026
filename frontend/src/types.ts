@@ -21,6 +21,8 @@ export interface MatchEvent {
     distance?: string;
     goalTarget?: number; // 1-9
     goalZoneTag?: string; // 'TL', 'TM', 'TR', etc.
+    isCollective?: boolean;
+    sanctionType?: SanctionType;
     context?: {
         isCollective?: boolean;
         hasOpposition?: boolean;
