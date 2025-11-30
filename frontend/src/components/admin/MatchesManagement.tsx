@@ -49,7 +49,7 @@ export const MatchesManagement = () => {
 
   const fetchMatches = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL} /api/matches`);
+      const response = await fetch(`${API_BASE_URL}/api/matches`);
       const data = await response.json();
       setMatches(data);
     } catch (error) {
@@ -81,7 +81,7 @@ export const MatchesManagement = () => {
       const method = editingMatch ? 'PUT' : 'POST';
 
       // Combine date and time
-      const dateTime = new Date(`${formData.date}T${formData.time} `);
+      const dateTime = new Date(`${formData.date}T${formData.time}`);
 
       const response = await fetch(url, {
         method,
@@ -112,7 +112,7 @@ export const MatchesManagement = () => {
     if (!confirm('Are you sure you want to delete this match?')) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL} /api/matches / ${id} `, { method: 'DELETE' });
+      const response = await fetch(`${API_BASE_URL}/api/matches/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete match');
       fetchMatches();
     } catch (error) {
@@ -157,7 +157,7 @@ export const MatchesManagement = () => {
   };
 
   const handleViewStats = (match: Match) => {
-    navigate(`/ statistics ? matchId = ${match.id} `);
+    navigate(`/statistics?matchId=${match.id}`);
   };
 
   const filteredMatches = matches.filter(match => {
@@ -339,8 +339,7 @@ export const MatchesManagement = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-left">{match.awayTeam.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <span className={`inline - flex items - center px - 2.5 py - 0.5 rounded - full text - xs font - medium ${match.isFinished ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                    } `}>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${match.isFinished ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                     {match.isFinished ? 'Finished' : 'Scheduled'}
                   </span>
                 </td>
