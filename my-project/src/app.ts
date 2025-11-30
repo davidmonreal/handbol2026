@@ -13,7 +13,17 @@ import cors from 'cors';
 const app = express();
 
 // Middleware setup
-app.use(cors()); // Enable CORS for frontend
+app.use(
+  cors({
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'https://handbol2026.vercel.app',
+      'https://handbol2026-frontend.vercel.app',
+    ],
+    credentials: true,
+  }),
+); // Enable CORS for frontend
 app.use(express.json());
 
 // Sample route
