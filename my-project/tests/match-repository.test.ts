@@ -4,118 +4,127 @@ import { MatchRepository } from '../src/repositories/match-repository';
 import prisma from '../src/lib/prisma';
 
 vi.mock('../src/lib/prisma', () => ({
-    default: {
-        match: {
-            findMany: vi.fn(),
-            findUnique: vi.fn(),
-            create: vi.fn(),
-            update: vi.fn(),
-            delete: vi.fn(),
-        },
+  default: {
+    match: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     },
+  },
 }));
 
 describe('MatchRepository', () => {
-    let repository: MatchRepository;
+  let repository: MatchRepository;
 
-    beforeEach(() => {
-        repository = new MatchRepository();
-        vi.clearAllMocks();
+  beforeEach(() => {
+    repository = new MatchRepository();
+    vi.clearAllMocks();
+  });
+
+  it('findAll returns all matches ordered by date desc', async () => {
+    const mockMatches = [
+      { id: '1', date: new Date(), homeTeamId: 'h1', awayTeamId: 'a1', isFinished: false },
+      { id: '2', date: new Date(), homeTeamId: 'h2', awayTeamId: 'a2', isFinished: false },
+    ];
+    (prisma.match.findMany as any).mockResolvedValue(mockMatches);
+
+    const result = await repository.findAll();
+
+    expect(prisma.match.findMany).toHaveBeenCalledWith({
+      include: {
+        homeTeam: { include: { club: true } },
+        awayTeam: { include: { club: true } },
+        events: {
+          select: { teamId: true, type: true, subtype: true },
+        },
+      },
+      orderBy: { date: 'desc' },
     });
+    expect(result).toEqual(mockMatches);
+  });
 
-    it('findAll returns all matches ordered by date desc', async () => {
-        const mockMatches = [
-            { id: '1', date: new Date(), homeTeamId: 'h1', awayTeamId: 'a1', isFinished: false },
-            { id: '2', date: new Date(), homeTeamId: 'h2', awayTeamId: 'a2', isFinished: false }
-        ];
-        (prisma.match.findMany as any).mockResolvedValue(mockMatches);
+  it('findById returns a match by id', async () => {
+    const mockMatch = { id: '1', homeTeam: { name: 'Home' }, awayTeam: { name: 'Away' } };
+    (prisma.match.findUnique as any).mockResolvedValue(mockMatch);
 
-        const result = await repository.findAll();
+    const result = await repository.findById('1');
 
-        expect(prisma.match.findMany).toHaveBeenCalledWith({
-            include: {
-                homeTeam: { include: { club: true } },
-                awayTeam: { include: { club: true } }
-            },
-            orderBy: { date: 'desc' },
-        });
-        expect(result).toEqual(mockMatches);
+    expect(prisma.match.findUnique).toHaveBeenCalledWith({
+      where: { id: '1' },
+      include: {
+        homeTeam: {
+          include: {
+            club: true,
+            players: { include: { player: true } },
+          },
+        },
+        awayTeam: {
+          include: {
+            club: true,
+            players: { include: { player: true } },
+          },
+        },
+      },
     });
+    expect(result).toEqual(mockMatch);
+  });
 
-    it('findById returns a match by id', async () => {
-        const mockMatch = { id: '1', homeTeam: { name: 'Home' }, awayTeam: { name: 'Away' } };
-        (prisma.match.findUnique as any).mockResolvedValue(mockMatch);
+  it('create creates a new match', async () => {
+    const newMatchData = {
+      date: new Date(),
+      homeTeamId: 'h1',
+      awayTeamId: 'a1',
+    };
+    const createdMatch = { id: '1', ...newMatchData };
+    (prisma.match.create as any).mockResolvedValue(createdMatch);
 
-        const result = await repository.findById('1');
+    const result = await repository.create(newMatchData);
 
-        expect(prisma.match.findUnique).toHaveBeenCalledWith({
-            where: { id: '1' },
-            include: {
-                homeTeam: {
-                    include: {
-                        club: true,
-                        players: { include: { player: true } }
-                    }
-                },
-                awayTeam: {
-                    include: {
-                        club: true,
-                        players: { include: { player: true } }
-                    }
-                }
-            }
-        });
-        expect(result).toEqual(mockMatch);
+    expect(prisma.match.create).toHaveBeenCalledWith({
+      data: newMatchData,
+      include: {
+        homeTeam: { include: { club: true } },
+        awayTeam: { include: { club: true } },
+      },
     });
+    expect(result).toEqual(createdMatch);
+  });
 
-    it('create creates a new match', async () => {
-        const newMatchData = {
-            date: new Date(),
-            homeTeamId: 'h1',
-            awayTeamId: 'a1'
-        };
-        const createdMatch = { id: '1', ...newMatchData };
-        (prisma.match.create as any).mockResolvedValue(createdMatch);
+  it('update updates an existing match', async () => {
+    const updateData = { isFinished: true };
+    const updatedMatch = { id: '1', ...updateData };
+    (prisma.match.update as any).mockResolvedValue(updatedMatch);
 
-        const result = await repository.create(newMatchData);
+    const result = await repository.update('1', updateData);
 
-        expect(prisma.match.create).toHaveBeenCalledWith({
-            data: newMatchData,
-            include: {
-                homeTeam: { include: { club: true } },
-                awayTeam: { include: { club: true } }
-            }
-        });
-        expect(result).toEqual(createdMatch);
+    expect(prisma.match.update).toHaveBeenCalledWith({
+      where: { id: '1' },
+      data: updateData,
+      include: {
+        homeTeam: { include: { club: true } },
+        awayTeam: { include: { club: true } },
+      },
     });
+    expect(result).toEqual(updatedMatch);
+  });
 
-    it('update updates an existing match', async () => {
-        const updateData = { isFinished: true };
-        const updatedMatch = { id: '1', ...updateData };
-        (prisma.match.update as any).mockResolvedValue(updatedMatch);
+  it('delete removes a match', async () => {
+    const mockMatch = {
+      id: '1',
+      date: new Date(),
+      homeTeamId: 'h1',
+      awayTeamId: 'a1',
+      isFinished: false,
+    };
+    (prisma.match.delete as any).mockResolvedValue(mockMatch);
 
-        const result = await repository.update('1', updateData);
+    const result = await repository.delete('1');
 
-        expect(prisma.match.update).toHaveBeenCalledWith({
-            where: { id: '1' },
-            data: updateData,
-            include: {
-                homeTeam: { include: { club: true } },
-                awayTeam: { include: { club: true } }
-            }
-        });
-        expect(result).toEqual(updatedMatch);
+    expect(prisma.match.delete).toHaveBeenCalledWith({
+      where: { id: '1' },
     });
-
-    it('delete removes a match', async () => {
-        const mockMatch = { id: '1', date: new Date(), homeTeamId: 'h1', awayTeamId: 'a1', isFinished: false };
-        (prisma.match.delete as any).mockResolvedValue(mockMatch);
-
-        const result = await repository.delete('1');
-
-        expect(prisma.match.delete).toHaveBeenCalledWith({
-            where: { id: '1' }
-        });
-        expect(result).toEqual(mockMatch);
-    });
+    expect(result).toEqual(mockMatch);
+  });
 });
