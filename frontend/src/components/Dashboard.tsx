@@ -35,7 +35,7 @@ const Dashboard = () => {
 
   const fetchMatches = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL} /api/matches`);
+      const response = await fetch(`${API_BASE_URL}/api/matches`);
       if (response.ok) {
         const data = await response.json();
         const pending = data.filter((m: Match) => !m.isFinished).sort((a: Match, b: Match) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -61,7 +61,7 @@ const Dashboard = () => {
         </div>
         {isPending ? (
           <button
-            onClick={() => navigate(`/ match - tracker / ${match.id} `)}
+            onClick={() => navigate(`/match-tracker/${match.id}`)}
             className="flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors"
           >
             <Play size={12} className="mr-1.5" />
@@ -69,7 +69,7 @@ const Dashboard = () => {
           </button>
         ) : (
           <button
-            onClick={() => navigate(`/ match - tracker / ${match.id} `)}
+            onClick={() => navigate(`/match-tracker/${match.id}`)}
             className="flex items-center px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"
           >
             <Edit2 size={12} className="mr-1.5" />
