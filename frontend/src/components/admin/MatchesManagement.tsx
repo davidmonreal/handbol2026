@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Calendar, Search } from 'lucide-react';
-
+import { Plus, Edit2, Trash2, Calendar, Search, BarChart3, X } from 'lucide-react';
+import { StatisticsView } from '../stats';
+import type { MatchEvent } from '../../types';
 interface Match {
   id: string;
   date: string;
@@ -33,6 +34,11 @@ export const MatchesManagement = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Statistics modal state
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
+  const [selectedMatchForStats, setSelectedMatchForStats] = useState<Match | null>(null);
+  const [matchEvents, setMatchEvents] = useState<MatchEvent[]>([]);
 
   useEffect(() => {
     fetchMatches();
@@ -146,6 +152,20 @@ export const MatchesManagement = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handleViewStats = async (match: Match) => {
+    setSelectedMatchForStats(match);
+    setIsStatsModalOpen(true);
+    
+    try {
+      const response = await fetch(`http://localhost:3000/api/game-events?matchId=${match.id}`);
+      const events = await response.json();
+      setMatchEvents(events);
+    } catch (error) {
+      console.error('Error fetching match events:', error);
+      setMatchEvents([]);
+    }
   };
 
   const filteredMatches = matches.filter(match => {
@@ -325,6 +345,13 @@ export const MatchesManagement = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
+                    onClick={() => handleViewStats(match)}
+                    className="text-green-600 hover:text-green-900 mr-4"
+                    title="View Statistics"
+                  >
+                    <BarChart3 size={18} />
+                  </button>
+                  <button
                     onClick={() => handleEdit(match)}
                     className="text-indigo-600 hover:text-indigo-900 mr-4"
                     title="Edit Match"
@@ -349,6 +376,50 @@ export const MatchesManagement = () => {
           </div>
         )}
       </div>
+
+      {/* Statistics Modal */}
+      {isStatsModalOpen && selectedMatchForStats && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  {selectedMatchForStats.homeTeam.name} vs {selectedMatchForStats.awayTeam.name}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {formatDate(selectedMatchForStats.date)} • Match Statistics
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setIsStatsModalOpen(false);
+                  setSelectedMatchForStats(null);
+                  setMatchEvents([]);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              {matchEvents.length > 0 ? (
+                <StatisticsView
+                  events={matchEvents}
+                  context="match"
+                  showComparison={false}
+                />
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  Loading statistics...
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
