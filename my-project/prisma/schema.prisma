@@ -68,6 +68,8 @@ model Match {
   awayTeam    Team     @relation("AwayTeam", fields: [awayTeamId], references: [id])
   events      GameEvent[]
   isFinished  Boolean  @default(false)
+  homeScore   Int      @default(0)
+  awayScore   Int      @default(0)
 }
 
 model GameEvent {
@@ -89,6 +91,8 @@ model GameEvent {
   position    String?  // LW, LB, CB, RB, RW, PIVOT
   distance    String?  // 6M, 9M, 7M
   isCollective Boolean @default(false)
+  hasOpposition Boolean @default(true)
+  isCounterAttack Boolean @default(false)
   
   // Goal Zone - Where the shot was aimed (9 quadrants)
   // Format: TL, TM, TR, ML, MM, MR, BL, BM, BR

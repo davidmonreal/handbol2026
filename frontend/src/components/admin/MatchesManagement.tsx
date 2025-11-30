@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Calendar, Search, BarChart3, X } from 'lucide-react';
-import { StatisticsView } from '../stats';
-import type { MatchEvent } from '../../types';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Edit2, Trash2, Calendar, Search, BarChart3 } from 'lucide-react';
+
+
 interface Match {
   id: string;
   date: string;
@@ -10,6 +11,8 @@ interface Match {
   homeTeam: { id: string; name: string };
   awayTeam: { id: string; name: string };
   isFinished: boolean;
+  homeScore?: number;
+  awayScore?: number;
 }
 
 interface Team {
@@ -18,27 +21,25 @@ interface Team {
 }
 
 export const MatchesManagement = () => {
+  const navigate = useNavigate();
   const [matches, setMatches] = useState<Match[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
-  
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
-  
-  const [formData, setFormData] = useState({ 
-    date: new Date().toISOString().split('T')[0], 
-    homeTeamId: '', 
+
+  const [formData, setFormData] = useState({
+    date: new Date().toISOString().split('T')[0],
+    homeTeamId: '',
     awayTeamId: '',
     time: '12:00'
   });
-  
+
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Statistics modal state
-  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
-  const [selectedMatchForStats, setSelectedMatchForStats] = useState<Match | null>(null);
-  const [matchEvents, setMatchEvents] = useState<MatchEvent[]>([]);
+
+
 
   useEffect(() => {
     fetchMatches();
@@ -70,12 +71,12 @@ export const MatchesManagement = () => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
-    
+
     try {
-      const url = editingMatch 
+      const url = editingMatch
         ? `http://localhost:3000/api/matches/${editingMatch.id}`
         : 'http://localhost:3000/api/matches';
-        
+
       const method = editingMatch ? 'PUT' : 'POST';
 
       // Combine date and time
@@ -95,7 +96,7 @@ export const MatchesManagement = () => {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to save match');
       }
-      
+
       fetchMatches();
       handleCancel();
     } catch (error) {
@@ -108,7 +109,7 @@ export const MatchesManagement = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this match?')) return;
-    
+
     try {
       const response = await fetch(`http://localhost:3000/api/matches/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete match');
@@ -122,7 +123,7 @@ export const MatchesManagement = () => {
   const handleEdit = (match: Match) => {
     setEditingMatch(match);
     const dateObj = new Date(match.date);
-    setFormData({ 
+    setFormData({
       date: dateObj.toISOString().split('T')[0],
       time: dateObj.toTimeString().slice(0, 5),
       homeTeamId: match.homeTeamId,
@@ -134,9 +135,9 @@ export const MatchesManagement = () => {
   const handleCancel = () => {
     setIsFormOpen(false);
     setEditingMatch(null);
-    setFormData({ 
-      date: new Date().toISOString().split('T')[0], 
-      homeTeamId: '', 
+    setFormData({
+      date: new Date().toISOString().split('T')[0],
+      homeTeamId: '',
       awayTeamId: '',
       time: '12:00'
     });
@@ -154,26 +155,8 @@ export const MatchesManagement = () => {
     });
   };
 
-  const handleViewStats = async (match: Match) => {
-    setSelectedMatchForStats(match);
-    setIsStatsModalOpen(true);
-    
-    try {
-      // Fetch both events and full match data (with players)
-      const [eventsResponse, matchResponse] = await Promise.all([
-        fetch(`http://localhost:3000/api/game-events?matchId=${match.id}`),
-        fetch(`http://localhost:3000/api/matches/${match.id}`)
-      ]);
-      
-      const events = await eventsResponse.json();
-      const fullMatchData = await matchResponse.json();
-      
-      setMatchEvents(events);
-      setSelectedMatchForStats(fullMatchData); // Update with full data including players
-    } catch (error) {
-      console.error('Error fetching match data:', error);
-      setMatchEvents([]);
-    }
+  const handleViewStats = (match: Match) => {
+    navigate(`/statistics?matchId=${match.id}`);
   };
 
   const filteredMatches = matches.filter(match => {
@@ -266,8 +249,8 @@ export const MatchesManagement = () => {
                 >
                   <option value="">Select Home Team</option>
                   {teams.map(team => (
-                    <option 
-                      key={team.id} 
+                    <option
+                      key={team.id}
                       value={team.id}
                       disabled={team.id === formData.awayTeamId}
                     >
@@ -289,8 +272,8 @@ export const MatchesManagement = () => {
                 >
                   <option value="">Select Away Team</option>
                   {teams.map(team => (
-                    <option 
-                      key={team.id} 
+                    <option
+                      key={team.id}
                       value={team.id}
                       disabled={team.id === formData.homeTeamId}
                     >
@@ -327,7 +310,8 @@ export const MatchesManagement = () => {
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Home Team</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Home Team</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Away Team</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -342,12 +326,20 @@ export const MatchesManagement = () => {
                     {formatDate(match.date)}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{match.homeTeam.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{match.awayTeam.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{match.homeTeam.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-center">
+                  {match.isFinished ? (
+                    <span className="bg-gray-100 px-2 py-1 rounded">
+                      {match.homeScore ?? 0} : {match.awayScore ?? 0}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">-:-</span>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-left">{match.awayTeam.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    match.isFinished ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${match.isFinished ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                    }`}>
                     {match.isFinished ? 'Finished' : 'Scheduled'}
                   </span>
                 </td>
@@ -385,50 +377,7 @@ export const MatchesManagement = () => {
         )}
       </div>
 
-      {/* Statistics Modal */}
-      {isStatsModalOpen && selectedMatchForStats && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">
-                  {selectedMatchForStats.homeTeam.name} vs {selectedMatchForStats.awayTeam.name}
-                </h2>
-                <p className="text-sm text-gray-500">
-                  {formatDate(selectedMatchForStats.date)} • Match Statistics
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setIsStatsModalOpen(false);
-                  setSelectedMatchForStats(null);
-                  setMatchEvents([]);
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={24} />
-              </button>
-            </div>
 
-            {/* Content */}
-            <div className="p-6">
-              {matchEvents.length > 0 ? (
-                <StatisticsView
-                  events={matchEvents}
-                  context="match"
-                  showComparison={false}
-                  matchData={selectedMatchForStats as any}
-                />
-              ) : (
-                <div className="text-center py-12 text-gray-500">
-                  Loading statistics...
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

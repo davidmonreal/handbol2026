@@ -4,84 +4,109 @@ import { MatchRepository } from '../repositories/match-repository';
 import prisma from '../lib/prisma';
 
 export class MatchService {
-    constructor(private repository: MatchRepository) { }
+  constructor(private repository: MatchRepository) {}
 
-    async getAll(): Promise<Match[]> {
-        return this.repository.findAll();
+  async getAll(): Promise<any[]> {
+    const matches = await this.repository.findAll();
+    return matches.map((match) => {
+      // Filter for goals: check both type and subtype to be safe
+      const goals = match.events.filter(
+        (e) => e.type === 'GOAL' || e.subtype === 'Goal' || e.type === 'Goal',
+      );
+
+      const homeScore = goals.filter((e) => e.teamId === match.homeTeamId).length;
+      const awayScore = goals.filter((e) => e.teamId === match.awayTeamId).length;
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { events, ...rest } = match;
+      return { ...rest, homeScore, awayScore };
+    });
+  }
+
+  async getById(id: string): Promise<Match | null> {
+    return this.repository.findById(id);
+  }
+
+  async create(data: {
+    date: string | Date;
+    homeTeamId: string;
+    awayTeamId: string;
+  }): Promise<Match> {
+    const date = new Date(data.date);
+    if (isNaN(date.getTime())) {
+      throw new Error('Invalid date format');
     }
 
-    async getById(id: string): Promise<Match | null> {
-        return this.repository.findById(id);
+    if (data.homeTeamId === data.awayTeamId) {
+      throw new Error('Home and Away teams must be different');
     }
 
-    async create(data: { date: string | Date; homeTeamId: string; awayTeamId: string }): Promise<Match> {
-        const date = new Date(data.date);
-        if (isNaN(date.getTime())) {
-            throw new Error('Invalid date format');
-        }
+    // Validate home team exists
+    const homeTeam = await prisma.team.findUnique({ where: { id: data.homeTeamId } });
+    if (!homeTeam) {
+      throw new Error('Home team not found');
+    }
 
-        if (data.homeTeamId === data.awayTeamId) {
-            throw new Error('Home and Away teams must be different');
-        }
+    // Validate away team exists
+    const awayTeam = await prisma.team.findUnique({ where: { id: data.awayTeamId } });
+    if (!awayTeam) {
+      throw new Error('Away team not found');
+    }
 
-        // Validate home team exists
+    return this.repository.create({
+      ...data,
+      date,
+    });
+  }
+
+  async update(
+    id: string,
+    data: Partial<{
+      date: string | Date;
+      homeTeamId: string;
+      awayTeamId: string;
+      isFinished: boolean;
+    }>,
+  ): Promise<Match> {
+    const updateData: Record<string, any> = { ...data };
+
+    if (data.date) {
+      const date = new Date(data.date);
+      if (isNaN(date.getTime())) {
+        throw new Error('Invalid date format');
+      }
+      updateData.date = date;
+    }
+
+    // If updating teams, we need to check constraints
+    if (data.homeTeamId || data.awayTeamId) {
+      const currentMatch = await this.repository.findById(id);
+      if (!currentMatch) {
+        throw new Error('Match not found');
+      }
+
+      const newHomeId = data.homeTeamId || currentMatch.homeTeamId;
+      const newAwayId = data.awayTeamId || currentMatch.awayTeamId;
+
+      if (newHomeId === newAwayId) {
+        throw new Error('Home and Away teams must be different');
+      }
+
+      if (data.homeTeamId) {
         const homeTeam = await prisma.team.findUnique({ where: { id: data.homeTeamId } });
-        if (!homeTeam) {
-            throw new Error('Home team not found');
-        }
+        if (!homeTeam) throw new Error('Home team not found');
+      }
 
-        // Validate away team exists
+      if (data.awayTeamId) {
         const awayTeam = await prisma.team.findUnique({ where: { id: data.awayTeamId } });
-        if (!awayTeam) {
-            throw new Error('Away team not found');
-        }
-
-        return this.repository.create({
-            ...data,
-            date
-        });
+        if (!awayTeam) throw new Error('Away team not found');
+      }
     }
 
-    async update(id: string, data: Partial<{ date: string | Date; homeTeamId: string; awayTeamId: string; isFinished: boolean }>): Promise<Match> {
-        const updateData: Record<string, any> = { ...data };
+    return this.repository.update(id, updateData);
+  }
 
-        if (data.date) {
-            const date = new Date(data.date);
-            if (isNaN(date.getTime())) {
-                throw new Error('Invalid date format');
-            }
-            updateData.date = date;
-        }
-
-        // If updating teams, we need to check constraints
-        if (data.homeTeamId || data.awayTeamId) {
-            const currentMatch = await this.repository.findById(id);
-            if (!currentMatch) {
-                throw new Error('Match not found');
-            }
-
-            const newHomeId = data.homeTeamId || currentMatch.homeTeamId;
-            const newAwayId = data.awayTeamId || currentMatch.awayTeamId;
-
-            if (newHomeId === newAwayId) {
-                throw new Error('Home and Away teams must be different');
-            }
-
-            if (data.homeTeamId) {
-                const homeTeam = await prisma.team.findUnique({ where: { id: data.homeTeamId } });
-                if (!homeTeam) throw new Error('Home team not found');
-            }
-
-            if (data.awayTeamId) {
-                const awayTeam = await prisma.team.findUnique({ where: { id: data.awayTeamId } });
-                if (!awayTeam) throw new Error('Away team not found');
-            }
-        }
-
-        return this.repository.update(id, updateData);
-    }
-
-    async delete(id: string): Promise<Match> {
-        return this.repository.delete(id);
-    }
+  async delete(id: string): Promise<Match> {
+    return this.repository.delete(id);
+  }
 }

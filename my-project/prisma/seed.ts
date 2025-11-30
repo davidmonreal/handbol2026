@@ -333,24 +333,36 @@ async function main() {
   console.log('✅ Created 5 matches');
 
   // Create 30 game events for each match
-  const positions = ['LW', 'LB', 'CB', 'RB', 'RW', 'PIVOT'];
-  const distances = ['6M', '7M', 'COUNTER'];
+  // Only use positions that map to valid zones (removed PIVOT)
+  const positions = ['LW', 'LB', 'CB', 'RB', 'RW'];
+  // Only use distances that map to valid zones (removed COUNTER)
+  const distances = ['6M', '9M', '7M'];
   const goalZones = ['TL', 'TM', 'TR', 'ML', 'MM', 'MR', 'BL', 'BM', 'BR'];
   const missSubtypes = ['OUT', 'SAVED', 'POST'];
-  const sanctionTypes = ['YELLOW', '2MIN', 'RED'];
+  const sanctionTypes = ['Yellow', '2min', 'Red'];
 
   for (const match of matches) {
-    const homeTeamPlayers = match.id === match1.id ? teamGrocPlayers :
-      match.id === match2.id ? teamGrocPlayers :
-        match.id === match3.id ? teamBarcaPlayers :
-          match.id === match4.id ? teamGranollersPlayers :
-            teamSabadellPlayers;
+    const homeTeamPlayers =
+      match.id === match1.id
+        ? teamGrocPlayers
+        : match.id === match2.id
+          ? teamGrocPlayers
+          : match.id === match3.id
+            ? teamBarcaPlayers
+            : match.id === match4.id
+              ? teamGranollersPlayers
+              : teamSabadellPlayers;
 
-    const awayTeamPlayers = match.id === match1.id ? teamNegrePlayers :
-      match.id === match2.id ? teamGranollersPlayers :
-        match.id === match3.id ? teamGrocPlayers :
-          match.id === match4.id ? teamNegrePlayers :
-            teamBarcaPlayers;
+    const awayTeamPlayers =
+      match.id === match1.id
+        ? teamNegrePlayers
+        : match.id === match2.id
+          ? teamGranollersPlayers
+          : match.id === match3.id
+            ? teamGrocPlayers
+            : match.id === match4.id
+              ? teamNegrePlayers
+              : teamBarcaPlayers;
 
     for (let i = 0; i < 30; i++) {
       const isHomeTeam = Math.random() > 0.5;
@@ -369,11 +381,24 @@ async function main() {
         teamId: teamId,
         type: eventType,
         isCollective: Math.random() > 0.6,
+        hasOpposition: Math.random() > 0.3,
+        isCounterAttack: Math.random() > 0.8,
       };
 
       if (eventType === 'Shot') {
-        eventData.position = positions[Math.floor(Math.random() * positions.length)];
         eventData.distance = distances[Math.floor(Math.random() * distances.length)];
+
+        // Filter positions based on distance
+        let validPositions = positions;
+        if (eventData.distance === '9M') {
+          // 9m shots only from LB, CB, RB
+          validPositions = ['LB', 'CB', 'RB'];
+        } else if (eventData.distance === '7M') {
+          // Position doesn't matter for 7m, but let's keep it clean
+          validPositions = ['CB'];
+        }
+
+        eventData.position = validPositions[Math.floor(Math.random() * validPositions.length)];
         eventData.goalZone = goalZones[Math.floor(Math.random() * goalZones.length)];
 
         // Randomly decide if it's a goal or miss
@@ -383,16 +408,34 @@ async function main() {
         eventData.subtype = ['Pass', 'Steps', 'Double', 'Area'][Math.floor(Math.random() * 4)];
       } else if (eventType === 'Sanction') {
         eventData.sanctionType = sanctionTypes[Math.floor(Math.random() * sanctionTypes.length)];
-        eventData.subtype = 'Foul'; // Add subtype for consistency
+        // subtype is not needed as we use sanctionType for action
       }
 
       await prisma.gameEvent.create({ data: eventData });
     }
+
+    // Calculate and update match score
+    const matchEvents = await prisma.gameEvent.findMany({
+      where: { matchId: match.id, type: 'Shot', subtype: 'Goal' },
+    });
+
+    const homeGoals = matchEvents.filter((e) => e.teamId === match.homeTeamId).length;
+    const awayGoals = matchEvents.filter((e) => e.teamId === match.awayTeamId).length;
+
+    await prisma.match.update({
+      where: { id: match.id },
+      data: {
+        homeScore: homeGoals,
+        awayScore: awayGoals,
+      },
+    });
   }
 
   console.log('✅ Created 150 game events (30 per match)');
   console.log('🎉 Seeding completed!');
-  console.log(`📊 Summary: 8 clubs, 7 seasons, ${players.length} players, 5 teams, 5 matches, 150 events`);
+  console.log(
+    `📊 Summary: 8 clubs, 7 seasons, ${players.length} players, 5 teams, 5 matches, 150 events`,
+  );
 }
 
 main()

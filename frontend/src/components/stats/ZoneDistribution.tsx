@@ -29,7 +29,7 @@ export function ZoneDistribution({
               const baseClass = onZoneClick
                 ? 'cursor-pointer hover:ring-2 hover:ring-indigo-300'
                 : '';
-              
+
               const borderClass = isSelected
                 ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200'
                 : 'border-gray-200 bg-gray-50';
@@ -68,7 +68,7 @@ export function ZoneDistribution({
               const baseClass = onZoneClick
                 ? 'cursor-pointer hover:ring-2 hover:ring-indigo-300'
                 : '';
-              
+
               const borderClass = isSelected
                 ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200'
                 : 'border-gray-200 bg-gray-50';
@@ -107,7 +107,7 @@ export function ZoneDistribution({
               const baseClass = onZoneClick
                 ? 'cursor-pointer hover:ring-2 hover:ring-indigo-300'
                 : '';
-              
+
               const borderClass = isSelected
                 ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200'
                 : 'border-gray-200 bg-gray-50';
