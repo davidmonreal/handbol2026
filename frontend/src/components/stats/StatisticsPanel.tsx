@@ -47,6 +47,19 @@ export function StatisticsPanel({
     : data.events;
 
   const filteredStats = useStatisticsCalculator(filteredEvents, comparison);
+  
+  console.log('[StatisticsPanel] Stats comparison:', {
+    unfilteredStats: {
+      totalShots: stats.totalShots,
+      totalGoals: stats.totalGoals,
+      efficiency: stats.efficiency
+    },
+    filteredStats: {
+      totalShots: filteredStats.totalShots,
+      totalGoals: filteredStats.totalGoals,
+      efficiency: filteredStats.efficiency
+    }
+  });
 
   const handleZoneClick = (zone: ZoneType | '7m' | null) => {
     setSelectedZone(zone);
