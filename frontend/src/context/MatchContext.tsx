@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import type { MatchEvent, DefenseType } from '../types';
+import type { MatchEvent, DefenseType, ZoneType, SanctionType } from '../types';
 import { API_BASE_URL } from '../config/api';
 
 interface Player {
@@ -108,10 +108,29 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/game-events/match/${id}`);
       if (response.ok) {
-        const backendEvents = await response.json();
+        interface BackendEvent {
+          id: string;
+          timestamp: number;
+          playerId: string;
+          teamId: string;
+          type: string;
+          subtype: string;
+          position?: string;
+          distance?: string;
+          isCollective?: boolean;
+          hasOpposition?: boolean;
+          isCounterAttack?: boolean;
+          goalZone?: string;
+          sanctionType?: string;
+          player?: {
+            name: string;
+            number: number;
+          };
+        }
+        const backendEvents: BackendEvent[] = await response.json();
 
         // Transform backend events to MatchEvent format
-        const transformedEvents: MatchEvent[] = backendEvents.map((e: any) => ({
+        const transformedEvents: MatchEvent[] = backendEvents.map((e) => ({
           id: e.id,
           timestamp: e.timestamp,
           playerId: e.playerId,
@@ -123,8 +142,10 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
           position: e.position,
           distance: e.distance,
           isCollective: e.isCollective || false,
-          zone: e.goalZone,
-          sanctionType: e.sanctionType,
+          hasOpposition: e.hasOpposition || false,
+          isCounterAttack: e.isCounterAttack || false,
+          zone: e.goalZone as ZoneType | undefined,
+          sanctionType: e.sanctionType as SanctionType | undefined,
         }));
 
         setEvents(transformedEvents);

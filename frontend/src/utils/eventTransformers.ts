@@ -40,6 +40,9 @@ export const transformBackendEvent = (e: any): MatchEvent => ({
     action: (e.type === 'Sanction' && e.sanctionType) ? e.sanctionType : (e.subtype || e.type),
     zone: positionDistanceToZone(e.position, e.distance), // Convert position+distance to zone
     goalTarget: goalZoneToTarget(e.goalZone), // Convert goalZone to number 1-9
+    isCollective: e.isCollective,
+    hasOpposition: e.hasOpposition,
+    isCounterAttack: e.isCounterAttack,
     context: {
         isCollective: e.isCollective,
         hasOpposition: e.hasOpposition,
