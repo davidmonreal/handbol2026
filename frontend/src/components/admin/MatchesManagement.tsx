@@ -9,8 +9,8 @@ interface Match {
   date: string;
   homeTeamId: string;
   awayTeamId: string;
-  homeTeam: { id: string; name: string };
-  awayTeam: { id: string; name: string };
+  homeTeam: { id: string; name: string; category?: string; club?: { name: string } };
+  awayTeam: { id: string; name: string; category?: string; club?: { name: string } };
   isFinished: boolean;
   homeScore?: number;
   awayScore?: number;
@@ -19,6 +19,8 @@ interface Match {
 interface Team {
   id: string;
   name: string;
+  category?: string;
+  club?: { name: string };
 }
 
 export const MatchesManagement = () => {
@@ -255,7 +257,7 @@ export const MatchesManagement = () => {
                       value={team.id}
                       disabled={team.id === formData.awayTeamId}
                     >
-                      {team.name}
+                      {team.category && `${team.category} `}{team.name} {team.club && `(${team.club.name})`}
                     </option>
                   ))}
                 </select>
@@ -278,7 +280,7 @@ export const MatchesManagement = () => {
                       value={team.id}
                       disabled={team.id === formData.homeTeamId}
                     >
-                      {team.name}
+                      {team.category && `${team.category} `}{team.name} {team.club && `(${team.club.name})`}
                     </option>
                   ))}
                 </select>
@@ -327,7 +329,10 @@ export const MatchesManagement = () => {
                     {formatDate(match.date)}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{match.homeTeam.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                  <div className="font-medium text-gray-900">{match.homeTeam.category && `${match.homeTeam.category} `}{match.homeTeam.name}</div>
+                  {match.homeTeam.club && <div className="text-xs text-gray-500">{match.homeTeam.club.name}</div>}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-center">
                   {match.isFinished ? (
                     <span className="bg-gray-100 px-2 py-1 rounded">
@@ -337,7 +342,10 @@ export const MatchesManagement = () => {
                     <span className="text-gray-400">-:-</span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-left">{match.awayTeam.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-left">
+                  <div className="font-medium text-gray-900">{match.awayTeam.category && `${match.awayTeam.category} `}{match.awayTeam.name}</div>
+                  {match.awayTeam.club && <div className="text-xs text-gray-500">{match.awayTeam.club.name}</div>}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${match.isFinished ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                     {match.isFinished ? 'Finished' : 'Scheduled'}

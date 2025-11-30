@@ -7,6 +7,7 @@ import { API_BASE_URL } from '../config/api';
 interface Team {
   id: string;
   name: string;
+  category?: string;
   club: { name: string };
 }
 
@@ -80,7 +81,9 @@ const Dashboard = () => {
 
       <div className="flex items-center justify-between mb-3">
         <div className="flex-1 text-right min-w-0">
-          <div className="font-semibold text-gray-900 truncate">{match.homeTeam?.name || 'Unknown Team'}</div>
+          <div className="font-semibold text-gray-900 truncate">
+            {match.homeTeam?.category && `${match.homeTeam.category} `}{match.homeTeam?.name || 'Unknown Team'}
+          </div>
           <div className="text-xs text-gray-500 truncate">{match.homeTeam?.club?.name || 'Unknown Club'}</div>
         </div>
 
@@ -95,7 +98,9 @@ const Dashboard = () => {
         )}
 
         <div className="flex-1 text-left min-w-0">
-          <div className="font-semibold text-gray-900 truncate">{match.awayTeam?.name || 'Unknown Team'}</div>
+          <div className="font-semibold text-gray-900 truncate">
+            {match.awayTeam?.category && `${match.awayTeam.category} `}{match.awayTeam?.name || 'Unknown Team'}
+          </div>
           <div className="text-xs text-gray-500 truncate">{match.awayTeam?.club?.name || 'Unknown Club'}</div>
         </div>
       </div>

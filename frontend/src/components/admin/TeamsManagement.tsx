@@ -483,9 +483,9 @@ export const TeamsManagement = () => {
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Club</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Season</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Players</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -494,16 +494,16 @@ export const TeamsManagement = () => {
           <tbody className="divide-y divide-gray-200">
             {filteredTeams.map((team) => (
               <tr key={team.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 flex items-center gap-2">
-                  {team.name}
-                  {team.isMyTeam && <Star size={16} className="text-yellow-500 fill-yellow-500" />}
-                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.club.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
                     {team.category || 'SENIOR'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.club.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 flex items-center gap-2">
+                  {team.name}
+                  {team.isMyTeam && <Star size={16} className="text-yellow-500 fill-yellow-500" />}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.season.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
