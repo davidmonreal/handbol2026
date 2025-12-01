@@ -37,6 +37,7 @@ export class PlayerController {
         name,
         number: parseInt(number),
         handedness,
+        isGoalkeeper: false,
       });
       res.status(201).json(player);
     } catch (error) {
