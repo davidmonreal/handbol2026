@@ -99,6 +99,7 @@ export interface CrudConfig<T> {
     formFields: FormFieldConfig[];
     searchFields: (keyof T)[];
     formatFormData?: (data: Record<string, unknown>) => Partial<T>;
+    mapItemToForm?: (item: T) => Record<string, unknown>;
     customActions?: Array<{
         icon: React.ComponentType<{ size?: number }>;
         label: string;

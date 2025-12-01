@@ -34,6 +34,8 @@ describe('TeamRepository', () => {
       {
         id: '1',
         name: 'Cadet A',
+        category: 'CADET',
+        isMyTeam: true,
         clubId: 'c1',
         seasonId: 's1',
         club: { id: 'c1', name: 'Mataró' },
@@ -60,6 +62,8 @@ describe('TeamRepository', () => {
     const mockTeam = {
       id: '1',
       name: 'Cadet A',
+      category: 'CADET',
+      isMyTeam: true,
       clubId: 'c1',
       seasonId: 's1',
       club: { id: 'c1', name: 'Mataró' },
@@ -82,7 +86,13 @@ describe('TeamRepository', () => {
   });
 
   it('create creates a new team', async () => {
-    const newTeamData = { name: 'Cadet A', clubId: 'c1', seasonId: 's1', isMyTeam: true };
+    const newTeamData = {
+      name: 'Cadet A',
+      category: 'CADET',
+      clubId: 'c1',
+      seasonId: 's1',
+      isMyTeam: true,
+    };
     const createdTeam = { id: '1', ...newTeamData, players: [] };
     vi.mocked(prisma.team.create).mockResolvedValue(createdTeam as any);
 

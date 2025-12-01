@@ -155,10 +155,6 @@ export const MatchesManagement = () => {
             const dateStr = data.date as string;
             const timeStr = (data.time as string) || '12:00';
 
-            // If we are editing, date might already be a full ISO string
-            // We need to handle both cases or ensure the form is populated correctly
-            // For now, let's assume the form provides separate date and time
-
             let dateTime: Date;
             try {
                 dateTime = new Date(`${dateStr}T${timeStr}`);
@@ -171,6 +167,21 @@ export const MatchesManagement = () => {
                 homeTeamId: data.homeTeamId as string,
                 awayTeamId: data.awayTeamId as string,
             } as Partial<Match>;
+        },
+
+        mapItemToForm: (match) => {
+            const dateObj = new Date(match.date);
+            // Format date as YYYY-MM-DD for input[type="date"]
+            const dateStr = dateObj.toISOString().split('T')[0];
+            // Format time as HH:MM for input[type="text"] or input[type="time"]
+            const timeStr = dateObj.toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+            return {
+                date: dateStr,
+                time: timeStr,
+                homeTeamId: match.homeTeamId,
+                awayTeamId: match.awayTeamId,
+            };
         },
 
         customActions: [

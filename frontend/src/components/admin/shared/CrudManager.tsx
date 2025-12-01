@@ -98,9 +98,16 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
         setEditingItem(item);
 
         const newFormData: Record<string, unknown> = {};
-        config.formFields.forEach((field: FormFieldConfig) => {
-            newFormData[field.name] = (item as Record<string, unknown>)[field.name] ?? '';
-        });
+
+        if (config.mapItemToForm) {
+            const mappedData = config.mapItemToForm(item);
+            Object.assign(newFormData, mappedData);
+        } else {
+            config.formFields.forEach((field: FormFieldConfig) => {
+                newFormData[field.name] = (item as Record<string, unknown>)[field.name] ?? '';
+            });
+        }
+
         setFormData(newFormData);
         setIsFormOpen(true);
     };
