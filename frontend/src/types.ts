@@ -33,3 +33,76 @@ export interface MatchEvent {
     defenseFormation?: string;
     activeGoalkeeperId?: string; // ID of the goalkeeper who was active during this event
 }
+
+// ========== Entity Types ==========
+
+export interface Club {
+    id: string;
+    name: string;
+}
+
+export interface Season {
+    id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+}
+
+export interface Player {
+    id: string;
+    name: string;
+    number: number;
+    handedness: string;
+    isGoalkeeper: boolean;
+    teams?: {
+        team: {
+            club: {
+                name: string;
+            };
+        };
+    }[];
+}
+
+export interface Team {
+    id: string;
+    name: string;
+    category?: string;
+    club?: { id: string; name: string };
+    season?: { id: string; name: string };
+    color: string;
+    players?: Player[];
+    isMyTeam?: boolean;
+}
+
+// ========== CRUD Manager Types (Type-Safe, no `any`) ==========
+
+export interface FormFieldConfig {
+    name: string;
+    label: string;
+    type: 'text' | 'number' | 'select' | 'checkbox' | 'date';
+    required?: boolean;
+    options?: { value: string | number; label: string }[];
+    placeholder?: string;
+}
+
+export interface ColumnConfig<T> {
+    key: keyof T | string;
+    label: string;
+    render?: (item: T) => React.ReactNode;
+}
+
+export interface CrudConfig<T> {
+    entityName: string;
+    entityNamePlural: string;
+    apiEndpoint: string;
+    columns: ColumnConfig<T>[];
+    formFields: FormFieldConfig[];
+    searchFields: (keyof T)[];
+    formatFormData?: (data: Record<string, unknown>) => Partial<T>;
+    customActions?: Array<{
+        icon: React.ComponentType<{ size?: number }>;
+        label: string;
+        onClick: (item: T) => void;
+        className?: string;
+    }>;
+}
