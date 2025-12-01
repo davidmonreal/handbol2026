@@ -61,7 +61,12 @@ describe('PlayerController', () => {
 
     await controller.create(req as Request, res as Response);
 
-    expect(service.create).toHaveBeenCalledWith({ name: 'Bob', number: 7, handedness: 'LEFT' });
+    expect(service.create).toHaveBeenCalledWith({
+      name: 'Bob',
+      number: 7,
+      handedness: 'LEFT',
+      isGoalkeeper: false,
+    });
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith(createdPlayer);
   });
