@@ -20,7 +20,6 @@ interface DuplicateMatch {
 interface MergeComparisonRowProps {
     newPlayer: ExtractedPlayer;
     existingPlayer: DuplicateMatch;
-    playerIndex: number;
     action: 'merge' | 'skip' | 'keep' | undefined;
     mergeChoices: Map<string, 'existing' | 'new'>;
     onActionChange: (action: 'merge' | 'skip' | 'keep') => void;
@@ -30,7 +29,6 @@ interface MergeComparisonRowProps {
 export const MergeComparisonRow = ({
     newPlayer,
     existingPlayer,
-    playerIndex,
     action,
     mergeChoices,
     onActionChange,
@@ -90,13 +88,13 @@ export const MergeComparisonRow = ({
                 <div className="flex gap-2">
                     <button
                         onClick={() => onActionChange('skip')}
-                        className="text-xs px-3 py-1.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-medium transition-colors"
+                        className="text-xs px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded shadow-sm hover:shadow font-medium transition-all"
                     >
                         Skip
                     </button>
                     <button
                         onClick={() => onActionChange('keep')}
-                        className="text-xs px-3 py-1.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-medium transition-colors"
+                        className="text-xs px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded shadow-sm hover:shadow font-medium transition-all"
                     >
                         Keep Both
                     </button>
@@ -135,8 +133,8 @@ export const MergeComparisonRow = ({
                         <td
                             onClick={() => onFieldChoiceChange('name', 'existing')}
                             className={`py-2 px-3 cursor-pointer border border-gray-300 transition-colors ${mergeChoices.get('name') === 'existing'
-                                    ? 'bg-blue-100 border-blue-400 font-semibold text-gray-900'
-                                    : 'hover:bg-gray-50 text-gray-700'
+                                ? 'bg-blue-100 border-blue-400 font-semibold text-gray-900'
+                                : 'hover:bg-gray-50 text-gray-700'
                                 }`}
                         >
                             {existingPlayer.name}
@@ -144,8 +142,8 @@ export const MergeComparisonRow = ({
                         <td
                             onClick={() => onFieldChoiceChange('name', 'new')}
                             className={`py-2 px-3 cursor-pointer border border-gray-300 transition-colors ${mergeChoices.get('name') === 'new'
-                                    ? 'bg-blue-100 border-blue-400 font-semibold text-gray-900'
-                                    : 'hover:bg-gray-50 text-gray-700'
+                                ? 'bg-blue-100 border-blue-400 font-semibold text-gray-900'
+                                : 'hover:bg-gray-50 text-gray-700'
                                 }`}
                         >
                             {newPlayer.name}
@@ -158,8 +156,8 @@ export const MergeComparisonRow = ({
                         <td
                             onClick={() => onFieldChoiceChange('number', 'existing')}
                             className={`py-2 px-3 cursor-pointer border border-gray-300 transition-colors ${mergeChoices.get('number') === 'existing'
-                                    ? 'bg-blue-100 border-blue-400 font-semibold text-gray-900'
-                                    : 'hover:bg-gray-50 text-gray-700'
+                                ? 'bg-blue-100 border-blue-400 font-semibold text-gray-900'
+                                : 'hover:bg-gray-50 text-gray-700'
                                 }`}
                         >
                             #{existingPlayer.number}
@@ -167,8 +165,8 @@ export const MergeComparisonRow = ({
                         <td
                             onClick={() => onFieldChoiceChange('number', 'new')}
                             className={`py-2 px-3 cursor-pointer border border-gray-300 transition-colors ${mergeChoices.get('number') === 'new'
-                                    ? 'bg-blue-100 border-blue-400 font-semibold text-gray-900'
-                                    : 'hover:bg-gray-50 text-gray-700'
+                                ? 'bg-blue-100 border-blue-400 font-semibold text-gray-900'
+                                : 'hover:bg-gray-50 text-gray-700'
                                 }`}
                         >
                             #{newPlayer.number}
@@ -181,8 +179,8 @@ export const MergeComparisonRow = ({
                         <td
                             onClick={() => onFieldChoiceChange('handedness', 'existing')}
                             className={`py-2 px-3 cursor-pointer border border-gray-300 transition-colors ${mergeChoices.get('handedness') === 'existing'
-                                    ? 'bg-blue-100 border-blue-400 font-semibold text-gray-900'
-                                    : 'hover:bg-gray-50 text-gray-700'
+                                ? 'bg-blue-100 border-blue-400 font-semibold text-gray-900'
+                                : 'hover:bg-gray-50 text-gray-700'
                                 }`}
                         >
                             {existingPlayer.handedness || '-'}
@@ -190,8 +188,8 @@ export const MergeComparisonRow = ({
                         <td
                             onClick={() => onFieldChoiceChange('handedness', 'new')}
                             className={`py-2 px-3 cursor-pointer border border-gray-300 transition-colors ${mergeChoices.get('handedness') === 'new'
-                                    ? 'bg-blue-100 border-blue-400 font-semibold text-gray-900'
-                                    : 'hover:bg-gray-50 text-gray-700'
+                                ? 'bg-blue-100 border-blue-400 font-semibold text-gray-900'
+                                : 'hover:bg-gray-50 text-gray-700'
                                 }`}
                         >
                             {newPlayer.handedness || '-'}
@@ -204,8 +202,8 @@ export const MergeComparisonRow = ({
                         <td
                             onClick={() => onFieldChoiceChange('isGoalkeeper', 'existing')}
                             className={`py-2 px-3 cursor-pointer border border-gray-300 transition-colors ${mergeChoices.get('isGoalkeeper') === 'existing'
-                                    ? 'bg-blue-100 border-blue-400 font-semibold text-gray-900'
-                                    : 'hover:bg-gray-50 text-gray-700'
+                                ? 'bg-blue-100 border-blue-400 font-semibold text-gray-900'
+                                : 'hover:bg-gray-50 text-gray-700'
                                 }`}
                         >
                             {existingPlayer.isGoalkeeper ? 'Yes' : 'No'}
@@ -213,8 +211,8 @@ export const MergeComparisonRow = ({
                         <td
                             onClick={() => onFieldChoiceChange('isGoalkeeper', 'new')}
                             className={`py-2 px-3 cursor-pointer border border-gray-300 transition-colors ${mergeChoices.get('isGoalkeeper') === 'new'
-                                    ? 'bg-blue-100 border-blue-400 font-semibold text-gray-900'
-                                    : 'hover:bg-gray-50 text-gray-700'
+                                ? 'bg-blue-100 border-blue-400 font-semibold text-gray-900'
+                                : 'hover:bg-gray-50 text-gray-700'
                                 }`}
                         >
                             {newPlayer.isGoalkeeper ? 'Yes' : 'No'}
@@ -222,6 +220,35 @@ export const MergeComparisonRow = ({
                     </tr>
                 </tbody>
             </table>
+
+            {/* Confirm button */}
+            <div className="mt-4 flex items-center justify-between">
+                <p className="text-xs text-gray-500">
+                    {mergeChoices.size === 4 ? '✓ All fields selected' : `Select ${4 - mergeChoices.size} more field(s)`}
+                </p>
+                <button
+                    onClick={() => {
+                        // Scroll to the import button at the bottom
+                        const allButtons = Array.from(document.querySelectorAll('button'));
+                        const finalImportButton = allButtons.find(btn => btn.textContent?.includes('Import') && btn.textContent?.includes('Players'));
+                        if (finalImportButton) {
+                            finalImportButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            // Add a subtle highlight effect
+                            finalImportButton.classList.add('ring-4', 'ring-blue-300');
+                            setTimeout(() => {
+                                finalImportButton.classList.remove('ring-4', 'ring-blue-300');
+                            }, 2000);
+                        }
+                    }}
+                    disabled={mergeChoices.size < 4}
+                    className={`px-4 py-2 rounded font-medium shadow-sm transition-all ${mergeChoices.size === 4
+                        ? 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow'
+                        : 'bg-white border border-gray-300 text-gray-400 cursor-not-allowed'
+                        }`}
+                >
+                    {mergeChoices.size === 4 ? '✓ Ready to Merge' : 'Select All Fields'}
+                </button>
+            </div>
         </div>
     );
 };

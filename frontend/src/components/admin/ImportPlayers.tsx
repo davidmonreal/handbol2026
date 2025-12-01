@@ -410,7 +410,6 @@ export const ImportPlayers = () => {
                                         key={index}
                                         newPlayer={player}
                                         existingPlayer={duplicate.matches[0]}
-                                        playerIndex={index}
                                         action={action}
                                         mergeChoices={playerMergeChoices}
                                         onActionChange={(newAction) => {
