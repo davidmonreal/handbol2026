@@ -39,12 +39,13 @@ model Team {
 }
 
 model Player {
-  id        String   @id @default(uuid())
-  name      String
-  number    Int      // Default number
-  handedness String  @default("RIGHT") // "LEFT" or "RIGHT"
-  teams     PlayerTeamSeason[]
-  events    GameEvent[]
+  id           String   @id @default(uuid())
+  name         String
+  number       Int      // Default number
+  handedness   String   @default("RIGHT") // "LEFT" or "RIGHT"
+  isGoalkeeper Boolean  @default(false)
+  teams        PlayerTeamSeason[]
+  events       GameEvent[]
 }
 
 // Handles the "Player plays in multiple teams per season" requirement
