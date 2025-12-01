@@ -59,7 +59,15 @@ describe('Goalkeeper Flow Integration', () => {
       type: 'Shot',
       subtype: 'Save',
       activeGoalkeeperId: 'gk-1',
-      playerId: 'player-2', // Shooter
+      playerId: 'player-2',
+      teamId: 'team-1',
+      position: null,
+      distance: null,
+      isCollective: false,
+      hasOpposition: true,
+      isCounterAttack: false,
+      goalZone: null,
+      sanctionType: null,
     };
 
     vi.mocked(gameEventRepository.create).mockResolvedValue(saveEvent);
@@ -93,6 +101,14 @@ describe('Goalkeeper Flow Integration', () => {
         subtype: 'Goal',
         activeGoalkeeperId: 'gk-1',
         playerId: 'player-3',
+        teamId: 'team-1',
+        position: null,
+        distance: null,
+        isCollective: false,
+        hasOpposition: true,
+        isCounterAttack: false,
+        goalZone: null,
+        sanctionType: null,
       },
     ];
 
@@ -102,8 +118,8 @@ describe('Goalkeeper Flow Integration', () => {
 
     // Verify we get events with activeGoalkeeperId
     expect(retrievedEvents).toHaveLength(2);
-    expect(retrievedEvents[0].activeGoalkeeperId).toBe('gk-1');
-    expect(retrievedEvents[1].activeGoalkeeperId).toBe('gk-1');
+    expect((retrievedEvents[0] as typeof saveEvent).activeGoalkeeperId).toBe('gk-1');
+    expect((retrievedEvents[1] as typeof saveEvent).activeGoalkeeperId).toBe('gk-1');
 
     // 4. Verify Statistics Logic (Frontend Simulation)
     // Calculate efficiency: 1 Save, 1 Goal -> 50%
