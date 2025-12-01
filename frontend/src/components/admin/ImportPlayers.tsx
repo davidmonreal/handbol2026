@@ -313,168 +313,169 @@ export const ImportPlayers = () => {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column: Image Upload */}
-                <div className="space-y-4">
-                    <div className="bg-white rounded-xl shadow-lg p-6">
-                        <h2 className="text-xl font-bold mb-4">Upload Image</h2>
 
-                        <div
-                            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center"
-                            onDrop={handleDrop}
-                            onDragOver={handleDragOver}
-                            onPaste={handlePaste}
-                            tabIndex={0}
-                        >
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageUpload}
-                                className="hidden"
-                                id="image-upload"
-                            />
-                            <label htmlFor="image-upload" className="cursor-pointer">
-                                <Upload size={48} className="mx-auto text-gray-400 mb-4" />
-                                <p className="text-gray-600">
-                                    Click to upload, drag and drop, or paste<br />
-                                    PNG, JPG up to 10MB
-                                </p>
-                            </label>
-                        </div>
+            {/* TOP SECTION: Upload and Preview */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Upload Area */}
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                    <h2 className="text-xl font-bold mb-4">Upload Image</h2>
 
-                        {image && (
-                            <button
-                                onClick={handleExtract}
-                                disabled={isProcessing}
-                                className="w-full mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
-                            >
-                                {isProcessing ? (
-                                    <>
-                                        <Loader2 className="animate-spin" size={20} />
-                                        Processing...
-                                    </>
-                                ) : (
-                                    'Extract Players'
-                                )}
-                            </button>
-                        )}
+                    <div
+                        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-400 transition-colors"
+                        onDrop={handleDrop}
+                        onDragOver={handleDragOver}
+                        onPaste={handlePaste}
+                        tabIndex={0}
+                    >
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                            id="image-upload"
+                        />
+                        <label htmlFor="image-upload" className="cursor-pointer">
+                            <Upload size={48} className="mx-auto text-gray-400 mb-4" />
+                            <p className="text-gray-600">
+                                Click to upload, drag and drop, or paste<br />
+                                PNG, JPG up to 10MB
+                            </p>
+                        </label>
                     </div>
 
                     {image && (
-                        <div className="bg-white rounded-xl shadow-lg p-6">
-                            <h2 className="text-xl font-bold mb-4">Preview</h2>
-                            <img src={image} alt="Preview" className="w-full rounded-lg border" />
-                        </div>
+                        <button
+                            onClick={handleExtract}
+                            disabled={isProcessing}
+                            className="w-full mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            {isProcessing ? (
+                                <>
+                                    <Loader2 className="animate-spin" size={20} />
+                                    Processing...
+                                </>
+                            ) : (
+                                'Extract Players'
+                            )}
+                        </button>
                     )}
                 </div>
 
-                {/* Extracted Players Section */}
-                {extractedPlayers.length > 0 && (
+                {/* Image Preview */}
+                {image && (
                     <div className="bg-white rounded-xl shadow-lg p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-2xl font-bold">
-                                Extracted Players ({extractedPlayers.length})
-                            </h2>
-                            <button
-                                onClick={() => {
-                                    setExtractedPlayers([]);
-                                    setDuplicates(new Map());
-                                    setDuplicateActions(new Map());
-                                    setMergeChoices(new Map());
-                                }}
-                                className="text-sm text-gray-600 hover:text-gray-900"
-                            >
-                                Clear all
-                            </button>
-                        </div>
-
-                        <TeamSelector
-                            teams={teams}
-                            selectedTeamId={selectedTeamId}
-                            onTeamChange={setSelectedTeamId}
-                            isCheckingDuplicates={isCheckingDuplicates}
-                        />
-
-                        <div className="mt-6 space-y-4">
-                            {extractedPlayers.map((player, index) => {
-                                const duplicate = duplicates.get(index);
-                                const action = duplicateActions.get(index);
-                                const playerMergeChoices = mergeChoices.get(index) || new Map();
-
-                                // If there's a duplicate and action is merge, show comparison
-                                if (duplicate && duplicate.hasDuplicates && action === 'merge') {
-                                    return (
-                                        <MergeComparisonRow
-                                            key={index}
-                                            newPlayer={player}
-                                            existingPlayer={duplicate.matches[0]}
-                                            playerIndex={index}
-                                            action={action}
-                                            mergeChoices={playerMergeChoices}
-                                            onActionChange={(newAction) => {
-                                                const newActions = new Map(duplicateActions);
-                                                newActions.set(index, newAction);
-                                                setDuplicateActions(newActions);
-                                            }}
-                                            onFieldChoiceChange={(field, choice) => {
-                                                const newMergeChoices = new Map(mergeChoices);
-                                                const playerChoices = new Map(playerMergeChoices);
-                                                playerChoices.set(field, choice);
-                                                newMergeChoices.set(index, playerChoices);
-                                                setMergeChoices(newMergeChoices);
-                                            }}
-                                        />
-                                    );
-                                }
-
-                                // Otherwise show regular player card
-                                return (
-                                    <PlayerCard
-                                        key={index}
-                                        player={player}
-                                        index={index}
-                                        isEditing={editingIndex === index}
-                                        duplicate={duplicate}
-                                        duplicateAction={action}
-                                        onEdit={setEditingIndex}
-                                        onSave={() => setEditingIndex(null)}
-                                        onRemove={handleRemovePlayer}
-                                        onFieldChange={handleEditPlayer}
-                                        onDuplicateActionChange={(newAction) => {
-                                            const newActions = new Map(duplicateActions);
-                                            newActions.set(index, newAction);
-                                            setDuplicateActions(newActions);
-
-                                            // Initialize merge choices with defaults when selecting merge
-                                            if (newAction === 'merge' && duplicate && duplicate.matches[0]) {
-                                                const defaultChoices = new Map<string, 'existing' | 'new'>();
-                                                defaultChoices.set('name', 'existing');
-                                                defaultChoices.set('number', 'existing');
-                                                defaultChoices.set('handedness', 'existing');
-                                                defaultChoices.set('isGoalkeeper', 'existing');
-                                                const newMergeChoices = new Map(mergeChoices);
-                                                newMergeChoices.set(index, defaultChoices);
-                                                setMergeChoices(newMergeChoices);
-                                            }
-                                        }}
-                                    />
-                                );
-                            })}
-                        </div>
-
-                        <button
-                            onClick={handleConfirmImport}
-                            disabled={!selectedTeamId || isProcessing || (duplicates.size > 0 && duplicates.size !== duplicateActions.size)}
-                            className="w-full mt-6 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isProcessing ? 'Importing...' : !selectedTeamId ? 'Select Team First' :
-                                (duplicates.size > 0 && duplicates.size !== duplicateActions.size) ?
-                                    `Resolve ${duplicates.size - duplicateActions.size} Duplicates` :
-                                    `Import ${extractedPlayers.filter((_, i) => duplicateActions.get(i) !== 'skip').length} Players`}
-                        </button>
+                        <h2 className="text-xl font-bold mb-4">Preview</h2>
+                        <img src={image} alt="Preview" className="w-full rounded-lg border" />
                     </div>
                 )}
             </div>
+
+            {/* BOTTOM SECTION: Extracted Players (Full Width) */}
+            {extractedPlayers.length > 0 && (
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-2xl font-bold">
+                            Extracted Players ({extractedPlayers.length})
+                        </h2>
+                        <button
+                            onClick={() => {
+                                setExtractedPlayers([]);
+                                setDuplicates(new Map());
+                                setDuplicateActions(new Map());
+                                setMergeChoices(new Map());
+                            }}
+                            className="text-sm text-gray-600 hover:text-gray-900"
+                        >
+                            Clear all
+                        </button>
+                    </div>
+
+                    <TeamSelector
+                        teams={teams}
+                        selectedTeamId={selectedTeamId}
+                        onTeamChange={setSelectedTeamId}
+                        isCheckingDuplicates={isCheckingDuplicates}
+                    />
+
+                    <div className="mt-6 space-y-4">
+                        {extractedPlayers.map((player, index) => {
+                            const duplicate = duplicates.get(index);
+                            const action = duplicateActions.get(index);
+                            const playerMergeChoices = mergeChoices.get(index) || new Map();
+
+                            // If there's a duplicate and action is merge, show comparison
+                            if (duplicate && duplicate.hasDuplicates && action === 'merge') {
+                                return (
+                                    <MergeComparisonRow
+                                        key={index}
+                                        newPlayer={player}
+                                        existingPlayer={duplicate.matches[0]}
+                                        playerIndex={index}
+                                        action={action}
+                                        mergeChoices={playerMergeChoices}
+                                        onActionChange={(newAction) => {
+                                            const newActions = new Map(duplicateActions);
+                                            newActions.set(index, newAction);
+                                            setDuplicateActions(newActions);
+                                        }}
+                                        onFieldChoiceChange={(field, choice) => {
+                                            const newMergeChoices = new Map(mergeChoices);
+                                            const playerChoices = new Map(playerMergeChoices);
+                                            playerChoices.set(field, choice);
+                                            newMergeChoices.set(index, playerChoices);
+                                            setMergeChoices(newMergeChoices);
+                                        }}
+                                    />
+                                );
+                            }
+
+                            // Otherwise show regular player card
+                            return (
+                                <PlayerCard
+                                    key={index}
+                                    player={player}
+                                    index={index}
+                                    isEditing={editingIndex === index}
+                                    duplicate={duplicate}
+                                    duplicateAction={action}
+                                    onEdit={setEditingIndex}
+                                    onSave={() => setEditingIndex(null)}
+                                    onRemove={handleRemovePlayer}
+                                    onFieldChange={handleEditPlayer}
+                                    onDuplicateActionChange={(newAction) => {
+                                        const newActions = new Map(duplicateActions);
+                                        newActions.set(index, newAction);
+                                        setDuplicateActions(newActions);
+
+                                        // Initialize merge choices with defaults when selecting merge
+                                        if (newAction === 'merge' && duplicate && duplicate.matches[0]) {
+                                            const defaultChoices = new Map<string, 'existing' | 'new'>();
+                                            defaultChoices.set('name', 'existing');
+                                            defaultChoices.set('number', 'existing');
+                                            defaultChoices.set('handedness', 'existing');
+                                            defaultChoices.set('isGoalkeeper', 'existing');
+                                            const newMergeChoices = new Map(mergeChoices);
+                                            newMergeChoices.set(index, defaultChoices);
+                                            setMergeChoices(newMergeChoices);
+                                        }
+                                    }}
+                                />
+                            );
+                        })}
+                    </div>
+
+                    <button
+                        onClick={handleConfirmImport}
+                        disabled={!selectedTeamId || isProcessing || (duplicates.size > 0 && duplicates.size !== duplicateActions.size)}
+                        className="w-full mt-6 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isProcessing ? 'Importing...' : !selectedTeamId ? 'Select Team First' :
+                            (duplicates.size > 0 && duplicates.size !== duplicateActions.size) ?
+                                `Resolve ${duplicates.size - duplicateActions.size} Duplicates` :
+                                `Import ${extractedPlayers.filter((_, i) => duplicateActions.get(i) !== 'skip').length} Players`}
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
