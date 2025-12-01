@@ -31,4 +31,5 @@ export interface MatchEvent {
         isCounterAttack?: boolean;
     };
     defenseFormation?: string;
+    activeGoalkeeperId?: string; // ID of the goalkeeper who was active during this event
 }

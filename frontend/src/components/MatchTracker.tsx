@@ -26,7 +26,8 @@ const MatchTracker = () => {
     activeTeamId, setActiveTeamId,
     defenseFormation, setDefenseFormation,
     addEvent,
-    homeTeam, visitorTeam, setMatchData
+    homeTeam, visitorTeam, setMatchData,
+    selectedOpponentGoalkeeper, setSelectedOpponentGoalkeeper
   } = useMatch();
 
   // Fetch Match Data
@@ -48,7 +49,9 @@ const MatchTracker = () => {
               id: p.player.id,
               number: p.player.number,
               name: p.player.name,
-              position: p.role || 'Player'
+
+              position: p.role || 'Player',
+              isGoalkeeper: p.player.isGoalkeeper
             }))
           });
 
@@ -249,6 +252,52 @@ const MatchTracker = () => {
             ) : (
               <div className="bg-gray-50 rounded-xl p-8 text-center text-gray-500 border-2 border-dashed">
                 Select a team to view players
+              </div>
+            )}
+
+            {/* Opponent Goalkeepers Selection */}
+            {activeTeam && (
+              <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wider">
+                  Opponent Goalkeeper
+                </h3>
+                <div className="space-y-2">
+                  {(() => {
+                    const opponentTeam = activeTeam.id === homeTeam?.id ? visitorTeam : homeTeam;
+                    const goalkeepers = opponentTeam?.players.filter(p => p.isGoalkeeper) || [];
+
+                    if (goalkeepers.length === 0) {
+                      return <div className="text-sm text-gray-400 italic">No goalkeepers found</div>;
+                    }
+
+                    return goalkeepers.map(gk => (
+                      <button
+                        key={gk.id}
+                        onClick={() => setSelectedOpponentGoalkeeper(gk)}
+                        className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${selectedOpponentGoalkeeper?.id === gk.id
+                          ? 'bg-orange-50 border-orange-500 ring-1 ring-orange-500'
+                          : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                          }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${selectedOpponentGoalkeeper?.id === gk.id
+                            ? 'bg-orange-500 text-white'
+                            : 'bg-gray-200 text-gray-600'
+                            }`}>
+                            {gk.number}
+                          </span>
+                          <span className={`font-medium ${selectedOpponentGoalkeeper?.id === gk.id ? 'text-orange-900' : 'text-gray-700'
+                            }`}>
+                            {gk.name}
+                          </span>
+                        </div>
+                        {selectedOpponentGoalkeeper?.id === gk.id && (
+                          <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                        )}
+                      </button>
+                    ));
+                  })()}
+                </div>
               </div>
             )}
 

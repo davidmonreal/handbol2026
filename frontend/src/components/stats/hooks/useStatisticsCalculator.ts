@@ -15,7 +15,8 @@ import type {
  */
 export function useStatisticsCalculator(
     events: MatchEvent[],
-    comparison?: ComparisonData
+    comparison?: ComparisonData,
+    isGoalkeeper: boolean = false
 ): CalculatedStats {
     return useMemo(() => {
         // Filter only shot events
@@ -27,7 +28,18 @@ export function useStatisticsCalculator(
 
         const totalShots = shots.length;
         const totalGoals = goals.length;
-        const efficiency = totalShots > 0 ? (totalGoals / totalShots) * 100 : 0;
+        const totalSaves = saves.length;
+
+        // Efficiency calculation
+        // For field players: Goals / Shots
+        // For goalkeepers: Saves / (Saves + Goals)
+        let efficiency = 0;
+        if (isGoalkeeper) {
+            const shotsOnTarget = totalSaves + totalGoals;
+            efficiency = shotsOnTarget > 0 ? (totalSaves / shotsOnTarget) * 100 : 0;
+        } else {
+            efficiency = totalShots > 0 ? (totalGoals / totalShots) * 100 : 0;
+        }
 
         // Calculate zone statistics
         const zoneStats = new Map<ZoneType | '7m', ZoneStatistics>();
@@ -52,19 +64,66 @@ export function useStatisticsCalculator(
 
         // Calculate efficiency for each zone
         zoneStats.forEach((stats) => {
+            // Default calculation (will be overwritten below)
             stats.efficiency = stats.shots > 0 ? (stats.goals / stats.shots) * 100 : 0;
         });
+
+        // Calculate efficiency for each zone
+        if (isGoalkeeper) {
+            // For goalkeepers: recalculate efficiency based on saves
+            zoneStats.forEach((stats, zone) => {
+                // Reset and recalculate for GK
+                stats.shots = 0;
+                stats.goals = 0;
+                let saves = 0;
+
+                // Count saves and goals for this zone
+                shots.forEach(shot => {
+                    if (shot.zone === zone) {
+                        if (shot.action === 'Save') {
+                            saves++;
+                            stats.shots++; // Count shots on target
+                        } else if (shot.action === 'Goal') {
+                            stats.goals++;
+                            stats.shots++; // Count shots on target
+                        }
+                    }
+                });
+
+                // Calculate efficiency as Save %
+                stats.efficiency = stats.shots > 0 ? (saves / stats.shots) * 100 : 0;
+            });
+        } else {
+            // For field players: efficiency is goals / shots
+            zoneStats.forEach((stats) => {
+                stats.efficiency = stats.shots > 0 ? (stats.goals / stats.shots) * 100 : 0;
+            });
+        }
 
         // Calculate goal target statistics (1-9)
         const goalTargetStats = new Map<number, GoalTargetStatistics>();
         for (let target = 1; target <= 9; target++) {
             const targetShots = shots.filter(s => s.goalTarget === target);
             const targetGoals = targetShots.filter(s => s.action === 'Goal');
+            const targetSaves = targetShots.filter(s => s.action === 'Save');
+
+            let targetEfficiency = 0;
+            if (isGoalkeeper) {
+                // For GK: Save % (Saves / (Saves + Goals))
+                // Note: targetShots includes Miss/Post which shouldn't count for Save % usually?
+                // Standard formula: Saves / Shots on Target
+                const shotsOnTarget = targetSaves.length + targetGoals.length;
+                targetEfficiency = shotsOnTarget > 0 ? (targetSaves.length / shotsOnTarget) * 100 : 0;
+            } else {
+                // For Player: Goal % (Goals / Shots)
+                targetEfficiency = targetShots.length > 0 ? (targetGoals.length / targetShots.length) * 100 : 0;
+            }
 
             goalTargetStats.set(target, {
                 goals: targetGoals.length,
+                saves: targetSaves.length,
                 shots: targetShots.length,
-                efficiency: targetShots.length > 0 ? (targetGoals.length / targetShots.length) * 100 : 0,
+                efficiency: targetEfficiency,
             });
         }
 
@@ -133,5 +192,5 @@ export function useStatisticsCalculator(
             playerStats,
             goalTargetStats,
         };
-    }, [events, comparison]);
+    }, [events, comparison, isGoalkeeper]);
 }

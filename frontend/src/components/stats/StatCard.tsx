@@ -7,6 +7,7 @@ const colorClasses = {
   yellow: 'bg-yellow-50 text-yellow-600 border-yellow-600',
   orange: 'bg-orange-50 text-orange-600 border-orange-600',
   gray: 'bg-gray-50 text-gray-600 border-gray-600',
+  red: 'bg-red-50 text-red-600 border-red-600',
 };
 
 const valueColorClasses = {
@@ -16,6 +17,7 @@ const valueColorClasses = {
   yellow: 'text-yellow-800',
   orange: 'text-orange-800',
   gray: 'text-gray-800',
+  red: 'text-red-800',
 };
 
 /**

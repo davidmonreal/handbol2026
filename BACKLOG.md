@@ -19,13 +19,27 @@
 - [x] Registre de tirs amb zona de porteria
 - [x] Registre de tirs aturats (Save) amb zona de porteria
 
+### Gestió de Porters i Estadístiques
+- [x] Camp `isGoalkeeper` al model Player i `activeGoalkeeperId` a GameEvent
+- [x] Badge "GK" a les llistes de jugadors i estadístiques
+- [x] Selecció de porter rival al Match Tracker
+- [x] Estadístiques específiques de porter (Parades, Eficiència de parades)
+- [x] Heatmap de parades per a porters
+- [x] Tests unitaris i d'integració per a funcionalitat de porters
+
 ---
 
 ## 📋 Backlog per Prioritat
 
 ### 🔥 Alta Prioritat
 
-#### 1. Categories d'Equips
+#### 1. Edició de Jugades (Match Event Editing)
+- [ ] Crear pàgina "Editar Jugades" per llistar i editar totes les accions del partit
+- [ ] Afegir icona d'edició al Llistat de Partits
+- [ ] Afegir icona d'edició al Match Tracker (pantalla de partit)
+- [ ] Implementar funcionalitat d'actualització (canviar tipus, jugador, zona, etc.)
+
+#### 2. Categories d'Equips
 - [ ] Afegir camp `category` al model `Team`
   - Opcions: Benjamí, Aleví, Infantil, Cadet, Juvenil, Senior
 - [ ] Actualitzar formulari de creació/edició d'equips
