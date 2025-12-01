@@ -54,8 +54,8 @@ model PlayerTeamSeason {
   id        String   @id @default(uuid())
   playerId  String
   teamId    String
-  player    Player   @relation(fields: [playerId], references: [id])
-  team      Team     @relation(fields: [teamId], references: [id])
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   role      String   // e.g., "Player", "Captain"
   
   @@unique([playerId, teamId])
@@ -82,12 +82,12 @@ model GameEvent {
   
   // Who
   playerId    String?
-  player      Player?  @relation("EventPlayer", fields: [playerId], references: [id])
+  player      Player?  @relation("EventPlayer", fields: [playerId], references: [id], onDelete: SetNull)
   teamId      String   // To know which side the event belongs to
   
   // Active Goalkeeper (for opponent's goalkeeper during shot events)
   activeGoalkeeperId String?
-  activeGoalkeeper   Player? @relation("ActiveGoalkeeper", fields: [activeGoalkeeperId], references: [id])
+  activeGoalkeeper   Player? @relation("ActiveGoalkeeper", fields: [activeGoalkeeperId], references: [id], onDelete: SetNull)
   
   // What
   type        String   // GOAL, MISS, TURNOVER, SANCTION
