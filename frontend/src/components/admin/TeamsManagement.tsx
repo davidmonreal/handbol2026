@@ -30,6 +30,7 @@ interface Player {
   name: string;
   number: number;
   handedness: string;
+  isGoalkeeper?: boolean;
 }
 
 export const TeamsManagement = () => {
@@ -431,7 +432,14 @@ export const TeamsManagement = () => {
                       {filteredPlayers.map(player => (
                         <div key={player.id} className="p-3 flex justify-between items-center hover:bg-gray-50">
                           <div>
-                            <div className="font-medium">{player.name}</div>
+                            <div className="font-medium flex items-center gap-2">
+                              {player.name}
+                              {player.isGoalkeeper && (
+                                <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-100 text-purple-700 border border-purple-200">
+                                  GK
+                                </span>
+                              )}
+                            </div>
                             <div className="text-sm text-gray-500">#{player.number} • {player.handedness}</div>
                           </div>
                           <button
@@ -458,7 +466,14 @@ export const TeamsManagement = () => {
                       {selectedTeamForPlayers.players.map(({ player }) => (
                         <div key={player.id} className="p-3 flex justify-between items-center bg-white">
                           <div>
-                            <div className="font-medium">{player.name}</div>
+                            <div className="font-medium flex items-center gap-2">
+                              {player.name}
+                              {player.isGoalkeeper && (
+                                <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-100 text-purple-700 border border-purple-200">
+                                  GK
+                                </span>
+                              )}
+                            </div>
                             <div className="text-sm text-gray-500">#{player.number} • {player.handedness}</div>
                           </div>
                           <button

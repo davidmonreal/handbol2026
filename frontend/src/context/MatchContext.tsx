@@ -8,6 +8,7 @@ interface Player {
   number: number;
   name: string;
   position: string;
+  isGoalkeeper?: boolean;
 }
 
 interface Team {
@@ -40,6 +41,8 @@ interface MatchContextType {
   matchId: string | null;
   setMatchId: React.Dispatch<React.SetStateAction<string | null>>;
   setMatchData: (id: string, home: Team, visitor: Team) => void;
+  selectedOpponentGoalkeeper: Player | null;
+  setSelectedOpponentGoalkeeper: React.Dispatch<React.SetStateAction<Player | null>>;
 }
 
 const MatchContext = createContext<MatchContextType | undefined>(undefined);
@@ -55,6 +58,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
   const [homeTeam, setHomeTeam] = useState<Team | null>(null);
   const [visitorTeam, setVisitorTeam] = useState<Team | null>(null);
   const [matchId, setMatchId] = useState<string | null>(null);
+  const [selectedOpponentGoalkeeper, setSelectedOpponentGoalkeeper] = useState<Player | null>(null);
 
   const addEvent = async (event: MatchEvent) => {
     // Add to local state immediately for UI responsiveness
@@ -86,6 +90,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
             isCounterAttack: event.isCounterAttack,
             goalZone: event.goalZoneTag,
             sanctionType: event.sanctionType,
+            activeGoalkeeperId: selectedOpponentGoalkeeper?.id,
           }),
         });
 
@@ -192,7 +197,8 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
       homeTeam, setHomeTeam,
       visitorTeam, setVisitorTeam,
       matchId, setMatchId,
-      setMatchData
+      setMatchData,
+      selectedOpponentGoalkeeper, setSelectedOpponentGoalkeeper
     }}>
       {children}
     </MatchContext.Provider>

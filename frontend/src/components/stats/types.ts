@@ -16,6 +16,7 @@ export interface StatisticsData {
     title: string;
     subtitle?: string;
     context: StatisticsContext;
+    isGoalkeeper?: boolean;
 }
 
 /**
@@ -62,6 +63,7 @@ export interface ZoneStatistics {
  */
 export interface GoalTargetStatistics {
     goals: number;
+    saves: number;
     shots: number;
     efficiency: number;
 }
@@ -93,6 +95,7 @@ export interface PlayerStatistics {
 export interface GoalHeatmapProps {
     goalTargetStats: Map<number, GoalTargetStatistics>;
     className?: string;
+    isGoalkeeper?: boolean;
 }
 
 /**
@@ -121,7 +124,7 @@ export interface StatsTableProps {
 export interface StatCardProps {
     label: string;
     value: string | number;
-    color?: 'blue' | 'green' | 'purple' | 'yellow' | 'orange' | 'gray';
+    color?: 'blue' | 'green' | 'purple' | 'yellow' | 'orange' | 'gray' | 'red';
     className?: string;
 }
 
