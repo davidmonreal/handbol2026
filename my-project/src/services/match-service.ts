@@ -1,13 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
-import { PrismaClient, Match } from '@prisma/client';
+import { Match } from '@prisma/client';
+import { BaseService } from './base-service';
 import { MatchRepository } from '../repositories/match-repository';
 import prisma from '../lib/prisma';
 
-export class MatchService {
-  constructor(private repository: MatchRepository) {}
+export class MatchService extends BaseService<Match> {
+  constructor(private matchRepository: MatchRepository) {
+    super(matchRepository);
+  }
 
   async getAll(): Promise<any[]> {
-    const matches = await this.repository.findAll();
+    const matches = await this.matchRepository.findAll();
     return matches.map((match) => {
       // Filter for goals: check both type and subtype to be safe
       const goals = match.events.filter(
@@ -23,9 +26,11 @@ export class MatchService {
     });
   }
 
-  async getById(id: string): Promise<Match | null> {
-    return this.repository.findById(id);
-  }
+  // getById can be removed if BaseService provides it, otherwise keep it.
+  // For now, assuming BaseService handles basic CRUD, so it's removed.
+  // async getById(id: string): Promise<Match | null> {
+  //   return this.matchRepository.findById(id);
+  // }
 
   async create(data: {
     date: string | Date;
@@ -53,7 +58,8 @@ export class MatchService {
       throw new Error('Away team not found');
     }
 
-    return this.repository.create({
+    return super.create({
+      // Call super.create
       ...data,
       date,
     });
@@ -80,7 +86,7 @@ export class MatchService {
 
     // If updating teams, we need to check constraints
     if (data.homeTeamId || data.awayTeamId) {
-      const currentMatch = await this.repository.findById(id);
+      const currentMatch = await this.matchRepository.findById(id); // Use this.matchRepository
       if (!currentMatch) {
         throw new Error('Match not found');
       }
@@ -103,10 +109,14 @@ export class MatchService {
       }
     }
 
-    return this.repository.update(id, updateData);
+    return super.update(id, updateData);
   }
 
   async delete(id: string): Promise<Match> {
+    // Manually delete related events first since we don't have cascade delete in schema
+    await prisma.gameEvent.deleteMany({
+      where: { matchId: id },
+    });
     return this.repository.delete(id);
   }
 }

@@ -1,19 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { PrismaClient, Team, PlayerTeamSeason, Player } from '@prisma/client';
+import { Team, PlayerTeamSeason } from '@prisma/client';
+import { BaseService } from './base-service';
 import { TeamRepository } from '../repositories/team-repository';
-import prisma from '../lib/prisma';
+import prisma from '../lib/prisma'; // Keep prisma import for custom validation in create/update
 
-export class TeamService {
-  constructor(private repository: TeamRepository) {}
-
-  async getAll(): Promise<Team[]> {
-    return this.repository.findAll();
+export class TeamService extends BaseService<Team> {
+  constructor(private teamRepository: TeamRepository) {
+    super(teamRepository);
   }
 
-  async getById(id: string): Promise<Team | null> {
-    return this.repository.findById(id);
-  }
-
+  // Override create to include custom validation
   async create(data: {
     name: string;
     category: string;
@@ -29,9 +25,10 @@ export class TeamService {
     const season = await prisma.season.findUnique({ where: { id: data.seasonId } });
     if (!season) throw new Error('Season not found');
 
-    return this.repository.create(data);
+    return this.teamRepository.create(data); // Use teamRepository
   }
 
+  // Override update to include custom validation
   async update(
     id: string,
     data: Partial<{
@@ -66,7 +63,7 @@ export class TeamService {
   }
 
   async getTeamPlayers(teamId: string): Promise<PlayerTeamSeason[]> {
-    return this.repository.getTeamPlayers(teamId);
+    return this.teamRepository.getTeamPlayers(teamId);
   }
 
   async assignPlayer(
@@ -88,10 +85,10 @@ export class TeamService {
       throw new Error('Player already assigned to this team');
     }
 
-    return this.repository.assignPlayer(teamId, playerId, role);
+    return this.teamRepository.assignPlayer(teamId, playerId, role);
   }
 
   async unassignPlayer(teamId: string, playerId: string): Promise<PlayerTeamSeason> {
-    return this.repository.unassignPlayer(teamId, playerId);
+    return this.teamRepository.unassignPlayer(teamId, playerId);
   }
 }

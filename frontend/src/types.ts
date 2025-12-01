@@ -70,7 +70,7 @@ export interface Team {
     club?: { id: string; name: string };
     season?: { id: string; name: string };
     color: string;
-    players?: Player[];
+    players?: { player: Player; role?: string }[];
     isMyTeam?: boolean;
 }
 

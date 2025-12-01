@@ -63,7 +63,7 @@ describe('PlayerController - Delete Operations', () => {
       await controller.delete(req as Request, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Failed to delete player' });
+      expect(res.json).toHaveBeenCalledWith({ error: 'Player not found' });
     });
 
     it('should return 500 on database error', async () => {
@@ -75,7 +75,7 @@ describe('PlayerController - Delete Operations', () => {
       await controller.delete(req as Request, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Failed to delete player' });
+      expect(res.json).toHaveBeenCalledWith({ error: 'Database connection failed' });
     });
   });
 

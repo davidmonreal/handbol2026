@@ -104,7 +104,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const setMatchData = useCallback(async (id: string, home: Team, visitor: Team) => {
-    console.log('setMatchData called with:', { id, home, visitor });
+
     setMatchId(id);
     setHomeTeam(home);
     setVisitorTeam(visitor);

@@ -3,15 +3,15 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for config/zones.ts</title>
+    <title>Code coverage report for src/components/stats/StatCard.tsx</title>
     <meta charset="utf-8" />
-    <link rel="stylesheet" href="../prettify.css" />
-    <link rel="stylesheet" href="../base.css" />
-    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png" />
+    <link rel="stylesheet" href="../../../prettify.css" />
+    <link rel="stylesheet" href="../../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../../favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style type='text/css'>
         .coverage-summary .sorter {
-            background-image: url(../sort-arrow-sprite.png);
+            background-image: url(../../../sort-arrow-sprite.png);
         }
     </style>
 </head>
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../index.html">All files</a> / <a href="index.html">config</a> zones.ts</h1>
+        <h1><a href="../../../index.html">All files</a> / <a href="index.html">src/components/stats</a> StatCard.tsx</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">37.5% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>3/8</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/5</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/3</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>3/6</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -97,13 +97,11 @@
 <a name='L32'></a><a href='#L32'>32</a>
 <a name='L33'></a><a href='#L33'>33</a>
 <a name='L34'></a><a href='#L34'>34</a>
-<a name='L35'></a><a href='#L35'>35</a>
-<a name='L36'></a><a href='#L36'>36</a>
-<a name='L37'></a><a href='#L37'>37</a>
-<a name='L38'></a><a href='#L38'>38</a>
-<a name='L39'></a><a href='#L39'>39</a>
-<a name='L40'></a><a href='#L40'>40</a>
-<a name='L41'></a><a href='#L41'>41</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L35'></a><a href='#L35'>35</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -126,63 +124,47 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">66x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { ZoneType } from '../types';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { StatCardProps } from './types';
 &nbsp;
-export interface ZoneConfig {
-    zone: ZoneType;
-    label: string;
-    shortLabel: string;
-}
-&nbsp;
-export const ZONE_CONFIG = {
-    // 6m Line
-    sixMeter: [
-        { zone: '6m-LW' as ZoneType, label: 'LW 6m', shortLabel: 'LW' },
-        { zone: '6m-LB' as ZoneType, label: 'LB 6m', shortLabel: 'LB' },
-        { zone: '6m-CB' as ZoneType, label: 'CB 6m', shortLabel: 'CB' },
-        { zone: '6m-RB' as ZoneType, label: 'RB 6m', shortLabel: 'RB' },
-        { zone: '6m-RW' as ZoneType, label: 'RW 6m', shortLabel: 'RW' },
-    ],
-    // 9m Line
-    nineMeter: [
-        { zone: '9m-LB' as ZoneType, label: 'LB 9m', shortLabel: 'LB' },
-        { zone: '9m-CB' as ZoneType, label: 'CB 9m', shortLabel: 'CB' },
-        { zone: '9m-RB' as ZoneType, label: 'RB 9m', shortLabel: 'RB' },
-    ],
-    // 7m Penalty
-    penalty: { zone: '7m' as ZoneType, label: 'Penalty 7m', shortLabel: '7m' },
-} as const;
-&nbsp;
-// Helper to get all zones in order
-export const getAllZones = <span class="fstat-no" title="function not covered" >(): ZoneConfig[] =&gt; <span class="cstat-no" title="statement not covered" >[</span></span>
-    ...ZONE_CONFIG.sixMeter,
-    ...ZONE_CONFIG.nineMeter,
-    ZONE_CONFIG.penalty,
-];
-&nbsp;
-// Helper to get zone label
-export const getZoneLabel = <span class="fstat-no" title="function not covered" >(z</span>one: ZoneType, short: boolean = <span class="branch-0 cbranch-no" title="branch not covered" >false): string =&gt; {</span>
-    const allZones = <span class="cstat-no" title="statement not covered" >getAllZones();</span>
-    const config = <span class="cstat-no" title="statement not covered" >allZones.find(<span class="fstat-no" title="function not covered" >z =&gt; <span class="cstat-no" title="statement not covered" >z</span>.zone === zone)</span>;</span>
-<span class="cstat-no" title="statement not covered" >    return config ? (short ? config.shortLabel : config.label) : zone;</span>
+const colorClasses = {
+  blue: 'bg-blue-50 text-blue-600 border-blue-600',
+  green: 'bg-green-50 text-green-600 border-green-600',
+  purple: 'bg-purple-50 text-purple-600 border-purple-600',
+  yellow: 'bg-yellow-50 text-yellow-600 border-yellow-600',
+  orange: 'bg-orange-50 text-orange-600 border-orange-600',
+  gray: 'bg-gray-50 text-gray-600 border-gray-600',
+  red: 'bg-red-50 text-red-600 border-red-600',
 };
+&nbsp;
+const valueColorClasses = {
+  blue: 'text-blue-800',
+  green: 'text-green-800',
+  purple: 'text-purple-800',
+  yellow: 'text-yellow-800',
+  orange: 'text-orange-800',
+  gray: 'text-gray-800',
+  red: 'text-red-800',
+};
+&nbsp;
+/**
+ * StatCard - Displays a single statistic with label and value
+ * Used in summary cards grid
+ */
+export function StatCard({ label, value, color = 'gray', className = '' }: StatCardProps) {
+  return (
+    &lt;div className={`${colorClasses[color]} rounded-lg p-4 ${className}`}&gt;
+      &lt;div className={`text-sm ${color !== 'gray' ? 'font-medium' : ''}`}&gt;{label}&lt;/div&gt;
+      &lt;div className={`text-2xl font-bold ${valueColorClasses[color]}`}&gt;{value}&lt;/div&gt;
+    &lt;/div&gt;
+  );
+}
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -190,16 +172,16 @@ export const getZoneLabel = <span class="fstat-no" title="function not covered" 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-29T10:49:58.702Z
+                at 2025-12-01T17:58:09.278Z
             </div>
-        <script src="../prettify.js"></script>
+        <script src="../../../prettify.js"></script>
         <script>
             window.onload = function () {
                 prettyPrint();
             };
         </script>
-        <script src="../sorter.js"></script>
-        <script src="../block-navigation.js"></script>
+        <script src="../../../sorter.js"></script>
+        <script src="../../../block-navigation.js"></script>
     </body>
 </html>
     

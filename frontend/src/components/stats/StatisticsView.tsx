@@ -107,12 +107,7 @@ export function StatisticsView({
 
   // Apply all filters
   const filteredEvents = useMemo(() => {
-    console.log('[StatisticsView] Filtering events:', {
-      totalEvents: events.length,
-      context,
-      selectedTeamId,
-      sampleEvent: events[0]
-    });
+
 
     const filtered = events.filter(e => {
       // Filter by team in match context
@@ -142,7 +137,7 @@ export function StatisticsView({
       return true;
     });
 
-    console.log('[StatisticsView] Filtered result:', { filteredCount: filtered.length });
+
     return filtered;
   }, [events, context, selectedTeamId, filterZone, filterPlayer, filterOpposition, filterCollective, filterCounterAttack]);
 

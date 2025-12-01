@@ -6,11 +6,11 @@ import { AdminLayout } from './components/admin/AdminLayout';
 import Dashboard from './components/Dashboard';
 import MatchTracker from './components/MatchTracker';
 import Statistics from './components/Statistics';
+import { MatchesManagement } from './components/admin/MatchesManagement';
 import { ClubsManagement } from './components/admin/ClubsManagement';
 import { SeasonsManagement } from './components/admin/SeasonsManagement';
 import { PlayersManagement } from './components/admin/PlayersManagement';
 import { TeamsManagement } from './components/admin/TeamsManagement';
-import { MatchesManagement } from './components/admin/MatchesManagement';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: ReactNode }) {

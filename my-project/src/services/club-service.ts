@@ -1,26 +1,12 @@
 import { Club } from '@prisma/client';
+import { BaseService } from './base-service';
 import { IClubRepository } from '../repositories/club-repository';
 
-export class ClubService {
-  constructor(private clubRepository: IClubRepository) {}
-
-  async getAllClubs(): Promise<Club[]> {
-    return this.clubRepository.findAll();
+export class ClubService extends BaseService<Club> {
+  constructor(repository: IClubRepository) {
+    super(repository);
   }
 
-  async getClubById(id: string): Promise<Club | null> {
-    return this.clubRepository.findById(id);
-  }
-
-  async createClub(name: string): Promise<Club> {
-    return this.clubRepository.create({ name });
-  }
-
-  async updateClub(id: string, name: string): Promise<Club> {
-    return this.clubRepository.update(id, { name });
-  }
-
-  async deleteClub(id: string): Promise<Club> {
-    return this.clubRepository.delete(id);
-  }
+  // Custom methods can be added here if needed
+  // Standard CRUD methods are inherited from BaseService
 }

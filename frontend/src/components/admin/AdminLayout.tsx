@@ -6,8 +6,8 @@ export const AdminLayout = () => {
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/clubs', label: 'Clubs', icon: Trophy },
     { path: '/seasons', label: 'Seasons', icon: Calendar },
-    { path: '/players', label: 'Players', icon: Users },
     { path: '/teams', label: 'Teams', icon: Users },
+    { path: '/players', label: 'Players', icon: Users },
     { path: '/matches', label: 'Matches', icon: FileText },
   ];
 
@@ -43,10 +43,9 @@ export const AdminLayout = () => {
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
-                    `w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-indigo-50 text-indigo-700 font-medium'
-                        : 'text-gray-700 hover:bg-gray-50'
+                    `w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
+                      ? 'bg-indigo-50 text-indigo-700 font-medium'
+                      : 'text-gray-700 hover:bg-gray-50'
                     }`
                   }
                 >

@@ -1,33 +1,26 @@
 import { Season } from '@prisma/client';
+import { BaseService } from './base-service';
 import { SeasonRepository } from '../repositories/season-repository';
 
-export class SeasonService {
-  constructor(private repository: SeasonRepository) {}
-
-  async getAll(): Promise<Season[]> {
-    return this.repository.findAll();
+export class SeasonService extends BaseService<Season> {
+  constructor(repository: SeasonRepository) {
+    super(repository);
   }
 
-  async getById(id: string): Promise<Season | null> {
-    return this.repository.findById(id);
-  }
-
-  async create(data: Omit<Season, 'id'>): Promise<Season> {
-    // Validation logic could go here (e.g., check if end date is after start date)
+  async create(data: { name: string; startDate: Date; endDate: Date }): Promise<Season> {
     if (data.endDate <= data.startDate) {
       throw new Error('End date must be after start date');
     }
-    return this.repository.create(data);
+    return super.create(data);
   }
 
-  async update(id: string, data: Partial<Omit<Season, 'id'>>): Promise<Season> {
+  async update(
+    id: string,
+    data: Partial<{ name: string; startDate: Date; endDate: Date }>,
+  ): Promise<Season> {
     if (data.startDate && data.endDate && data.endDate <= data.startDate) {
       throw new Error('End date must be after start date');
     }
-    return this.repository.update(id, data);
-  }
-
-  async delete(id: string): Promise<Season> {
-    return this.repository.delete(id);
+    return super.update(id, data);
   }
 }

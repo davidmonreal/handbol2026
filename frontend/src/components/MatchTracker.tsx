@@ -36,9 +36,7 @@ const MatchTracker = () => {
       fetch(`${API_BASE_URL}/api/matches/${matchId}`)
         .then(res => res.json())
         .then(data => {
-          console.log('API Response:', data);
-          console.log('HomeTeam players:', data.homeTeam?.players);
-          console.log('AwayTeam players:', data.awayTeam?.players);
+
 
           // Transform API data to Context format
           const transformTeam = (teamData: any, color: string) => ({
@@ -60,8 +58,7 @@ const MatchTracker = () => {
           const home = transformTeam(data.homeTeam, 'bg-yellow-400');
           const visitor = transformTeam(data.awayTeam, 'bg-white');
 
-          console.log('Transformed home team:', home);
-          console.log('Transformed visitor team:', visitor);
+
 
           setMatchData(data.id, home, visitor);
         })

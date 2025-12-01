@@ -1,84 +1,25 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from 'express';
+import { Match } from '@prisma/client';
+import { BaseController } from './base-controller';
 import { MatchService } from '../services/match-service';
 
-export class MatchController {
-  constructor(private matchService: MatchService) {}
+export class MatchController extends BaseController<Match> {
+  constructor(service: MatchService) {
+    super(service, 'Match');
+  }
 
-  getAll = async (req: Request, res: Response) => {
-    try {
-      const matches = await this.matchService.getAll();
-      res.json(matches);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch matches' });
-    }
-  };
+  async create(req: Request, res: Response) {
+    // Date parsing is handled in service or here?
+    // Original controller passed raw strings to service, but service expects Date objects or strings?
+    // Looking at original service, it parsed strings to Date.
+    // BaseController passes body directly.
+    // Let's parse here to be safe and consistent with SeasonController.
+    if (req.body.date) req.body.date = new Date(req.body.date);
+    return super.create(req, res);
+  }
 
-  getById = async (req: Request, res: Response) => {
-    try {
-      const match = await this.matchService.getById(req.params.id);
-      if (!match) {
-        return res.status(404).json({ error: 'Match not found' });
-      }
-      res.json(match);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch match' });
-    }
-  };
-
-  create = async (req: Request, res: Response) => {
-    try {
-      const { date, homeTeamId, awayTeamId } = req.body;
-      const match = await this.matchService.create({ date, homeTeamId, awayTeamId });
-      res.status(201).json(match);
-    } catch (error) {
-      if (error instanceof Error) {
-        if (
-          error.message === 'Home and Away teams must be different' ||
-          error.message === 'Invalid date format' ||
-          error.message.includes('not found')
-        ) {
-          return res.status(400).json({ error: error.message });
-        }
-      }
-      res.status(500).json({ error: 'Failed to create match' });
-    }
-  };
-
-  update = async (req: Request, res: Response) => {
-    try {
-      const { date, homeTeamId, awayTeamId, isFinished } = req.body;
-      const updateData: Record<string, any> = {};
-      if (date) updateData.date = date;
-      if (homeTeamId) updateData.homeTeamId = homeTeamId;
-      if (awayTeamId) updateData.awayTeamId = awayTeamId;
-      if (isFinished !== undefined) updateData.isFinished = isFinished;
-
-      const match = await this.matchService.update(req.params.id, updateData);
-      res.json(match);
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.message === 'Match not found') {
-          return res.status(404).json({ error: error.message });
-        }
-        if (
-          error.message === 'Home and Away teams must be different' ||
-          error.message === 'Invalid date format' ||
-          error.message.includes('not found')
-        ) {
-          return res.status(400).json({ error: error.message });
-        }
-      }
-      res.status(500).json({ error: 'Failed to update match' });
-    }
-  };
-
-  delete = async (req: Request, res: Response) => {
-    try {
-      await this.matchService.delete(req.params.id);
-      res.status(204).send();
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to delete match' });
-    }
-  };
+  async update(req: Request, res: Response) {
+    if (req.body.date) req.body.date = new Date(req.body.date);
+    return super.update(req, res);
+  }
 }
