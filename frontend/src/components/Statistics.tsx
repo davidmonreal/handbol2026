@@ -45,14 +45,19 @@ const Statistics = () => {
           const playerData = await playerRes.json();
           setData(playerData);
 
-          // Load all events and filter by player (replicating PlayersManagement logic)
-          // Ideally backend should support /api/game-events?playerId=...
+          // Load all events
           const eventsRes = await fetch(`${API_BASE_URL}/api/game-events`);
           const allEvents = await eventsRes.json();
-          const playerEvents = allEvents.filter((e: any) => e.playerId === playerId);
 
-          // We need to use the same transformation logic as PlayersManagement or update transformBackendEvents
-          // transformBackendEvents seems robust enough if we pass the raw backend events
+          // Filter based on player type
+          const playerEvents = playerData.isGoalkeeper
+            ? allEvents.filter((e: any) =>
+              e.activeGoalkeeperId === playerId &&
+              e.type === 'Shot' &&
+              ['Goal', 'Save'].includes(e.subtype)
+            )
+            : allEvents.filter((e: any) => e.playerId === playerId);
+
           setStatsEvents(transformBackendEvents(playerEvents));
         } else if (teamId) {
           // Load team details
@@ -95,7 +100,16 @@ const Statistics = () => {
       return `Match Statistics: ${currentTeamName}`;
     }
     if (playerId && data) {
-      return `${data.name} - Statistics`;
+      return (
+        <div className="flex items-center gap-2">
+          <span>{data.name} - Statistics</span>
+          {data.isGoalkeeper && (
+            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+              GK
+            </span>
+          )}
+        </div>
+      );
     }
     if (teamId && data) {
       return `${data.name} - Statistics`;

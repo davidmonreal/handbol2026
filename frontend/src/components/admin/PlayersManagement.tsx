@@ -10,6 +10,7 @@ interface Player {
   name: string;
   number: number;
   handedness: string;
+  isGoalkeeper: boolean;
   teams?: {
     team: {
       club: {
@@ -29,7 +30,8 @@ export const PlayersManagement = () => {
   const [formData, setFormData] = useState({
     name: '',
     number: '',
-    handedness: 'RIGHT'
+    handedness: 'RIGHT',
+    isGoalkeeper: false
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -113,7 +115,8 @@ export const PlayersManagement = () => {
     setFormData({
       name: player.name,
       number: player.number.toString(),
-      handedness: player.handedness
+      handedness: player.handedness,
+      isGoalkeeper: player.isGoalkeeper || false
     });
     setIsFormOpen(true);
   };
@@ -121,7 +124,8 @@ export const PlayersManagement = () => {
   const handleCancel = () => {
     setIsFormOpen(false);
     setEditingPlayer(null);
-    setFormData({ name: '', number: '', handedness: 'RIGHT' });
+    setEditingPlayer(null);
+    setFormData({ name: '', number: '', handedness: 'RIGHT', isGoalkeeper: false });
     setError(null);
   };
 
@@ -222,6 +226,18 @@ export const PlayersManagement = () => {
                   </select>
                 </div>
               </div>
+              <div className="mb-4 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isGoalkeeper"
+                  checked={formData.isGoalkeeper}
+                  onChange={(e) => setFormData({ ...formData, isGoalkeeper: e.target.checked })}
+                  className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                />
+                <label htmlFor="isGoalkeeper" className="text-sm font-medium text-gray-700">
+                  Is Goalkeeper
+                </label>
+              </div>
               <div className="flex gap-3 justify-end">
                 <button
                   type="button"
@@ -260,6 +276,9 @@ export const PlayersManagement = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Handedness
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Goalkeeper
+              </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
@@ -289,6 +308,15 @@ export const PlayersManagement = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {player.handedness}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {player.isGoalkeeper ? (
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                      GK
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button

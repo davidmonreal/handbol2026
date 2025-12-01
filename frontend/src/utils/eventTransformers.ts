@@ -49,6 +49,7 @@ export const transformBackendEvent = (e: any): MatchEvent => ({
         isCounterAttack: e.isCounterAttack,
     },
     defenseFormation: undefined,
+    activeGoalkeeperId: e.activeGoalkeeperId, // Add goalkeeper ID from backend
 });
 
 /**

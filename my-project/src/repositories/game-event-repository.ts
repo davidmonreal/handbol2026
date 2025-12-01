@@ -28,6 +28,7 @@ export class GameEventRepository {
       where: { matchId },
       include: {
         player: true,
+        activeGoalkeeper: true,
       },
       orderBy: { timestamp: 'asc' },
     });
@@ -57,6 +58,7 @@ export class GameEventRepository {
     sanctionType?: string;
     hasOpposition?: boolean;
     isCounterAttack?: boolean;
+    activeGoalkeeperId?: string;
   }): Promise<GameEvent> {
     return prisma.gameEvent.create({
       data,
@@ -80,6 +82,7 @@ export class GameEventRepository {
       sanctionType: string;
       hasOpposition: boolean;
       isCounterAttack: boolean;
+      activeGoalkeeperId: string;
     }>,
   ): Promise<GameEvent> {
     return prisma.gameEvent.update({

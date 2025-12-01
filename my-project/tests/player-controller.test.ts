@@ -61,7 +61,19 @@ describe('PlayerController', () => {
 
     await controller.create(req as Request, res as Response);
 
-    expect(service.create).toHaveBeenCalledWith({ name: 'Bob', number: 7, handedness: 'LEFT' });
+    expect(service.create).toHaveBeenCalledWith({ name: 'Bob', number: 7, handedness: 'LEFT', isGoalkeeper: false });
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(createdPlayer);
+  });
+
+  it('create creates a new goalkeeper', async () => {
+    req.body = { name: 'Nico', number: '1', handedness: 'RIGHT', isGoalkeeper: true };
+    const createdPlayer = { id: '3', name: 'Nico', number: 1, handedness: 'RIGHT', isGoalkeeper: true };
+    vi.mocked(service.create).mockResolvedValue(createdPlayer);
+
+    await controller.create(req as Request, res as Response);
+
+    expect(service.create).toHaveBeenCalledWith({ name: 'Nico', number: 1, handedness: 'RIGHT', isGoalkeeper: true });
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith(createdPlayer);
   });
@@ -85,6 +97,18 @@ describe('PlayerController', () => {
     await controller.update(req as Request, res as Response);
 
     expect(service.update).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith(updatedPlayer);
+  });
+
+  it('update modifies a player to be a goalkeeper', async () => {
+    req.params = { id: '1' };
+    req.body = { isGoalkeeper: true };
+    const updatedPlayer = { id: '1', name: 'Alice', number: 10, handedness: 'RIGHT', isGoalkeeper: true };
+    vi.mocked(service.update).mockResolvedValue(updatedPlayer);
+
+    await controller.update(req as Request, res as Response);
+
+    expect(service.update).toHaveBeenCalledWith('1', { isGoalkeeper: true });
     expect(res.json).toHaveBeenCalledWith(updatedPlayer);
   });
 

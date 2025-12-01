@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -39,12 +39,14 @@ model Team {
 }
 
 model Player {
-  id        String   @id @default(uuid())
-  name      String
-  number    Int      // Default number
-  handedness String  @default("RIGHT") // "LEFT" or "RIGHT"
-  teams     PlayerTeamSeason[]
-  events    GameEvent[]
+  id            String   @id @default(uuid())
+  name          String
+  number        Int      // Default number
+  handedness    String   @default("RIGHT") // "LEFT" or "RIGHT"
+  isGoalkeeper  Boolean  @default(false) // Whether player is a goalkeeper
+  teams         PlayerTeamSeason[]
+  events        GameEvent[] @relation("EventPlayer")
+  activeGoalkeeperEvents GameEvent[] @relation("ActiveGoalkeeper")
 }
 
 // Handles the "Player plays in multiple teams per season" requirement
@@ -80,8 +82,12 @@ model GameEvent {
   
   // Who
   playerId    String?
-  player      Player?  @relation(fields: [playerId], references: [id])
+  player      Player?  @relation("EventPlayer", fields: [playerId], references: [id])
   teamId      String   // To know which side the event belongs to
+  
+  // Active Goalkeeper (for opponent's goalkeeper during shot events)
+  activeGoalkeeperId String?
+  activeGoalkeeper   Player? @relation("ActiveGoalkeeper", fields: [activeGoalkeeperId], references: [id])
   
   // What
   type        String   // GOAL, MISS, TURNOVER, SANCTION

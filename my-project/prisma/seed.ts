@@ -88,16 +88,16 @@ async function main() {
 
   // Create Players (14 existing + 50 new = 64 total)
   const playerNames = [
-    // Existing players
-    { name: 'Martí Monreal', number: 21, handedness: 'RIGHT' },
-    { name: 'Guillem Cuartero', number: 31, handedness: 'LEFT' },
-    { name: 'Pol Rossell', number: 30, handedness: 'RIGHT' },
-    { name: 'Guim', number: 33, handedness: 'RIGHT' },
-    { name: 'Marc Garcia', number: 7, handedness: 'RIGHT' },
-    { name: 'Joan López', number: 10, handedness: 'LEFT' },
-    { name: 'Albert Martínez', number: 15, handedness: 'RIGHT' },
-    { name: 'Pau Rodríguez', number: 3, handedness: 'LEFT' },
-    { name: 'David Sánchez', number: 12, handedness: 'RIGHT' },
+    // Existing players - First 2 are goalkeepers
+    { name: 'Martí Monreal', number: 21, handedness: 'RIGHT', isGoalkeeper: false },
+    { name: 'Guillem Cuartero', number: 31, handedness: 'LEFT', isGoalkeeper: true },  // Goalkeeper
+    { name: 'Pol Rossell', number: 30, handedness: 'RIGHT', isGoalkeeper: true },     // Goalkeeper
+    { name: 'Guim', number: 33, handedness: 'RIGHT', isGoalkeeper: false },
+    { name: 'Marc Garcia', number: 7, handedness: 'RIGHT', isGoalkeeper: false },
+    { name: 'Joan López', number: 10, handedness: 'LEFT', isGoalkeeper: false },
+    { name: 'Albert Martínez', number: 15, handedness: 'RIGHT', isGoalkeeper: false },
+    { name: 'Pau Rodríguez', number: 3, handedness: 'LEFT', isGoalkeeper: false },
+    { name: 'David Sánchez', number: 12, handedness: 'RIGHT', isGoalkeeper: false },
     { name: 'Carlos Fernández', number: 9, handedness: 'RIGHT' },
     { name: 'Jordi Vila', number: 5, handedness: 'LEFT' },
     { name: 'Gerard Pons', number: 21, handedness: 'RIGHT' },
@@ -159,7 +159,8 @@ async function main() {
 
   const players = [];
   for (const playerData of playerNames) {
-    const player = await prisma.player.create({ data: playerData });
+    const data = { ...playerData, isGoalkeeper: (playerData as any).isGoalkeeper || false };
+    const player = await prisma.player.create({ data });
     players.push(player);
   }
 
@@ -387,7 +388,6 @@ async function main() {
 
       if (eventType === 'Shot') {
         eventData.distance = distances[Math.floor(Math.random() * distances.length)];
-
         // Filter positions based on distance
         let validPositions = positions;
         if (eventData.distance === '9M') {
@@ -404,6 +404,14 @@ async function main() {
         // Randomly decide if it's a goal or miss
         const shotResults = ['Goal', 'Save', 'Miss', 'Post'];
         eventData.subtype = shotResults[Math.floor(Math.random() * shotResults.length)];
+
+        // Assign active goalkeeper (opponent team's goalkeeper)
+        const opponentPlayers = isHomeTeam ? awayTeamPlayers : homeTeamPlayers;
+        const goalkeepers = opponentPlayers.filter((p: any) => p.isGoalkeeper);
+        if (goalkeepers.length > 0) {
+          const randomGoalkeeper = goalkeepers[Math.floor(Math.random() * goalkeepers.length)];
+          eventData.activeGoalkeeperId = randomGoalkeeper.id;
+        }
       } else if (eventType === 'Turnover') {
         eventData.subtype = ['Pass', 'Steps', 'Double', 'Area'][Math.floor(Math.random() * 4)];
       } else if (eventType === 'Sanction') {

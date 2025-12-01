@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { PlayerService } from '../services/player-service';
 
 export class PlayerController {
-  constructor(private playerService: PlayerService) {}
+  constructor(private playerService: PlayerService) { }
 
   getAll = async (req: Request, res: Response) => {
     try {
@@ -32,11 +32,12 @@ export class PlayerController {
 
   create = async (req: Request, res: Response) => {
     try {
-      const { name, number, handedness } = req.body;
+      const { name, number, handedness, isGoalkeeper } = req.body;
       const player = await this.playerService.create({
         name,
         number: parseInt(number),
         handedness,
+        isGoalkeeper: isGoalkeeper || false,
       });
       res.status(201).json(player);
     } catch (error) {
@@ -53,11 +54,12 @@ export class PlayerController {
 
   update = async (req: Request, res: Response) => {
     try {
-      const { name, number, handedness } = req.body;
+      const { name, number, handedness, isGoalkeeper } = req.body;
       const updateData: any = {};
       if (name) updateData.name = name;
       if (number) updateData.number = parseInt(number);
       if (handedness) updateData.handedness = handedness;
+      if (isGoalkeeper !== undefined) updateData.isGoalkeeper = isGoalkeeper;
 
       const player = await this.playerService.update(req.params.id, updateData);
       res.json(player);

@@ -8,7 +8,7 @@ import { usePlayerBaselines } from './hooks/usePlayerBaselines';
 
 interface StatisticsViewProps {
   events: MatchEvent[];
-  title?: string;
+  title?: React.ReactNode;
   subtitle?: string;
   context: 'match' | 'player' | 'team';
   onPlayerClick?: (playerId: string | null) => void;
@@ -65,24 +65,36 @@ export function StatisticsView({
   };
 
   // Player info lookup function
-  const getPlayerInfo = (playerId: string): { name: string; number: number } => {
+  const getPlayerInfo = (playerId: string): { name: string; number: number; isGoalkeeper?: boolean } => {
     if (matchData) {
       // Look in home team
       const homePlayer = matchData.homeTeam.players.find((p: any) => p.player.id === playerId);
-      if (homePlayer) return { name: homePlayer.player.name, number: homePlayer.player.number };
+      if (homePlayer) return {
+        name: homePlayer.player.name,
+        number: homePlayer.player.number,
+        isGoalkeeper: homePlayer.player.isGoalkeeper
+      };
 
       // Look in away team
       const awayPlayer = matchData.awayTeam.players.find((p: any) => p.player.id === playerId);
-      if (awayPlayer) return { name: awayPlayer.player.name, number: awayPlayer.player.number };
+      if (awayPlayer) return {
+        name: awayPlayer.player.name,
+        number: awayPlayer.player.number,
+        isGoalkeeper: awayPlayer.player.isGoalkeeper
+      };
     }
 
     if (teamData) {
       // Look in team players
       const teamPlayer = teamData.players.find((p: any) => p.player.id === playerId);
-      if (teamPlayer) return { name: teamPlayer.player.name, number: teamPlayer.player.number };
+      if (teamPlayer) return {
+        name: teamPlayer.player.name,
+        number: teamPlayer.player.number,
+        isGoalkeeper: teamPlayer.player.isGoalkeeper
+      };
     }
 
-    // Fallback to event data
+    // Fallback to event data (we might not have isGoalkeeper here if it's not in event)
     const event = events.find(e => e.playerId === playerId);
     return { name: event?.playerName || 'Unknown', number: event?.playerNumber || 0 };
   };
@@ -106,7 +118,24 @@ export function StatisticsView({
       // Filter by team in match context
       if (context === 'match' && selectedTeamId && e.teamId !== selectedTeamId) return false;
       if (filterZone && e.zone !== filterZone) return false;
-      if (filterPlayer && e.playerId !== filterPlayer) return false;
+
+      // Player filter with goalkeeper support
+      if (filterPlayer) {
+        const playerInfo = getPlayerInfo(filterPlayer);
+
+        if (playerInfo.isGoalkeeper) {
+          // For goalkeepers: ONLY include events where they are the active goalkeeper
+          // (not events where they scored a goal themselves)
+          if (e.activeGoalkeeperId !== filterPlayer) return false;
+
+          // Only show Shot events (Goals and Saves) for goalkeepers
+          if (e.category === 'Shot' && !['Goal', 'Save'].includes(e.action)) return false;
+        } else {
+          // For field players: only show events where they are the playerId
+          if (e.playerId !== filterPlayer) return false;
+        }
+      }
+
       if (filterOpposition !== null && (e.hasOpposition ?? e.context?.hasOpposition) !== filterOpposition) return false;
       if (filterCollective !== null && (e.isCollective ?? e.context?.isCollective) !== filterCollective) return false;
       if (filterCounterAttack !== null && (e.isCounterAttack ?? e.context?.isCounterAttack) !== filterCounterAttack) return false;
@@ -116,6 +145,24 @@ export function StatisticsView({
     console.log('[StatisticsView] Filtered result:', { filteredCount: filtered.length });
     return filtered;
   }, [events, context, selectedTeamId, filterZone, filterPlayer, filterOpposition, filterCollective, filterCounterAttack]);
+
+  // Determine if we're viewing goalkeeper statistics
+  const isGoalkeeperView = useMemo(() => {
+    if (filterPlayer) {
+      // If filtering by specific player, check if they're a goalkeeper
+      return getPlayerInfo(filterPlayer).isGoalkeeper || false;
+    }
+    if (context === 'player' && events.length > 0) {
+      // If in player context, check the first event to see if it's a goalkeeper event
+      // (events are already filtered to be goalkeeper events if the player is a GK)
+      const firstEvent = events[0];
+      if (firstEvent.activeGoalkeeperId) {
+        // If events have activeGoalkeeperId set, this is a goalkeeper view
+        return true;
+      }
+    }
+    return false;
+  }, [filterPlayer, context, events]);
 
   const handleZoneFilter = (zone: ZoneType | '7m' | null) => {
     setFilterZone(zone);
@@ -221,6 +268,7 @@ export function StatisticsView({
           events: filteredEvents,
           title: '',
           context,
+          isGoalkeeper: isGoalkeeperView,
         }}
         comparison={showComparison ? { playerAverages: playerBaselines } : undefined}
         onZoneFilter={handleZoneFilter}

@@ -34,36 +34,18 @@ export function StatisticsPanel({
   const [selectedZone, setSelectedZone] = useState<ZoneType | '7m' | null>(null);
 
   // Calculate all statistics from events
-  const stats = useStatisticsCalculator(data.events, comparison);
-  
-  console.log('[StatisticsPanel] Received data:', {
-    eventsCount: data.events.length,
-    eventCategories: data.events.reduce((acc: any, e: any) => {
-      acc[e.category] = (acc[e.category] || 0) + 1;
-      return acc;
-    }, {}),
-    sampleEvents: data.events.slice(0, 3)
-  });
+  const stats = useStatisticsCalculator(data.events, comparison, data.isGoalkeeper);
+
+
 
   // Filter events by selected zone
   const filteredEvents = selectedZone
     ? data.events.filter(e => e.zone === selectedZone)
     : data.events;
 
-  const filteredStats = useStatisticsCalculator(filteredEvents, comparison);
-  
-  console.log('[StatisticsPanel] Stats comparison:', {
-    unfilteredStats: {
-      totalShots: stats.totalShots,
-      totalGoals: stats.totalGoals,
-      efficiency: stats.efficiency
-    },
-    filteredStats: {
-      totalShots: filteredStats.totalShots,
-      totalGoals: filteredStats.totalGoals,
-      efficiency: filteredStats.efficiency
-    }
-  });
+  const filteredStats = useStatisticsCalculator(filteredEvents, comparison, data.isGoalkeeper);
+
+
 
   const handleZoneClick = (zone: ZoneType | '7m' | null) => {
     setSelectedZone(zone);
@@ -80,12 +62,16 @@ export function StatisticsPanel({
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-        <StatCard label="Goals" value={filteredStats.totalGoals} color="green" />
+        <StatCard
+          label={data.isGoalkeeper ? "Goals Conceded" : "Goals"}
+          value={filteredStats.totalGoals}
+          color={data.isGoalkeeper ? "red" : "green"}
+        />
         <StatCard label="Shots" value={filteredStats.totalShots} color="blue" />
         <StatCard
-          label="Efficiency"
+          label={data.isGoalkeeper ? "Save %" : "Efficiency"}
           value={`${filteredStats.efficiency.toFixed(1)}%`}
-          color="purple"
+          color={data.isGoalkeeper ? "green" : "purple"}
         />
         <StatCard label="Saves" value={filteredStats.totalSaves} color="yellow" />
         <StatCard label="Misses" value={filteredStats.totalMisses} color="orange" />
@@ -94,7 +80,10 @@ export function StatisticsPanel({
 
       {/* Heatmaps and Zone Distribution */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <GoalHeatmap goalTargetStats={filteredStats.goalTargetStats} />
+        <GoalHeatmap
+          goalTargetStats={filteredStats.goalTargetStats}
+          isGoalkeeper={data.isGoalkeeper}
+        />
         <ZoneDistribution
           zoneStats={stats.zoneStats}
           totalShots={stats.totalShots}
