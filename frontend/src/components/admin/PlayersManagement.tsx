@@ -64,6 +64,14 @@ export const PlayersManagement = () => {
                 type: 'text',
                 required: true,
                 placeholder: 'e.g. John Doe',
+                transform: (value) => {
+                    if (typeof value !== 'string') return value;
+                    return value
+                        .toLowerCase()
+                        .split(' ')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(' ');
+                },
             },
             {
                 name: 'number',

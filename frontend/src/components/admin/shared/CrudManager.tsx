@@ -125,7 +125,9 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
     };
 
     const handleFieldChange = (fieldName: string, value: unknown) => {
-        setFormData(prev => ({ ...prev, [fieldName]: value }));
+        const fieldConfig = config.formFields.find(f => f.name === fieldName);
+        const finalValue = fieldConfig?.transform ? fieldConfig.transform(value) : value;
+        setFormData(prev => ({ ...prev, [fieldName]: finalValue }));
     };
 
     const filteredItems = items.filter((item: T) => {

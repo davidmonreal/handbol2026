@@ -83,6 +83,7 @@ export interface FormFieldConfig {
     required?: boolean;
     options?: { value: string | number; label: string }[];
     placeholder?: string;
+    transform?: (value: unknown) => unknown;
 }
 
 export interface ColumnConfig<T> {
