@@ -44,6 +44,8 @@ const MatchTracker = () => {
           const transformTeam = (teamData: any, color: string) => ({
             id: teamData.id,
             name: teamData.name,
+            category: teamData.category,
+            club: teamData.club,
             color: color,
             players: (teamData.players || []).map((p: any) => ({
               id: p.player.id,

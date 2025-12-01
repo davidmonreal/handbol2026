@@ -40,15 +40,22 @@ export const Scoreboard = ({
     <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-6">
       <div className="flex justify-between items-center">
         {/* Home Team */}
-        <div 
+        <div
           className={`text-center flex-1 p-2 md:p-4 rounded-lg cursor-pointer transition-colors ${activeTeamId === homeTeam.id ? 'bg-blue-50 border-2 border-blue-500' : 'hover:bg-gray-50'}`}
           onClick={() => onTeamSelect(homeTeam.id)}
         >
-          <h2 className="text-lg md:text-2xl font-bold text-gray-800 mb-2">{homeTeam.name}</h2>
+          <div className="mb-1">
+            <h2 className="text-lg md:text-2xl font-bold text-gray-800">
+              {homeTeam.category && `${homeTeam.category} `}{homeTeam.name}
+            </h2>
+            {homeTeam.club?.name && (
+              <div className="text-xs md:text-sm text-gray-500">{homeTeam.club.name}</div>
+            )}
+          </div>
           <div className="text-4xl md:text-6xl font-bold text-blue-600 mb-4">{homeScore}</div>
           <div className="flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => onHomeScoreChange(Math.max(0, homeScore - 1))} className="p-1 rounded bg-gray-100"><Minus size={16}/></button>
-            <button onClick={() => onHomeScoreChange(homeScore + 1)} className="p-1 rounded bg-gray-100"><Plus size={16}/></button>
+            <button onClick={() => onHomeScoreChange(Math.max(0, homeScore - 1))} className="p-1 rounded bg-gray-100"><Minus size={16} /></button>
+            <button onClick={() => onHomeScoreChange(homeScore + 1)} className="p-1 rounded bg-gray-100"><Plus size={16} /></button>
           </div>
         </div>
 
@@ -66,11 +73,18 @@ export const Scoreboard = ({
         </div>
 
         {/* Visitor Team */}
-        <div 
+        <div
           className={`text-center flex-1 p-2 md:p-4 rounded-lg cursor-pointer transition-colors ${activeTeamId === visitorTeam.id ? 'bg-red-50 border-2 border-red-500' : 'hover:bg-gray-50'}`}
           onClick={() => onTeamSelect(visitorTeam.id)}
         >
-          <h2 className="text-lg md:text-2xl font-bold text-gray-800 mb-2">{visitorTeam.name}</h2>
+          <div className="mb-1">
+            <h2 className="text-lg md:text-2xl font-bold text-gray-800">
+              {visitorTeam.category && `${visitorTeam.category} `}{visitorTeam.name}
+            </h2>
+            {visitorTeam.club?.name && (
+              <div className="text-xs md:text-sm text-gray-500">{visitorTeam.club.name}</div>
+            )}
+          </div>
           <div className="text-4xl md:text-6xl font-bold text-red-600 mb-4">{visitorScore}</div>
           <div className="flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => onVisitorScoreChange(Math.max(0, visitorScore - 1))} className="p-2 rounded-full bg-gray-100 hover:bg-gray-200"><Minus size={20} /></button>

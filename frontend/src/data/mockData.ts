@@ -8,6 +8,8 @@ export interface Player {
 export interface Team {
     id: string;
     name: string;
+    category?: string;
+    club?: { name: string };
     color: string;
     players: Player[];
 }
