@@ -21,6 +21,9 @@ export interface Player {
     isGoalkeeper: boolean;
     teams?: {
         team: {
+            id: string;
+            name: string;
+            category?: string;
             club: {
                 name: string;
             };
