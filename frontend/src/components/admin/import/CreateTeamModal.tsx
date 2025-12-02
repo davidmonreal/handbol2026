@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Loader2 } from 'lucide-react';
+import { toTitleCase } from '../../../utils/textUtils';
 
 interface CreateTeamModalProps {
     isOpen: boolean;
@@ -72,21 +73,21 @@ export const CreateTeamModal = ({ isOpen, onClose, onSubmit, initialTeamName }: 
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Club Name *
+                            Team Name
                         </label>
                         <input
                             type="text"
-                            value={clubName}
-                            onChange={(e) => setClubName(e.target.value)}
+                            value={teamName}
+                            onChange={(e) => setTeamName(toTitleCase(e.target.value))}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                            placeholder="e.g. FC Barcelona"
+                            placeholder="e.g. Cadet A"
                             autoFocus
                         />
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Category *
+                            Category
                         </label>
                         <div className="relative">
                             <select
@@ -94,13 +95,13 @@ export const CreateTeamModal = ({ isOpen, onClose, onSubmit, initialTeamName }: 
                                 onChange={(e) => setCategory(e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all appearance-none bg-white"
                             >
-                                <option value="" disabled>Select a category...</option>
-                                <option value="BENJAMI">BENJAMI</option>
-                                <option value="ALEVI">ALEVI</option>
-                                <option value="INFANTIL">INFANTIL</option>
-                                <option value="CADET">CADET</option>
-                                <option value="JUVENIL">JUVENIL</option>
-                                <option value="SENIOR">SENIOR</option>
+                                <option value="" disabled>Select Category</option>
+                                <option value="BENJAMI">Benjamí</option>
+                                <option value="ALEVI">Aleví</option>
+                                <option value="INFANTIL">Infantil</option>
+                                <option value="CADET">Cadet</option>
+                                <option value="JUVENIL">Juvenil</option>
+                                <option value="SENIOR">Sènior</option>
                             </select>
                             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                                 <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -112,18 +113,42 @@ export const CreateTeamModal = ({ isOpen, onClose, onSubmit, initialTeamName }: 
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Team Name *
+                            Club
                         </label>
                         <input
                             type="text"
-                            value={teamName}
-                            onChange={(e) => setTeamName(e.target.value)}
+                            value={clubName}
+                            onChange={(e) => setClubName(toTitleCase(e.target.value))}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                            placeholder="e.g. Handbol 2026"
+                            placeholder="e.g. FC Barcelona"
                         />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Season
+                        </label>
+                        <select
+                            value="2024-2025"
+                            disabled
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                        >
+                            <option value="2024-2025">2024-2025</option>
+                        </select>
                         <p className="text-xs text-gray-500 mt-1">
-                            This is usually the specific name of the team within the club.
+                            Season selection will be available in future versions
                         </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            id="isMyTeam"
+                            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                        />
+                        <label htmlFor="isMyTeam" className="text-sm font-medium text-gray-700">
+                            Is My Team
+                        </label>
                     </div>
 
                     <div className="flex justify-end gap-3 pt-4">
