@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Save, Hand, Shield, Shirt, Trash2, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Hand, Shield, Shirt, Trash2, CheckCircle, Loader2 } from 'lucide-react';
 import { API_BASE_URL } from '../../../config/api';
 import { SearchableSelectWithCreate } from '../../common/SearchableSelectWithCreate';
 import { toTitleCase } from '../../../utils/textUtils';
@@ -365,7 +365,7 @@ export const PlayerFormPage = () => {
                                     placeholder="e.g. Jordi Casanovas"
                                 />
 
-                                {/* Duplicate Detection UI */}
+                                {/* Duplicate Detection UI - Moved outside */}
                                 {!isEditMode && name.trim().length >= 3 && (
                                     <div className="mt-2">
                                         {isCheckingDuplicates && (
@@ -379,67 +379,6 @@ export const PlayerFormPage = () => {
                                             <div className="flex items-center gap-2 text-sm text-green-600">
                                                 <CheckCircle size={14} />
                                                 <span>Aquest jugador encara no existeix a la BBDD</span>
-                                            </div>
-                                        )}
-
-                                        {showDuplicateWarning && !ignoreDuplicates && (
-                                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 space-y-3">
-                                                <div className="flex items-start gap-2">
-                                                    <AlertTriangle size={18} className="text-yellow-600 mt-0.5 flex-shrink-0" />
-                                                    <div className="flex-1">
-                                                        <p className="text-sm font-medium text-yellow-900">
-                                                            Possible Duplicate Players Found
-                                                        </p>
-                                                        <p className="text-xs text-yellow-700 mt-1">
-                                                            We found {duplicateMatches.length} similar player{duplicateMatches.length > 1 ? 's' : ''} in the database:
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="space-y-2 ml-6">
-                                                    {duplicateMatches.map((match, idx) => (
-                                                        <div key={idx} className="bg-white rounded p-2 text-xs border border-yellow-100">
-                                                            <div className="flex items-center justify-between">
-                                                                <div>
-                                                                    <span className="font-medium">{match.name}</span>
-                                                                    {match.teams && match.teams.length > 0 && (
-                                                                        <span className="text-gray-500 ml-2">
-                                                                            ({match.teams.map(t => `${t.club} ${t.name}`).join(', ')})
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => window.open(`/players/${match.id}/edit`, '_blank')}
-                                                                    className="text-indigo-600 hover:text-indigo-800 font-medium"
-                                                                >
-                                                                    View/Edit
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-
-                                                <div className="flex gap-2 ml-6">
-                                                    <button
-                                                        type="button"
-                                                        onClick={handleCancelCreation}
-                                                        className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
-                                                    >
-                                                        Cancel Creation
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={handleContinueAnyway}
-                                                        className="px-3 py-1.5 text-sm bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors"
-                                                    >
-                                                        Continue Anyway (Different Player)
-                                                    </button>
-                                                </div>
-
-                                                <p className="text-xs text-yellow-600 ml-6">
-                                                    💡 If you want to assign this player to another team, use the "View/Edit" link above instead.
-                                                </p>
                                             </div>
                                         )}
                                     </div>
@@ -456,6 +395,53 @@ export const PlayerFormPage = () => {
                                 />
                             </div>
                         </div>
+
+                        {/* Full Width Duplicate Warning */}
+                        {!isEditMode && showDuplicateWarning && !ignoreDuplicates && (
+                            <div className="mt-4 border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                                {duplicateMatches.map((match, idx) => (
+                                    <div key={idx} className="bg-white p-4 flex items-center justify-between gap-4">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="font-medium text-gray-900 flex items-center gap-2">
+                                                {match.name}
+                                                {match.number && <span className="text-gray-500">#{match.number}</span>}
+                                            </div>
+                                            {match.teams && match.teams.length > 0 ? (
+                                                <div className="text-sm text-gray-500 mt-0.5">
+                                                    {match.teams.map(t => `${t.club} ${toTitleCase(t.name)}`).join(', ')}
+                                                </div>
+                                            ) : (
+                                                <div className="text-sm text-gray-400 italic mt-0.5">No active teams</div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                            <button
+                                                type="button"
+                                                onClick={() => navigate(`/players/${match.id}/edit`)}
+                                                className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                            >
+                                                View/Edit
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleCancelCreation}
+                                                className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleContinueAnyway}
+                                                className="px-3 py-1.5 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-colors"
+                                            >
+                                                Continue
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </section>
 
                     <hr className="border-gray-100" />
@@ -552,7 +538,7 @@ export const PlayerFormPage = () => {
                                     {playerTeams.map((pt) => (
                                         <div
                                             key={pt.team.id}
-                                            className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg group hover:shadow-sm transition-all"
+                                            className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg group hover:shadow-sm transition-all"
                                         >
                                             <span className="text-sm">
                                                 <span className="font-semibold text-indigo-900">{pt.team.club.name}</span>

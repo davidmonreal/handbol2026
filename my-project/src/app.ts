@@ -7,6 +7,7 @@ import playerRouter from './routes/players';
 import teamRouter from './routes/teams';
 import matchRouter from './routes/matches';
 import gameEventRouter from './routes/game-events';
+import importRouter from './routes/import.routes';
 
 import cors from 'cors';
 
@@ -32,6 +33,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // API routes with /api prefix
+app.use('/api', importRouter); // Mounts /import-players-from-image, /players/check-duplicates, etc.
 app.use('/api/health', healthRouter);
 app.use('/api/clubs', clubRouter);
 app.use('/api/seasons', seasonRouter);
@@ -41,7 +43,10 @@ app.use('/api/matches', matchRouter);
 app.use('/api/game-events', gameEventRouter);
 
 // Start the server only if not in serverless environment and not in test mode
-if ((process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') || (!process.env.VERCEL && process.env.NODE_ENV !== 'test')) {
+if (
+  (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') ||
+  (!process.env.VERCEL && process.env.NODE_ENV !== 'test')
+) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);

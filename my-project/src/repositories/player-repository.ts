@@ -22,6 +22,17 @@ export class PlayerRepository {
   async findById(id: string): Promise<Player | null> {
     return prisma.player.findUnique({
       where: { id },
+      include: {
+        teams: {
+          include: {
+            team: {
+              include: {
+                club: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 
