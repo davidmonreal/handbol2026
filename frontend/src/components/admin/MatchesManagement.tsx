@@ -150,6 +150,10 @@ export const MatchesManagement = () => {
 
         searchFields: ['homeTeam', 'awayTeam'], // Searching by object keys might need specific handling in CrudManager or backend
 
+        // Navigate to create/edit pages instead of using modal
+        onCreate: () => navigate('/matches/new'),
+        onEdit: (match) => navigate(`/matches/${match.id}/edit`),
+
         formatFormData: (data) => {
             // Combine date and time
             const dateStr = data.date as string;
