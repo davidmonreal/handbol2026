@@ -4,17 +4,13 @@ Extract all player information from this image and return ONLY a valid JSON arra
 [
   {
     "name": "First Name + First Surname",
-    "number": 7,
-    "handedness": "right",
-    "isGoalkeeper": false
+    "number": 7
   }
 ]
 
 **Field rules:**
-- name: First name + first surname ONLY (e.g., "David Monreal" not "David Monreal García"). If player has multiple surnames, use only the first one. If not visible, use "Unknown Player"
+- name: First name + first surname ONLY. Be careful with compound names (e.g., "Josep Maria Rodríguez" -> "Josep Maria Rodríguez", "Juan Antonio Garcia" -> "Juan Antonio Garcia"). If player has multiple surnames (e.g. "Perez Garcia"), use only the first one. If not visible, use "Unknown Player"
 - number: Jersey/dorsal number as integer. If not visible, use 0
-- handedness: Must be "left", "right", or "both". If not specified in image, use "right" as default
-- isGoalkeeper: Set to true only if explicitly marked as goalkeeper/porter/P. Otherwise false
 
 **Important:**
 - Return ONLY the JSON array, nothing else

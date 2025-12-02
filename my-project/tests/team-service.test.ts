@@ -33,7 +33,16 @@ describe('TeamService', () => {
   });
 
   it('getAll calls repository.findAll', async () => {
-    const mockTeams = [{ id: '1', name: 'Cadet A' }];
+    const mockTeams = [
+      {
+        id: '1',
+        name: 'Cadet A',
+        category: 'CADET',
+        isMyTeam: false,
+        clubId: 'c1',
+        seasonId: 's1',
+      },
+    ];
     vi.mocked(repository.findAll).mockResolvedValue(mockTeams);
 
     const result = await service.getAll();
@@ -42,34 +51,28 @@ describe('TeamService', () => {
     expect(result).toEqual(mockTeams);
   });
 
-  it('create validates club and season exist', async () => {
-    const data = { name: 'New Team', clubId: 'c1', seasonId: 's1', isMyTeam: true };
+  it('create validates season exists when seasonId provided', async () => {
+    const data = {
+      name: 'New Team',
+      category: 'SENIOR',
+      clubId: 'c1',
+      seasonId: 's1',
+      isMyTeam: true,
+    };
     const createdTeam = { id: '1', ...data };
 
-    vi.mocked(prisma.club.findUnique).mockResolvedValue({ id: 'c1' } as any);
     vi.mocked(prisma.season.findUnique).mockResolvedValue({ id: 's1' } as any);
     vi.mocked(repository.create).mockResolvedValue(createdTeam as any);
 
     const result = await service.create(data);
 
-    expect(prisma.club.findUnique).toHaveBeenCalledWith({ where: { id: 'c1' } });
     expect(prisma.season.findUnique).toHaveBeenCalledWith({ where: { id: 's1' } });
-    expect(repository.create).toHaveBeenCalledWith(data);
+    expect(repository.create).toHaveBeenCalled();
     expect(result).toEqual(createdTeam);
   });
 
-  it('create throws error Club not found', async () => {
-    const newTeamData = { name: 'Test', clubId: 'invalid', seasonId: 's1' };
-    vi.mocked(prisma.club.findUnique).mockResolvedValue(null);
-
-    await expect(service.create(newTeamData)).rejects.toThrow('Club not found');
-    expect(repository.create).not.toHaveBeenCalled();
-  });
-
-  it('create throws error if season not found', async () => {
-    const newTeamData = { name: 'Test', clubId: 'c1', seasonId: 'invalid' };
-    const mockClub = { id: 'c1', name: 'Mataró' };
-    vi.mocked(prisma.club.findUnique).mockResolvedValue(mockClub);
+  it('create throws error if season not found when seasonId provided', async () => {
+    const newTeamData = { name: 'Test', category: 'SENIOR', clubId: 'c1', seasonId: 'invalid' };
     vi.mocked(prisma.season.findUnique).mockResolvedValue(null);
 
     await expect(service.create(newTeamData)).rejects.toThrow('Season not found');

@@ -7,6 +7,7 @@ interface TeamSelectorProps {
     teams: Team[];
     selectedTeamId: string | null;
     onTeamChange: (teamId: string | null) => void;
+    onCreateTeam: (teamName: string) => void;
     isCheckingDuplicates: boolean;
 }
 
@@ -14,6 +15,7 @@ export const TeamSelector = ({
     teams,
     selectedTeamId,
     onTeamChange,
+    onCreateTeam,
     isCheckingDuplicates
 }: TeamSelectorProps) => {
     return (
@@ -29,7 +31,7 @@ export const TeamSelector = ({
                     label: `${t.club?.name || 'Unknown Club'} ${t.category || ''} ${t.name}`.trim()
                 }))}
                 onChange={(value) => onTeamChange(value)}
-                onCreate={() => { }}
+                onCreate={onCreateTeam}
                 placeholder="Search for a team..."
             />
             {!selectedTeamId && (

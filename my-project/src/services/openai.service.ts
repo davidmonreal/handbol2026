@@ -7,10 +7,17 @@ const openai = new OpenAI({
   organization: process.env.OPENAI_ORG_ID,
 });
 
+export const HANDEDNESS = {
+  LEFT: 'LEFT',
+  RIGHT: 'RIGHT',
+} as const;
+
+export type Handedness = (typeof HANDEDNESS)[keyof typeof HANDEDNESS];
+
 export interface ExtractedPlayer {
   name: string;
   number: number;
-  handedness?: 'left' | 'right' | 'both';
+  handedness?: Handedness;
   isGoalkeeper?: boolean;
 }
 

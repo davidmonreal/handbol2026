@@ -9,23 +9,80 @@ export class TeamService extends BaseService<Team> {
     super(teamRepository);
   }
 
-  // Override create to include custom validation
+  // Override create to include custom validation and logic
   async create(data: {
     name: string;
     category: string;
-    clubId: string;
-    seasonId: string;
+    clubId?: string;
+    clubName?: string;
+    seasonId?: string;
     isMyTeam?: boolean;
   }): Promise<Team> {
-    // Validate club exists
-    const club = await prisma.club.findUnique({ where: { id: data.clubId } });
-    if (!club) throw new Error('Club not found');
+    let clubId = data.clubId;
 
-    // Validate season exists
-    const season = await prisma.season.findUnique({ where: { id: data.seasonId } });
-    if (!season) throw new Error('Season not found');
+    // 1. Handle Club (Find or Create)
+    if (!clubId && data.clubName) {
+      // Check if club exists by name
+      let club = await prisma.club.findFirst({ where: { name: data.clubName } });
+      if (!club) {
+        // Create new club
+        club = await prisma.club.create({ data: { name: data.clubName } });
+      }
+      clubId = club.id;
+    }
 
-    return this.teamRepository.create(data); // Use teamRepository
+    if (!clubId) {
+      throw new Error('Club ID or Club Name is required');
+    }
+
+    // 2. Handle Season (Default to current or latest)
+    let seasonId = data.seasonId;
+    if (!seasonId) {
+      // Try to find a season that covers today
+      const now = new Date();
+      const currentSeason = await prisma.season.findFirst({
+        where: {
+          startDate: { lte: now },
+          endDate: { gte: now },
+        },
+      });
+
+      if (currentSeason) {
+        seasonId = currentSeason.id;
+      } else {
+        // Fallback: find the latest season created
+        const latestSeason = await prisma.season.findFirst({
+          orderBy: { endDate: 'desc' },
+        });
+        if (latestSeason) {
+          seasonId = latestSeason.id;
+        } else {
+          // Fallback: Create a default season
+          const defaultSeason = await prisma.season.create({
+            data: {
+              name: `${now.getFullYear()}-${now.getFullYear() + 1}`,
+              startDate: now,
+              endDate: new Date(now.getFullYear() + 1, 5, 30), // June 30th next year
+            },
+          });
+          seasonId = defaultSeason.id;
+        }
+      }
+    }
+
+    // Validate season exists (if passed explicitly)
+    if (data.seasonId) {
+      const season = await prisma.season.findUnique({ where: { id: data.seasonId } });
+      if (!season) throw new Error('Season not found');
+    }
+
+    return this.teamRepository.create({
+      name: data.name,
+      category: data.category,
+      clubId,
+      seasonId,
+      isMyTeam: data.isMyTeam,
+    });
   }
 
   // Override update to include custom validation

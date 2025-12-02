@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { usePlayerImport } from '../../hooks/usePlayerImport';
 import { ImageUpload } from './import/ImageUpload';
 import { ImagePreview } from './import/ImagePreview';
+import { CreateTeamModal } from './import/CreateTeamModal';
 import { ExtractedPlayersList } from './import/ExtractedPlayersList';
 
 export const ImportPlayers = () => {
@@ -54,6 +55,7 @@ export const ImportPlayers = () => {
                     teams={state.teams}
                     selectedTeamId={state.selectedTeamId}
                     onTeamChange={actions.setSelectedTeamId}
+                    onCreateTeam={actions.handleCreateTeam}
                     duplicates={state.duplicates}
                     duplicateActions={state.duplicateActions}
                     reviewingDuplicates={state.reviewingDuplicates}
@@ -72,6 +74,13 @@ export const ImportPlayers = () => {
                     isCheckingDuplicates={state.isCheckingDuplicates}
                 />
             )}
+
+            <CreateTeamModal
+                isOpen={state.isCreateTeamModalOpen}
+                onClose={() => actions.setIsCreateTeamModalOpen(false)}
+                onSubmit={actions.handleSubmitCreateTeam}
+                initialTeamName={state.newTeamName}
+            />
         </div>
     );
 };

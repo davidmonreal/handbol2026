@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
+import { PlayerService } from '../services/player-service';
 import { PlayerRepository } from '../repositories/player-repository';
 import prisma from '../lib/prisma';
 
 const playerRepository = new PlayerRepository();
+const playerService = new PlayerService(playerRepository);
 
 export async function batchCreatePlayers(req: Request, res: Response) {
   try {
@@ -17,7 +19,7 @@ export async function batchCreatePlayers(req: Request, res: Response) {
 
     for (const playerData of players) {
       try {
-        const player = await playerRepository.create({
+        const player = await playerService.create({
           name: playerData.name,
           number: playerData.number,
           handedness: playerData.handedness,
@@ -65,8 +67,8 @@ export async function batchCreateWithTeam(req: Request, res: Response) {
 
     for (const playerData of players) {
       try {
-        // Create player
-        const player = await playerRepository.create({
+        // Create player with validation
+        const player = await playerService.create({
           name: playerData.name,
           number: playerData.number,
           handedness: playerData.handedness,

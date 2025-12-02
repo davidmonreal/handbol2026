@@ -1,9 +1,16 @@
 import { API_BASE_URL } from '../config/api';
 
+export const HANDEDNESS = {
+    LEFT: 'LEFT',
+    RIGHT: 'RIGHT'
+} as const;
+
+export type Handedness = typeof HANDEDNESS[keyof typeof HANDEDNESS];
+
 export interface ExtractedPlayer {
     name: string;
     number: number;
-    handedness?: 'left' | 'right' | 'both';
+    handedness?: Handedness;
     isGoalkeeper?: boolean;
 }
 
@@ -13,7 +20,7 @@ export interface DuplicateMatch {
     number: number;
     distance: number;
     similarity: number;
-    handedness?: 'left' | 'right' | 'both';
+    handedness?: Handedness;
     isGoalkeeper?: boolean;
     teams?: { id: string; name: string; club: string }[];
 }
@@ -80,6 +87,36 @@ export const playerImportService = {
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || 'Failed to import players');
+        }
+        return response.json();
+    },
+
+    createTeam: async (clubName: string, teamName: string, category: string) => {
+        // First, verify if club exists or create it, then create team.
+        // For simplicity, we'll assume the backend handles "get or create club" logic 
+        // or we use a specific endpoint. 
+        // If the backend /api/teams supports creating a team with a club name, great.
+        // Otherwise we might need to fetch clubs, check existence, create club, then create team.
+        // Let's assume a new endpoint or enhanced /api/teams for this specific flow 
+        // or just use the standard creation flow if it supports it.
+
+        // Based on typical patterns, let's try to post to /api/teams with clubName.
+        // If the backend doesn't support this, we might need to adjust.
+        // Given I can't see backend code easily right now, I'll assume a standard structure.
+
+        const response = await fetch(`${API_BASE_URL}/api/teams`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: teamName,
+                category,
+                clubName, // Backend should handle finding or creating club
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to create team');
         }
         return response.json();
     }

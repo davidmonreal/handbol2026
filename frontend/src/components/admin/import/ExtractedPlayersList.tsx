@@ -9,6 +9,7 @@ interface ExtractedPlayersListProps {
     teams: Team[];
     selectedTeamId: string | null;
     onTeamChange: (id: string | null) => void;
+    onCreateTeam: (teamName: string) => void;
     duplicates: Map<number, DuplicateInfo>;
     duplicateActions: Map<number, 'merge' | 'skip' | 'keep'>;
     reviewingDuplicates: Map<number, boolean>;
@@ -32,6 +33,7 @@ export const ExtractedPlayersList = ({
     teams,
     selectedTeamId,
     onTeamChange,
+    onCreateTeam,
     duplicates,
     duplicateActions,
     reviewingDuplicates,
@@ -67,6 +69,7 @@ export const ExtractedPlayersList = ({
                 teams={teams}
                 selectedTeamId={selectedTeamId}
                 onTeamChange={onTeamChange}
+                onCreateTeam={onCreateTeam}
                 isCheckingDuplicates={isCheckingDuplicates}
             />
 

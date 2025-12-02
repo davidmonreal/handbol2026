@@ -15,7 +15,9 @@ describe('PlayerService', () => {
   });
 
   it('getAll calls repository.findAll', async () => {
-    const mockPlayers = [{ id: '1', name: 'Alice', number: 10, handedness: 'RIGHT' }];
+    const mockPlayers = [
+      { id: '1', name: 'Alice', number: 10, handedness: 'RIGHT', isGoalkeeper: false },
+    ];
     vi.mocked(repository.findAll).mockResolvedValue(mockPlayers);
 
     const result = await service.getAll();
@@ -25,7 +27,13 @@ describe('PlayerService', () => {
   });
 
   it('getById calls repository.findById', async () => {
-    const mockPlayer = { id: '1', name: 'Alice', number: 10, handedness: 'RIGHT' };
+    const mockPlayer = {
+      id: '1',
+      name: 'Alice',
+      number: 10,
+      handedness: 'RIGHT',
+      isGoalkeeper: false,
+    };
     vi.mocked(repository.findById).mockResolvedValue(mockPlayer);
 
     const result = await service.getById('1');
@@ -35,7 +43,7 @@ describe('PlayerService', () => {
   });
 
   it('create calls repository.create with valid data', async () => {
-    const newPlayerData = { name: 'Bob', number: 7, handedness: 'LEFT' };
+    const newPlayerData = { name: 'Bob', number: 7, handedness: 'LEFT', isGoalkeeper: false };
     const createdPlayer = { id: '2', ...newPlayerData };
     vi.mocked(repository.create).mockResolvedValue(createdPlayer);
 
@@ -46,7 +54,7 @@ describe('PlayerService', () => {
   });
 
   it('create throws error if number is not positive', async () => {
-    const invalidData = { name: 'Invalid', number: 0, handedness: 'RIGHT' };
+    const invalidData = { name: 'Invalid', number: 0, handedness: 'RIGHT', isGoalkeeper: false };
 
     await expect(service.create(invalidData)).rejects.toThrow('Player number must be positive');
     expect(repository.create).not.toHaveBeenCalled();
@@ -57,6 +65,7 @@ describe('PlayerService', () => {
       name: 'Invalid',
       number: 10,
       handedness: 'MIDDLE' as unknown as 'LEFT' | 'RIGHT',
+      isGoalkeeper: false,
     };
 
     await expect(service.create(invalidData)).rejects.toThrow('Handedness must be LEFT or RIGHT');
@@ -65,7 +74,13 @@ describe('PlayerService', () => {
 
   it('update calls repository.update', async () => {
     const updateData = { name: 'Alice Updated' };
-    const updatedPlayer = { id: '1', name: 'Alice Updated', number: 10, handedness: 'RIGHT' };
+    const updatedPlayer = {
+      id: '1',
+      name: 'Alice Updated',
+      number: 10,
+      handedness: 'RIGHT',
+      isGoalkeeper: false,
+    };
     vi.mocked(repository.update).mockResolvedValue(updatedPlayer);
 
     const result = await service.update('1', updateData);
@@ -84,7 +99,13 @@ describe('PlayerService', () => {
   });
 
   it('delete calls repository.delete', async () => {
-    const deletedPlayer = { id: '1', name: 'Alice', number: 10, handedness: 'RIGHT' };
+    const deletedPlayer = {
+      id: '1',
+      name: 'Alice',
+      number: 10,
+      handedness: 'RIGHT',
+      isGoalkeeper: false,
+    };
     vi.mocked(repository.delete).mockResolvedValue(deletedPlayer);
 
     const result = await service.delete('1');

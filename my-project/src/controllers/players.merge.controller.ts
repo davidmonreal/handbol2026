@@ -36,7 +36,7 @@ export async function mergePlayer(req: Request, res: Response) {
         data: {
           name: newPlayerData.name,
           number: newPlayerData.number,
-          handedness: newPlayerData.handedness,
+          handedness: newPlayerData.handedness as 'LEFT' | 'RIGHT',
           isGoalkeeper: newPlayerData.isGoalkeeper || false,
         },
       });

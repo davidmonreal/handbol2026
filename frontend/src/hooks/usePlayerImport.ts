@@ -247,6 +247,33 @@ export const usePlayerImport = () => {
         }
     };
 
+    // Team Creation Logic
+    const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false);
+    const [newTeamName, setNewTeamName] = useState('');
+
+    const handleCreateTeam = (teamName: string) => {
+        setNewTeamName(teamName);
+        setIsCreateTeamModalOpen(true);
+    };
+
+    const handleSubmitCreateTeam = async (data: { clubName: string; teamName: string; category: string }) => {
+        try {
+            const newTeam = await playerImportService.createTeam(data.clubName, data.teamName, data.category);
+
+            // Refresh teams list
+            const teamsData = await playerImportService.fetchTeams();
+            setTeams(teamsData);
+
+            // Select the new team
+            setSelectedTeamId(newTeam.id);
+
+            return Promise.resolve();
+        } catch (error) {
+            console.error('Failed to create team:', error);
+            return Promise.reject(error);
+        }
+    };
+
     return {
         state: {
             image,
@@ -260,7 +287,10 @@ export const usePlayerImport = () => {
             reviewingDuplicates,
             resolvedDuplicates,
             isCheckingDuplicates,
-            mergeChoices
+            mergeChoices,
+            // Team Creation
+            isCreateTeamModalOpen,
+            newTeamName,
         },
         actions: {
             setImage,
@@ -276,7 +306,12 @@ export const usePlayerImport = () => {
             handleActionChange,
             handleFieldChoiceChange,
             handleConfirmMerge,
-            handleConfirmImport
+            handleConfirmImport,
+            // Team Creation
+            setIsCreateTeamModalOpen,
+            handleCreateTeam,
+            handleSubmitCreateTeam
         }
     };
 };
+

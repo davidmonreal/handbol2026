@@ -34,7 +34,7 @@ export const PlayerCard = ({
                     {player.name}
                 </div>
                 <div className="text-sm text-gray-500 flex gap-4">
-                    <span>{player.handedness === 'both' ? 'Ambidextrous' : player.handedness ? player.handedness.charAt(0).toUpperCase() + player.handedness.slice(1) + '-handed' : '-'}</span>
+                    <span>{player.handedness ? player.handedness.charAt(0) + player.handedness.slice(1).toLowerCase() + '-handed' : '-'}</span>
                     <span>{player.isGoalkeeper ? 'Goalkeeper' : 'Player'}</span>
                 </div>
             </div>

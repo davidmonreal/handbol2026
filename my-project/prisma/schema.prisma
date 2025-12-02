@@ -10,6 +10,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Handedness {
+  LEFT
+  RIGHT
+}
+
 model Club {
   id        String   @id @default(uuid())
   name      String
@@ -39,11 +44,11 @@ model Team {
 }
 
 model Player {
-  id            String   @id @default(uuid())
+  id            String      @id @default(uuid())
   name          String
-  number        Int      // Default number
-  handedness    String   @default("RIGHT") // "LEFT" or "RIGHT"
-  isGoalkeeper  Boolean  @default(false) // Whether player is a goalkeeper
+  number        Int         // Default number
+  handedness    Handedness  @default(RIGHT)
+  isGoalkeeper  Boolean     @default(false) // Whether player is a goalkeeper
   teams         PlayerTeamSeason[]
   events        GameEvent[] @relation("EventPlayer")
   activeGoalkeeperEvents GameEvent[] @relation("ActiveGoalkeeper")

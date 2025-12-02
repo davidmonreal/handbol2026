@@ -15,7 +15,7 @@ export class PlayerService extends BaseService<Player> {
     }
 
     // Validation: handedness must be LEFT or RIGHT
-    if (data.handedness !== 'LEFT' && data.handedness !== 'RIGHT') {
+    if (!['LEFT', 'RIGHT'].includes(data.handedness)) {
       throw new Error('Handedness must be LEFT or RIGHT');
     }
 
@@ -30,7 +30,7 @@ export class PlayerService extends BaseService<Player> {
     }
 
     // Validation: handedness must be LEFT or RIGHT if provided
-    if (data.handedness && data.handedness !== 'LEFT' && data.handedness !== 'RIGHT') {
+    if (data.handedness && !['LEFT', 'RIGHT'].includes(data.handedness)) {
       throw new Error('Handedness must be LEFT or RIGHT');
     }
 
