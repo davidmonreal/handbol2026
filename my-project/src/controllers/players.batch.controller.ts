@@ -22,7 +22,7 @@ export async function batchCreatePlayers(req: Request, res: Response) {
         const player = await playerService.create({
           name: playerData.name,
           number: playerData.number,
-          handedness: playerData.handedness,
+          handedness: playerData.handedness || 'RIGHT', // Default to RIGHT if not provided by AI
           isGoalkeeper: playerData.isGoalkeeper || false,
         });
         createdPlayers.push(player);
@@ -71,7 +71,7 @@ export async function batchCreateWithTeam(req: Request, res: Response) {
         const player = await playerService.create({
           name: playerData.name,
           number: playerData.number,
-          handedness: playerData.handedness,
+          handedness: playerData.handedness || 'RIGHT', // Default to RIGHT if not provided by AI
           isGoalkeeper: playerData.isGoalkeeper || false,
         });
 
