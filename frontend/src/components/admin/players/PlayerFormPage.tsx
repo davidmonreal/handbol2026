@@ -74,7 +74,7 @@ export const PlayerFormPage = () => {
                     setNumber(player.number);
                     setHandedness(player.handedness as 'RIGHT' | 'LEFT');
                     setIsGoalkeeper(player.isGoalkeeper);
-                    setPlayerTeams(player.teams || []);
+                    setPlayerTeams((player.teams || []) as PlayerTeam[]);
                 }
             } catch (err) {
                 console.error('Error loading data:', err);
