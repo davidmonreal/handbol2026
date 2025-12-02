@@ -1,15 +1,9 @@
 import { Edit2, X, AlertTriangle } from 'lucide-react';
 
-interface ExtractedPlayer {
-    name: string;
-    number: number;
-    handedness?: 'left' | 'right' | 'both';
-    isGoalkeeper?: boolean;
-}
+import type { ExtractedPlayer } from '../../../services/playerImportService';
 
 interface PlayerCardProps {
     player: ExtractedPlayer;
-    index: number;
     onDelete: () => void;
     onEdit: (player: ExtractedPlayer) => void;
     duplicate?: {

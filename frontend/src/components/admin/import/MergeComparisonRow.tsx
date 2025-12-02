@@ -1,20 +1,4 @@
-interface ExtractedPlayer {
-    name: string;
-    number: number;
-    handedness?: 'left' | 'right' | 'both';
-    isGoalkeeper?: boolean;
-}
-
-interface DuplicateMatch {
-    id: string;
-    name: string;
-    number: number;
-    distance: number;
-    similarity: number;
-    handedness?: 'left' | 'right' | 'both';
-    isGoalkeeper?: boolean;
-    teams?: { id: string; name: string; club: string }[];
-}
+import type { ExtractedPlayer, DuplicateMatch } from '../../../services/playerImportService';
 
 
 interface MergeComparisonRowProps {

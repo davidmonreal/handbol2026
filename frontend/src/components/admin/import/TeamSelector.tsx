@@ -1,14 +1,7 @@
 import { Loader2 } from 'lucide-react';
 import { SearchableSelectWithCreate } from '../../common/SearchableSelectWithCreate';
 
-interface Team {
-    id: string;
-    name: string;
-    club: {
-        name: string;
-    };
-    category: string;
-}
+import type { Team } from '../../../types';
 
 interface TeamSelectorProps {
     teams: Team[];
@@ -33,7 +26,7 @@ export const TeamSelector = ({
                 value={selectedTeamId}
                 options={teams.map(t => ({
                     value: t.id,
-                    label: `${t.club.name} ${t.category} ${t.name}`
+                    label: `${t.club?.name || 'Unknown Club'} ${t.category || ''} ${t.name}`.trim()
                 }))}
                 onChange={(value) => onTeamChange(value)}
                 onCreate={() => { }}
