@@ -80,7 +80,13 @@ describe('TeamService', () => {
   });
 
   it('assignPlayer validates player exists', async () => {
-    const mockPlayer = { id: 'p1', name: 'Marc', number: 7, handedness: 'RIGHT' };
+    const mockPlayer = {
+      id: 'p1',
+      name: 'Marc',
+      number: 7,
+      handedness: 'RIGHT',
+      isGoalkeeper: false,
+    };
     const mockAssignment = { id: 'a1', teamId: 't1', playerId: 'p1', role: 'Player' };
 
     vi.mocked(prisma.player.findUnique).mockResolvedValue(mockPlayer);
@@ -101,7 +107,13 @@ describe('TeamService', () => {
   });
 
   it('assignPlayer throws error if player already assigned', async () => {
-    const mockPlayer = { id: 'p1', name: 'Marc', number: 7, handedness: 'RIGHT' };
+    const mockPlayer = {
+      id: 'p1',
+      name: 'Marc',
+      number: 7,
+      handedness: 'RIGHT',
+      isGoalkeeper: false,
+    };
     const existingAssignment = { id: 'a1', teamId: 't1', playerId: 'p1', role: 'Player' };
 
     vi.mocked(prisma.player.findUnique).mockResolvedValue(mockPlayer);
