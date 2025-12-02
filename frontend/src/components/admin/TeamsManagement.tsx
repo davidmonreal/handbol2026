@@ -125,12 +125,15 @@ export const TeamsManagement = () => {
 
         searchFields: ['name'], // Note: 'club' and 'category' search would require client-side filtering logic in CrudManager or backend support
 
+        // Navigate to create/edit pages instead of using modal
+        onCreate: () => navigate('/teams/new'),
+        onEdit: (team) => navigate(`/teams/${team.id}/edit`),
+
         customActions: [
             {
                 icon: BarChart3,
                 label: 'View Statistics',
                 onClick: (team) => navigate(`/statistics?teamId=${team.id}`),
-                className: 'text-green-600 hover:text-green-900 mr-4',
             },
             {
                 icon: Users,
