@@ -8,16 +8,16 @@ describe('parseTeamName', () => {
         expect(result.name).toBe('Negre');
     });
 
-    it('detects category case insensitive', () => {
+    it('detects category case insensitive and preserves name formatting', () => {
         const result = parseTeamName('juvenil groc');
         expect(result.category).toBe('JUVENIL');
-        expect(result.name).toBe('Groc');
+        expect(result.name).toBe('groc'); // Preserves original formatting
     });
 
-    it('defaults to SENIOR if no category found', () => {
+    it('defaults to SENIOR if no category found and preserves formatting', () => {
         const result = parseTeamName('Mataro A');
         expect(result.category).toBe('SENIOR');
-        expect(result.name).toBe('Mataro A'); // toTitleCase applied
+        expect(result.name).toBe('Mataro A'); // Original formatting preserved
     });
 
     it('handles Prebenjami correctly vs Benjami', () => {

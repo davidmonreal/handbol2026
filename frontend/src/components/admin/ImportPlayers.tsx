@@ -80,9 +80,8 @@ export const ImportPlayers = () => {
                 onClose={() => actions.setIsCreateTeamModalOpen(false)}
                 onSubmit={actions.handleSubmitCreateTeam}
                 initialTeamName={state.newTeamName}
+                applyTitleCase={false}
             />
         </div>
     );
 };
-
-

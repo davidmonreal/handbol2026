@@ -1,5 +1,3 @@
-import { toTitleCase } from './textUtils';
-
 export const TEAM_CATEGORIES = [
     'SENIOR',
     'JUVENIL',
@@ -42,8 +40,8 @@ export const parseTeamName = (inputName: string): ParsedTeam => {
     // Or better, if it's empty, maybe the name IS the category? No, that's confusing.
     // Let's return the stripped name. If empty, the user will see empty name field.
 
-    // Capitalize the remaining name properly
-    cleanName = toTitleCase(cleanName);
+    // Keep the team name as entered by the user
+    // Do NOT apply toTitleCase - teams may have specific formatting (e.g., "FC BARCELONA", "CE Handbol")
 
     return {
         name: cleanName || inputName, // If stripped name is empty, return original? No, user wants to enter name.

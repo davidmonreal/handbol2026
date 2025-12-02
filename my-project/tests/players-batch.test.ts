@@ -6,14 +6,22 @@ import {
   batchCreateWithTeam,
 } from '../src/controllers/players.batch.controller';
 import prisma from '../src/lib/prisma';
+import { Handedness } from '@prisma/client';
 
 // Types for test mocks
 interface MockPlayer {
   id: string;
   name: string;
   number: number;
-  handedness: string;
+  handedness: Handedness;
   isGoalkeeper: boolean;
+}
+
+interface MockPlayerTeamSeason {
+  id: string;
+  playerId: string;
+  teamId: string;
+  role: string;
 }
 
 // Mock Prisma
@@ -93,15 +101,17 @@ describe('Batch Player Creation (Player Import)', () => {
     });
 
     it('should respect handedness when provided', async () => {
-      const mockPlayer = {
+      const mockPlayer: MockPlayer = {
         id: '1',
         name: 'Pol Martínez',
         number: 9,
-        handedness: 'LEFT',
+        handedness: Handedness.LEFT,
         isGoalkeeper: false,
       };
 
-      vi.mocked(prisma.player.create).mockResolvedValueOnce(mockPlayer as MockPlayer);
+      vi.mocked(prisma.player.create).mockResolvedValueOnce(
+        mockPlayer as unknown as Awaited<ReturnType<typeof prisma.player.create>>,
+      );
 
       const playersWithHandedness = [{ name: 'Pol Martínez', number: 9, handedness: 'LEFT' }];
 
@@ -140,17 +150,46 @@ describe('Batch Player Creation (Player Import)', () => {
 
   describe('batchCreatePlayersWithTeam - Team Import Flow', () => {
     it('should handle team import flow with default handedness', async () => {
-      const mockPlayers = [
-        { id: 'p1', name: 'Anna López', number: 5, handedness: 'RIGHT', isGoalkeeper: false },
-        { id: 'p2', name: 'Laura Sánchez', number: 13, handedness: 'RIGHT', isGoalkeeper: true },
+      const mockPlayers: MockPlayer[] = [
+        {
+          id: 'p1',
+          name: 'Anna López',
+          number: 5,
+          handedness: Handedness.RIGHT,
+          isGoalkeeper: false,
+        },
+        {
+          id: 'p2',
+          name: 'Laura Sánchez',
+          number: 13,
+          handedness: Handedness.RIGHT,
+          isGoalkeeper: true,
+        },
+      ];
+
+      const mockPlayerTeamSeasons: MockPlayerTeamSeason[] = [
+        { id: 'pts1', playerId: 'p1', teamId: 'team-1', role: 'Player' },
+        { id: 'pts2', playerId: 'p2', teamId: 'team-1', role: 'Player' },
       ];
 
       vi.mocked(prisma.player.create)
-        .mockResolvedValueOnce(mockPlayers[0] as MockPlayer)
-        .mockResolvedValueOnce(mockPlayers[1] as MockPlayer);
+        .mockResolvedValueOnce(
+          mockPlayers[0] as unknown as Awaited<ReturnType<typeof prisma.player.create>>,
+        )
+        .mockResolvedValueOnce(
+          mockPlayers[1] as unknown as Awaited<ReturnType<typeof prisma.player.create>>,
+        );
       vi.mocked(prisma.playerTeamSeason.create)
-        .mockResolvedValueOnce({ id: 'pts1' } as { id: string })
-        .mockResolvedValueOnce({ id: 'pts2' } as { id: string });
+        .mockResolvedValueOnce(
+          mockPlayerTeamSeasons[0] as unknown as Awaited<
+            ReturnType<typeof prisma.playerTeamSeason.create>
+          >,
+        )
+        .mockResolvedValueOnce(
+          mockPlayerTeamSeasons[1] as unknown as Awaited<
+            ReturnType<typeof prisma.playerTeamSeason.create>
+          >,
+        );
 
       const playersFromAI = [
         { name: 'Anna López', number: 5 },
@@ -210,13 +249,17 @@ describe('Batch Player Creation (Player Import)', () => {
     it('should handle missing required fields gracefully', async () => {
       // Mock to simulate that player service will create successfully
       // even with missing name, since our defaults fill in the gaps
-      vi.mocked(prisma.player.create).mockResolvedValueOnce({
+      const mockPlayer: MockPlayer = {
         id: '1',
         name: '',
         number: 7,
-        handedness: 'RIGHT',
+        handedness: Handedness.RIGHT,
         isGoalkeeper: false,
-      } as MockPlayer);
+      };
+
+      vi.mocked(prisma.player.create).mockResolvedValueOnce(
+        mockPlayer as unknown as Awaited<ReturnType<typeof prisma.player.create>>,
+      );
 
       const playersWithMissingName = [
         { number: 7 }, // Missing name - but will get default handedness

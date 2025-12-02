@@ -7,9 +7,10 @@ interface CreateTeamModalProps {
     onClose: () => void;
     onSubmit: (data: { clubName: string; teamName: string; category: string }) => Promise<void>;
     initialTeamName: string;
+    applyTitleCase?: boolean; // Optional: apply title case transformation to team and club names
 }
 
-export const CreateTeamModal = ({ isOpen, onClose, onSubmit, initialTeamName }: CreateTeamModalProps) => {
+export const CreateTeamModal = ({ isOpen, onClose, onSubmit, initialTeamName, applyTitleCase = true }: CreateTeamModalProps) => {
     const [clubName, setClubName] = useState('');
     const [teamName, setTeamName] = useState('');
     const [category, setCategory] = useState('');
@@ -78,7 +79,7 @@ export const CreateTeamModal = ({ isOpen, onClose, onSubmit, initialTeamName }: 
                         <input
                             type="text"
                             value={teamName}
-                            onChange={(e) => setTeamName(toTitleCase(e.target.value))}
+                            onChange={(e) => setTeamName(applyTitleCase ? toTitleCase(e.target.value) : e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                             placeholder="e.g. Cadet A"
                             autoFocus
@@ -118,7 +119,7 @@ export const CreateTeamModal = ({ isOpen, onClose, onSubmit, initialTeamName }: 
                         <input
                             type="text"
                             value={clubName}
-                            onChange={(e) => setClubName(toTitleCase(e.target.value))}
+                            onChange={(e) => setClubName(applyTitleCase ? toTitleCase(e.target.value) : e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                             placeholder="e.g. FC Barcelona"
                         />
