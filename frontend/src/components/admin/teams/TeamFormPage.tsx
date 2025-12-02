@@ -226,19 +226,28 @@ export const TeamFormPage = () => {
                     placeholder="Select season..."
                 />
 
-                {/* Is My Team */}
-                <div className="flex items-center gap-2">
-                    <input
-                        type="checkbox"
-                        id="isMyTeam"
-                        checked={isMyTeam}
-                        onChange={(e) => setIsMyTeam(e.target.checked)}
-                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                    />
-                    <label htmlFor="isMyTeam" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                        <Star size={16} className={isMyTeam ? 'text-yellow-500 fill-yellow-500' : 'text-gray-400'} />
+                {/* Is My Team - Clickable Star */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                         Is My Team
                     </label>
+                    <button
+                        type="button"
+                        onClick={() => setIsMyTeam(!isMyTeam)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all hover:border-yellow-400"
+                        style={{
+                            borderColor: isMyTeam ? '#fbbf24' : '#d1d5db',
+                            backgroundColor: isMyTeam ? '#fef3c7' : 'white'
+                        }}
+                    >
+                        <Star
+                            size={24}
+                            className={`transition-all ${isMyTeam ? 'text-yellow-500 fill-yellow-500' : 'text-gray-400'}`}
+                        />
+                        <span className={`font-medium ${isMyTeam ? 'text-yellow-900' : 'text-gray-600'}`}>
+                            {isMyTeam ? 'This is my team' : 'Mark as my team'}
+                        </span>
+                    </button>
                 </div>
 
                 {/* Actions */}

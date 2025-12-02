@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Loader2 } from 'lucide-react';
+import { X, Save, Loader2, Star } from 'lucide-react';
 import { toTitleCase } from '../../../utils/textUtils';
 import { SearchableSelectWithCreate } from '../../common/SearchableSelectWithCreate';
 import { API_BASE_URL } from '../../../config/api';
@@ -212,15 +212,32 @@ export const CreateTeamModal = ({ isOpen, onClose, onSubmit, initialTeamName, ap
                                 disabled={seasons.length === 0}
                             />
 
-                            <div className="flex items-center gap-2 pt-2">
+                            {/* Is My Team - Clickable Star */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Is My Team
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const checkbox = document.getElementById('isMyTeam') as HTMLInputElement;
+                                        if (checkbox) checkbox.checked = !checkbox.checked;
+                                    }}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all hover:border-yellow-400"
+                                >
+                                    <Star
+                                        size={24}
+                                        className="text-gray-400 transition-all hover:text-yellow-500"
+                                    />
+                                    <span className="font-medium text-gray-600">
+                                        Mark as my team
+                                    </span>
+                                </button>
                                 <input
                                     type="checkbox"
                                     id="isMyTeam"
-                                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                    className="hidden"
                                 />
-                                <label htmlFor="isMyTeam" className="text-sm font-medium text-gray-700">
-                                    Is My Team
-                                </label>
                             </div>
 
                             <div className="flex justify-end gap-3 pt-4">
