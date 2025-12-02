@@ -132,6 +132,11 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
 
     const filteredItems = items.filter((item: T) => {
         const searchLower = searchTerm.toLowerCase();
+
+        if (config.customFilter) {
+            return config.customFilter(item, searchLower);
+        }
+
         return config.searchFields.some((field: keyof T) => {
             const value = item[field];
             return value?.toString().toLowerCase().includes(searchLower);
@@ -206,16 +211,17 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
     return (
         <div className="p-6 max-w-6xl mx-auto">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-800">
-                    {config.entityNamePlural} Management
-                </h1>
-                <button
-                    onClick={() => setIsFormOpen(true)}
-                    className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-                >
-                    <Plus size={20} />
-                    New {config.entityName}
-                </button>
+                <h1 className="text-3xl font-bold text-gray-800">{config.entityNamePlural} Management</h1>
+                <div className="flex gap-3">
+                    {config.headerActions}
+                    <button
+                        onClick={() => setIsFormOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                    >
+                        <Plus size={20} />
+                        New {config.entityName}
+                    </button>
+                </div>
             </div>
 
             <div className="mb-6">

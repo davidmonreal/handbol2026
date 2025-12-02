@@ -107,4 +107,6 @@ export interface CrudConfig<T> {
         onClick: (item: T) => void;
         className?: string;
     }>;
+    headerActions?: React.ReactNode;
+    customFilter?: (item: T, searchTerm: string) => boolean;
 }

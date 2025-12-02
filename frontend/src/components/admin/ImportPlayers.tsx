@@ -28,6 +28,8 @@ interface DuplicateMatch {
     number: number;
     distance: number;
     similarity: number;
+    handedness?: 'left' | 'right' | 'both';
+    isGoalkeeper?: boolean;
     teams?: { id: string; name: string; club: string }[];
 }
 
@@ -43,13 +45,14 @@ export const ImportPlayers = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [extractedPlayers, setExtractedPlayers] = useState<ExtractedPlayer[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
     // New state for duplicate detection
     const [teams, setTeams] = useState<Team[]>([]);
     const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
     const [duplicates, setDuplicates] = useState<Map<number, DuplicateInfo>>(new Map());
     const [duplicateActions, setDuplicateActions] = useState<Map<number, 'merge' | 'skip' | 'keep'>>(new Map());
+    const [reviewingDuplicates, setReviewingDuplicates] = useState<Map<number, boolean>>(new Map());
+    const [resolvedDuplicates, setResolvedDuplicates] = useState<Set<number>>(new Set());
     const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
     const [mergeChoices, setMergeChoices] = useState<Map<number, Map<string, 'existing' | 'new'>>>(new Map());
 
@@ -187,10 +190,10 @@ export const ImportPlayers = () => {
         }
     };
 
-    const handleEditPlayer = (index: number, field: keyof ExtractedPlayer, value: any) => {
-        const updatedPlayers = [...extractedPlayers];
-        updatedPlayers[index] = { ...updatedPlayers[index], [field]: value };
-        setExtractedPlayers(updatedPlayers);
+    const handleUpdatePlayer = (index: number, updatedPlayer: ExtractedPlayer) => {
+        const newPlayers = [...extractedPlayers];
+        newPlayers[index] = updatedPlayer;
+        setExtractedPlayers(newPlayers);
     };
 
     const handleRemovePlayer = (index: number) => {
@@ -400,11 +403,13 @@ export const ImportPlayers = () => {
                     <div className="mt-6 space-y-4">
                         {extractedPlayers.map((player, index) => {
                             const duplicate = duplicates.get(index);
-                            const action = duplicateActions.get(index);
+                            const isReviewing = reviewingDuplicates.get(index);
                             const playerMergeChoices = mergeChoices.get(index) || new Map();
+                            const action = duplicateActions.get(index);
+                            const isResolved = resolvedDuplicates.has(index);
 
-                            // If there's a duplicate and action is merge, show comparison
-                            if (duplicate && duplicate.hasDuplicates && action === 'merge') {
+                            // If reviewing duplicate, show comparison
+                            if (isReviewing && duplicate && duplicate.hasDuplicates && !isResolved) {
                                 return (
                                     <MergeComparisonRow
                                         key={index}
@@ -416,6 +421,13 @@ export const ImportPlayers = () => {
                                             const newActions = new Map(duplicateActions);
                                             newActions.set(index, newAction);
                                             setDuplicateActions(newActions);
+
+                                            // If action is skip or keep, exit review mode
+                                            if (newAction === 'skip' || newAction === 'keep') {
+                                                const newReviewing = new Map(reviewingDuplicates);
+                                                newReviewing.set(index, false);
+                                                setReviewingDuplicates(newReviewing);
+                                            }
                                         }}
                                         onFieldChoiceChange={(field, choice) => {
                                             const newMergeChoices = new Map(mergeChoices);
@@ -423,6 +435,41 @@ export const ImportPlayers = () => {
                                             playerChoices.set(field, choice);
                                             newMergeChoices.set(index, playerChoices);
                                             setMergeChoices(newMergeChoices);
+                                        }}
+                                        onConfirmMerge={() => {
+                                            // Apply merge choices to the player
+                                            const newExtractedPlayers = [...extractedPlayers];
+                                            const choices = mergeChoices.get(index);
+
+                                            if (choices && duplicate && duplicate.matches[0]) {
+                                                const existing = duplicate.matches[0];
+
+                                                // Update fields based on choices
+                                                if (choices.get('name') === 'existing') {
+                                                    newExtractedPlayers[index].name = existing.name;
+                                                }
+                                                if (choices.get('number') === 'existing') {
+                                                    newExtractedPlayers[index].number = existing.number;
+                                                }
+                                                if (choices.get('handedness') === 'existing' && existing.handedness) {
+                                                    newExtractedPlayers[index].handedness = existing.handedness;
+                                                }
+                                                if (choices.get('isGoalkeeper') === 'existing' && existing.isGoalkeeper !== undefined) {
+                                                    newExtractedPlayers[index].isGoalkeeper = existing.isGoalkeeper;
+                                                }
+
+                                                setExtractedPlayers(newExtractedPlayers);
+
+                                                // Mark as resolved (merged)
+                                                const newResolved = new Set(resolvedDuplicates);
+                                                newResolved.add(index);
+                                                setResolvedDuplicates(newResolved);
+
+                                                // Exit review mode
+                                                const newReviewing = new Map(reviewingDuplicates);
+                                                newReviewing.set(index, false);
+                                                setReviewingDuplicates(newReviewing);
+                                            }
                                         }}
                                     />
                                 );
@@ -434,29 +481,43 @@ export const ImportPlayers = () => {
                                     key={index}
                                     player={player}
                                     index={index}
-                                    isEditing={editingIndex === index}
-                                    duplicate={duplicate}
+                                    onDelete={() => handleRemovePlayer(index)}
+                                    onEdit={(updatedPlayer) => handleUpdatePlayer(index, updatedPlayer)}
+                                    duplicate={isResolved ? undefined : duplicate}
                                     duplicateAction={action}
-                                    onEdit={setEditingIndex}
-                                    onSave={() => setEditingIndex(null)}
-                                    onRemove={handleRemovePlayer}
-                                    onFieldChange={handleEditPlayer}
-                                    onDuplicateActionChange={(newAction) => {
-                                        const newActions = new Map(duplicateActions);
-                                        newActions.set(index, newAction);
-                                        setDuplicateActions(newActions);
+                                    onReviewDuplicate={() => {
+                                        const newReviewing = new Map(reviewingDuplicates);
+                                        newReviewing.set(index, true);
+                                        setReviewingDuplicates(newReviewing);
 
-                                        // Initialize merge choices with defaults when selecting merge
-                                        if (newAction === 'merge' && duplicate && duplicate.matches[0]) {
-                                            const defaultChoices = new Map<string, 'existing' | 'new'>();
-                                            defaultChoices.set('name', 'existing');
-                                            defaultChoices.set('number', 'existing');
-                                            defaultChoices.set('handedness', 'existing');
-                                            defaultChoices.set('isGoalkeeper', 'existing');
+                                        // Initialize choices if not present
+                                        if (!mergeChoices.has(index)) {
+                                            const initialChoices = new Map<string, 'existing' | 'new'>();
+                                            initialChoices.set('name', 'new');
+                                            initialChoices.set('number', 'new');
+                                            initialChoices.set('handedness', 'new');
+                                            initialChoices.set('isGoalkeeper', 'new');
                                             const newMergeChoices = new Map(mergeChoices);
-                                            newMergeChoices.set(index, defaultChoices);
+                                            newMergeChoices.set(index, initialChoices);
                                             setMergeChoices(newMergeChoices);
                                         }
+
+                                        // Initialize action if not present
+                                        if (!duplicateActions.has(index)) {
+                                            const newActions = new Map(duplicateActions);
+                                            newActions.set(index, 'merge');
+                                            setDuplicateActions(newActions);
+                                        }
+                                    }}
+                                    onUndoDuplicateAction={() => {
+                                        const newActions = new Map(duplicateActions);
+                                        newActions.delete(index);
+                                        setDuplicateActions(newActions);
+
+                                        // Re-enter review mode
+                                        const newReviewing = new Map(reviewingDuplicates);
+                                        newReviewing.set(index, true);
+                                        setReviewingDuplicates(newReviewing);
                                     }}
                                 />
                             );

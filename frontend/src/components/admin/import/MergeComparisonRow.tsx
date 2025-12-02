@@ -24,6 +24,7 @@ interface MergeComparisonRowProps {
     mergeChoices: Map<string, 'existing' | 'new'>;
     onActionChange: (action: 'merge' | 'skip' | 'keep') => void;
     onFieldChoiceChange: (field: string, choice: 'existing' | 'new') => void;
+    onConfirmMerge: () => void;
 }
 
 export const MergeComparisonRow = ({
@@ -33,7 +34,10 @@ export const MergeComparisonRow = ({
     mergeChoices,
     onActionChange,
     onFieldChoiceChange,
+    onConfirmMerge,
 }: MergeComparisonRowProps) => {
+    // ... (rest of component)
+
     if (action === 'skip') {
         return (
             <div className="bg-red-50 border border-red-200 rounded p-3 mb-3">
@@ -81,39 +85,24 @@ export const MergeComparisonRow = ({
                     <div className="text-lg font-bold text-gray-900">
                         {newPlayer.name} <span className="text-gray-600">#{newPlayer.number}</span>
                     </div>
-                    <div className="text-xs text-gray-500 mt-0.5">
-                        {Math.round(existingPlayer.similarity * 100)}% match with existing player
-                    </div>
                 </div>
                 <div className="flex gap-2">
                     <button
                         onClick={() => onActionChange('skip')}
                         className="text-xs px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded shadow-sm hover:shadow font-medium transition-all"
+                        title="Do not import this player"
                     >
-                        Skip
+                        Skip (Don't Import)
                     </button>
                     <button
                         onClick={() => onActionChange('keep')}
                         className="text-xs px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded shadow-sm hover:shadow font-medium transition-all"
+                        title="Import as a new player, creating a duplicate"
                     >
-                        Keep Both
+                        Keep Both (Create Duplicate)
                     </button>
                 </div>
             </div>
-
-            {/* Existing player teams */}
-            {existingPlayer.teams && existingPlayer.teams.length > 0 && (
-                <div className="mb-3 p-2 bg-gray-50 rounded border border-gray-200">
-                    <p className="text-xs font-medium text-gray-600 mb-1">Current teams:</p>
-                    <div className="flex flex-wrap gap-1.5">
-                        {existingPlayer.teams.map((team, idx) => (
-                            <span key={idx} className="text-xs px-2 py-0.5 bg-white border border-gray-300 text-gray-700 rounded">
-                                {team.name} ({team.club})
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            )}
 
             <p className="text-xs text-gray-600 mb-2">Click on a value to select it:</p>
 
@@ -122,8 +111,8 @@ export const MergeComparisonRow = ({
                 <thead>
                     <tr className="bg-gray-100">
                         <th className="text-left py-2 px-3 font-semibold text-gray-700 border border-gray-300">Field</th>
-                        <th className="text-left py-2 px-3 font-semibold text-gray-700 border border-gray-300">Existing</th>
-                        <th className="text-left py-2 px-3 font-semibold text-gray-700 border border-gray-300">New</th>
+                        <th className="text-left py-2 px-3 font-semibold text-gray-700 border border-gray-300">Existing (Database)</th>
+                        <th className="text-left py-2 px-3 font-semibold text-gray-700 border border-gray-300">New (Import)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -222,31 +211,16 @@ export const MergeComparisonRow = ({
             </table>
 
             {/* Confirm button */}
-            <div className="mt-4 flex items-center justify-between">
-                <p className="text-xs text-gray-500">
-                    {mergeChoices.size === 4 ? '✓ All fields selected' : `Select ${4 - mergeChoices.size} more field(s)`}
-                </p>
+            <div className="mt-4 flex items-center justify-end">
                 <button
-                    onClick={() => {
-                        // Scroll to the import button at the bottom
-                        const allButtons = Array.from(document.querySelectorAll('button'));
-                        const finalImportButton = allButtons.find(btn => btn.textContent?.includes('Import') && btn.textContent?.includes('Players'));
-                        if (finalImportButton) {
-                            finalImportButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            // Add a subtle highlight effect
-                            finalImportButton.classList.add('ring-4', 'ring-blue-300');
-                            setTimeout(() => {
-                                finalImportButton.classList.remove('ring-4', 'ring-blue-300');
-                            }, 2000);
-                        }
-                    }}
+                    onClick={onConfirmMerge}
                     disabled={mergeChoices.size < 4}
                     className={`px-4 py-2 rounded font-medium shadow-sm transition-all ${mergeChoices.size === 4
                         ? 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow'
                         : 'bg-white border border-gray-300 text-gray-400 cursor-not-allowed'
                         }`}
                 >
-                    {mergeChoices.size === 4 ? '✓ Ready to Merge' : 'Select All Fields'}
+                    Confirm Data
                 </button>
             </div>
         </div>

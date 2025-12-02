@@ -1,0 +1,27 @@
+Extract all player information from this image and return ONLY a valid JSON array. Do not include markdown, code blocks, or any other text.
+
+**Required format:**
+[
+  {
+    "name": "First Name + First Surname",
+    "number": 7,
+    "handedness": "right",
+    "isGoalkeeper": false
+  }
+]
+
+**Field rules:**
+- name: First name + first surname ONLY (e.g., "David Monreal" not "David Monreal García"). If player has multiple surnames, use only the first one. If not visible, use "Unknown Player"
+- number: Jersey/dorsal number as integer. If not visible, use 0
+- handedness: Must be "left", "right", or "both". If not specified in image, use "right" as default
+- isGoalkeeper: Set to true only if explicitly marked as goalkeeper/porter/P. Otherwise false
+
+**Important:**
+- Return ONLY the JSON array, nothing else
+- Do not wrap in markdown code blocks
+- Do not include explanations
+- Extract all players visible in the image
+- If table has headers, use them to identify fields
+- **CRITICAL**: For names, use ONLY first name + first surname (drop second surname)
+
+Return the JSON now:

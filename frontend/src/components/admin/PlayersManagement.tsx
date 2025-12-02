@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, Upload } from 'lucide-react';
 import { CrudManager } from './shared/CrudManager';
 import type { Player, CrudConfig } from '../../types';
 
@@ -97,7 +97,20 @@ export const PlayersManagement = () => {
             },
         ],
 
-        searchFields: ['name'], // Note: Complex search like club name might need backend support or custom filter logic in CrudManager if strictly client-side
+        searchFields: ['name'], // Keep for backward compatibility or default behavior
+
+        customFilter: (player: Player, searchTerm: string) => {
+            const term = searchTerm.toLowerCase();
+            // Check name
+            if (player.name.toLowerCase().includes(term)) return true;
+
+            // Check clubs
+            if (player.teams && player.teams.length > 0) {
+                return player.teams.some(t => t.team.club.name.toLowerCase().includes(term));
+            }
+
+            return false;
+        },
 
         formatFormData: (data) => ({
             ...data,
@@ -112,6 +125,16 @@ export const PlayersManagement = () => {
                 className: 'text-green-600 hover:text-green-900 mr-4',
             },
         ],
+
+        headerActions: (
+            <button
+                onClick={() => navigate('/players/import')}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+                <Upload size={20} />
+                Import Players
+            </button>
+        ),
     };
 
     return <CrudManager<Player> config={playersConfig} />;

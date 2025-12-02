@@ -114,4 +114,7 @@ export interface CrudConfig<T> {
         onClick: (item: T) => void;
         className?: string;
     }>;
+    headerActions?: React.ReactNode; // Custom buttons in header
+    customFilter?: (item: T, searchTerm: string) => boolean; // Custom search logic
+    mapItemToForm?: (item: T) => any; // Transform item to form data
 }
