@@ -12,6 +12,7 @@ import { SeasonsManagement } from './components/admin/SeasonsManagement';
 import { PlayersManagement } from './components/admin/PlayersManagement';
 import { ImportPlayers } from './components/admin/ImportPlayers';
 import { TeamsManagement } from './components/admin/TeamsManagement';
+import { PlayerFormPage } from './components/admin/players/PlayerFormPage';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -55,6 +56,8 @@ function App() {
               <Route path="clubs" element={<ClubsManagement />} />
               <Route path="seasons" element={<SeasonsManagement />} />
               <Route path="players" element={<PlayersManagement />} />
+              <Route path="players/new" element={<PlayerFormPage />} />
+              <Route path="players/:id/edit" element={<PlayerFormPage />} />
               <Route path="players/import" element={<ImportPlayers />} />
               <Route path="teams" element={<TeamsManagement />} />
               <Route path="matches" element={<MatchesManagement />} />

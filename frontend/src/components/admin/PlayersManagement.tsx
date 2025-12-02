@@ -57,47 +57,10 @@ export const PlayersManagement = () => {
             },
         ],
 
-        formFields: [
-            {
-                name: 'name',
-                label: 'Player Name',
-                type: 'text',
-                required: true,
-                placeholder: 'e.g. John Doe',
-                transform: (value) => {
-                    if (typeof value !== 'string') return value;
-                    return value
-                        .toLowerCase()
-                        .split(' ')
-                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                        .join(' ');
-                },
-            },
-            {
-                name: 'number',
-                label: 'Number',
-                type: 'number',
-                required: true,
-                placeholder: 'e.g. 7',
-            },
-            {
-                name: 'handedness',
-                label: 'Handedness',
-                type: 'select',
-                required: true,
-                options: [
-                    { value: 'RIGHT', label: 'Right' },
-                    { value: 'LEFT', label: 'Left' },
-                ],
-            },
-            {
-                name: 'isGoalkeeper',
-                label: 'Is Goalkeeper',
-                type: 'checkbox',
-            },
-        ],
+        // No formFields = no modal, we navigate to a dedicated page instead
+        formFields: [],
 
-        searchFields: ['name'], // Keep for backward compatibility or default behavior
+        searchFields: ['name'],
 
         customFilter: (player: Player, searchTerm: string) => {
             const term = searchTerm.toLowerCase();
@@ -112,10 +75,11 @@ export const PlayersManagement = () => {
             return false;
         },
 
-        formatFormData: (data) => ({
-            ...data,
-            number: typeof data.number === 'string' ? parseInt(data.number, 10) : (data.number as number),
-        }),
+        // Navigate to edit page instead of opening modal
+        onEdit: (player) => navigate(`/players/${player.id}/edit`),
+
+        // Navigate to create page instead of opening modal
+        onCreate: () => navigate('/players/new'),
 
         customActions: [
             {

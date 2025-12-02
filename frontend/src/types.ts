@@ -112,4 +112,6 @@ export interface CrudConfig<T> {
     }>;
     headerActions?: React.ReactNode;
     customFilter?: (item: T, searchTerm: string) => boolean;
+    onEdit?: (item: T) => void; // Custom edit handler (e.g., navigate to page instead of modal)
+    onCreate?: () => void; // Custom create handler (e.g., navigate to page instead of modal)
 }

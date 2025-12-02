@@ -4,7 +4,7 @@ import { ArrowLeft, Save, Hand, Shield, Shirt, Trash2 } from 'lucide-react';
 import { API_BASE_URL } from '../../../config/api';
 import { SearchableSelectWithCreate } from '../../common/SearchableSelectWithCreate';
 import { toTitleCase } from '../../../utils/textUtils';
-import { parseTeamName, TEAM_CATEGORIES } from '../../../utils/teamUtils';
+import { TEAM_CATEGORIES } from '../../../utils/teamUtils';
 import type { Player, Club, Team, Season } from '../../../types';
 
 export const PlayerFormPage = () => {
@@ -29,6 +29,7 @@ export const PlayerFormPage = () => {
     const [handedness, setHandedness] = useState<'RIGHT' | 'LEFT'>('RIGHT');
     const [isGoalkeeper, setIsGoalkeeper] = useState(false);
     const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
+    const [selectedCategory, setSelectedCategory] = useState<string>('SENIOR');
     const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
     // Explicitly define the shape to avoid inference issues
@@ -87,8 +88,11 @@ export const PlayerFormPage = () => {
         loadData();
     }, [id, isEditMode]);
 
-    // Derived State
-    const filteredTeams = teams.filter(t => t.club?.id === selectedClubId);
+    // Derived State - Filter teams by Club AND Category
+    const filteredTeams = teams.filter(t =>
+        t.club?.id === selectedClubId &&
+        (t.category || 'SENIOR') === selectedCategory
+    );
 
     // Handlers
     const handleNameChange = (val: string) => {
@@ -120,9 +124,6 @@ export const PlayerFormPage = () => {
     const [pendingTeamSeasonId, setPendingTeamSeasonId] = useState('');
 
     const handleCreateTeamRequest = (teamName: string) => {
-        // Even if no club is selected, we can allow opening the modal and selecting one there
-        const { name: cleanName, category: detectedCategory } = parseTeamName(teamName);
-
         // Determine default season (current date or first available)
         const now = new Date();
         const currentSeason = seasons.find(s => {
@@ -132,8 +133,9 @@ export const PlayerFormPage = () => {
         });
         const defaultSeasonId = currentSeason?.id || seasons[0]?.id || '';
 
-        setPendingTeamName(cleanName);
-        setPendingTeamCategory(detectedCategory);
+        // Use the selected category from the main form
+        setPendingTeamName(teamName);
+        setPendingTeamCategory(selectedCategory);
         setPendingTeamSeasonId(defaultSeasonId);
         setIsTeamModalOpen(true);
     };
@@ -235,10 +237,21 @@ export const PlayerFormPage = () => {
                 });
             }
 
+            // Construct success message
+            let successMessage = `Player "${savedPlayer.name}" ${isEditMode ? 'updated' : 'created'}`;
+
+            if (selectedTeamId && selectedClubId) {
+                const clubName = clubs.find(c => c.id === selectedClubId)?.name;
+                const teamName = teams.find(t => t.id === selectedTeamId)?.name;
+                if (clubName && teamName) {
+                    successMessage = `${savedPlayer.name} created in ${clubName} ${selectedCategory} ${teamName}`;
+                }
+            }
+
             if (location.state?.from) {
-                navigate(location.state.from);
+                navigate(location.state.from, { state: { message: successMessage } });
             } else {
-                navigate('/admin/players');
+                navigate('/players', { state: { message: successMessage } });
             }
         } catch (err) {
             console.error(err);
@@ -261,7 +274,7 @@ export const PlayerFormPage = () => {
                             if (location.state?.from) {
                                 navigate(location.state.from);
                             } else {
-                                navigate('/admin/players');
+                                navigate('/players');
                             }
                         }}
                         className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -428,7 +441,7 @@ export const PlayerFormPage = () => {
                         )}
 
                         <h3 className="text-sm font-medium text-gray-700 mb-3">Add to Team</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <SearchableSelectWithCreate
                                 label="Club"
                                 value={selectedClubId}
@@ -438,7 +451,28 @@ export const PlayerFormPage = () => {
                                     setSelectedTeamId(null); // Reset team when club changes
                                 }}
                                 onCreate={handleCreateClub}
-                                placeholder="Select or create a club..."
+                                placeholder="Select or create..."
+                            />
+
+                            <SearchableSelectWithCreate
+                                label="Category"
+                                value={selectedCategory}
+                                options={Array.from(new Set([
+                                    ...TEAM_CATEGORIES,
+                                    ...teams.map(t => t.category || 'SENIOR')
+                                ])).map(cat => ({
+                                    value: cat,
+                                    label: toTitleCase(cat)
+                                }))}
+                                onChange={(val) => {
+                                    setSelectedCategory(val);
+                                    setSelectedTeamId(null);
+                                }}
+                                onCreate={(newCat) => {
+                                    setSelectedCategory(newCat);
+                                    setSelectedTeamId(null);
+                                }}
+                                placeholder="Select category..."
                             />
 
                             <SearchableSelectWithCreate
@@ -446,16 +480,16 @@ export const PlayerFormPage = () => {
                                 value={selectedTeamId}
                                 options={filteredTeams.map(t => ({
                                     value: t.id,
-                                    label: `${toTitleCase(t.category || 'Senior')} ${t.name}`
+                                    label: t.name
                                 }))}
                                 onChange={setSelectedTeamId}
                                 onCreate={handleCreateTeamRequest}
-                                placeholder={selectedClubId ? "Select or create a team..." : "Select a club first"}
+                                placeholder={selectedClubId ? "Select or create..." : "Select club first"}
                                 disabled={!selectedClubId}
                             />
                         </div>
                         <p className="text-sm text-gray-500 mt-2">
-                            Select a club to see its teams. You can create new clubs and teams directly from the dropdowns.
+                            Select club and category to see available teams. You can create new clubs and teams directly from the dropdowns.
                         </p>
                     </section>
 

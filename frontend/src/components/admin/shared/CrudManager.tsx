@@ -95,6 +95,13 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
     };
 
     const handleEdit = (item: T) => {
+        // Use custom edit handler if provided (e.g., navigate to page)
+        if (config.onEdit) {
+            config.onEdit(item);
+            return;
+        }
+
+        // Default behavior: open modal
         setEditingItem(item);
 
         const newFormData: Record<string, unknown> = {};
@@ -215,7 +222,13 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                 <div className="flex gap-3">
                     {config.headerActions}
                     <button
-                        onClick={() => setIsFormOpen(true)}
+                        onClick={() => {
+                            if (config.onCreate) {
+                                config.onCreate();
+                            } else {
+                                setIsFormOpen(true);
+                            }
+                        }}
                         className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                     >
                         <Plus size={20} />
