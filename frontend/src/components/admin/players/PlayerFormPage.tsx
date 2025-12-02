@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Save, Hand, Shield, Shirt, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Hand, Shield, Shirt, Trash2, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import { API_BASE_URL } from '../../../config/api';
 import { SearchableSelectWithCreate } from '../../common/SearchableSelectWithCreate';
 import { toTitleCase } from '../../../utils/textUtils';
 import { TEAM_CATEGORIES } from '../../../utils/teamUtils';
+import { playerImportService, type DuplicateMatch } from '../../../services/playerImportService';
 import type { Player, Club, Team, Season } from '../../../types';
 
 export const PlayerFormPage = () => {
@@ -16,6 +17,12 @@ export const PlayerFormPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Duplicate Detection State
+    const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
+    const [duplicateMatches, setDuplicateMatches] = useState<DuplicateMatch[]>([]);
+    const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+    const [ignoreDuplicates, setIgnoreDuplicates] = useState(false);
 
     // Data
     const [clubs, setClubs] = useState<Club[]>([]);
@@ -94,9 +101,52 @@ export const PlayerFormPage = () => {
         (t.category || 'SENIOR') === selectedCategory
     );
 
+    // Duplicate Detection (debounced)
+    useEffect(() => {
+        // Don't check for duplicates in edit mode or if name is too short
+        if (isEditMode || name.trim().length < 3 || ignoreDuplicates) {
+            setDuplicateMatches([]);
+            setShowDuplicateWarning(false);
+            return;
+        }
+
+        const timeoutId = setTimeout(async () => {
+            setIsCheckingDuplicates(true);
+            try {
+                const data = await playerImportService.checkDuplicates([name]);
+                if (data.duplicates && data.duplicates[0]) {
+                    const duplicateInfo = data.duplicates[0];
+                    if (duplicateInfo.hasDuplicates && duplicateInfo.matches.length > 0) {
+                        setDuplicateMatches(duplicateInfo.matches);
+                        setShowDuplicateWarning(true);
+                    } else {
+                        setDuplicateMatches([]);
+                        setShowDuplicateWarning(false);
+                    }
+                }
+            } catch (err) {
+                console.error('Error checking duplicates:', err);
+            } finally {
+                setIsCheckingDuplicates(false);
+            }
+        }, 500); // Debounce 500ms
+
+        return () => clearTimeout(timeoutId);
+    }, [name, isEditMode, ignoreDuplicates]);
+
     // Handlers
     const handleNameChange = (val: string) => {
         setName(toTitleCase(val));
+        setIgnoreDuplicates(false); // Reset when user changes name
+    };
+
+    const handleContinueAnyway = () => {
+        setIgnoreDuplicates(true);
+        setShowDuplicateWarning(false);
+    };
+
+    const handleCancelCreation = () => {
+        navigate('/players');
     };
 
     const handleCreateClub = async (clubName: string) => {
@@ -314,6 +364,86 @@ export const PlayerFormPage = () => {
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                                     placeholder="e.g. Jordi Casanovas"
                                 />
+
+                                {/* Duplicate Detection UI */}
+                                {!isEditMode && name.trim().length >= 3 && (
+                                    <div className="mt-2">
+                                        {isCheckingDuplicates && (
+                                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                                                <Loader2 size={14} className="animate-spin" />
+                                                <span>Checking for duplicates...</span>
+                                            </div>
+                                        )}
+
+                                        {!isCheckingDuplicates && !showDuplicateWarning && !ignoreDuplicates && (
+                                            <div className="flex items-center gap-2 text-sm text-green-600">
+                                                <CheckCircle size={14} />
+                                                <span>Aquest jugador encara no existeix a la BBDD</span>
+                                            </div>
+                                        )}
+
+                                        {showDuplicateWarning && !ignoreDuplicates && (
+                                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 space-y-3">
+                                                <div className="flex items-start gap-2">
+                                                    <AlertTriangle size={18} className="text-yellow-600 mt-0.5 flex-shrink-0" />
+                                                    <div className="flex-1">
+                                                        <p className="text-sm font-medium text-yellow-900">
+                                                            Possible Duplicate Players Found
+                                                        </p>
+                                                        <p className="text-xs text-yellow-700 mt-1">
+                                                            We found {duplicateMatches.length} similar player{duplicateMatches.length > 1 ? 's' : ''} in the database:
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2 ml-6">
+                                                    {duplicateMatches.map((match, idx) => (
+                                                        <div key={idx} className="bg-white rounded p-2 text-xs border border-yellow-100">
+                                                            <div className="flex items-center justify-between">
+                                                                <div>
+                                                                    <span className="font-medium">{match.name}</span>
+                                                                    {match.teams && match.teams.length > 0 && (
+                                                                        <span className="text-gray-500 ml-2">
+                                                                            ({match.teams.map(t => `${t.club} ${t.name}`).join(', ')})
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => window.open(`/players/${match.id}/edit`, '_blank')}
+                                                                    className="text-indigo-600 hover:text-indigo-800 font-medium"
+                                                                >
+                                                                    View/Edit
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                <div className="flex gap-2 ml-6">
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleCancelCreation}
+                                                        className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
+                                                    >
+                                                        Cancel Creation
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleContinueAnyway}
+                                                        className="px-3 py-1.5 text-sm bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors"
+                                                    >
+                                                        Continue Anyway (Different Player)
+                                                    </button>
+                                                </div>
+
+                                                <p className="text-xs text-yellow-600 ml-6">
+                                                    💡 If you want to assign this player to another team, use the "View/Edit" link above instead.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Number</label>
@@ -414,25 +544,29 @@ export const PlayerFormPage = () => {
                             Team Assignments
                         </h2>
 
-                        {/* Current Teams List */}
+                        {/* Current Teams List - Badge Style */}
                         {isEditMode && playerTeams && playerTeams.length > 0 && (
-                            <div className="mb-6 space-y-3">
-                                <h3 className="text-sm font-medium text-gray-700">Current Teams</h3>
-                                <div className="grid gap-3">
+                            <div className="mb-6">
+                                <h3 className="text-sm font-medium text-gray-700 mb-3">Current Teams</h3>
+                                <div className="flex flex-wrap gap-2">
                                     {playerTeams.map((pt) => (
-                                        <div key={pt.team.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
-                                            <div>
-                                                <div className="font-medium text-gray-900">
-                                                    {toTitleCase(pt.team.category || 'Senior')} {pt.team.name}
-                                                </div>
-                                                <div className="text-sm text-gray-500">{pt.team.club.name}</div>
-                                            </div>
+                                        <div
+                                            key={pt.team.id}
+                                            className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg group hover:shadow-sm transition-all"
+                                        >
+                                            <span className="text-sm">
+                                                <span className="font-semibold text-indigo-900">{pt.team.club.name}</span>
+                                                {' '}
+                                                <span className="text-indigo-700">{toTitleCase(pt.team.category || 'Senior')}</span>
+                                                {' '}
+                                                <span className="text-indigo-600">{pt.team.name}</span>
+                                            </span>
                                             <button
                                                 onClick={() => handleRemoveTeam(pt.team.id)}
-                                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                                                 title="Remove from team"
                                             >
-                                                <Trash2 size={18} />
+                                                <Trash2 size={14} />
                                             </button>
                                         </div>
                                     ))}
