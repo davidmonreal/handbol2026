@@ -23,13 +23,26 @@ export const PlayerFormPage = () => {
     const [seasons, setSeasons] = useState<Season[]>([]);
 
     // Form State
+    // Form State
     const [name, setName] = useState('');
     const [number, setNumber] = useState<number | ''>('');
     const [handedness, setHandedness] = useState<'RIGHT' | 'LEFT'>('RIGHT');
     const [isGoalkeeper, setIsGoalkeeper] = useState(false);
     const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
     const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
-    const [playerTeams, setPlayerTeams] = useState<Player['teams']>([]);
+
+    // Explicitly define the shape to avoid inference issues
+    interface PlayerTeam {
+        team: {
+            id: string;
+            name: string;
+            category?: string;
+            club: {
+                name: string;
+            };
+        };
+    }
+    const [playerTeams, setPlayerTeams] = useState<PlayerTeam[]>([]);
 
     // Initial Data Loading
     useEffect(() => {
