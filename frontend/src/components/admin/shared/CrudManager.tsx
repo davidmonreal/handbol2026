@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search } from 'lucide-react';
 import { API_BASE_URL } from '../../../config/api';
 import type { CrudConfig, FormFieldConfig } from '../../../types';
+import { LoadingTable, ErrorMessage } from '../../common';
+
 
 interface CrudManagerProps<T> {
     config: CrudConfig<T>;
@@ -14,6 +16,7 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
     const [formData, setFormData] = useState<Record<string, unknown>>({});
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
@@ -22,11 +25,13 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
 
     const fetchItems = async () => {
         try {
+            setError(null);
             const response = await fetch(`${API_BASE_URL}${config.apiEndpoint}`);
             const data = await response.json();
 
             if (Array.isArray(data)) {
                 setItems(data);
+                setError(null);
             } else {
                 console.error('Expected array but got:', data);
                 setItems([]);
@@ -38,6 +43,8 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
             console.error(`Error fetching ${config.entityNamePlural}:`, err);
             setError('Failed to connect to the server. Please ensure the backend is running.');
             setItems([]);
+        } finally {
+            setIsInitialLoading(false);
         }
     };
 
@@ -215,6 +222,18 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
         }
     };
 
+    // Show loading state on initial load
+    if (isInitialLoading) {
+        return (
+            <div className="p-6 max-w-6xl mx-auto">
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-3xl font-bold text-gray-800">{config.entityNamePlural} Management</h1>
+                </div>
+                <LoadingTable rows={5} />
+            </div>
+        );
+    }
+
     return (
         <div className="p-6 max-w-6xl mx-auto">
             <div className="flex justify-between items-center mb-6">
@@ -251,9 +270,11 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
             </div>
 
             {error && (
-                <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                    {error}
-                </div>
+                <ErrorMessage
+                    message={error}
+                    onRetry={fetchItems}
+                    className="mb-6"
+                />
             )}
 
             {isFormOpen && (

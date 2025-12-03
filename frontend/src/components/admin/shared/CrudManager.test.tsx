@@ -51,6 +51,11 @@ describe('CrudManager', () => {
     it('opens the form when "New" button is clicked', async () => {
         render(<CrudManager config={testConfig} />);
 
+        // Wait for loading to complete
+        await waitFor(() => {
+            expect(screen.getByText('New Test Item')).toBeInTheDocument();
+        });
+
         const newButton = screen.getByText('New Test Item');
         fireEvent.click(newButton);
 

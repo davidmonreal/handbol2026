@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Calendar, Clock, MapPin, ChevronRight, Play, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { API_BASE_URL } from '../config/api';
+import { LoadingGrid, ErrorMessage, EmptyState } from './common';
+
 
 interface Team {
   id: string;
@@ -29,6 +31,7 @@ const Dashboard = () => {
   const [pendingMatches, setPendingMatches] = useState<Match[]>([]);
   const [pastMatches, setPastMatches] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMatches();
@@ -36,6 +39,8 @@ const Dashboard = () => {
 
   const fetchMatches = async () => {
     try {
+      setError(null);
+      setIsLoading(true);
       const response = await fetch(`${API_BASE_URL}/api/matches`);
       if (response.ok) {
         const data = await response.json();
@@ -43,9 +48,12 @@ const Dashboard = () => {
         const past = data.filter((m: Match) => m.isFinished).sort((a: Match, b: Match) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setPendingMatches(pending);
         setPastMatches(past);
+      } else {
+        setError('Failed to load matches');
       }
     } catch (error) {
       console.error('Error fetching matches:', error);
+      setError('Failed to connect to the server. Please check your connection.');
     } finally {
       setIsLoading(false);
     }
@@ -116,8 +124,22 @@ const Dashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      <div className="p-6 max-w-7xl mx-auto space-y-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-500">Loading your matches...</p>
+          </div>
+        </div>
+        <div>
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+              <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+              Upcoming Matches
+            </h2>
+          </div>
+          <LoadingGrid items={3} />
+        </div>
       </div>
     );
   }
@@ -138,6 +160,14 @@ const Dashboard = () => {
           New Match
         </button>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <ErrorMessage
+          message={error}
+          onRetry={fetchMatches}
+        />
+      )}
 
       {/* Pending Matches */}
       <section>
