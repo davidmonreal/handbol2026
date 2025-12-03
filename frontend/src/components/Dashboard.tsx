@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Calendar, Clock, MapPin, ChevronRight, Play, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { API_BASE_URL } from '../config/api';
-import { LoadingGrid, ErrorMessage, EmptyState } from './common';
-
+import { LoadingGrid, ErrorMessage } from './common';
 
 interface Team {
   id: string;
