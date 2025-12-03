@@ -158,15 +158,38 @@ export const MergeComparisonRow = ({
                                 }`}
                         >
                             {isEditing ? (
-                                <select
-                                    value={editForm.handedness || ''}
-                                    onChange={(e) => setEditForm({ ...editForm, handedness: e.target.value as any || undefined })}
-                                    className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 bg-white"
-                                >
-                                    <option value="">Unknown</option>
-                                    <option value="RIGHT">Right</option>
-                                    <option value="LEFT">Left</option>
-                                </select>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditForm({ ...editForm, handedness: undefined })}
+                                        className={`px-3 py-1.5 text-sm rounded border transition-all ${!editForm.handedness
+                                                ? 'bg-blue-600 text-white border-blue-600 font-medium shadow-sm'
+                                                : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+                                            }`}
+                                    >
+                                        Unknown
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditForm({ ...editForm, handedness: 'RIGHT' as any })}
+                                        className={`px-3 py-1.5 text-sm rounded border transition-all ${editForm.handedness === 'RIGHT'
+                                                ? 'bg-blue-600 text-white border-blue-600 font-medium shadow-sm'
+                                                : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+                                            }`}
+                                    >
+                                        Right
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditForm({ ...editForm, handedness: 'LEFT' as any })}
+                                        className={`px-3 py-1.5 text-sm rounded border transition-all ${editForm.handedness === 'LEFT'
+                                                ? 'bg-blue-600 text-white border-blue-600 font-medium shadow-sm'
+                                                : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+                                            }`}
+                                    >
+                                        Left
+                                    </button>
+                                </div>
                             ) : (newPlayer.handedness || '-')}
                         </td>
                     </tr>

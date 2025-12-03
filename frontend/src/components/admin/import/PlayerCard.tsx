@@ -73,13 +73,18 @@ export const PlayerCard = ({
                     </div>
                 )}
 
-                <button
-                    onClick={() => onEdit(player)}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                    title="Edit player"
-                >
-                    <Edit2 className="w-4 h-4" />
-                </button>
+                {/* Edit button - only show if no duplicate */}
+                {!(duplicate && duplicate.hasDuplicates) && (
+                    <button
+                        onClick={() => onEdit(player)}
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        title="Edit player"
+                    >
+                        <Edit2 className="w-4 h-4" />
+                    </button>
+                )}
+
+                {/* Delete button */}
                 <button
                     onClick={onDelete}
                     className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
