@@ -58,13 +58,13 @@ const MatchTracker = () => {
           const home = transformTeam(data.homeTeam, 'bg-yellow-400');
           const visitor = transformTeam(data.awayTeam, 'bg-white');
 
-
-
-          setMatchData(data.id, home, visitor);
+          // Preserve state if we already have teams loaded (returning from another page)
+          const shouldPreserveState = homeTeam !== null && visitorTeam !== null;
+          setMatchData(data.id, home, visitor, shouldPreserveState);
         })
         .catch(err => console.error('Error fetching match:', err));
     }
-  }, [matchId, setMatchData]);
+  }, [matchId, setMatchData, homeTeam, visitorTeam]);
 
   // Local Selection State (Transient)
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
@@ -199,7 +199,7 @@ const MatchTracker = () => {
               {homeTeam.name} vs {visitorTeam.name}
             </h1>
             <button
-              onClick={() => navigate(`/statistics?matchId=${matchId}`)}
+              onClick={() => navigate(`/statistics?matchId=${matchId}${activeTeamId ? `&activeTeamId=${activeTeamId}` : ''}`)}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -14,6 +14,7 @@ const Statistics = () => {
   const matchId = searchParams.get('matchId');
   const playerId = searchParams.get('playerId');
   const teamId = searchParams.get('teamId');
+  const urlActiveTeamId = searchParams.get('activeTeamId');
 
   const { events, activeTeamId } = useMatch();
 
@@ -33,7 +34,8 @@ const Statistics = () => {
           const matchRes = await fetch(`${API_BASE_URL}/api/matches/${matchId}`);
           const matchData = await matchRes.json();
           setData(matchData);
-          setSelectedTeamId(matchData.homeTeamId);
+          // Use activeTeamId from URL or context, fallback to homeTeamId
+          setSelectedTeamId(urlActiveTeamId || activeTeamId || matchData.homeTeamId);
 
           // Load match events
           const eventsRes = await fetch(`${API_BASE_URL}/api/game-events/match/${matchId}`);

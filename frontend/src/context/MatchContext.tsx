@@ -14,6 +14,8 @@ interface Player {
 interface Team {
   id: string;
   name: string;
+  category?: string;
+  club?: { name: string };
   color: string;
   players: Player[];
 }
@@ -40,7 +42,7 @@ interface MatchContextType {
   setVisitorTeam: React.Dispatch<React.SetStateAction<Team | null>>;
   matchId: string | null;
   setMatchId: React.Dispatch<React.SetStateAction<string | null>>;
-  setMatchData: (id: string, home: Team, visitor: Team) => void;
+  setMatchData: (id: string, home: Team, visitor: Team, preserveState?: boolean) => void;
   selectedOpponentGoalkeeper: Player | null;
   setSelectedOpponentGoalkeeper: React.Dispatch<React.SetStateAction<Player | null>>;
 }
@@ -103,7 +105,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const setMatchData = useCallback(async (id: string, home: Team, visitor: Team) => {
+  const setMatchData = useCallback(async (id: string, home: Team, visitor: Team, preserveState = false) => {
 
     setMatchId(id);
     setHomeTeam(home);
@@ -180,8 +182,12 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
 
     setTime(0);
     setIsPlaying(false);
-    setActiveTeamId(null);
-    setDefenseFormation('6-0');
+
+    // Only reset these if not preserving state
+    if (!preserveState) {
+      setActiveTeamId(null);
+      setDefenseFormation('6-0');
+    }
   }, []);
 
   return (

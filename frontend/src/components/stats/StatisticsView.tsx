@@ -16,8 +16,8 @@ interface StatisticsViewProps {
   showComparison?: boolean;
   teamId?: string | null;
   matchData?: {
-    homeTeam: { id: string; name: string; players: any[] };
-    awayTeam: { id: string; name: string; players: any[] };
+    homeTeam: { id: string; name: string; club?: { name: string }; category?: string; players: any[] };
+    awayTeam: { id: string; name: string; club?: { name: string }; category?: string; players: any[] };
     homeTeamId: string;
     awayTeamId: string;
   };
@@ -42,6 +42,14 @@ export function StatisticsView({
   onTeamChange,
   onBack,
 }: StatisticsViewProps) {
+  // Helper function to format team display with club, category, and name
+  const formatTeamDisplay = (team: { name: string; club?: { name: string }; category?: string }) => {
+    const parts = [];
+    if (team.club?.name) parts.push(team.club.name);
+    if (team.category) parts.push(team.category);
+    parts.push(team.name);
+    return parts.join(' ');
+  };
   // Filter state
   const [filterZone, setFilterZone] = useState<ZoneType | '7m' | null>(null);
   const [filterPlayer, setFilterPlayer] = useState<string | null>(selectedPlayerId || null);
@@ -189,7 +197,7 @@ export function StatisticsView({
             <div className="flex items-center gap-2 mr-auto">
               <span className="text-sm text-gray-600">Viewing:</span>
               <span className="font-semibold text-gray-900">
-                {selectedTeamId === matchData.homeTeamId ? matchData.homeTeam.name : matchData.awayTeam.name}
+                {selectedTeamId === matchData.homeTeamId ? formatTeamDisplay(matchData.homeTeam) : formatTeamDisplay(matchData.awayTeam)}
               </span>
               <button
                 onClick={() => handleTeamSwitch(
@@ -200,7 +208,7 @@ export function StatisticsView({
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                 </svg>
-                Switch to {selectedTeamId === matchData.homeTeamId ? matchData.awayTeam.name : matchData.homeTeam.name}
+                Switch to {selectedTeamId === matchData.homeTeamId ? formatTeamDisplay(matchData.awayTeam) : formatTeamDisplay(matchData.homeTeam)}
               </button>
             </div>
           )}

@@ -75,10 +75,10 @@ describe('StatisticsView', () => {
         matchData={mockMatchData}
       />
     );
-    
+
     const switchButton = screen.getByText('Switch to Away Team');
     fireEvent.click(switchButton);
-    
+
     expect(screen.getByText('Away Team')).toBeInTheDocument();
     expect(screen.getByText('Switch to Home Team')).toBeInTheDocument();
   });
@@ -94,10 +94,10 @@ describe('StatisticsView', () => {
         teamId="team1"
       />
     );
-    
+
     const switchButton = screen.getByText('Switch to Away Team');
     fireEvent.click(switchButton);
-    
+
     expect(handleTeamChange).toHaveBeenCalledWith('team2');
   });
 
@@ -110,7 +110,7 @@ describe('StatisticsView', () => {
         onBack={handleBack}
       />
     );
-    
+
     const backButton = screen.getByText('Back');
     expect(backButton).toBeInTheDocument();
     fireEvent.click(backButton);
@@ -130,5 +130,137 @@ describe('StatisticsView', () => {
     // Since StatisticsPanel is a child, we might need to integration test or rely on implementation details
     // For now, let's just check if the main components render
     expect(screen.getByText('Filters:')).toBeInTheDocument();
+  });
+
+  describe('formatTeamDisplay function', () => {
+    const mockMatchDataWithDetails = {
+      homeTeam: {
+        id: 'team1',
+        name: 'Groc',
+        category: 'CADET',
+        club: { name: 'AB Investiments Joventut Mataró' },
+        players: []
+      },
+      awayTeam: {
+        id: 'team2',
+        name: 'A',
+        category: 'CADET',
+        club: { name: 'La Roca' },
+        players: []
+      },
+      homeTeamId: 'team1',
+      awayTeamId: 'team2'
+    };
+
+    it('should display full team info (club + category + name) in Viewing label', () => {
+      render(
+        <StatisticsView
+          events={mockEvents}
+          context="match"
+          matchData={mockMatchDataWithDetails}
+        />
+      );
+
+      expect(screen.getByText('Viewing:')).toBeInTheDocument();
+      expect(screen.getByText('AB Investiments Joventut Mataró CADET Groc')).toBeInTheDocument();
+    });
+
+    it('should display full team info in Switch button', () => {
+      render(
+        <StatisticsView
+          events={mockEvents}
+          context="match"
+          matchData={mockMatchDataWithDetails}
+        />
+      );
+
+      expect(screen.getByText('Switch to La Roca CADET A')).toBeInTheDocument();
+    });
+
+    it('should handle team without club', () => {
+      const dataWithoutClub = {
+        ...mockMatchDataWithDetails,
+        homeTeam: {
+          ...mockMatchDataWithDetails.homeTeam,
+          club: undefined
+        }
+      };
+
+      render(
+        <StatisticsView
+          events={mockEvents}
+          context="match"
+          matchData={dataWithoutClub}
+        />
+      );
+
+      // Should show category + name only
+      expect(screen.getByText('CADET Groc')).toBeInTheDocument();
+    });
+
+    it('should handle team without category', () => {
+      const dataWithoutCategory = {
+        ...mockMatchDataWithDetails,
+        homeTeam: {
+          ...mockMatchDataWithDetails.homeTeam,
+          category: undefined
+        }
+      };
+
+      render(
+        <StatisticsView
+          events={mockEvents}
+          context="match"
+          matchData={dataWithoutCategory}
+        />
+      );
+
+      // Should show club + name only
+      expect(screen.getByText('AB Investiments Joventut Mataró Groc')).toBeInTheDocument();
+    });
+
+    it('should handle team with only name', () => {
+      const dataNameOnly = {
+        ...mockMatchDataWithDetails,
+        homeTeam: {
+          ...mockMatchDataWithDetails.homeTeam,
+          club: undefined,
+          category: undefined
+        }
+      };
+
+      render(
+        <StatisticsView
+          events={mockEvents}
+          context="match"
+          matchData={dataNameOnly}
+        />
+      );
+
+      // Should show name only
+      expect(screen.getByText('Groc')).toBeInTheDocument();
+    });
+
+    it('should update team display when switching teams', () => {
+      render(
+        <StatisticsView
+          events={mockEvents}
+          context="match"
+          matchData={mockMatchDataWithDetails}
+        />
+      );
+
+      // Initially showing home team
+      expect(screen.getByText('AB Investiments Joventut Mataró CADET Groc')).toBeInTheDocument();
+      expect(screen.getByText('Switch to La Roca CADET A')).toBeInTheDocument();
+
+      // Click switch button
+      const switchButton = screen.getByText('Switch to La Roca CADET A');
+      fireEvent.click(switchButton);
+
+      // Now showing away team
+      expect(screen.getByText('La Roca CADET A')).toBeInTheDocument();
+      expect(screen.getByText('Switch to AB Investiments Joventut Mataró CADET Groc')).toBeInTheDocument();
+    });
   });
 });
