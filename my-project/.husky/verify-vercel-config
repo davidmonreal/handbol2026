@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+
+# Check if vercel.json is being modified
+if git diff --cached --name-only | grep -q "vercel.json"; then
+  echo ""
+  echo "⚠️  WARNING: You are about to commit changes to vercel.json"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "This file is critical for Vercel deployment!"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "Continue with commit? (y/n)"
+  exec < /dev/tty
+  read -r response
+  if [ "$response" != "y" ] && [ "$response" != "Y" ]; then
+    echo ""
+    echo "❌ Commit aborted by user."
+    echo ""
+    exit 1
+  fi
+  echo ""
+  echo "✅ Proceeding with commit..."
+  echo ""
+fi
+

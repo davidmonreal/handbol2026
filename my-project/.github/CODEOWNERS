@@ -1,0 +1,12 @@
+# Code Owners for Critical Files
+# Each line is a file pattern followed by one or more owners.
+
+# Deployment configuration files require approval from @davidmonreal
+vercel.json @davidmonreal
+frontend/vercel.json @davidmonreal
+
+# Database schema changes require approval
+prisma/schema.prisma @davidmonreal
+
+# Environment configuration
+.env.example @davidmonreal
