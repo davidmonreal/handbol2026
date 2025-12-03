@@ -26,6 +26,10 @@ interface ExtractedPlayersListProps {
     onConfirmImport: () => void;
     isProcessing: boolean;
     isCheckingDuplicates: boolean;
+    // Edit Props
+    editingPlayerIndex: number | null;
+    onSaveEditedPlayer: (player: ExtractedPlayer) => void;
+    onCancelEdit: () => void;
 }
 
 export const ExtractedPlayersList = ({
@@ -49,7 +53,10 @@ export const ExtractedPlayersList = ({
     onConfirmMerge,
     onConfirmImport,
     isProcessing,
-    isCheckingDuplicates
+    isCheckingDuplicates,
+    editingPlayerIndex,
+    onSaveEditedPlayer,
+    onCancelEdit
 }: ExtractedPlayersListProps) => {
     return (
         <div className="bg-white rounded-xl shadow-lg p-6">
@@ -80,6 +87,7 @@ export const ExtractedPlayersList = ({
                     const playerMergeChoices = mergeChoices.get(index) || new Map();
                     const action = duplicateActions.get(index);
                     const isResolved = resolvedDuplicates.has(index);
+                    const isEditing = editingPlayerIndex === index;
 
                     // If reviewing duplicate, show comparison
                     if (isReviewing && duplicate && duplicate.hasDuplicates && !isResolved) {
@@ -93,6 +101,25 @@ export const ExtractedPlayersList = ({
                                 onActionChange={(newAction) => onActionChange(index, newAction)}
                                 onFieldChoiceChange={(field, choice) => onFieldChoiceChange(index, field, choice)}
                                 onConfirmMerge={() => onConfirmMerge(index)}
+                            />
+                        );
+                    }
+
+                    // If editing, show inline editor (using MergeComparisonRow in edit mode)
+                    if (isEditing) {
+                        return (
+                            <MergeComparisonRow
+                                key={index}
+                                newPlayer={player}
+                                existingPlayer={null} // No existing player when editing new import
+                                action={undefined}
+                                mergeChoices={new Map()} // Not used in edit mode
+                                onActionChange={() => { }} // Not used in edit mode
+                                onFieldChoiceChange={() => { }} // Not used in edit mode
+                                onConfirmMerge={() => { }} // Not used in edit mode
+                                isEditing={true}
+                                onSave={onSaveEditedPlayer}
+                                onCancel={onCancelEdit}
                             />
                         );
                     }

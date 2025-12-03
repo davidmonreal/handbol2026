@@ -4,17 +4,11 @@ import { usePlayerImport } from '../../hooks/usePlayerImport';
 import { ImageUpload } from './import/ImageUpload';
 import { ImagePreview } from './import/ImagePreview';
 import { CreateTeamModal } from './import/CreateTeamModal';
-import { EditPlayerModal } from './import/EditPlayerModal';
 import { ExtractedPlayersList } from './import/ExtractedPlayersList';
 
 export const ImportPlayers = () => {
     const navigate = useNavigate();
     const { state, actions } = usePlayerImport();
-
-    const handleImportSuccess = (summary: string[]) => {
-        alert(`✅ Import complete!\n${summary.join(', ')}`);
-        navigate('/players');
-    };
 
     return (
         <div className="p-6 max-w-7xl mx-auto">
@@ -70,9 +64,15 @@ export const ImportPlayers = () => {
                     onActionChange={actions.handleActionChange}
                     onFieldChoiceChange={actions.handleFieldChoiceChange}
                     onConfirmMerge={actions.handleConfirmMerge}
-                    onConfirmImport={() => actions.handleConfirmImport(handleImportSuccess)}
+                    onConfirmImport={() => actions.handleConfirmImport((summary) => {
+                        alert(`Import successful!\n${summary.join('\n')}`);
+                    })}
                     isProcessing={state.isProcessing}
                     isCheckingDuplicates={state.isCheckingDuplicates}
+                    // Edit Props
+                    editingPlayerIndex={state.editingPlayerIndex}
+                    onSaveEditedPlayer={actions.handleSaveEditedPlayer}
+                    onCancelEdit={actions.handleCancelEdit}
                 />
             )}
 
@@ -82,13 +82,6 @@ export const ImportPlayers = () => {
                 onSubmit={actions.handleSubmitCreateTeam}
                 initialTeamName={state.newTeamName}
                 applyTitleCase={false}
-            />
-
-            <EditPlayerModal
-                isOpen={state.isEditModalOpen}
-                onClose={() => actions.setIsEditModalOpen(false)}
-                onSave={actions.handleSaveEditedPlayer}
-                player={state.editingPlayerIndex !== null ? state.extractedPlayers[state.editingPlayerIndex] : null}
             />
         </div>
     );

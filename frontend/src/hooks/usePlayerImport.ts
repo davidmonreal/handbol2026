@@ -253,17 +253,14 @@ export const usePlayerImport = () => {
 
     // Edit Player Logic
     const [editingPlayerIndex, setEditingPlayerIndex] = useState<number | null>(null);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const handleEditClick = (index: number) => {
         setEditingPlayerIndex(index);
-        setIsEditModalOpen(true);
     };
 
     const handleSaveEditedPlayer = (updatedPlayer: ExtractedPlayer) => {
         if (editingPlayerIndex !== null) {
             handleUpdatePlayer(editingPlayerIndex, updatedPlayer);
-            setIsEditModalOpen(false);
             setEditingPlayerIndex(null);
         }
     };
@@ -310,7 +307,6 @@ export const usePlayerImport = () => {
             newTeamName,
             // Edit Player
             editingPlayerIndex,
-            isEditModalOpen,
         },
         actions: {
             setImage,
@@ -334,7 +330,7 @@ export const usePlayerImport = () => {
             // Edit Player
             handleEditClick,
             handleSaveEditedPlayer,
-            setIsEditModalOpen
+            handleCancelEdit: () => setEditingPlayerIndex(null),
         }
     };
 };
