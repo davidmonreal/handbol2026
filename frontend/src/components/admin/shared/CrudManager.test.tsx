@@ -5,7 +5,8 @@ import type { CrudConfig } from '../../../types';
 
 // Mock API
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch as any;
+
 
 // Mock Config
 interface TestItem {
