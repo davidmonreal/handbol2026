@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,105 +7,91 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Handedness {
-  LEFT
-  RIGHT
-}
-
 model Club {
-  id        String   @id @default(uuid())
-  name      String
-  teams     Team[]
+  id    String @id @default(uuid())
+  name  String
+  teams Team[]
 }
 
 model Season {
   id        String   @id @default(uuid())
-  name      String   // e.g., "2024-2025"
+  name      String
   startDate DateTime
   endDate   DateTime
   teams     Team[]
 }
 
 model Team {
-  id        String   @id @default(uuid())
-  name      String   // e.g., "Cadet A"
-  category  String   @default("SENIOR") // BENJAMI, ALEVI, INFANTIL, CADET, JUVENIL, SENIOR
-  isMyTeam  Boolean  @default(false)
-  clubId    String
-  club      Club     @relation(fields: [clubId], references: [id])
-  seasonId  String
-  season    Season   @relation(fields: [seasonId], references: [id])
-  players   PlayerTeamSeason[]
-  homeMatches Match[] @relation("HomeTeam")
-  awayMatches Match[] @relation("AwayTeam")
+  id          String             @id @default(uuid())
+  name        String
+  category    String             @default("SENIOR")
+  isMyTeam    Boolean            @default(false)
+  clubId      String
+  seasonId    String
+  awayMatches Match[]            @relation("AwayTeam")
+  homeMatches Match[]            @relation("HomeTeam")
+  players     PlayerTeamSeason[]
+  club        Club               @relation(fields: [clubId], references: [id])
+  season      Season             @relation(fields: [seasonId], references: [id])
 }
 
 model Player {
-  id            String      @id @default(uuid())
-  name          String
-  number        Int         // Default number
-  handedness    Handedness  @default(RIGHT)
-  isGoalkeeper  Boolean     @default(false) // Whether player is a goalkeeper
-  teams         PlayerTeamSeason[]
-  events        GameEvent[] @relation("EventPlayer")
-  activeGoalkeeperEvents GameEvent[] @relation("ActiveGoalkeeper")
+  id                     String             @id @default(uuid())
+  name                   String
+  number                 Int
+  handedness             Handedness         @default(RIGHT)
+  isGoalkeeper           Boolean            @default(false)
+  activeGoalkeeperEvents GameEvent[]        @relation("ActiveGoalkeeper")
+  events                 GameEvent[]        @relation("EventPlayer")
+  teams                  PlayerTeamSeason[]
 }
 
-// Handles the "Player plays in multiple teams per season" requirement
 model PlayerTeamSeason {
-  id        String   @id @default(uuid())
-  playerId  String
-  teamId    String
-  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  role      String   // e.g., "Player", "Captain"
-  
+  id       String @id @default(uuid())
+  playerId String
+  teamId   String
+  role     String
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  team     Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
   @@unique([playerId, teamId])
 }
 
 model Match {
-  id          String   @id @default(uuid())
-  date        DateTime
-  homeTeamId  String
-  awayTeamId  String
-  homeTeam    Team     @relation("HomeTeam", fields: [homeTeamId], references: [id])
-  awayTeam    Team     @relation("AwayTeam", fields: [awayTeamId], references: [id])
-  events      GameEvent[]
-  isFinished  Boolean  @default(false)
-  homeScore   Int      @default(0)
-  awayScore   Int      @default(0)
+  id         String      @id @default(uuid())
+  date       DateTime
+  homeTeamId String
+  awayTeamId String
+  isFinished Boolean     @default(false)
+  homeScore  Int         @default(0)
+  awayScore  Int         @default(0)
+  events     GameEvent[]
+  awayTeam   Team        @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  homeTeam   Team        @relation("HomeTeam", fields: [homeTeamId], references: [id])
 }
 
 model GameEvent {
-  id          String   @id @default(uuid())
-  matchId     String
-  match       Match    @relation(fields: [matchId], references: [id])
-  timestamp   Int      // Seconds from start
-  
-  // Who
-  playerId    String?
-  player      Player?  @relation("EventPlayer", fields: [playerId], references: [id], onDelete: SetNull)
-  teamId      String   // To know which side the event belongs to
-  
-  // Active Goalkeeper (for opponent's goalkeeper during shot events)
+  id                 String  @id @default(uuid())
+  matchId            String
+  timestamp          Int
+  playerId           String?
+  teamId             String
+  type               String
+  subtype            String?
+  position           String?
+  distance           String?
+  isCollective       Boolean @default(false)
+  hasOpposition      Boolean @default(true)
+  isCounterAttack    Boolean @default(false)
+  goalZone           String?
+  sanctionType       String?
   activeGoalkeeperId String?
-  activeGoalkeeper   Player? @relation("ActiveGoalkeeper", fields: [activeGoalkeeperId], references: [id], onDelete: SetNull)
-  
-  // What
-  type        String   // GOAL, MISS, TURNOVER, SANCTION
-  subtype     String?  // For Miss: "OUT", "SAVED", "POST". For Turnover: "PASS", "STEPS", "DOUBLE", "AREA"
-  
-  // Context - Where the shot was taken from
-  position    String?  // LW, LB, CB, RB, RW, PIVOT
-  distance    String?  // 6M, 9M, 7M
-  isCollective Boolean @default(false)
-  hasOpposition Boolean @default(true)
-  isCounterAttack Boolean @default(false)
-  
-  // Goal Zone - Where the shot was aimed (9 quadrants)
-  // Format: TL, TM, TR, ML, MM, MR, BL, BM, BR
-  goalZone    String?  // Only for GOAL and MISS types
-  
-  // Sanction specifics
-  sanctionType String? // YELLOW, 2MIN, RED
+  activeGoalkeeper   Player? @relation("ActiveGoalkeeper", fields: [activeGoalkeeperId], references: [id])
+  match              Match   @relation(fields: [matchId], references: [id])
+  player             Player? @relation("EventPlayer", fields: [playerId], references: [id])
+}
+
+enum Handedness {
+  LEFT
+  RIGHT
 }
