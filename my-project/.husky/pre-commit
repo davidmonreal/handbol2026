@@ -1,6 +1,9 @@
 #!/usr/bin/env sh
 cd "$(dirname -- "$0")/.." || exit 1
 
+# Verify package.json changes (CRITICAL for data safety)
+.husky/verify-package-json || exit 1
+
 # Verify vercel.json changes
 .husky/verify-vercel-config || exit 1
 

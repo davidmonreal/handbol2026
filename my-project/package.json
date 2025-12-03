@@ -12,7 +12,7 @@
     "lint": "eslint . --ext .ts",
     "format": "prettier . --write",
     "prepare": "husky install",
-    "vercel-build": "prisma generate && prisma db push --accept-data-loss",
+    "vercel-build": "prisma generate",
     "postinstall": "prisma generate"
   },
   "devDependencies": {

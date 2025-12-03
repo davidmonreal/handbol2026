@@ -8,5 +8,8 @@ frontend/vercel.json @davidmonreal
 # Database schema changes require approval
 prisma/schema.prisma @davidmonreal
 
+# Build and deployment scripts - CRITICAL for data safety
+package.json @davidmonreal
+
 # Environment configuration
 .env.example @davidmonreal

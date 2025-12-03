@@ -1,0 +1,39 @@
+#!/usr/bin/env sh
+
+# Check if package.json is being modified to add dangerous flags
+if git diff --cached --name-only | grep -q "package.json"; then
+  # Check if the diff contains dangerous patterns
+  if git diff --cached package.json | grep -i "accept-data-loss"; then
+    echo ""
+    echo "🚨 CRITICAL ERROR: Attempting to add '--accept-data-loss' flag!"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "This flag DELETES DATA on every deployment!"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "NEVER use --accept-data-loss in production scripts!"
+    echo ""
+    echo "❌ COMMIT BLOCKED"
+    echo ""
+    exit 1
+  fi
+  
+  # General warning for package.json changes
+  echo ""
+  echo "⚠️  WARNING: You are modifying package.json"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "This file contains build scripts for deployment."
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "Continue with commit? (y/n)"
+  exec < /dev/tty
+  read -r response
+  if [ "$response" != "y" ] && [ "$response" != "Y" ]; then
+    echo ""
+    echo "❌ Commit aborted by user."
+    echo ""
+    exit 1
+  fi
+  echo ""
+  echo "✅ Proceeding with commit..."
+  echo ""
+fi
