@@ -10,15 +10,27 @@ interface ImageUploadProps {
 export const ImageUpload = ({ onImageUpload, isProcessing, onExtract, hasImage }: ImageUploadProps) => {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) onImageUpload(file);
+        if (file) validateAndUpload(file);
+    };
+
+    const validateAndUpload = (file: File) => {
+        if (!file.type.startsWith('image/')) {
+            alert('Please upload a valid image file (PNG, JPG, etc.)');
+            return;
+        }
+        if (file.size > 1024 * 1024) { // 1MB
+            alert('Image is too large. Please upload an image smaller than 1MB.');
+            return;
+        }
+        onImageUpload(file);
     };
 
     const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
         const file = e.dataTransfer.files?.[0];
-        if (file && file.type.startsWith('image/')) {
-            onImageUpload(file);
+        if (file) {
+            validateAndUpload(file);
         }
     };
 
@@ -35,7 +47,7 @@ export const ImageUpload = ({ onImageUpload, isProcessing, onExtract, hasImage }
         for (let i = 0; i < items.length; i++) {
             if (items[i].type.startsWith('image/')) {
                 const file = items[i].getAsFile();
-                if (file) onImageUpload(file);
+                if (file) validateAndUpload(file);
                 break;
             }
         }
@@ -63,7 +75,7 @@ export const ImageUpload = ({ onImageUpload, isProcessing, onExtract, hasImage }
                     <Upload size={48} className="mx-auto text-gray-400 mb-4" />
                     <p className="text-gray-600">
                         Click to upload, drag and drop, or paste<br />
-                        PNG, JPG up to 10MB
+                        PNG, JPG up to 1MB
                     </p>
                 </label>
             </div>

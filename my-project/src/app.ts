@@ -1,5 +1,5 @@
 import express from 'express';
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import healthRouter from './routes/health';
 import clubRouter from './routes/clubs';
 import seasonRouter from './routes/seasons';
@@ -25,7 +25,7 @@ app.use(
     credentials: true,
   }),
 ); // Enable CORS for frontend
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 // Sample route
 app.get('/', (req: Request, res: Response) => {
@@ -41,6 +41,21 @@ app.use('/api/players', playerRouter);
 app.use('/api/teams', teamRouter);
 app.use('/api/matches', matchRouter);
 app.use('/api/game-events', gameEventRouter);
+
+// Global error handler for body-parser errors (e.g. payload too large)
+app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
+  if (
+    err &&
+    typeof err === 'object' &&
+    'type' in err &&
+    (err as { type: string }).type === 'entity.too.large'
+  ) {
+    return res.status(413).json({
+      error: 'Image is too large. Please upload an image smaller than 1MB.',
+    });
+  }
+  next(err);
+});
 
 // Start the server only if not in serverless environment and not in test mode
 if (

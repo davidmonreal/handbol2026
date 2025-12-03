@@ -24,6 +24,13 @@ export async function importPlayersFromImage(req: Request, res: Response) {
       return res.status(400).json({ error: 'Image data is required' });
     }
 
+    // Validate image format (must be png, jpeg, webp, or gif)
+    if (!image.match(/^data:image\/(png|jpeg|jpg|webp|gif);base64,/)) {
+      return res.status(400).json({
+        error: 'Invalid image format. Please upload a PNG, JPEG, or WebP image.',
+      });
+    }
+
     // Remove data:image prefix if present
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
 

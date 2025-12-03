@@ -55,8 +55,15 @@ export const playerImportService = {
             body: JSON.stringify({ image }),
         });
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to process image');
+            let errorMessage = 'Failed to process image';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error || errorMessage;
+            } catch (e) {
+                // If response is not JSON (e.g. HTML error page), use status text
+                errorMessage = `Server Error (${response.status}): ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
         return response.json();
     },
