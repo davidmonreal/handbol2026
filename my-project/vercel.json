@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "buildCommand": "prisma generate && npm run build",
+  "installCommand": "npm install",
   "builds": [
     {
       "src": "api/index.ts",
@@ -11,5 +13,8 @@
       "src": "/(.*)",
       "dest": "/api/index.ts"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
