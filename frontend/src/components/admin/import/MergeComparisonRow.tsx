@@ -70,22 +70,6 @@ export const MergeComparisonRow = ({
                         {newPlayer.name} <span className="text-gray-600">#{newPlayer.number}</span>
                     </div>
                 </div>
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => onActionChange('skip')}
-                        className="text-xs px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded shadow-sm hover:shadow font-medium transition-all"
-                        title="Do not import this player"
-                    >
-                        Skip (Don't Import)
-                    </button>
-                    <button
-                        onClick={() => onActionChange('keep')}
-                        className="text-xs px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded shadow-sm hover:shadow font-medium transition-all"
-                        title="Import as a new player, creating a duplicate"
-                    >
-                        Keep Both (Create Duplicate)
-                    </button>
-                </div>
             </div>
 
             <p className="text-xs text-gray-600 mb-2">Click on a value to select it:</p>
@@ -194,8 +178,20 @@ export const MergeComparisonRow = ({
                 </tbody>
             </table>
 
-            {/* Confirm button */}
-            <div className="mt-4 flex items-center justify-end">
+            {/* Confirm button and Actions */}
+            <div className="mt-4 flex items-center justify-end gap-3">
+                <button
+                    onClick={() => onActionChange('skip')}
+                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded shadow-sm hover:shadow font-medium transition-all"
+                >
+                    Skip (Don't Import)
+                </button>
+                <button
+                    onClick={() => onActionChange('keep')}
+                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded shadow-sm hover:shadow font-medium transition-all"
+                >
+                    Keep Both
+                </button>
                 <button
                     onClick={onConfirmMerge}
                     disabled={mergeChoices.size < 4}

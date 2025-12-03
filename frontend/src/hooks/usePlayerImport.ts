@@ -109,10 +109,10 @@ export const usePlayerImport = () => {
         // Initialize choices if not present
         if (!mergeChoices.has(index)) {
             const initialChoices = new Map<string, 'existing' | 'new'>();
-            initialChoices.set('name', 'new');
-            initialChoices.set('number', 'new');
-            initialChoices.set('handedness', 'new');
-            initialChoices.set('isGoalkeeper', 'new');
+            initialChoices.set('name', 'existing');
+            initialChoices.set('number', 'existing');
+            initialChoices.set('handedness', 'existing');
+            initialChoices.set('isGoalkeeper', 'existing');
             const newMergeChoices = new Map(mergeChoices);
             newMergeChoices.set(index, initialChoices);
             setMergeChoices(newMergeChoices);
@@ -251,6 +251,23 @@ export const usePlayerImport = () => {
     const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false);
     const [newTeamName, setNewTeamName] = useState('');
 
+    // Edit Player Logic
+    const [editingPlayerIndex, setEditingPlayerIndex] = useState<number | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+    const handleEditClick = (index: number) => {
+        setEditingPlayerIndex(index);
+        setIsEditModalOpen(true);
+    };
+
+    const handleSaveEditedPlayer = (updatedPlayer: ExtractedPlayer) => {
+        if (editingPlayerIndex !== null) {
+            handleUpdatePlayer(editingPlayerIndex, updatedPlayer);
+            setIsEditModalOpen(false);
+            setEditingPlayerIndex(null);
+        }
+    };
+
     const handleCreateTeam = (teamName: string) => {
         setNewTeamName(teamName);
         setIsCreateTeamModalOpen(true);
@@ -291,6 +308,9 @@ export const usePlayerImport = () => {
             // Team Creation
             isCreateTeamModalOpen,
             newTeamName,
+            // Edit Player
+            editingPlayerIndex,
+            isEditModalOpen,
         },
         actions: {
             setImage,
@@ -310,7 +330,11 @@ export const usePlayerImport = () => {
             // Team Creation
             setIsCreateTeamModalOpen,
             handleCreateTeam,
-            handleSubmitCreateTeam
+            handleSubmitCreateTeam,
+            // Edit Player
+            handleEditClick,
+            handleSaveEditedPlayer,
+            setIsEditModalOpen
         }
     };
 };

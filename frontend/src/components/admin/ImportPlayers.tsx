@@ -4,6 +4,7 @@ import { usePlayerImport } from '../../hooks/usePlayerImport';
 import { ImageUpload } from './import/ImageUpload';
 import { ImagePreview } from './import/ImagePreview';
 import { CreateTeamModal } from './import/CreateTeamModal';
+import { EditPlayerModal } from './import/EditPlayerModal';
 import { ExtractedPlayersList } from './import/ExtractedPlayersList';
 
 export const ImportPlayers = () => {
@@ -61,7 +62,7 @@ export const ImportPlayers = () => {
                     reviewingDuplicates={state.reviewingDuplicates}
                     resolvedDuplicates={state.resolvedDuplicates}
                     mergeChoices={state.mergeChoices}
-                    onUpdatePlayer={actions.handleUpdatePlayer}
+                    onUpdatePlayer={actions.handleEditClick}
                     onRemovePlayer={actions.handleRemovePlayer}
                     onClearAll={actions.handleClearAll}
                     onReviewDuplicate={actions.handleReviewDuplicate}
@@ -81,6 +82,13 @@ export const ImportPlayers = () => {
                 onSubmit={actions.handleSubmitCreateTeam}
                 initialTeamName={state.newTeamName}
                 applyTitleCase={false}
+            />
+
+            <EditPlayerModal
+                isOpen={state.isEditModalOpen}
+                onClose={() => actions.setIsEditModalOpen(false)}
+                onSave={actions.handleSaveEditedPlayer}
+                player={state.editingPlayerIndex !== null ? state.extractedPlayers[state.editingPlayerIndex] : null}
             />
         </div>
     );
