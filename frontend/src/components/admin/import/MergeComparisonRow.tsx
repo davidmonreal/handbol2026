@@ -161,7 +161,7 @@ export const MergeComparisonRow = ({
                                 <select
                                     value={editForm.handedness || ''}
                                     onChange={(e) => setEditForm({ ...editForm, handedness: e.target.value as any || undefined })}
-                                    className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                                    className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 bg-white"
                                 >
                                     <option value="">Unknown</option>
                                     <option value="RIGHT">Right</option>

@@ -24,8 +24,8 @@ describe('PlayerRepository', () => {
 
   it('findAll returns all players ordered by name', async () => {
     const mockPlayers = [
-      { id: '1', name: 'Alice', number: 10, handedness: 'RIGHT' },
-      { id: '2', name: 'Bob', number: 7, handedness: 'LEFT' },
+      { id: '1', name: 'Alice', number: 10, handedness: 'RIGHT' as const, isGoalkeeper: false },
+      { id: '2', name: 'Bob', number: 7, handedness: 'LEFT' as const, isGoalkeeper: false },
     ];
     vi.mocked(prisma.player.findMany).mockResolvedValue(mockPlayers);
 
@@ -49,33 +49,61 @@ describe('PlayerRepository', () => {
   });
 
   it('findById returns a player by id', async () => {
-    const mockPlayer = { id: '1', name: 'Alice', number: 10, handedness: 'RIGHT' };
+    const mockPlayer = {
+      id: '1',
+      name: 'Player 1',
+      number: 10,
+      handedness: 'RIGHT' as const,
+      isGoalkeeper: false,
+    };
     vi.mocked(prisma.player.findUnique).mockResolvedValue(mockPlayer);
 
     const result = await repository.findById('1');
 
     expect(prisma.player.findUnique).toHaveBeenCalledWith({
       where: { id: '1' },
+      include: {
+        teams: {
+          include: {
+            team: {
+              include: {
+                club: true,
+              },
+            },
+          },
+        },
+      },
     });
     expect(result).toEqual(mockPlayer);
   });
 
   it('create creates a new player', async () => {
-    const newPlayerData = { name: 'Charlie', number: 15, handedness: 'RIGHT' };
-    const createdPlayer = { id: '3', ...newPlayerData };
+    const newPlayer = {
+      name: 'New Player',
+      number: 11,
+      handedness: 'LEFT' as const,
+      isGoalkeeper: false,
+    };
+    const createdPlayer = { id: '2', ...newPlayer };
     vi.mocked(prisma.player.create).mockResolvedValue(createdPlayer);
 
-    const result = await repository.create(newPlayerData);
+    const result = await repository.create(newPlayer);
 
     expect(prisma.player.create).toHaveBeenCalledWith({
-      data: newPlayerData,
+      data: newPlayer,
     });
     expect(result).toEqual(createdPlayer);
   });
 
   it('update modifies an existing player', async () => {
     const updateData = { name: 'Alice Updated' };
-    const updatedPlayer = { id: '1', name: 'Alice Updated', number: 10, handedness: 'RIGHT' };
+    const updatedPlayer = {
+      id: '1',
+      name: 'Alice Updated',
+      number: 10,
+      handedness: 'RIGHT' as const,
+      isGoalkeeper: false,
+    };
     vi.mocked(prisma.player.update).mockResolvedValue(updatedPlayer);
 
     const result = await repository.update('1', updateData);
@@ -88,7 +116,13 @@ describe('PlayerRepository', () => {
   });
 
   it('delete removes a player', async () => {
-    const deletedPlayer = { id: '1', name: 'Alice', number: 10, handedness: 'RIGHT' };
+    const deletedPlayer = {
+      id: '1',
+      name: 'Alice',
+      number: 10,
+      handedness: 'RIGHT' as const,
+      isGoalkeeper: false,
+    };
     vi.mocked(prisma.player.delete).mockResolvedValue(deletedPlayer);
 
     const result = await repository.delete('1');
