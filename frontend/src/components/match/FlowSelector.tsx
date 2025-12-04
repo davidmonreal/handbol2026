@@ -11,9 +11,9 @@ interface FlowSelectorProps {
 export const FlowSelector = ({ flowType, onFlowSelect, onEditFlow }: FlowSelectorProps) => {
   if (flowType) {
     return (
-      <CollapsedStep 
-        label="Category" 
-        value={flowType} 
+      <CollapsedStep
+        label="Category"
+        value={flowType}
         onEdit={onEditFlow}
         icon={flowType === 'Shot' ? Target : flowType === 'Turnover' ? AlertTriangle : FileWarning}
       />
@@ -21,30 +21,30 @@ export const FlowSelector = ({ flowType, onFlowSelect, onEditFlow }: FlowSelecto
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 animate-fade-in">
-      <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <Activity size={20} /> 1. Select Category
+    <div className="bg-white rounded-xl shadow-lg p-3 md:p-4 animate-fade-in">
+      <h3 className="text-base md:text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+        <Activity size={18} /> 1. Select Category
       </h3>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-3">
         <button
           onClick={() => onFlowSelect('Shot')}
-          className="p-4 md:p-6 rounded-xl font-bold text-sm md:text-xl flex flex-col items-center gap-2 transition-all bg-gray-50 text-gray-700 hover:bg-gray-100"
+          className="p-3 md:p-4 rounded-xl font-bold text-xs md:text-base flex flex-col items-center gap-2 transition-all bg-gray-50 text-gray-700 hover:bg-gray-100"
         >
-          <Target size={24} className="md:w-8 md:h-8" />
+          <Target size={20} className="md:w-6 md:h-6" />
           Shot
         </button>
         <button
           onClick={() => onFlowSelect('Turnover')}
-          className="p-4 md:p-6 rounded-xl font-bold text-sm md:text-xl flex flex-col items-center gap-2 transition-all bg-gray-50 text-gray-700 hover:bg-gray-100"
+          className="p-3 md:p-4 rounded-xl font-bold text-xs md:text-base flex flex-col items-center gap-2 transition-all bg-gray-50 text-gray-700 hover:bg-gray-100"
         >
-          <AlertTriangle size={24} className="md:w-8 md:h-8" />
+          <AlertTriangle size={20} className="md:w-6 md:h-6" />
           Turnover
         </button>
         <button
           onClick={() => onFlowSelect('Sanction')}
-          className="p-4 md:p-6 rounded-xl font-bold text-sm md:text-xl flex flex-col items-center gap-2 transition-all bg-gray-50 text-gray-700 hover:bg-gray-100"
+          className="p-3 md:p-4 rounded-xl font-bold text-xs md:text-base flex flex-col items-center gap-2 transition-all bg-gray-50 text-gray-700 hover:bg-gray-100"
         >
-          <FileWarning size={24} className="md:w-8 md:h-8" />
+          <FileWarning size={20} className="md:w-6 md:h-6" />
           Foul
         </button>
       </div>

@@ -165,8 +165,8 @@ export const EventEditResult = ({ event, team, onSave, onCancel, onDelete }: Eve
                                         setIsPlayerListOpen(false);
                                     }}
                                     className={`flex items-center gap-3 p-2 rounded-md transition-colors ${selectedPlayerId === player.id
-                                            ? 'bg-indigo-50 text-indigo-700'
-                                            : 'hover:bg-gray-50 text-gray-700'
+                                        ? 'bg-indigo-50 text-indigo-700'
+                                        : 'hover:bg-gray-50 text-gray-700'
                                         }`}
                                 >
                                     <span className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${selectedPlayerId === player.id ? 'bg-indigo-200' : 'bg-gray-200'
@@ -201,10 +201,12 @@ export const EventEditResult = ({ event, team, onSave, onCancel, onDelete }: Eve
             </div>
 
             {/* 2. Zone Selection (Always visible) */}
-            <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Select Zone</div>
                 <ZoneSelector
                     selectedZone={selectedZone}
                     onZoneSelect={setSelectedZone}
+                    variant="minimal"
                 />
             </div>
 

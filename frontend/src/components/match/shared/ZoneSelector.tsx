@@ -5,23 +5,32 @@ interface ZoneSelectorProps {
   selectedZone: ZoneType | null;
   onZoneSelect: (zone: ZoneType) => void;
   hidePenalty?: boolean;
+  variant?: 'default' | 'minimal';
 }
 
-export const ZoneSelector = ({ selectedZone, onZoneSelect, hidePenalty = false }: ZoneSelectorProps) => (
-  <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 animate-fade-in">
-    <h3 className="text-lg font-bold text-gray-800 mb-4">Select Zone</h3>
-    <div className="space-y-3">
+export const ZoneSelector = ({ selectedZone, onZoneSelect, hidePenalty = false, variant = 'default' }: ZoneSelectorProps) => {
+  const isMinimal = variant === 'minimal';
+
+  const buttonClasses = (zone: ZoneType) => {
+    const baseClasses = 'rounded-lg text-xs md:text-sm font-semibold transition-all';
+    const selectedClasses = 'bg-indigo-600 text-white shadow-lg ring-2 ring-indigo-300';
+    const unselectedClasses = isMinimal
+      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+      : 'bg-gray-100 text-gray-700 hover:bg-gray-200';
+    const padding = isMinimal ? 'p-2' : 'p-2';
+
+    return `${padding} ${baseClasses} ${selectedZone === zone ? selectedClasses : unselectedClasses}`;
+  };
+
+  const content = (
+    <div className={isMinimal ? 'space-y-2' : 'space-y-2'}>
       {/* 6m Line */}
       <div className="grid grid-cols-5 gap-2">
         {ZONE_CONFIG.sixMeter.map(({ zone, label }) => (
           <button
             key={zone}
             onClick={() => onZoneSelect(zone)}
-            className={`p-3 rounded-lg text-xs md:text-sm font-semibold transition-all ${
-              selectedZone === zone 
-                ? 'bg-indigo-600 text-white shadow-lg ring-2 ring-indigo-300' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={buttonClasses(zone)}
           >
             {label}
           </button>
@@ -33,11 +42,7 @@ export const ZoneSelector = ({ selectedZone, onZoneSelect, hidePenalty = false }
           <button
             key={zone}
             onClick={() => onZoneSelect(zone)}
-            className={`p-3 rounded-lg text-xs md:text-sm font-semibold transition-all ${
-              selectedZone === zone 
-                ? 'bg-indigo-600 text-white shadow-lg ring-2 ring-indigo-300' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={buttonClasses(zone)}
           >
             {label}
           </button>
@@ -48,16 +53,23 @@ export const ZoneSelector = ({ selectedZone, onZoneSelect, hidePenalty = false }
         <div className="max-w-xs mx-auto">
           <button
             onClick={() => onZoneSelect(ZONE_CONFIG.penalty.zone)}
-            className={`w-full p-3 rounded-lg text-xs md:text-sm font-semibold transition-all ${
-              selectedZone === ZONE_CONFIG.penalty.zone 
-                ? 'bg-indigo-600 text-white shadow-lg ring-2 ring-indigo-300' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={`w-full ${buttonClasses(ZONE_CONFIG.penalty.zone)}`}
           >
             {ZONE_CONFIG.penalty.label}
           </button>
         </div>
       )}
     </div>
-  </div>
-);
+  );
+
+  if (isMinimal) {
+    return content;
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-lg p-3 md:p-4 animate-fade-in">
+      <h3 className="text-base md:text-lg font-bold text-gray-800 mb-3">Select Zone</h3>
+      {content}
+    </div>
+  );
+};

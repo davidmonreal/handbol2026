@@ -22,32 +22,31 @@ export const SanctionFlow = ({
   <div className="space-y-6 animate-fade-in">
     {/* Step 2: Severity */}
     {selectedAction ? (
-      <CollapsedStep 
-        label="Severity" 
-        value={selectedAction} 
+      <CollapsedStep
+        label="Severity"
+        value={selectedAction}
         onEdit={onEditSeverity}
         icon={FileWarning}
       />
     ) : (
-      <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 animate-fade-in">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">2. Select Severity</h3>
-        <div className="grid grid-cols-2 gap-4">
+      <div className="bg-white rounded-xl shadow-lg p-3 md:p-4 animate-fade-in">
+        <h3 className="text-base md:text-lg font-bold text-gray-800 mb-3">2. Select Severity</h3>
+        <div className="grid grid-cols-2 gap-3">
           {FLOW_CONFIG.Sanction.actions.map((action) => (
-            <button 
+            <button
               key={action}
               onClick={() => onActionSelect(action)}
-              className={`p-4 font-bold rounded-lg hover:opacity-90 ${
-                action === 'Foul' ? 'bg-gray-100 text-gray-800 border-2 border-gray-200 col-span-2' :
-                action === 'Yellow' ? 'bg-yellow-400 text-yellow-900' :
-                action === '2min' ? 'bg-gray-800 text-white' :
-                action === 'Red' ? 'bg-red-600 text-white' :
-                'bg-blue-600 text-white'
-              }`}
+              className={`p-3 font-bold rounded-lg text-sm hover:opacity-90 ${action === 'Foul' ? 'bg-gray-100 text-gray-800 border-2 border-gray-200 col-span-2' :
+                  action === 'Yellow' ? 'bg-yellow-400 text-yellow-900' :
+                    action === '2min' ? 'bg-gray-800 text-white' :
+                      action === 'Red' ? 'bg-red-600 text-white' :
+                        'bg-blue-600 text-white'
+                }`}
             >
-              {action === 'Foul' ? 'Common Foul' : 
-               action === '2min' ? '2 Minutes' : 
-               action === 'Yellow' ? 'Yellow Card' :
-               action + (action.includes('Card') ? '' : ' Card')}
+              {action === 'Foul' ? 'Common Foul' :
+                action === '2min' ? '2 Minutes' :
+                  action === 'Yellow' ? 'Yellow Card' :
+                    action + (action.includes('Card') ? '' : ' Card')}
             </button>
           ))}
         </div>

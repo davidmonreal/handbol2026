@@ -15,14 +15,14 @@ export const TurnoverFlow = ({
   onZoneSelect,
   onFinalizeEvent
 }: TurnoverFlowProps) => (
-  <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 animate-fade-in">
-    <h3 className="text-lg font-bold text-gray-800 mb-4">2. Select Error Type</h3>
+  <div className="bg-white rounded-xl shadow-lg p-3 md:p-4 animate-fade-in">
+    <h3 className="text-base md:text-lg font-bold text-gray-800 mb-3">2. Select Error Type</h3>
     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
       {FLOW_CONFIG.Turnover.actions.map((type) => (
         <button
           key={type}
           onClick={() => onActionSelect(type)}
-          className={`p-4 rounded-lg font-medium transition-colors text-sm md:text-base ${selectedAction === type ? 'bg-orange-500 text-white' : 'bg-gray-100 hover:bg-gray-200'
+          className={`p-3 rounded-lg font-medium transition-colors text-xs md:text-sm ${selectedAction === type ? 'bg-orange-500 text-white' : 'bg-gray-100 hover:bg-gray-200'
             }`}
         >
           {type === 'Pass' ? 'Bad Pass' :
