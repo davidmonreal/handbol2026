@@ -1,23 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     User, Users, ArrowUp, ArrowLeftRight,
-    Target, Wind, Ban, Hand, Goal as GoalIcon
+    Target, Wind, Ban, Hand, Goal as GoalIcon,
+    ChevronDown, ChevronUp
 } from 'lucide-react';
 import type { MatchEvent, ZoneType, SanctionType, TurnoverType } from '../../../types';
-import { useMatch } from '../../../context/MatchContext';
 import { ZoneSelector } from '../shared/ZoneSelector';
 import { SplitToggle } from '../shared/SplitToggle';
 
-interface EventEditResultProps {
-    event: MatchEvent;
-    onSave: () => void;
-    onCancel: () => void;
+// Define interfaces locally to match MatchContext structure
+interface Player {
+    id: string;
+    number: number;
+    name: string;
+    position: string;
+    isGoalkeeper?: boolean;
 }
 
-export const EventEditResult = ({ event, onSave, onCancel }: EventEditResultProps) => {
-    const { updateEvent, deleteEvent } = useMatch();
+interface Team {
+    id: string;
+    name: string;
+    color: string;
+    players: Player[];
+}
 
+interface EventEditResultProps {
+    event: MatchEvent;
+    team: Team;
+    onSave: (event: MatchEvent) => void;
+    onCancel: () => void;
+    onDelete: (eventId: string) => void;
+}
+
+export const EventEditResult = ({ event, team, onSave, onCancel, onDelete }: EventEditResultProps) => {
     // State
+    const [selectedPlayerId, setSelectedPlayerId] = useState<string>(event.playerId || '');
     const [selectedCategory, setSelectedCategory] = useState<string>(event.category);
     const [selectedAction, setSelectedAction] = useState<string | null>(event.action);
     const [selectedZone, setSelectedZone] = useState<ZoneType | null>(event.zone || null);
@@ -25,6 +42,20 @@ export const EventEditResult = ({ event, onSave, onCancel }: EventEditResultProp
     const [isCollective, setIsCollective] = useState(event.isCollective || false);
     const [hasOpposition, setHasOpposition] = useState(event.hasOpposition || false);
     const [isCounterAttack, setIsCounterAttack] = useState(event.isCounterAttack || false);
+
+    const [isPlayerListOpen, setIsPlayerListOpen] = useState(false);
+
+    // Update state when event changes
+    useEffect(() => {
+        setSelectedPlayerId(event.playerId || '');
+        setSelectedCategory(event.category);
+        setSelectedAction(event.action);
+        setSelectedZone(event.zone || null);
+        setSelectedTarget(event.goalTarget);
+        setIsCollective(event.isCollective || false);
+        setHasOpposition(event.hasOpposition || false);
+        setIsCounterAttack(event.isCounterAttack || false);
+    }, [event]);
 
     // Constants
     const shotResults = [
@@ -59,8 +90,10 @@ export const EventEditResult = ({ event, onSave, onCancel }: EventEditResultProp
         setSelectedTarget(undefined);
     };
 
-    const handleSave = async () => {
-        const updates: Partial<MatchEvent> = {
+    const handleSave = () => {
+        const updatedEvent: MatchEvent = {
+            ...event,
+            playerId: selectedPlayerId,
             category: selectedCategory,
             action: selectedAction || event.action,
             zone: selectedZone || event.zone,
@@ -71,44 +104,83 @@ export const EventEditResult = ({ event, onSave, onCancel }: EventEditResultProp
 
         // Add goal target if applicable
         if (selectedTarget && (selectedAction === 'Goal' || selectedAction === 'Save')) {
-            updates.goalTarget = selectedTarget;
+            updatedEvent.goalTarget = selectedTarget;
             const targetToZoneMap: Record<number, string> = {
                 1: 'TL', 2: 'TM', 3: 'TR',
                 4: 'ML', 5: 'MM', 6: 'MR',
                 7: 'BL', 8: 'BM', 9: 'BR'
             };
-            updates.goalZoneTag = targetToZoneMap[selectedTarget];
+            updatedEvent.goalZoneTag = targetToZoneMap[selectedTarget];
         } else {
-            updates.goalTarget = undefined;
-            updates.goalZoneTag = undefined;
+            updatedEvent.goalTarget = undefined;
+            updatedEvent.goalZoneTag = undefined;
         }
 
         // Add sanction type if applicable
         if (selectedCategory === 'Sanction') {
-            updates.sanctionType = selectedAction as SanctionType;
+            updatedEvent.sanctionType = selectedAction as SanctionType;
         }
 
-        try {
-            await updateEvent(event.id, updates);
-            onSave();
-        } catch (error) {
-            console.error('Error in handleSave:', error);
-        }
+        onSave(updatedEvent);
     };
 
-    const handleDelete = async () => {
+    const handleDelete = () => {
         if (confirm('Are you sure you want to delete this event?')) {
-            try {
-                await deleteEvent(event.id);
-                onCancel();
-            } catch (error) {
-                console.error('Error deleting event:', error);
-            }
+            onDelete(event.id);
+            onCancel(); // Close editor
         }
     };
+
+    const selectedPlayer = team.players.find(p => p.id === selectedPlayerId);
 
     return (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-6">
+
+            {/* 0. Player Selection */}
+            <div className="relative">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Player</div>
+                <button
+                    onClick={() => setIsPlayerListOpen(!isPlayerListOpen)}
+                    className="w-full flex items-center justify-between p-3 bg-white border border-gray-300 rounded-lg hover:border-indigo-500 transition-colors"
+                >
+                    <div className="flex items-center gap-3">
+                        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold text-sm">
+                            {selectedPlayer?.number || '?'}
+                        </span>
+                        <span className="font-medium text-gray-900">
+                            {selectedPlayer?.name || 'Unknown Player'}
+                        </span>
+                    </div>
+                    {isPlayerListOpen ? <ChevronUp size={20} className="text-gray-400" /> : <ChevronDown size={20} className="text-gray-400" />}
+                </button>
+
+                {isPlayerListOpen && (
+                    <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                        <div className="p-2 grid grid-cols-1 gap-1">
+                            {team.players.map(player => (
+                                <button
+                                    key={player.id}
+                                    onClick={() => {
+                                        setSelectedPlayerId(player.id);
+                                        setIsPlayerListOpen(false);
+                                    }}
+                                    className={`flex items-center gap-3 p-2 rounded-md transition-colors ${selectedPlayerId === player.id
+                                            ? 'bg-indigo-50 text-indigo-700'
+                                            : 'hover:bg-gray-50 text-gray-700'
+                                        }`}
+                                >
+                                    <span className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${selectedPlayerId === player.id ? 'bg-indigo-200' : 'bg-gray-200'
+                                        }`}>
+                                        {player.number}
+                                    </span>
+                                    <span className="text-sm font-medium">{player.name}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {/* 1. Category Selection */}
             <div>
                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Category</div>

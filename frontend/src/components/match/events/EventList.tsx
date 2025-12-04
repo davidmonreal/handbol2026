@@ -1,11 +1,13 @@
 import { useMatch } from '../../../context/MatchContext';
 import { EventItem } from './EventItem';
+import type { MatchEvent } from '../../../types';
 
 interface EventListProps {
     maxEvents?: number;
+    onEditEvent?: (event: MatchEvent) => void;
 }
 
-export const EventList = ({ maxEvents = 5 }: EventListProps) => {
+export const EventList = ({ maxEvents = 5, onEditEvent }: EventListProps) => {
     const { events } = useMatch();
 
     // Get the last N events (most recent first)
@@ -28,7 +30,11 @@ export const EventList = ({ maxEvents = 5 }: EventListProps) => {
             </div>
             <div className="divide-y divide-gray-100">
                 {recentEvents.map(event => (
-                    <EventItem key={event.id} event={event} />
+                    <EventItem
+                        key={event.id}
+                        event={event}
+                        onEdit={onEditEvent}
+                    />
                 ))}
             </div>
         </div>

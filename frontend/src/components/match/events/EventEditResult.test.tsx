@@ -1,5 +1,6 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import '@testing-library/jest-dom';
 import { MatchProvider } from '../../../context/MatchContext';
 import { EventEditResult } from './EventEditResult';
 import type { MatchEvent } from '../../../types';
@@ -19,8 +20,19 @@ describe('EventEditResult', () => {
         isCounterAttack: false,
     };
 
+    const mockTeam = {
+        id: 'team-1',
+        name: 'Test Team',
+        color: 'bg-blue-500',
+        players: [
+            { id: 'player-1', number: 21, name: 'Test Player', position: 'LW' },
+            { id: 'player-2', number: 10, name: 'Other Player', position: 'CB' }
+        ]
+    };
+
     const mockOnSave = vi.fn();
     const mockOnCancel = vi.fn();
+    const mockOnDelete = vi.fn();
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -31,38 +43,44 @@ describe('EventEditResult', () => {
             <MatchProvider>
                 <EventEditResult
                     event={mockEvent}
+                    team={mockTeam}
                     onSave={mockOnSave}
                     onCancel={mockOnCancel}
+                    onDelete={mockOnDelete}
                 />
             </MatchProvider>
         );
 
         // Goal button should be selected
-        const goalButton = screen.getByText('Goal');
+        const goalButton = screen.getByRole('button', { name: 'Goal' });
         expect(goalButton).toBeInTheDocument();
     });
 
     it('should allow changing action to Miss', async () => {
-        const { updateEvent } = require('../../../context/MatchContext');
-        const mockUpdateEvent = vi.fn();
-
         render(
             <MatchProvider>
                 <EventEditResult
                     event={mockEvent}
+                    team={mockTeam}
                     onSave={mockOnSave}
                     onCancel={mockOnCancel}
+                    onDelete={mockOnDelete}
                 />
             </MatchProvider>
         );
 
         // Click Miss button
-        const missButton = screen.getByText('Miss');
+        const missButton = screen.getByRole('button', { name: 'Miss' });
         fireEvent.click(missButton);
 
-        // Click Save button
-        const saveButton = screen.getByText('Save');
-        fireEvent.click(saveButton);
+        // Click Save button - The action button at the bottom
+        // We can find it by looking for the button that contains the Save icon or text, 
+        // but since there is another "Save" (result), we need to be specific.
+        // The result buttons are in a grid, the save button is in the footer.
+        // Let's use the text but filter for the one that is likely the submit button.
+        const buttons = screen.getAllByText('Save');
+        const saveActionButton = buttons[buttons.length - 1]; // Usually the last one in DOM order
+        fireEvent.click(saveActionButton);
 
         await waitFor(() => {
             expect(mockOnSave).toHaveBeenCalled();
@@ -74,8 +92,10 @@ describe('EventEditResult', () => {
             <MatchProvider>
                 <EventEditResult
                     event={mockEvent}
+                    team={mockTeam}
                     onSave={mockOnSave}
                     onCancel={mockOnCancel}
+                    onDelete={mockOnDelete}
                 />
             </MatchProvider>
         );
@@ -84,5 +104,36 @@ describe('EventEditResult', () => {
         expect(screen.getByText(/Individual/)).toBeInTheDocument();
         expect(screen.getByText(/Free/)).toBeInTheDocument();
         expect(screen.getByText(/Static/)).toBeInTheDocument();
+    });
+
+    it('should allow changing player', () => {
+        render(
+            <MatchProvider>
+                <EventEditResult
+                    event={mockEvent}
+                    team={mockTeam}
+                    onSave={mockOnSave}
+                    onCancel={mockOnCancel}
+                    onDelete={mockOnDelete}
+                />
+            </MatchProvider>
+        );
+
+        // Open player dropdown
+        const playerButton = screen.getByText('Test Player');
+        fireEvent.click(playerButton);
+
+        // Select other player
+        const otherPlayerButton = screen.getByText('Other Player');
+        fireEvent.click(otherPlayerButton);
+
+        // Save
+        const buttons = screen.getAllByText('Save');
+        const saveActionButton = buttons[buttons.length - 1];
+        fireEvent.click(saveActionButton);
+
+        expect(mockOnSave).toHaveBeenCalledWith(expect.objectContaining({
+            playerId: 'player-2'
+        }));
     });
 });

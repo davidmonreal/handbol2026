@@ -12,6 +12,7 @@ import { ShotFlow } from './match/flows/ShotFlow';
 import { SanctionFlow } from './match/flows/SanctionFlow';
 import { TurnoverFlow } from './match/flows/TurnoverFlow';
 import { EventList } from './match/events/EventList';
+import { EventEditResult } from './match/events/EventEditResult';
 
 const MatchTracker = () => {
   const { matchId } = useParams<{ matchId: string }>();
@@ -27,6 +28,8 @@ const MatchTracker = () => {
     activeTeamId, setActiveTeamId,
     defenseFormation, setDefenseFormation,
     addEvent,
+    updateEvent, // Import updateEvent
+    deleteEvent, // Import deleteEvent
     homeTeam, visitorTeam, setMatchData,
     selectedOpponentGoalkeeper, setSelectedOpponentGoalkeeper,
     matchId: contextMatchId // Get matchId from context
@@ -90,6 +93,9 @@ const MatchTracker = () => {
   // Local Selection State (Transient)
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
 
+  // Editing State
+  const [editingEvent, setEditingEvent] = useState<MatchEvent | null>(null);
+
   // Flow State
   const [flowType, setFlowType] = useState<FlowType>(null);
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
@@ -103,6 +109,7 @@ const MatchTracker = () => {
   const handleTeamSelect = (teamId: string) => {
     setActiveTeamId(teamId);
     setSelectedPlayerId(null);
+    setEditingEvent(null); // Clear editing when changing team
     resetPlayState();
   };
 
@@ -119,6 +126,24 @@ const MatchTracker = () => {
     setFlowType(type);
     setSelectedAction(null);
     setSelectedZone(null);
+  };
+
+  const handleEditEvent = (event: MatchEvent) => {
+    setEditingEvent(event);
+    // Optionally clear other states to avoid confusion
+    setSelectedPlayerId(null);
+    resetPlayState();
+    // Scroll to top of right column? Not strictly necessary if layout is good.
+  };
+
+  const handleSaveEdit = async (updatedEvent: MatchEvent) => {
+    if (!editingEvent) return;
+    await updateEvent(editingEvent.id, updatedEvent);
+    setEditingEvent(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEvent(null);
   };
 
   const handleFinalizeEvent = (targetIndex?: number, zoneOverride?: ZoneType) => {
@@ -261,6 +286,7 @@ const MatchTracker = () => {
                 onPlayerSelect={(playerId) => {
                   setSelectedPlayerId(playerId);
                   resetPlayState();
+                  setEditingEvent(null); // Clear edit if selecting a player
                 }}
               />
             ) : (
@@ -289,14 +315,14 @@ const MatchTracker = () => {
                         key={gk.id}
                         onClick={() => setSelectedOpponentGoalkeeper(gk)}
                         className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${selectedOpponentGoalkeeper?.id === gk.id
-                            ? 'bg-orange-50 border-orange-500 ring-1 ring-orange-500'
-                            : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                          ? 'bg-orange-50 border-orange-500 ring-1 ring-orange-500'
+                          : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
                           }`}
                       >
                         <div className="flex items-center gap-3">
                           <span className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${selectedOpponentGoalkeeper?.id === gk.id
-                              ? 'bg-orange-500 text-white'
-                              : 'bg-gray-200 text-gray-600'
+                            ? 'bg-orange-500 text-white'
+                            : 'bg-gray-200 text-gray-600'
                             }`}>
                             {gk.number}
                           </span>
@@ -322,9 +348,35 @@ const MatchTracker = () => {
             />
           </div>
 
-          {/* Right Column: Recording Interface */}
+          {/* Right Column: Recording Interface OR Editing Interface */}
           <div className="lg:col-span-8">
-            {selectedPlayerId ? (
+            {editingEvent ? (
+              <div className="bg-white rounded-xl shadow-sm p-6 border border-indigo-100">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit Event
+                  </h2>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <EventEditResult
+                  event={editingEvent}
+                  team={editingEvent.teamId === homeTeam.id ? homeTeam : visitorTeam}
+                  onSave={handleSaveEdit}
+                  onCancel={handleCancelEdit}
+                  onDelete={deleteEvent}
+                />
+              </div>
+            ) : selectedPlayerId ? (
               <div className="space-y-6">
 
                 {/* 1. Flow Selection */}
@@ -385,7 +437,7 @@ const MatchTracker = () => {
 
         {/* Recent Events */}
         <div className="mt-8">
-          <EventList maxEvents={5} />
+          <EventList maxEvents={5} onEditEvent={handleEditEvent} />
         </div>
       </div>
     </div>
