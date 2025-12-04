@@ -8,7 +8,7 @@ export { StatisticsPanel } from './StatisticsPanel';
 export { StatCard } from './StatCard';
 export { GoalHeatmap } from './GoalHeatmap';
 export { ZoneDistribution } from './ZoneDistribution';
-export { StatsTable } from './StatsTable';
+
 export { PlayerStatisticsTable } from './PlayerStatisticsTable';
 export { FiltersBar } from './FiltersBar';
 
@@ -27,7 +27,7 @@ export type {
     PlayerStatistics,
     GoalHeatmapProps,
     ZoneDistributionProps,
-    StatsTableProps,
+
     StatCardProps,
     StatisticsPanelProps,
 } from './types';

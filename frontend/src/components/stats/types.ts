@@ -110,15 +110,6 @@ export interface ZoneDistributionProps {
 }
 
 /**
- * Props for StatsTable component
- */
-export interface StatsTableProps {
-    stats: CalculatedStats;
-    context: StatisticsContext;
-    className?: string;
-}
-
-/**
  * Props for StatCard component
  */
 export interface StatCardProps {

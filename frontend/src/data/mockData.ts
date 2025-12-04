@@ -30,18 +30,3 @@ export const HOME_TEAM: Team = {
     ]
 };
 
-export const VISITOR_TEAM: Team = {
-    id: 'visitor',
-    name: 'Club Handbol B',
-    color: 'red',
-    players: [
-        { id: 'v1', number: 12, name: 'Porter B', position: 'GK' },
-        { id: 'v2', number: 4, name: 'Extrem Esq B', position: 'LW' },
-        { id: 'v3', number: 6, name: 'Lateral Esq B', position: 'LB' },
-        { id: 'v4', number: 11, name: 'Central B', position: 'CB' },
-        { id: 'v5', number: 14, name: 'Lateral Dret B', position: 'RB' },
-        { id: 'v6', number: 8, name: 'Extrem Dret B', position: 'RW' },
-        { id: 'v7', number: 19, name: 'Pivot B', position: 'PV' },
-        { id: 'v8', number: 24, name: 'Banqueta 1', position: 'RB' },
-    ]
-};

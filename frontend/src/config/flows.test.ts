@@ -41,7 +41,7 @@ describe('FLOW_CONFIG', () => {
     describe('Turnover Flow', () => {
         it('should have correct actions', () => {
             expect(FLOW_CONFIG.Turnover.actions).toEqual([
-                'Pass', 'Catch', 'Dribble', 'Steps', 'Area', 'Offensive Foul'
+                'Pass', 'Catch', 'Offensive Foul', 'Steps', 'Area'
             ]);
         });
     });
