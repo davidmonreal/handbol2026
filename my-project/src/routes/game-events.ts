@@ -22,8 +22,11 @@ router.get('/:id', controller.getById);
 // Create game event
 router.post('/', controller.create);
 
-// Update game event
+// Update game event (full update)
 router.put('/:id', controller.update);
+
+// Update game event (partial update)
+router.patch('/:id', controller.update);
 
 // Delete game event
 router.delete('/:id', controller.delete);

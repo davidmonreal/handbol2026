@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMatch } from '../context/MatchContext';
 import type { FlowType, ZoneType, MatchEvent } from '../types';
@@ -11,6 +11,7 @@ import { FlowSelector } from './match/FlowSelector';
 import { ShotFlow } from './match/flows/ShotFlow';
 import { SanctionFlow } from './match/flows/SanctionFlow';
 import { TurnoverFlow } from './match/flows/TurnoverFlow';
+import { EventList } from './match/events/EventList';
 
 const MatchTracker = () => {
   const { matchId } = useParams<{ matchId: string }>();
@@ -22,49 +23,69 @@ const MatchTracker = () => {
     visitorScore, setVisitorScore,
     isPlaying, setIsPlaying,
     time, setTime,
-    events, setEvents,
+    setEvents,
     activeTeamId, setActiveTeamId,
     defenseFormation, setDefenseFormation,
     addEvent,
     homeTeam, visitorTeam, setMatchData,
-    selectedOpponentGoalkeeper, setSelectedOpponentGoalkeeper
+    selectedOpponentGoalkeeper, setSelectedOpponentGoalkeeper,
+    matchId: contextMatchId // Get matchId from context
   } = useMatch();
+
+  // Ref to track context match ID without triggering effect re-runs
+  const contextMatchIdRef = useRef(contextMatchId);
+  useEffect(() => {
+    contextMatchIdRef.current = contextMatchId;
+  }, [contextMatchId]);
 
   // Fetch Match Data
   useEffect(() => {
-    if (matchId) {
-      fetch(`${API_BASE_URL}/api/matches/${matchId}`)
-        .then(res => res.json())
-        .then(data => {
+    if (!matchId) return;
 
-
-          // Transform API data to Context format
-          const transformTeam = (teamData: any, color: string) => ({
-            id: teamData.id,
-            name: teamData.name,
-            category: teamData.category,
-            club: teamData.club,
-            color: color,
-            players: (teamData.players || []).map((p: any) => ({
-              id: p.player.id,
-              number: p.player.number,
-              name: p.player.name,
-
-              position: p.role || 'Player',
-              isGoalkeeper: p.player.isGoalkeeper
-            }))
-          });
-
-          const home = transformTeam(data.homeTeam, 'bg-yellow-400');
-          const visitor = transformTeam(data.awayTeam, 'bg-white');
-
-          // Preserve state if we already have teams loaded (returning from another page)
-          const shouldPreserveState = homeTeam !== null && visitorTeam !== null;
-          setMatchData(data.id, home, visitor, shouldPreserveState);
-        })
-        .catch(err => console.error('Error fetching match:', err));
+    // OPTIMIZATION: If we already have the correct match data loaded, don't fetch again.
+    // This minimizes DB calls and prevents state resets (active team deselection).
+    if (contextMatchIdRef.current === matchId && homeTeam && visitorTeam) {
+      return;
     }
-  }, [matchId, setMatchData, homeTeam, visitorTeam]);
+
+    const loadMatchData = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/matches/${matchId}`);
+        if (!response.ok) throw new Error('Failed to load match');
+
+        const data = await response.json();
+
+        // Transform API data to Context format
+        const transformTeam = (teamData: any, color: string) => ({
+          id: teamData.id,
+          name: teamData.name,
+          category: teamData.category,
+          club: teamData.club,
+          color: color,
+          players: (teamData.players || []).map((p: any) => ({
+            id: p.player.id,
+            number: p.player.number,
+            name: p.player.name,
+            position: p.role || 'Player',
+            isGoalkeeper: p.player.isGoalkeeper
+          }))
+        });
+
+        const home = transformTeam(data.homeTeam, 'bg-yellow-400');
+        const visitor = transformTeam(data.awayTeam, 'bg-white');
+
+        // Check if we are reloading the same match to preserve state
+        const shouldPreserveState = contextMatchIdRef.current === data.id;
+
+        setMatchData(data.id, home, visitor, shouldPreserveState);
+      } catch (error) {
+        console.error('Error loading match:', error);
+      }
+    };
+
+    loadMatchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchId]); // Only depend on matchId to prevent infinite loops
 
   // Local Selection State (Transient)
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
@@ -78,12 +99,6 @@ const MatchTracker = () => {
   const [isCollective, setIsCollective] = useState(false);
   const [hasOpposition, setHasOpposition] = useState(false);
   const [isCounterAttack, setIsCounterAttack] = useState(false);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const handleTeamSelect = (teamId: string) => {
     setActiveTeamId(teamId);
@@ -274,14 +289,14 @@ const MatchTracker = () => {
                         key={gk.id}
                         onClick={() => setSelectedOpponentGoalkeeper(gk)}
                         className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${selectedOpponentGoalkeeper?.id === gk.id
-                          ? 'bg-orange-50 border-orange-500 ring-1 ring-orange-500'
-                          : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                            ? 'bg-orange-50 border-orange-500 ring-1 ring-orange-500'
+                            : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
                           }`}
                       >
                         <div className="flex items-center gap-3">
                           <span className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${selectedOpponentGoalkeeper?.id === gk.id
-                            ? 'bg-orange-500 text-white'
-                            : 'bg-gray-200 text-gray-600'
+                              ? 'bg-orange-500 text-white'
+                              : 'bg-gray-200 text-gray-600'
                             }`}>
                             {gk.number}
                           </span>
@@ -368,20 +383,9 @@ const MatchTracker = () => {
           </div>
         </div>
 
-        {/* Event Log (Debug) */}
-        <div className="mt-8 bg-gray-50 p-4 rounded-lg text-xs font-mono text-gray-600">
-          <h4 className="font-bold mb-2">Recent Events</h4>
-          {events.slice(0, 5).map(e => (
-            <div key={e.id}>
-              {formatTime(e.timestamp)} - {e.teamId} - {e.playerId} -
-              <span className="font-bold"> {e.category}</span>: {e.action}
-              {e.zone ? ` (${e.zone})` : ''}
-              {e.context?.isCollective ? ' [Coll]' : ''}
-              {e.context?.hasOpposition ? ' [Opp]' : ''}
-              {e.context?.isCounterAttack ? ' [Counter]' : ''}
-              <span className="text-gray-500"> [Def: {e.defenseFormation}]</span>
-            </div>
-          ))}
+        {/* Recent Events */}
+        <div className="mt-8">
+          <EventList maxEvents={5} />
         </div>
       </div>
     </div>

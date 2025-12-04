@@ -22,11 +22,12 @@ export const TurnoverFlow = ({
         <button
           key={type}
           onClick={() => onActionSelect(type)}
-          className={`p-4 rounded-lg font-medium transition-colors text-sm md:text-base ${
-            selectedAction === type ? 'bg-orange-500 text-white' : 'bg-gray-100 hover:bg-gray-200'
-          }`}
+          className={`p-4 rounded-lg font-medium transition-colors text-sm md:text-base ${selectedAction === type ? 'bg-orange-500 text-white' : 'bg-gray-100 hover:bg-gray-200'
+            }`}
         >
-          {type}
+          {type === 'Pass' ? 'Bad Pass' :
+            type === 'Catch' ? 'Dropped Ball' :
+              type}
         </button>
       ))}
     </div>

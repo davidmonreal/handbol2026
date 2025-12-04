@@ -16,7 +16,7 @@ export const FLOW_CONFIG = {
     },
     Turnover: {
         steps: ['TYPE', 'ZONE'],
-        actions: ['Pass', 'Catch', 'Dribble', 'Steps', 'Area', 'Offensive Foul'],
+        actions: ['Pass', 'Catch', 'Offensive Foul', 'Steps', 'Area'],
         requiresZone: (action: string | null) => action === 'Area', // Only 'Area' strictly requires a zone, others are optional
     },
     Sanction: {

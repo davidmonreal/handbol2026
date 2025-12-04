@@ -36,6 +36,8 @@ interface MatchContextType {
   defenseFormation: DefenseType;
   setDefenseFormation: React.Dispatch<React.SetStateAction<DefenseType>>;
   addEvent: (event: MatchEvent) => void;
+  updateEvent: (eventId: string, updates: Partial<MatchEvent>) => Promise<void>;
+  deleteEvent: (eventId: string) => Promise<void>;
   homeTeam: Team | null;
   setHomeTeam: React.Dispatch<React.SetStateAction<Team | null>>;
   visitorTeam: Team | null;
@@ -64,7 +66,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
 
   const addEvent = async (event: MatchEvent) => {
     // Add to local state immediately for UI responsiveness
-    setEvents(prev => [event, ...prev]);
+    setEvents(prev => [...prev, event]);
 
     // Update Score Logic
     if (event.category === 'Shot' && event.action === 'Goal') {
@@ -101,6 +103,138 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error) {
         console.error('Error saving event:', error);
+      }
+    }
+  };
+
+  const updateEvent = async (eventId: string, updates: Partial<MatchEvent>) => {
+    const currentEvent = events.find(e => e.id === eventId);
+    if (!currentEvent) {
+      console.error('Event not found:', eventId);
+      return;
+    }
+
+    // Check if the update affects the score
+    const oldIsGoal = currentEvent.category === 'Shot' && currentEvent.action === 'Goal';
+    const newIsGoal = (updates.category === 'Shot' || currentEvent.category === 'Shot') &&
+      (updates.action === 'Goal' || (updates.action === undefined && currentEvent.action === 'Goal'));
+
+    const affectsScore = oldIsGoal !== newIsGoal;
+
+    if (affectsScore) {
+      const confirmed = window.confirm(
+        'This change will affect the score. Are you sure you want to continue?'
+      );
+      if (!confirmed) {
+        console.log('User cancelled score change');
+        return;
+      }
+    }
+
+    // Create updated events array
+    const updatedEvents = events.map(e =>
+      e.id === eventId ? { ...e, ...updates } : e
+    );
+
+    // Update state
+    setEvents(updatedEvents);
+
+    // Recalculate scores if needed - using the updated events array directly
+    if (affectsScore) {
+      const homeGoals = updatedEvents.filter(e =>
+        e.category === 'Shot' && e.action === 'Goal' && e.teamId === homeTeam?.id
+      ).length;
+      const visitorGoals = updatedEvents.filter(e =>
+        e.category === 'Shot' && e.action === 'Goal' && e.teamId === visitorTeam?.id
+      ).length;
+
+      setHomeScore(homeGoals);
+      setVisitorScore(visitorGoals);
+    }
+
+    // Persist to backend if we have a matchId
+    if (matchId) {
+      try {
+        const updatedEvent = { ...currentEvent, ...updates };
+
+        const response = await fetch(`${API_BASE_URL}/api/game-events/${eventId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            timestamp: updatedEvent.timestamp,
+            playerId: updatedEvent.playerId,
+            teamId: updatedEvent.teamId,
+            type: updatedEvent.category,
+            subtype: updatedEvent.action,
+            position: updatedEvent.position,
+            distance: updatedEvent.distance,
+            isCollective: updatedEvent.isCollective,
+            hasOpposition: updatedEvent.hasOpposition,
+            isCounterAttack: updatedEvent.isCounterAttack,
+            goalZone: updatedEvent.goalZoneTag,
+            sanctionType: updatedEvent.sanctionType,
+          }),
+        });
+
+        if (!response.ok) {
+          console.error('Failed to update event in backend');
+          const errorText = await response.text();
+          console.error('Error response:', errorText);
+        } else {
+          console.log('Event updated successfully in backend');
+          // No need to update events again - we already did it above with the updated events array
+        }
+      } catch (error) {
+        console.error('Error updating event:', error);
+      }
+    }
+  };
+
+  const deleteEvent = async (eventId: string) => {
+    const currentEvent = events.find(e => e.id === eventId);
+    if (!currentEvent) return;
+
+    // Check if the event is a goal
+    const isGoal = currentEvent.category === 'Shot' && currentEvent.action === 'Goal';
+
+    if (isGoal) {
+      const confirmed = window.confirm(
+        'Deleting this goal will affect the score. Are you sure you want to continue?'
+      );
+      if (!confirmed) return;
+    }
+
+    // Create filtered events array
+    const updatedEvents = events.filter(e => e.id !== eventId);
+
+    // Delete locally
+    setEvents(updatedEvents);
+
+    // Recalculate scores if needed - using the updated events array directly
+    if (isGoal) {
+      const homeGoals = updatedEvents.filter(e =>
+        e.category === 'Shot' && e.action === 'Goal' && e.teamId === homeTeam?.id
+      ).length;
+      const visitorGoals = updatedEvents.filter(e =>
+        e.category === 'Shot' && e.action === 'Goal' && e.teamId === visitorTeam?.id
+      ).length;
+
+      setHomeScore(homeGoals);
+      setVisitorScore(visitorGoals);
+    }
+
+    // Delete from backend if we have a matchId
+    if (matchId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/game-events/${eventId}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          console.error('Failed to delete event from backend');
+        }
+      } catch (error) {
+        console.error('Error deleting event:', error);
       }
     }
   };
@@ -145,7 +279,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
           playerNumber: e.player?.number || 0,
           teamId: e.teamId,
           category: e.type,
-          action: e.subtype || e.type,
+          action: e.subtype || e.type,  // This is the problem! If subtype is empty, it uses type
           position: e.position,
           distance: e.distance,
           isCollective: e.isCollective || false,
@@ -200,6 +334,8 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
       activeTeamId, setActiveTeamId,
       defenseFormation, setDefenseFormation,
       addEvent,
+      updateEvent,
+      deleteEvent,
       homeTeam, setHomeTeam,
       visitorTeam, setVisitorTeam,
       matchId, setMatchId,
