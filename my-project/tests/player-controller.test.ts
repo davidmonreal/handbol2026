@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Request, Response } from 'express';
+import { Handedness } from '@prisma/client';
 import { PlayerController } from '../src/controllers/player-controller';
 import { PlayerService } from '../src/services/player-service';
 
@@ -23,9 +24,10 @@ describe('PlayerController', () => {
     vi.clearAllMocks();
   });
 
-  it('getAll returns players', async () => {
+  it('getAll returns players (legacy mode - no query params)', async () => {
+    req.query = {}; // Empty query = legacy mode
     const mockPlayers = [
-      { id: '1', name: 'Alice', number: 10, handedness: 'RIGHT', isGoalkeeper: false },
+      { id: '1', name: 'Alice', number: 10, handedness: Handedness.RIGHT, isGoalkeeper: false },
     ];
     vi.mocked(service.getAll).mockResolvedValue(mockPlayers);
 
@@ -35,13 +37,33 @@ describe('PlayerController', () => {
     expect(res.json).toHaveBeenCalledWith(mockPlayers);
   });
 
+  it('getAll returns paginated players when skip/take provided', async () => {
+    req.query = { skip: '0', take: '20' };
+    const mockPlayers = [
+      { id: '1', name: 'Alice', number: 10, handedness: Handedness.RIGHT, isGoalkeeper: false },
+    ];
+    vi.mocked(service.getAllPaginated).mockResolvedValue(mockPlayers);
+    vi.mocked(service.count).mockResolvedValue(50);
+
+    await controller.getAll(req as Request, res as Response);
+
+    expect(service.getAllPaginated).toHaveBeenCalledWith({
+      skip: 0,
+      take: 20,
+      search: undefined,
+      clubId: undefined,
+    });
+    expect(service.count).toHaveBeenCalledWith({ search: undefined, clubId: undefined });
+    expect(res.json).toHaveBeenCalledWith({ data: mockPlayers, total: 50, skip: 0, take: 20 });
+  });
+
   it('getById returns a player if found', async () => {
     req.params = { id: '1' };
     const mockPlayer = {
       id: '1',
       name: 'Alice',
       number: 10,
-      handedness: 'RIGHT',
+      handedness: Handedness.RIGHT,
       isGoalkeeper: false,
     };
     vi.mocked(service.getById).mockResolvedValue(mockPlayer);
@@ -68,7 +90,7 @@ describe('PlayerController', () => {
       id: '2',
       name: 'Bob',
       number: 7,
-      handedness: 'LEFT',
+      handedness: Handedness.LEFT,
       isGoalkeeper: false,
     };
     vi.mocked(service.create).mockResolvedValue(createdPlayer);
@@ -91,7 +113,7 @@ describe('PlayerController', () => {
       id: '3',
       name: 'Nico',
       number: 1,
-      handedness: 'RIGHT',
+      handedness: Handedness.RIGHT,
       isGoalkeeper: true,
     };
     vi.mocked(service.create).mockResolvedValue(createdPlayer);
@@ -125,7 +147,7 @@ describe('PlayerController', () => {
       id: '1',
       name: 'Alice Updated',
       number: 10,
-      handedness: 'RIGHT',
+      handedness: Handedness.RIGHT,
       isGoalkeeper: false,
     };
     vi.mocked(service.update).mockResolvedValue(updatedPlayer);
@@ -143,7 +165,7 @@ describe('PlayerController', () => {
       id: '1',
       name: 'Alice',
       number: 10,
-      handedness: 'RIGHT',
+      handedness: Handedness.RIGHT,
       isGoalkeeper: true,
     };
     vi.mocked(service.update).mockResolvedValue(updatedPlayer);
@@ -156,7 +178,13 @@ describe('PlayerController', () => {
 
   it('delete removes a player', async () => {
     req.params = { id: '1' };
-    const mockDeleteResult = { id: '1', name: 'Deleted', number: 10, handedness: 'RIGHT' };
+    const mockDeleteResult = {
+      id: '1',
+      name: 'Deleted',
+      number: 10,
+      handedness: Handedness.RIGHT,
+      isGoalkeeper: false,
+    };
     vi.mocked(service.delete).mockResolvedValue(mockDeleteResult);
 
     await controller.delete(req as Request, res as Response);

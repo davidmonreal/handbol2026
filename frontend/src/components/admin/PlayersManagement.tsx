@@ -1,20 +1,56 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart3, Upload } from 'lucide-react';
 import { CrudManager } from './shared/CrudManager';
-import type { Player, CrudConfig } from '../../types';
+import { SearchableSelectWithCreate } from '../common/SearchableSelectWithCreate';
+import { API_BASE_URL } from '../../config/api';
+import type { Player, Club, CrudConfig } from '../../types';
 
 export const PlayersManagement = () => {
     const navigate = useNavigate();
+    const [clubs, setClubs] = useState<Club[]>([]);
+    const [selectedClubId, setSelectedClubId] = useState<string>('');
+
+    useEffect(() => {
+        const fetchClubs = async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/clubs`);
+                const data = await response.json();
+                if (Array.isArray(data)) {
+                    setClubs(data);
+                }
+            } catch (error) {
+                console.error('Error fetching clubs:', error);
+            }
+        };
+        fetchClubs();
+    }, []);
+
+    const clubOptions = [
+        { value: '', label: 'All Clubs' },
+        ...clubs.map(club => ({ value: club.id, label: club.name }))
+    ];
 
     const playersConfig: CrudConfig<Player> = {
         entityName: 'Player',
         entityNamePlural: 'Players',
         apiEndpoint: '/api/players',
+        pagination: true,
 
         columns: [
             {
                 key: 'name',
                 label: 'Name',
+                render: (player) => (
+                    <div className="flex items-center gap-2">
+                        <span className="font-medium">{player.name}</span>
+                        {player.isGoalkeeper && (
+                            <span className="px-1.5 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-800">
+                                GK
+                            </span>
+                        )}
+                    </div>
+                ),
             },
             {
                 key: 'number',
@@ -23,10 +59,10 @@ export const PlayersManagement = () => {
             },
             {
                 key: 'teams',
-                label: 'Club(s)',
+                label: 'Club',
                 render: (player) => {
                     if (!player.teams || player.teams.length === 0) {
-                        return <span className="text-gray-400 italic">No club</span>;
+                        return <span className="text-gray-400 italic">-</span>;
                     }
                     const uniqueClubs = Array.from(new Set(player.teams.map(t => t.team.club.name)));
                     return (
@@ -41,44 +77,52 @@ export const PlayersManagement = () => {
                 },
             },
             {
-                key: 'handedness',
-                label: 'Handedness',
+                key: 'teams',
+                label: 'Category',
+                render: (player) => {
+                    if (!player.teams || player.teams.length === 0) {
+                        return <span className="text-gray-400 italic">-</span>;
+                    }
+                    const uniqueCategories = Array.from(new Set(player.teams.map(t => t.team.category).filter(Boolean)));
+                    return (
+                        <div className="flex flex-wrap gap-1">
+                            {uniqueCategories.map(category => (
+                                <span key={category} className="px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-700">
+                                    {category}
+                                </span>
+                            ))}
+                        </div>
+                    );
+                },
             },
             {
-                key: 'isGoalkeeper',
-                label: 'Goalkeeper',
-                render: (player) => player.isGoalkeeper ? (
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
-                        GK
-                    </span>
-                ) : (
-                    <span className="text-gray-400">-</span>
-                ),
+                key: 'teams',
+                label: 'Team',
+                render: (player) => {
+                    if (!player.teams || player.teams.length === 0) {
+                        return <span className="text-gray-400 italic">-</span>;
+                    }
+                    return (
+                        <div className="flex flex-wrap gap-1">
+                            {player.teams.map((t, idx) => (
+                                <span key={idx} className="text-sm text-gray-700">
+                                    {t.team.name}
+                                </span>
+                            ))}
+                        </div>
+                    );
+                },
             },
         ],
 
-        // No formFields = no modal, we navigate to a dedicated page instead
         formFields: [],
 
         searchFields: ['name'],
 
-        customFilter: (player: Player, searchTerm: string) => {
-            const term = searchTerm.toLowerCase();
-            // Check name
-            if (player.name.toLowerCase().includes(term)) return true;
+        // Server-side filtering by clubId
+        serverFilters: selectedClubId ? { clubId: selectedClubId } : undefined,
 
-            // Check clubs
-            if (player.teams && player.teams.length > 0) {
-                return player.teams.some(t => t.team.club.name.toLowerCase().includes(term));
-            }
-
-            return false;
-        },
-
-        // Navigate to edit page instead of opening modal
         onEdit: (player) => navigate(`/players/${player.id}/edit`),
-
-        // Navigate to create page instead of opening modal
         onCreate: () => navigate('/players/new'),
 
         customActions: [
@@ -99,7 +143,22 @@ export const PlayersManagement = () => {
                 Import Players
             </button>
         ),
+
+        // Club filter aligned with search bar
+        filterSlot: (
+            <div className="w-64 flex items-center">
+                <SearchableSelectWithCreate
+                    label=""
+                    value={selectedClubId}
+                    options={clubOptions}
+                    onChange={(value) => setSelectedClubId(value)}
+                    placeholder="Filter by Club..."
+                    className="w-full"
+                />
+            </div>
+        ),
     };
 
-    return <CrudManager<Player> config={playersConfig} />;
+    return <CrudManager<Player> key={selectedClubId} config={playersConfig} />;
 };
+

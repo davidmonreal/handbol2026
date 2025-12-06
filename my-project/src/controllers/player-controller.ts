@@ -3,9 +3,42 @@ import { Player } from '@prisma/client';
 import { BaseController } from './base-controller';
 import { PlayerService } from '../services/player-service';
 
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 100;
+
 export class PlayerController extends BaseController<Player> {
+  private playerService: PlayerService;
+
   constructor(service: PlayerService) {
     super(service, 'Player');
+    this.playerService = service;
+  }
+
+  async getAll(req: Request, res: Response) {
+    try {
+      const skip = Math.max(0, parseInt(req.query.skip as string) || 0);
+      const take = Math.min(MAX_PAGE_SIZE, Math.max(1, parseInt(req.query.take as string) || DEFAULT_PAGE_SIZE));
+      const search = (req.query.search as string) || undefined;
+      const clubId = (req.query.clubId as string) || undefined;
+
+      // If no pagination params, use legacy behavior for backwards compatibility
+      if (!req.query.skip && !req.query.take && !req.query.search && !req.query.clubId) {
+        return super.getAll(req, res);
+      }
+
+      const [data, total] = await Promise.all([
+        this.playerService.getAllPaginated({ skip, take, search, clubId }),
+        this.playerService.count({ search, clubId }),
+      ]);
+
+      res.json({ data, total, skip, take });
+    } catch (error) {
+      console.error('Error fetching players:', error);
+      res.status(500).json({
+        error: 'Failed to fetch players',
+        details: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   async create(req: Request, res: Response) {

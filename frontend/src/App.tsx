@@ -14,6 +14,7 @@ import { ImportPlayers } from './components/admin/ImportPlayers';
 import { TeamsManagement } from './components/admin/TeamsManagement';
 import { PlayerFormPage } from './components/admin/players/PlayerFormPage';
 import { TeamFormPage } from './components/admin/teams/TeamFormPage';
+import { TeamPlayersPage } from './components/admin/teams/TeamPlayersPage';
 import { MatchFormPage } from './components/admin/matches/MatchFormPage';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -64,6 +65,7 @@ function App() {
               <Route path="teams" element={<TeamsManagement />} />
               <Route path="teams/new" element={<TeamFormPage />} />
               <Route path="teams/:id/edit" element={<TeamFormPage />} />
+              <Route path="teams/:id/players" element={<TeamPlayersPage />} />
               <Route path="matches" element={<MatchesManagement />} />
               <Route path="matches/new" element={<MatchFormPage />} />
               <Route path="matches/:id/edit" element={<MatchFormPage />} />

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, BarChart3, Star } from 'lucide-react';
 import { CrudManager } from './shared/CrudManager';
-import { TeamPlayersModal } from './TeamPlayersModal';
 import { API_BASE_URL } from '../../config/api';
 import type { Team, Club, Season, CrudConfig } from '../../types';
 
@@ -12,13 +11,6 @@ export const TeamsManagement = () => {
     const navigate = useNavigate();
     const [clubs, setClubs] = useState<Club[]>([]);
     const [seasons, setSeasons] = useState<Season[]>([]);
-    const [selectedTeamForPlayers, setSelectedTeamForPlayers] = useState<Team | null>(null);
-    const [isPlayersModalOpen, setIsPlayersModalOpen] = useState(false);
-
-    // We need a key to force re-render of CrudManager when we want to refresh data
-    // or we can just rely on CrudManager's internal state if we don't need to force refresh from outside
-    // But here, when players are updated in the modal, we might want to refresh the main table to show updated player counts
-    const [refreshKey, setRefreshKey] = useState(0);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -123,7 +115,19 @@ export const TeamsManagement = () => {
             },
         ],
 
-        searchFields: ['name'], // Note: 'club' and 'category' search would require client-side filtering logic in CrudManager or backend support
+        searchFields: ['name'],
+
+        customFilter: (team: Team, searchTerm: string) => {
+            // Search by team name
+            if (team.name.toLowerCase().includes(searchTerm)) return true;
+            // Search by club name
+            if (team.club?.name.toLowerCase().includes(searchTerm)) return true;
+            // Search by category
+            if (team.category?.toLowerCase().includes(searchTerm)) return true;
+            // Search by season
+            if (team.season?.name.toLowerCase().includes(searchTerm)) return true;
+            return false;
+        },
 
         // Navigate to create/edit pages instead of using modal
         onCreate: () => navigate('/teams/new'),
@@ -138,33 +142,11 @@ export const TeamsManagement = () => {
             {
                 icon: Users,
                 label: 'Manage Players',
-                onClick: (team) => {
-                    setSelectedTeamForPlayers(team);
-                    setIsPlayersModalOpen(true);
-                },
+                onClick: (team) => navigate(`/teams/${team.id}/players`),
                 className: 'text-blue-600 hover:text-blue-900 mr-4',
             },
         ],
     };
 
-    return (
-        <>
-            <CrudManager<Team> key={refreshKey} config={teamsConfig} />
-
-            {selectedTeamForPlayers && (
-                <TeamPlayersModal
-                    team={selectedTeamForPlayers}
-                    isOpen={isPlayersModalOpen}
-                    onClose={() => {
-                        setIsPlayersModalOpen(false);
-                        setSelectedTeamForPlayers(null);
-                    }}
-                    onUpdate={() => {
-                        // Refresh the main table to show updated player counts
-                        setRefreshKey(prev => prev + 1);
-                    }}
-                />
-            )}
-        </>
-    );
+    return <CrudManager<Team> config={teamsConfig} />;
 };

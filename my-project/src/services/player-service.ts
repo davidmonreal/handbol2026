@@ -3,8 +3,19 @@ import { BaseService } from './base-service';
 import { PlayerRepository } from '../repositories/player-repository';
 
 export class PlayerService extends BaseService<Player> {
+  private playerRepository: PlayerRepository;
+
   constructor(repository: PlayerRepository) {
     super(repository);
+    this.playerRepository = repository;
+  }
+
+  async getAllPaginated(params: { skip: number; take: number; search?: string; clubId?: string }): Promise<Player[]> {
+    return this.playerRepository.findAllPaginated(params);
+  }
+
+  async count(params: { search?: string; clubId?: string }): Promise<number> {
+    return this.playerRepository.count(params);
   }
 
   // Override create to add business logic validation

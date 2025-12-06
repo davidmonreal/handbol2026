@@ -10,6 +10,7 @@ vi.mock('../src/lib/prisma', () => ({
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      count: vi.fn(),
     },
   },
 }));
@@ -38,10 +39,11 @@ describe('PlayerRepository', () => {
           select: {
             team: {
               select: {
+                id: true,
                 name: true,
                 category: true,
                 club: {
-                  select: { name: true },
+                  select: { id: true, name: true },
                 },
               },
             },
@@ -51,6 +53,69 @@ describe('PlayerRepository', () => {
       orderBy: { name: 'asc' },
     });
     expect(result).toEqual(mockPlayers);
+  });
+
+  describe('findAllPaginated', () => {
+    it('returns paginated players with skip and take', async () => {
+      const mockPlayers = [
+        { id: '1', name: 'Alice', number: 10, handedness: 'RIGHT' as const, isGoalkeeper: false },
+      ];
+      vi.mocked(prisma.player.findMany).mockResolvedValue(mockPlayers);
+
+      const result = await repository.findAllPaginated({ skip: 0, take: 20 });
+
+      expect(prisma.player.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skip: 0,
+          take: 20,
+          orderBy: { name: 'asc' },
+        }),
+      );
+      expect(result).toEqual(mockPlayers);
+    });
+
+    it('filters by search term on name', async () => {
+      const mockPlayers = [
+        { id: '1', name: 'Alice', number: 10, handedness: 'RIGHT' as const, isGoalkeeper: false },
+      ];
+      vi.mocked(prisma.player.findMany).mockResolvedValue(mockPlayers);
+
+      await repository.findAllPaginated({ skip: 0, take: 20, search: 'Ali' });
+
+      expect(prisma.player.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([
+              expect.objectContaining({ name: expect.objectContaining({ contains: 'Ali' }) }),
+            ]),
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('count', () => {
+    it('returns total count of players', async () => {
+      vi.mocked(prisma.player.count).mockResolvedValue(50);
+
+      const result = await repository.count({});
+
+      expect(prisma.player.count).toHaveBeenCalled();
+      expect(result).toBe(50);
+    });
+
+    it('returns filtered count when search provided', async () => {
+      vi.mocked(prisma.player.count).mockResolvedValue(5);
+
+      const result = await repository.count({ search: 'Ali' });
+
+      expect(prisma.player.count).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.anything(),
+        }),
+      );
+      expect(result).toBe(5);
+    });
   });
 
   it('findById returns a player by id', async () => {

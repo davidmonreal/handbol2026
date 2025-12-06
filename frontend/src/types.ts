@@ -60,6 +60,7 @@ export interface Player {
             name: string;
             category?: string;
             club: {
+                id: string;
                 name: string;
             };
         };
@@ -114,4 +115,7 @@ export interface CrudConfig<T> {
     customFilter?: (item: T, searchTerm: string) => boolean;
     onEdit?: (item: T) => void; // Custom edit handler (e.g., navigate to page instead of modal)
     onCreate?: () => void; // Custom create handler (e.g., navigate to page instead of modal)
+    pagination?: boolean;
+    filterSlot?: React.ReactNode; // Custom filter component to render next to search
+    serverFilters?: Record<string, string>; // Query params to send to server (e.g., { clubId: '...' })
 }

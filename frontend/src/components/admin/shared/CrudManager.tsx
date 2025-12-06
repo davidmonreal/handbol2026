@@ -18,35 +18,125 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
     const [isLoading, setIsLoading] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; itemId: string | null }>({ isOpen: false, itemId: null });
 
-    useEffect(() => {
-        fetchItems();
-    }, []);
+    // Pagination state
+    const [page, setPage] = useState(0);
+    const [totalItems, setTotalItems] = useState(0);
+    const [isMoreLoading, setIsMoreLoading] = useState(false);
+    const PAGE_SIZE = 20;
 
-    const fetchItems = async () => {
+    // Debounce search term
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        setPage(0); // Reset page on search term change
+        // Only fetch from server if we don't have all items already loaded
+        // If all items are loaded (serverFilters applied + totalItems <= items.length), filter client-side
+        const allItemsLoaded = config.pagination && config.serverFilters && items.length > 0 && items.length >= totalItems;
+        if (!allItemsLoaded) {
+            fetchItems(false, 0); // Fetch initial data or new search results with explicit page 0
+        }
+        // If allItemsLoaded, we skip fetch and filteredItems will handle client-side filtering
+    }, [debouncedSearchTerm]);
+
+    useEffect(() => {
+        // Only load more if page is incremented and not the initial load (page 0)
+        if (page > 0) {
+            fetchItems(true);
+        }
+    }, [page]);
+
+    const fetchItems = async (isLoadMore = false, pageOverride?: number) => {
+        const currentPage = pageOverride ?? page;
+
+        // Prevent double fetching on initial load since searchTerm effect runs too
+        // If not loading more, and page is already > 0, it means a search term change
+        // or initial load has already triggered a fetch for page 0.
+        if (!isLoadMore && currentPage > 0) return;
+
         try {
-            setError(null);
-            const response = await fetch(`${API_BASE_URL}${config.apiEndpoint}`);
+            if (isLoadMore) {
+                setIsMoreLoading(true);
+            } else {
+                setError(null);
+                // Only show full loading on truly initial load (component mount), not on search changes
+                // This prevents the search input from being unmounted and losing focus
+                if (items.length === 0 && !debouncedSearchTerm) setIsInitialLoading(true);
+            }
+
+            let url = `${API_BASE_URL}${config.apiEndpoint}`;
+
+            if (config.pagination) {
+                const skip = currentPage * PAGE_SIZE;
+                const params = new URLSearchParams();
+                params.append('skip', skip.toString());
+                params.append('take', PAGE_SIZE.toString());
+                if (debouncedSearchTerm) {
+                    params.append('search', debouncedSearchTerm);
+                }
+                // Add server-side filters (e.g., clubId)
+                if (config.serverFilters) {
+                    Object.entries(config.serverFilters).forEach(([key, value]) => {
+                        if (value) params.append(key, value);
+                    });
+                }
+                url += `?${params.toString()}`;
+            }
+
+            const response = await fetch(url);
             const data = await response.json();
 
-            if (Array.isArray(data)) {
-                setItems(data);
-                setError(null);
+            if (config.pagination) {
+                // Expect { data: [], total: number }
+                if (data.data && Array.isArray(data.data)) {
+                    if (isLoadMore) {
+                        setItems(prev => [...prev, ...data.data]);
+                    } else {
+                        setItems(data.data);
+                    }
+                    setTotalItems(data.total || 0);
+                } else {
+                    // Fallback or error
+                    console.error('Expected paginated result but got:', data);
+                    setItems([]);
+                    setTotalItems(0);
+                }
             } else {
-                console.error('Expected array but got:', data);
-                setItems([]);
-                if (data.error) {
-                    setError(data.error);
+                // Legacy behavior (no pagination)
+                if (Array.isArray(data)) {
+                    // Client-side filtering if search is active (legacy behavior was handled by client after fetch? 
+                    // No, existing code filtered client side in render via filteredItems.
+                    // So we just set items here.
+                    setItems(data);
+                    setTotalItems(data.length); // For non-paginated, total is just current items length
+                } else {
+                    console.error('Expected array but got:', data);
+                    setItems([]);
+                    setTotalItems(0);
+                    if (data.error) setError(data.error);
                 }
             }
         } catch (err) {
             console.error(`Error fetching ${config.entityNamePlural}:`, err);
-            setError('Failed to connect to the server. Please ensure the backend is running.');
-            setItems([]);
+            setError('Failed to connect to the server.');
+            if (!isLoadMore) setItems([]); // Clear items only if not loading more
+            setTotalItems(0);
         } finally {
             setIsInitialLoading(false);
+            setIsMoreLoading(false);
         }
+    };
+
+    const handleLoadMore = () => {
+        setPage(prev => prev + 1);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -74,7 +164,9 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                 throw new Error(errorData.error || `Failed to save ${config.entityName}`);
             }
 
-            fetchItems();
+            // Refresh items (reset to page 0)
+            setPage(0);
+            fetchItems(false);
             handleCancel();
         } catch (err) {
             console.error(`Error saving ${config.entityName}:`, err);
@@ -102,7 +194,9 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                 const errorData = await response.json().catch(() => ({}));
                 throw new Error(errorData.error || `Failed to delete ${config.entityName}`);
             }
-            fetchItems();
+            // Refresh items
+            setPage(0);
+            fetchItems(false);
         } catch (err) {
             console.error(`Error deleting ${config.entityName}:`, err);
             setError(err instanceof Error ? err.message : `Failed to delete ${config.entityName}. Please try again.`);
@@ -156,9 +250,32 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
         setFormData(prev => ({ ...prev, [fieldName]: finalValue }));
     };
 
+    // Determine if all items are loaded (for client-side search optimization)
+    const allItemsLoaded = config.pagination && config.serverFilters && items.length > 0 && items.length >= totalItems;
+
     const filteredItems = items.filter((item: T) => {
         const searchLower = searchTerm.toLowerCase();
 
+        // For pagination mode with all items loaded, apply text search client-side
+        if (config.pagination && allItemsLoaded && searchLower) {
+            // Apply text search to searchFields
+            const matchesSearch = config.searchFields.some((field: keyof T) => {
+                const value = item[field];
+                return value?.toString().toLowerCase().includes(searchLower);
+            });
+            return matchesSearch;
+        }
+
+        // For pagination mode without all items, server handles search
+        // But customFilter still applies client-side
+        if (config.pagination) {
+            if (config.customFilter) {
+                return config.customFilter(item, searchLower);
+            }
+            return true; // No additional filtering
+        }
+
+        // For non-paginated mode, apply text search client-side
         if (config.customFilter) {
             return config.customFilter(item, searchLower);
         }
@@ -268,8 +385,10 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                 </div>
             </div>
 
-            <div className="mb-6">
-                <div className="relative">
+
+            <div className="mb-6 flex gap-4 items-center">
+                {config.filterSlot}
+                <div className={`relative ${config.filterSlot ? 'flex-1' : 'w-full'}`}>
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                     <input
                         type="text"
@@ -374,6 +493,25 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                 {filteredItems.length === 0 && (
                     <div className="text-center py-12 text-gray-500">
                         No {config.entityNamePlural.toLowerCase()} found. Create your first {config.entityName.toLowerCase()}!
+                    </div>
+                )}
+
+                {config.pagination && filteredItems.length > 0 && items.length < totalItems && (
+                    <div className="p-4 border-t border-gray-100 flex justify-center bg-gray-50">
+                        <button
+                            onClick={handleLoadMore}
+                            disabled={isMoreLoading}
+                            className="px-4 py-2 text-sm font-medium text-indigo-600 bg-white border border-gray-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                            {isMoreLoading ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                                    Loading more...
+                                </>
+                            ) : (
+                                `Load 20 more (${totalItems - items.length} remaining)`
+                            )}
+                        </button>
                     </div>
                 )}
             </div>

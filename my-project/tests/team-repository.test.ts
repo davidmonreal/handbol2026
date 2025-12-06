@@ -46,11 +46,14 @@ describe('TeamRepository', () => {
 
     const result = await repository.findAll();
 
-    // Players removed for performance - use getTeamPlayers() when needed
+    // findAll returns teams with player count (optimized - only IDs for counting)
     expect(prisma.team.findMany).toHaveBeenCalledWith({
       include: {
         club: true,
         season: true,
+        players: {
+          select: { id: true },
+        },
       },
       orderBy: { name: 'asc' },
     });
