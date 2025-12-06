@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useMatch } from '../context/MatchContext';
 import type { MatchEvent } from '../types';
-import { HOME_TEAM } from '../data/mockData';
 import { transformBackendEvents } from '../utils/eventTransformers';
 import { StatisticsView } from './stats';
 import { API_BASE_URL } from '../config/api';
@@ -116,7 +115,7 @@ const Statistics = () => {
     if (teamId && data) {
       return `${data.name} - Statistics`;
     }
-    return activeTeamId === HOME_TEAM.id ? 'Team Statistics' : 'Team Statistics';
+    return 'Team Statistics';
   }, [matchId, playerId, teamId, data, selectedTeamId, activeTeamId]);
 
   // Handle back navigation

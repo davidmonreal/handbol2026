@@ -1,8 +1,22 @@
 import { Users } from 'lucide-react';
-import type { Team } from '../../data/mockData';
+
+interface MatchPlayer {
+  id: string;
+  number: number;
+  name: string;
+  position?: string;
+  isGoalkeeper?: boolean;
+}
+
+interface MatchTeam {
+  id: string;
+  name: string;
+  color: string;
+  players: MatchPlayer[];
+}
 
 interface PlayerSelectorProps {
-  team: Team;
+  team: MatchTeam;
   selectedPlayerId: string | null;
   onPlayerSelect: (playerId: string) => void;
 }
@@ -18,11 +32,10 @@ export const PlayerSelector = ({ team, selectedPlayerId, onPlayerSelect }: Playe
         <button
           key={player.id}
           onClick={() => onPlayerSelect(player.id)}
-          className={`p-3 rounded-lg border-2 text-left transition-all ${
-            selectedPlayerId === player.id
+          className={`p-3 rounded-lg border-2 text-left transition-all ${selectedPlayerId === player.id
               ? team.id === 'home' ? 'border-blue-500 bg-blue-50' : 'border-red-500 bg-red-50'
               : 'border-gray-100 hover:bg-gray-50'
-          }`}
+            }`}
         >
           <div className="font-bold text-lg">{player.number}</div>
           <div className="text-sm truncate hidden md:block">{player.name}</div>

@@ -36,8 +36,8 @@ interface MatchContextType {
   defenseFormation: DefenseType;
   setDefenseFormation: React.Dispatch<React.SetStateAction<DefenseType>>;
   addEvent: (event: MatchEvent) => void;
-  updateEvent: (eventId: string, updates: Partial<MatchEvent>) => Promise<void>;
-  deleteEvent: (eventId: string) => Promise<void>;
+  updateEvent: (eventId: string, updates: Partial<MatchEvent>, skipConfirmation?: boolean) => Promise<boolean>;
+  deleteEvent: (eventId: string, skipConfirmation?: boolean) => Promise<boolean>;
   homeTeam: Team | null;
   setHomeTeam: React.Dispatch<React.SetStateAction<Team | null>>;
   visitorTeam: Team | null;
@@ -107,11 +107,11 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateEvent = async (eventId: string, updates: Partial<MatchEvent>) => {
+  const updateEvent = async (eventId: string, updates: Partial<MatchEvent>, skipConfirmation = false): Promise<boolean> => {
     const currentEvent = events.find(e => e.id === eventId);
     if (!currentEvent) {
       console.error('Event not found:', eventId);
-      return;
+      return false;
     }
 
     // Check if the update affects the score
@@ -121,14 +121,9 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
 
     const affectsScore = oldIsGoal !== newIsGoal;
 
-    if (affectsScore) {
-      const confirmed = window.confirm(
-        'This change will affect the score. Are you sure you want to continue?'
-      );
-      if (!confirmed) {
-        console.log('User cancelled score change');
-        return;
-      }
+    // If affects score and confirmation not skipped, return false to signal caller to confirm
+    if (affectsScore && !skipConfirmation) {
+      return false; // Caller should show confirmation and call again with skipConfirmation=true
     }
 
     // Create updated events array
@@ -188,20 +183,20 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
         console.error('Error updating event:', error);
       }
     }
+
+    return true; // Success
   };
 
-  const deleteEvent = async (eventId: string) => {
+  const deleteEvent = async (eventId: string, skipConfirmation = false): Promise<boolean> => {
     const currentEvent = events.find(e => e.id === eventId);
-    if (!currentEvent) return;
+    if (!currentEvent) return false;
 
     // Check if the event is a goal
     const isGoal = currentEvent.category === 'Shot' && currentEvent.action === 'Goal';
 
-    if (isGoal) {
-      const confirmed = window.confirm(
-        'Deleting this goal will affect the score. Are you sure you want to continue?'
-      );
-      if (!confirmed) return;
+    // If affects score and confirmation not skipped, return false to signal caller to confirm
+    if (isGoal && !skipConfirmation) {
+      return false; // Caller should show confirmation and call again with skipConfirmation=true
     }
 
     // Create filtered events array
@@ -237,6 +232,8 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
         console.error('Error deleting event:', error);
       }
     }
+
+    return true; // Success
   };
 
   const setMatchData = useCallback(async (id: string, home: Team, visitor: Team, preserveState = false) => {

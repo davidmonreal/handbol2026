@@ -215,13 +215,31 @@ export const MatchFormPage = () => {
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <h3 className="font-semibold text-blue-900 mb-2">Match Preview</h3>
                         <div className="flex items-center justify-center gap-4 text-lg">
-                            <span className="font-medium">
-                                {teams.find(t => t.id === selectedHomeTeamId)?.name}
-                            </span>
-                            <span className="text-gray-500">vs</span>
-                            <span className="font-medium">
-                                {teams.find(t => t.id === selectedAwayTeamId)?.name}
-                            </span>
+                            <div className="text-right">
+                                <div className="font-bold">
+                                    {(() => {
+                                        const t = teams.find(team => team.id === selectedHomeTeamId);
+                                        return t ? `${t.category ? t.category + ' ' : ''}${t.name}` : '';
+                                    })()}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                    {teams.find(t => t.id === selectedHomeTeamId)?.club?.name}
+                                </div>
+                            </div>
+
+                            <span className="text-gray-400 font-bold px-2">vs</span>
+
+                            <div className="text-left">
+                                <div className="font-bold">
+                                    {(() => {
+                                        const t = teams.find(team => team.id === selectedAwayTeamId);
+                                        return t ? `${t.category ? t.category + ' ' : ''}${t.name}` : '';
+                                    })()}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                    {teams.find(t => t.id === selectedAwayTeamId)?.club?.name}
+                                </div>
+                            </div>
                         </div>
                         {dateValue && timeValue && (
                             <p className="text-sm text-gray-600 text-center mt-2">

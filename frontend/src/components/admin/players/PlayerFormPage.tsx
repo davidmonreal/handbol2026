@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save, Hand, Shield, Shirt, Trash2, CheckCircle, Loader2 } from 'lucide-react';
 import { API_BASE_URL } from '../../../config/api';
 import { SearchableSelectWithCreate } from '../../common/SearchableSelectWithCreate';
+import { ConfirmationModal } from '../../common';
 import { toTitleCase } from '../../../utils/textUtils';
 import { TEAM_CATEGORIES } from '../../../utils/teamUtils';
 import { playerImportService, type DuplicateMatch } from '../../../services/playerImportService';
@@ -51,6 +52,16 @@ export const PlayerFormPage = () => {
         };
     }
     const [playerTeams, setPlayerTeams] = useState<PlayerTeam[]>([]);
+
+    // Confirmation state
+    const [removeTeamConfirmation, setRemoveTeamConfirmation] = useState<{ isOpen: boolean; teamId: string | null }>({
+        isOpen: false,
+        teamId: null,
+    });
+    const [createClubConfirmation, setCreateClubConfirmation] = useState<{ isOpen: boolean; clubName: string | null }>({
+        isOpen: false,
+        clubName: null,
+    });
 
     // Initial Data Loading
     useEffect(() => {
@@ -150,7 +161,14 @@ export const PlayerFormPage = () => {
     };
 
     const handleCreateClub = async (clubName: string) => {
-        if (!confirm(`Create new club "${clubName}"?`)) return;
+        setCreateClubConfirmation({ isOpen: true, clubName });
+    };
+
+    const confirmCreateClub = async () => {
+        const clubName = createClubConfirmation.clubName;
+        setCreateClubConfirmation({ isOpen: false, clubName: null });
+        if (!clubName) return;
+
         try {
             const res = await fetch(`${API_BASE_URL}/api/clubs`, {
                 method: 'POST',
@@ -161,7 +179,7 @@ export const PlayerFormPage = () => {
             const newClub: Club = await res.json();
             setClubs(prev => [...prev, newClub]);
             setSelectedClubId(newClub.id);
-            return newClub; // Return for the searchable select to use if needed
+            return newClub;
         } catch (err) {
             alert('Error creating club');
         }
@@ -224,8 +242,15 @@ export const PlayerFormPage = () => {
         }
     };
 
-    const handleRemoveTeam = async (teamId: string) => {
-        if (!confirm('Are you sure you want to remove this player from the team?')) return;
+    const handleRemoveTeam = (teamId: string) => {
+        setRemoveTeamConfirmation({ isOpen: true, teamId });
+    };
+
+    const confirmRemoveTeam = async () => {
+        const teamId = removeTeamConfirmation.teamId;
+        setRemoveTeamConfirmation({ isOpen: false, teamId: null });
+        if (!teamId) return;
+
         try {
             const res = await fetch(`${API_BASE_URL}/api/teams/${teamId}/players/${id}`, {
                 method: 'DELETE'
@@ -689,6 +714,30 @@ export const PlayerFormPage = () => {
                     </div>
                 </div>
             )}
+
+            {/* Remove Team Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={removeTeamConfirmation.isOpen}
+                title="Remove from Team"
+                message="Are you sure you want to remove this player from the team?"
+                confirmLabel="Remove"
+                cancelLabel="Cancel"
+                variant="danger"
+                onConfirm={confirmRemoveTeam}
+                onCancel={() => setRemoveTeamConfirmation({ isOpen: false, teamId: null })}
+            />
+
+            {/* Create Club Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={createClubConfirmation.isOpen}
+                title="Create New Club"
+                message={`Create new club "${createClubConfirmation.clubName}"?`}
+                confirmLabel="Create"
+                cancelLabel="Cancel"
+                variant="info"
+                onConfirm={confirmCreateClub}
+                onCancel={() => setCreateClubConfirmation({ isOpen: false, clubName: null })}
+            />
         </div>
     );
 };

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { MatchEvent, ZoneType } from '../../../types';
 import { useMatch } from '../../../context/MatchContext';
 import { ZONE_CONFIG } from '../../../config/zones';
+import { ConfirmationModal } from '../../common';
 
 interface EventEditZoneProps {
     event: MatchEvent;
@@ -12,6 +13,7 @@ interface EventEditZoneProps {
 export const EventEditZone = ({ event, onSave, onCancel }: EventEditZoneProps) => {
     const { updateEvent, deleteEvent } = useMatch(); // Added deleteEvent
     const [selectedZone, setSelectedZone] = useState<ZoneType | null>(event.zone || null); // Added selectedZone state
+    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
     const handleSelect = (zone: ZoneType) => { // Modified handleSelect
         setSelectedZone(zone);
@@ -24,11 +26,14 @@ export const EventEditZone = ({ event, onSave, onCancel }: EventEditZoneProps) =
         }
     };
 
-    const handleDelete = async () => { // Added handleDelete
-        if (window.confirm('Are you sure you want to delete this event?')) {
-            await deleteEvent(event.id);
-            onSave();
-        }
+    const handleDelete = () => { // Added handleDelete
+        setShowDeleteConfirmation(true);
+    };
+
+    const confirmDelete = async () => {
+        setShowDeleteConfirmation(false);
+        await deleteEvent(event.id);
+        onSave();
     };
 
     return (
@@ -107,6 +112,17 @@ export const EventEditZone = ({ event, onSave, onCancel }: EventEditZoneProps) =
                     </button>
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={showDeleteConfirmation}
+                title="Delete Event"
+                message="Are you sure you want to delete this event? This action cannot be undone."
+                confirmLabel="Delete"
+                cancelLabel="Cancel"
+                variant="danger"
+                onConfirm={confirmDelete}
+                onCancel={() => setShowDeleteConfirmation(false)}
+            />
         </div>
     );
 };

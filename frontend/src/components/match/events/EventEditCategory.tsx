@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { MatchEvent, FlowType } from '../../../types';
 import { useMatch } from '../../../context/MatchContext';
+import { ConfirmationModal } from '../../common';
 
 interface EventEditCategoryProps {
     event: MatchEvent;
@@ -11,6 +12,7 @@ interface EventEditCategoryProps {
 export const EventEditCategory = ({ event, onSave, onCancel }: EventEditCategoryProps) => {
     const { updateEvent, deleteEvent } = useMatch();
     const [selectedCategory, setSelectedCategory] = useState<FlowType>(event.category as FlowType);
+    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
     const categories: { value: FlowType; label: string; icon: string }[] = [
         { value: 'Shot', label: 'Shot', icon: '🎯' },
@@ -33,11 +35,14 @@ export const EventEditCategory = ({ event, onSave, onCancel }: EventEditCategory
         onSave();
     };
 
-    const handleDelete = async () => {
-        if (window.confirm('Are you sure you want to delete this event?')) {
-            await deleteEvent(event.id);
-            onSave();
-        }
+    const handleDelete = () => {
+        setShowDeleteConfirmation(true);
+    };
+
+    const confirmDelete = async () => {
+        setShowDeleteConfirmation(false);
+        await deleteEvent(event.id);
+        onSave();
     };
 
     return (
@@ -88,6 +93,17 @@ export const EventEditCategory = ({ event, onSave, onCancel }: EventEditCategory
                     </button>
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={showDeleteConfirmation}
+                title="Delete Event"
+                message="Are you sure you want to delete this event? This action cannot be undone."
+                confirmLabel="Delete"
+                cancelLabel="Cancel"
+                variant="danger"
+                onConfirm={confirmDelete}
+                onCancel={() => setShowDeleteConfirmation(false)}
+            />
         </div>
     );
 };

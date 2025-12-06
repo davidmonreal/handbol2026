@@ -7,6 +7,7 @@ import {
 import type { MatchEvent, ZoneType, SanctionType, TurnoverType } from '../../../types';
 import { ZoneSelector } from '../shared/ZoneSelector';
 import { SplitToggle } from '../shared/SplitToggle';
+import { ConfirmationModal } from '../../common';
 
 // Define interfaces locally to match MatchContext structure
 interface Player {
@@ -44,6 +45,7 @@ export const EventEditResult = ({ event, team, onSave, onCancel, onDelete }: Eve
     const [isCounterAttack, setIsCounterAttack] = useState(event.isCounterAttack || false);
 
     const [isPlayerListOpen, setIsPlayerListOpen] = useState(false);
+    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
     // Update state when event changes
     useEffect(() => {
@@ -125,10 +127,13 @@ export const EventEditResult = ({ event, team, onSave, onCancel, onDelete }: Eve
     };
 
     const handleDelete = () => {
-        if (confirm('Are you sure you want to delete this event?')) {
-            onDelete(event.id);
-            onCancel(); // Close editor
-        }
+        setShowDeleteConfirmation(true);
+    };
+
+    const confirmDelete = () => {
+        setShowDeleteConfirmation(false);
+        onDelete(event.id);
+        onCancel();
     };
 
     const selectedPlayer = team.players.find(p => p.id === selectedPlayerId);
@@ -355,6 +360,17 @@ export const EventEditResult = ({ event, team, onSave, onCancel, onDelete }: Eve
                     </button>
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={showDeleteConfirmation}
+                title="Delete Event"
+                message="Are you sure you want to delete this event? This action cannot be undone."
+                confirmLabel="Delete"
+                cancelLabel="Cancel"
+                variant="danger"
+                onConfirm={confirmDelete}
+                onCancel={() => setShowDeleteConfirmation(false)}
+            />
         </div>
     );
 };

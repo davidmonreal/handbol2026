@@ -1,9 +1,16 @@
 import { Play, Pause, RotateCcw, Plus, Minus } from 'lucide-react';
-import type { Team } from '../../data/mockData';
+
+interface MatchTeam {
+  id: string;
+  name: string;
+  category?: string;
+  club?: { id?: string; name: string };
+  color: string;
+}
 
 interface ScoreboardProps {
-  homeTeam: Team;
-  visitorTeam: Team;
+  homeTeam: MatchTeam;
+  visitorTeam: MatchTeam;
   homeScore: number;
   visitorScore: number;
   time: number;

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search } from 'lucide-react';
 import { API_BASE_URL } from '../../../config/api';
 import type { CrudConfig, FormFieldConfig } from '../../../types';
-import { LoadingTable, ErrorMessage } from '../../common';
+import { LoadingTable, ErrorMessage, ConfirmationModal } from '../../common';
 
 
 interface CrudManagerProps<T> {
@@ -18,6 +18,7 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
     const [isLoading, setIsLoading] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; itemId: string | null }>({ isOpen: false, itemId: null });
 
     useEffect(() => {
         fetchItems();
@@ -83,8 +84,15 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm(`Are you sure you want to delete this ${config.entityName}?`)) return;
+    const handleDeleteClick = (id: string) => {
+        setDeleteConfirmation({ isOpen: true, itemId: id });
+    };
+
+    const handleDeleteConfirm = async () => {
+        const id = deleteConfirmation.itemId;
+        if (!id) return;
+
+        setDeleteConfirmation({ isOpen: false, itemId: null });
 
         try {
             const response = await fetch(`${API_BASE_URL}${config.apiEndpoint}/${id}`, {
@@ -99,6 +107,10 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
             console.error(`Error deleting ${config.entityName}:`, err);
             setError(err instanceof Error ? err.message : `Failed to delete ${config.entityName}. Please try again.`);
         }
+    };
+
+    const handleDeleteCancel = () => {
+        setDeleteConfirmation({ isOpen: false, itemId: null });
     };
 
     const handleEdit = (item: T) => {
@@ -349,7 +361,7 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                                         <Edit2 size={18} />
                                     </button>
                                     <button
-                                        onClick={() => handleDelete(item.id)}
+                                        onClick={() => handleDeleteClick(item.id)}
                                         className="text-red-600 hover:text-red-900"
                                     >
                                         <Trash2 size={18} />
@@ -365,6 +377,17 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                     </div>
                 )}
             </div>
+
+            <ConfirmationModal
+                isOpen={deleteConfirmation.isOpen}
+                title="Confirm Delete"
+                message={`Are you sure you want to delete this ${config.entityName.toLowerCase()}? This action cannot be undone.`}
+                confirmLabel="Delete"
+                cancelLabel="Cancel"
+                variant="danger"
+                onConfirm={handleDeleteConfirm}
+                onCancel={handleDeleteCancel}
+            />
         </div>
     );
 }

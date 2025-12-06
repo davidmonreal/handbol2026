@@ -6,7 +6,7 @@ import { API_BASE_URL } from '../config/api';
 import { ZONE_CONFIG } from '../config/zones';
 import { Scoreboard } from './match/Scoreboard';
 import { PlayerSelector } from './match/PlayerSelector';
-import { DefenseFormationSelector } from './match/DefenseFormationSelector';
+
 import { FlowSelector } from './match/FlowSelector';
 import { ShotFlow } from './match/flows/ShotFlow';
 import { SanctionFlow } from './match/flows/SanctionFlow';
@@ -26,7 +26,7 @@ const MatchTracker = () => {
     time, setTime,
     setEvents,
     activeTeamId, setActiveTeamId,
-    defenseFormation, setDefenseFormation,
+    defenseFormation,
     addEvent,
     updateEvent, // Import updateEvent
     deleteEvent, // Import deleteEvent
@@ -341,11 +341,7 @@ const MatchTracker = () => {
               </div>
             )}
 
-            {/* Defense Formation (Persistent) */}
-            <DefenseFormationSelector
-              defenseFormation={defenseFormation}
-              onDefenseFormationChange={setDefenseFormation}
-            />
+
           </div>
 
           {/* Right Column: Recording Interface OR Editing Interface */}
