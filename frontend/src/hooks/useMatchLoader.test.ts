@@ -96,11 +96,13 @@ describe('useMatchLoader', () => {
 
             await waitFor(() => {
                 expect(result.current.homeTeam?.players).toBeDefined();
-                const player = result.current.homeTeam?.players?.[0];
-                expect(player?.id).toBe('p1');
-                expect(player?.number).toBe(1);
-                expect(player?.name).toBe('Player 1');
-                expect(player?.isGoalkeeper).toBe(true);
+                const playerEntry = result.current.homeTeam?.players?.[0];
+                // Players are stored as { player: Player, role?: string }
+                expect(playerEntry?.player?.id).toBe('p1');
+                expect(playerEntry?.player?.number).toBe(1);
+                expect(playerEntry?.player?.name).toBe('Player 1');
+                expect(playerEntry?.player?.isGoalkeeper).toBe(true);
+                expect(playerEntry?.role).toBe('GK');
             });
         });
 

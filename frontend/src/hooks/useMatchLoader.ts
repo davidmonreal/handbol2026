@@ -21,12 +21,14 @@ const transformTeam = (teamData: TeamApiResponse, color: string): Team => ({
     club: teamData.club ? { id: teamData.club.id || '', name: teamData.club.name } : undefined,
     color,
     players: teamData.players.map((p) => ({
-        id: p.player.id,
-        number: p.player.number,
-        name: p.player.name,
-        handedness: '',
-        isGoalkeeper: p.player.isGoalkeeper || false,
-        // Note: 'position' is stored in the Team's player list, not Player interface
+        player: {
+            id: p.player.id,
+            number: p.player.number,
+            name: p.player.name,
+            handedness: '',
+            isGoalkeeper: p.player.isGoalkeeper || false,
+        },
+        role: p.role,
     })),
 });
 
