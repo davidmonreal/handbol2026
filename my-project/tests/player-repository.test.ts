@@ -22,7 +22,7 @@ describe('PlayerRepository', () => {
     vi.clearAllMocks();
   });
 
-  it('findAll returns all players ordered by name', async () => {
+  it('findAll returns all players ordered by name (optimized with select)', async () => {
     const mockPlayers = [
       { id: '1', name: 'Alice', number: 10, handedness: 'RIGHT' as const, isGoalkeeper: false },
       { id: '2', name: 'Bob', number: 7, handedness: 'LEFT' as const, isGoalkeeper: false },
@@ -31,13 +31,18 @@ describe('PlayerRepository', () => {
 
     const result = await repository.findAll();
 
+    // Optimized query: uses select instead of include for minimal data transfer
     expect(prisma.player.findMany).toHaveBeenCalledWith({
       include: {
         teams: {
-          include: {
+          select: {
             team: {
-              include: {
-                club: true,
+              select: {
+                name: true,
+                category: true,
+                club: {
+                  select: { name: true },
+                },
               },
             },
           },

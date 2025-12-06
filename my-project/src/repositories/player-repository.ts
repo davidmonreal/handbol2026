@@ -6,10 +6,14 @@ export class PlayerRepository {
     return prisma.player.findMany({
       include: {
         teams: {
-          include: {
+          select: {
             team: {
-              include: {
-                club: true,
+              select: {
+                name: true,
+                category: true,
+                club: {
+                  select: { name: true },
+                },
               },
             },
           },
