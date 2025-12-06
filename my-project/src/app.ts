@@ -16,15 +16,37 @@ const app = express();
 // Middleware setup
 app.use(
   cors({
-    origin: [
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'https://handbol2026.vercel.app',
-      'https://handbol2026-frontend.vercel.app',
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      // Allow any localhost origin (dev)
+      if (origin.match(/^http:\/\/localhost:\d+$/)) {
+        return callback(null, true);
+      }
+
+      // Allow specific production domains
+      const allowedOrigins = [
+        'https://handbol2026.vercel.app',
+        'https://handbol2026-frontend.vercel.app',
+      ];
+
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        return callback(null, true);
+      }
+
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    },
     credentials: true,
-  }),
-); // Enable CORS for frontend
+  })
+);
+
+// Debug middleware to log origin
+app.use((req, res, next) => {
+  console.log('Incoming Request Origin:', req.headers.origin);
+  next();
+});
 app.use(express.json({ limit: '1mb' }));
 
 // Sample route

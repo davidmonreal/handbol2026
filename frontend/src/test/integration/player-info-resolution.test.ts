@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { describe, it, expect } from 'vitest';
 
 describe('Player Info Resolution Tests', () => {
@@ -32,13 +33,17 @@ describe('Player Info Resolution Tests', () => {
     const getPlayerInfo = (
         playerId: string,
         matchId: string | null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         matchData: any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         matchEvents: any[],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         events: any[],
         activeTeamId: string | null
     ) => {
         // 1. Try to find in matchData (API structure)
         if (matchId && matchData) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const findInTeam = (team: any) => team?.players?.find((p: any) => p.player?.id === playerId)?.player;
 
             const homePlayer = findInTeam(matchData.homeTeam);

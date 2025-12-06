@@ -11,44 +11,41 @@ interface UseMatchLoaderReturn {
     refetch: () => void;
 }
 
-/**
- * Transform API team response to frontend Team format
- */
-const transformTeam = (teamData: TeamApiResponse, color: string): Team => ({
-    id: teamData.id,
-    name: teamData.name,
-    category: teamData.category,
-    club: teamData.club ? { id: teamData.club.id || '', name: teamData.club.name } : undefined,
-    color,
-    players: teamData.players.map((p) => ({
-        player: {
-            id: p.player.id,
-            number: p.player.number,
-            name: p.player.name,
-            handedness: '',
-            isGoalkeeper: p.player.isGoalkeeper || false,
-        },
-        role: p.role,
-    })),
-});
+const transformTeam = (teamData: TeamApiResponse, defaultColor: string = '#000000'): Team => {
+    return {
+        id: teamData.id,
+        name: teamData.name,
+        category: teamData.category,
+        club: teamData.club ? { id: teamData.club.id || '', name: teamData.club.name } : undefined,
+        color: defaultColor,
+        players: teamData.players?.map(p => ({
+            player: {
+                id: p.player.id,
+                name: p.player.name,
+                number: p.player.number,
+                isGoalkeeper: p.player.isGoalkeeper || false,
+                handedness: 'RIGHT'
+            },
+            role: p.role
+        })) || []
+    };
+};
 
-/**
- * Custom hook for loading match data
- * Encapsulates fetching, transformation, and error handling
- */
-export const useMatchLoader = (matchId: string): UseMatchLoaderReturn => {
+export const useMatchLoader = (matchId: string | undefined): UseMatchLoaderReturn => {
     const [homeTeam, setHomeTeam] = useState<Team | null>(null);
     const [visitorTeam, setVisitorTeam] = useState<Team | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const fetchMatchData = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
+        if (!matchId) return;
 
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || '';
-            const response = await fetch(`${apiUrl}/api/matches/${matchId}`);
+            setIsLoading(true);
+            setError(null);
+
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+            const response = await fetch(`${API_URL}/api/matches/${matchId}`);
 
             if (!response.ok) {
                 throw new Error(`Failed to load match: ${response.status}`);
@@ -59,25 +56,23 @@ export const useMatchLoader = (matchId: string): UseMatchLoaderReturn => {
             setHomeTeam(transformTeam(data.homeTeam, '#3B82F6'));
             setVisitorTeam(transformTeam(data.awayTeam, '#EF4444'));
         } catch (err) {
-            const message = err instanceof Error ? err.message : 'Unknown error';
-            setError(message);
+            console.error('Error fetching match data:', err);
+            setError(err instanceof Error ? err.message : 'An unknown error occurred');
         } finally {
             setIsLoading(false);
         }
     }, [matchId]);
 
     useEffect(() => {
-        if (matchId) {
-            fetchMatchData();
-        }
-    }, [matchId, fetchMatchData]);
+        fetchMatchData();
+    }, [fetchMatchData]);
 
     return {
         homeTeam,
         visitorTeam,
-        matchId,
+        matchId: matchId || '',
         isLoading,
         error,
-        refetch: fetchMatchData,
+        refetch: fetchMatchData
     };
 };

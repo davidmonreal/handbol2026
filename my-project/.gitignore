@@ -5,6 +5,7 @@ coverage/
 .DS_Store
 
 /src/generated/prisma
+/src/generated/zod
 *.db
 *.db-journal
 node_modules/.vite/vitest/results.json

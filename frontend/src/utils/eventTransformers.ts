@@ -36,20 +36,41 @@ export const positionDistanceToZone = (position: string | null, distance: string
     return `${distancePrefix}-${position.toUpperCase()}` as ZoneType;
 };
 
+interface BackendEvent {
+    id: string;
+    timestamp: number;
+    playerId: string;
+    player?: {
+        name: string;
+        number: number;
+    };
+    teamId: string;
+    type: string;
+    subtype?: string;
+    sanctionType?: string;
+    position?: string;
+    distance?: string;
+    goalZone?: string;
+    isCollective?: boolean;
+    hasOpposition?: boolean;
+    isCounterAttack?: boolean;
+    activeGoalkeeperId?: string;
+}
+
 /**
  * Transforms backend event data to frontend MatchEvent format
  */
-export const transformBackendEvent = (e: any): MatchEvent => ({
+export const transformBackendEvent = (e: BackendEvent): MatchEvent => ({
     id: e.id,
     timestamp: e.timestamp,
     playerId: e.playerId,
     playerName: e.player?.name,
     playerNumber: e.player?.number,
     teamId: e.teamId,
-    category: e.type, // 'Shot', 'Turnover', 'Sanction'
+    category: e.type,
     action: (e.type === 'Sanction' && e.sanctionType) ? e.sanctionType : (e.subtype || e.type),
-    zone: positionDistanceToZone(e.position, e.distance), // Convert position+distance to zone
-    goalTarget: goalZoneToTarget(e.goalZone), // Convert goalZone to number 1-9
+    zone: positionDistanceToZone(e.position || null, e.distance || null), // Convert position+distance to zone
+    goalTarget: goalZoneToTarget(e.goalZone || null), // Convert goalZone to number 1-9
     isCollective: e.isCollective,
     hasOpposition: e.hasOpposition,
     isCounterAttack: e.isCounterAttack,
@@ -65,7 +86,7 @@ export const transformBackendEvent = (e: any): MatchEvent => ({
 /**
  * Transforms an array of backend events
  */
-export const transformBackendEvents = (events: any[]): MatchEvent[] => {
+export const transformBackendEvents = (events: BackendEvent[]): MatchEvent[] => {
     return events.map(transformBackendEvent);
 };
 

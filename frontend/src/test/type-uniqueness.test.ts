@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+/// <reference types="node" />
+import { describe, it } from 'vitest';
 import { execSync } from 'child_process';
 
 describe('Type Definition Uniqueness', () => {

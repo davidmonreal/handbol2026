@@ -13,11 +13,13 @@ describe('useMatchLoader', () => {
         awayScore: 0,
         isFinished: false,
         videoUrl: 'https://www.youtube.com/watch?v=test123',
+        firstHalfVideoStart: null,
+        secondHalfVideoStart: null,
         homeTeam: {
             id: 'home-team-1',
             name: 'Home Team',
             category: 'Senior',
-            club: { name: 'Club A' },
+            club: { id: 'club-1', name: 'Club A' },
             players: [
                 { player: { id: 'p1', number: 1, name: 'Player 1', isGoalkeeper: true }, role: 'GK' },
                 { player: { id: 'p2', number: 7, name: 'Player 2', isGoalkeeper: false }, role: 'Player' },
@@ -27,7 +29,7 @@ describe('useMatchLoader', () => {
             id: 'away-team-1',
             name: 'Away Team',
             category: 'Senior',
-            club: { name: 'Club B' },
+            club: { id: 'club-2', name: 'Club B' },
             players: [
                 { player: { id: 'ap1', number: 1, name: 'Away GK', isGoalkeeper: true }, role: 'GK' },
             ],
