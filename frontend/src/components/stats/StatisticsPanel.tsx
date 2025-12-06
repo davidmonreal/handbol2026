@@ -85,8 +85,8 @@ export function StatisticsPanel({
           isGoalkeeper={data.isGoalkeeper}
         />
         <ZoneDistribution
+          isGoalkeeper={data.isGoalkeeper}
           zoneStats={stats.zoneStats}
-          totalShots={stats.totalShots}
           onZoneClick={handleZoneClick}
           selectedZone={selectedZone}
         />

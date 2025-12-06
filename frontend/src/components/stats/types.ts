@@ -103,10 +103,10 @@ export interface GoalHeatmapProps {
  */
 export interface ZoneDistributionProps {
     zoneStats: Map<ZoneType | '7m', ZoneStatistics>;
-    totalShots: number;
     onZoneClick?: (zone: ZoneType | '7m' | null) => void;
     selectedZone?: ZoneType | '7m' | null;
     className?: string;
+    isGoalkeeper?: boolean;
 }
 
 /**

@@ -1,5 +1,8 @@
+import { useMemo } from 'react';
 import { ZONE_CONFIG } from '../../config/zones';
+import type { ZoneType } from '../../types';
 import type { ZoneDistributionProps } from './types';
+import { calculateZoneColors, getHeatmapColorClasses } from './utils/heatmapUtils';
 
 /**
  * ZoneDistribution - Displays shot distribution across court zones
@@ -7,131 +10,86 @@ import type { ZoneDistributionProps } from './types';
  */
 export function ZoneDistribution({
   zoneStats,
-  totalShots,
   onZoneClick,
   selectedZone,
-  className = ''
+  className = '',
+  isGoalkeeper = false
 }: ZoneDistributionProps) {
+  // Combine all stats to calculate relative colors across the whole court
+  const zoneColors = useMemo(() => {
+    return calculateZoneColors(zoneStats);
+  }, [zoneStats]);
+
+  const renderZoneButton = (zone: ZoneType | '7m') => {
+    const stats = zoneStats.get(zone);
+    if (!stats) return null; // Should not happen given we init all zones
+
+    const isSelected = selectedZone === zone;
+
+    // Determine color class
+    const colorKey = zoneColors.get(zone) || 'default';
+    const colorClasses = getHeatmapColorClasses(colorKey);
+
+    const baseClass = onZoneClick
+      ? 'cursor-pointer transition-all hover:brightness-95 hover:shadow-md'
+      : '';
+
+    const borderClass = isSelected
+      ? 'ring-2 ring-indigo-500 z-10' // Highlight selection
+      : '';
+
+    // Calculate value to display
+    // For GK: Saves = Shots - Goals (since shots includes both)
+    // For Player: Goals
+    const value = isGoalkeeper ? (stats.shots - stats.goals) : stats.goals;
+
+    return (
+      <button
+        key={zone}
+        onClick={() => onZoneClick?.(isSelected ? null : zone)}
+        disabled={!onZoneClick}
+        className={`p-2 rounded-lg border-2 flex flex-col items-center justify-center min-h-[80px] w-full transition-colors ${colorClasses} ${borderClass} ${baseClass}`}
+      >
+        <span className="text-xl font-bold">
+          {value}/{stats.shots}
+        </span>
+        <span className="text-xs opacity-75">
+          {stats.shots > 0 ? `${stats.efficiency.toFixed(0)}%` : '-'}
+        </span>
+      </button>
+    );
+  };
+
   return (
     <div className={`bg-white rounded-xl shadow-lg p-6 ${className}`}>
-      <h3 className="text-lg font-bold text-gray-800 mb-4">Shot Distribution (Court Zones)</h3>
+      <h3 className="text-lg font-bold text-gray-800 mb-4">
+        {isGoalkeeper ? 'Saves Distribution (Court Zones)' : 'Goal Distribution (Court Zones)'}
+      </h3>
       <div className="space-y-3">
         {/* 6m Line */}
         <div>
           <div className="grid grid-cols-5 gap-2">
-            {ZONE_CONFIG.sixMeter.map(({ zone, label }) => {
-              const stats = zoneStats.get(zone);
-              if (!stats) return null;
-
-              const percentage = totalShots > 0 ? Math.round((stats.shots / totalShots) * 100) : 0;
-              const isSelected = selectedZone === zone;
-
-              const baseClass = onZoneClick
-                ? 'cursor-pointer hover:ring-2 hover:ring-indigo-300'
-                : '';
-
-              const borderClass = isSelected
-                ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200'
-                : 'border-gray-200 bg-gray-50';
-
-              return (
-                <button
-                  key={zone}
-                  onClick={() => onZoneClick?.(isSelected ? null : zone)}
-                  disabled={!onZoneClick}
-                  className={`p-3 rounded-lg border-2 ${borderClass} ${baseClass} flex flex-col items-center transition-all`}
-                >
-                  <span className="text-xs font-bold text-gray-500 mb-1">{label}</span>
-                  <span className="text-xl font-bold text-gray-800">{percentage}%</span>
-                  <span className="text-xs text-gray-400">({stats.shots})</span>
-                  {stats.shots > 0 && (
-                    <span className="text-xs text-green-600 mt-1">
-                      {stats.efficiency.toFixed(0)}% eff
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            {ZONE_CONFIG.sixMeter.map(({ zone }) => renderZoneButton(zone))}
           </div>
         </div>
 
         {/* 9m Line */}
         <div>
           <div className="grid grid-cols-3 gap-2 max-w-md mx-auto">
-            {ZONE_CONFIG.nineMeter.map(({ zone, label }) => {
-              const stats = zoneStats.get(zone);
-              if (!stats) return null;
-
-              const percentage = totalShots > 0 ? Math.round((stats.shots / totalShots) * 100) : 0;
-              const isSelected = selectedZone === zone;
-
-              const baseClass = onZoneClick
-                ? 'cursor-pointer hover:ring-2 hover:ring-indigo-300'
-                : '';
-
-              const borderClass = isSelected
-                ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200'
-                : 'border-gray-200 bg-gray-50';
-
-              return (
-                <button
-                  key={zone}
-                  onClick={() => onZoneClick?.(isSelected ? null : zone)}
-                  disabled={!onZoneClick}
-                  className={`p-3 rounded-lg border-2 ${borderClass} ${baseClass} flex flex-col items-center transition-all`}
-                >
-                  <span className="text-xs font-bold text-gray-500 mb-1">{label}</span>
-                  <span className="text-xl font-bold text-gray-800">{percentage}%</span>
-                  <span className="text-xs text-gray-400">({stats.shots})</span>
-                  {stats.shots > 0 && (
-                    <span className="text-xs text-green-600 mt-1">
-                      {stats.efficiency.toFixed(0)}% eff
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            {ZONE_CONFIG.nineMeter.map(({ zone }) => renderZoneButton(zone))}
           </div>
         </div>
 
         {/* 7m Penalty */}
         <div>
           <div className="max-w-xs mx-auto">
-            {(() => {
-              const stats = zoneStats.get('7m');
-              if (!stats) return null;
-
-              const percentage = totalShots > 0 ? Math.round((stats.shots / totalShots) * 100) : 0;
-              const isSelected = selectedZone === '7m';
-
-              const baseClass = onZoneClick
-                ? 'cursor-pointer hover:ring-2 hover:ring-indigo-300'
-                : '';
-
-              const borderClass = isSelected
-                ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200'
-                : 'border-gray-200 bg-gray-50';
-
-              return (
-                <button
-                  onClick={() => onZoneClick?.(isSelected ? null : '7m')}
-                  disabled={!onZoneClick}
-                  className={`p-3 rounded-lg border-2 ${borderClass} ${baseClass} flex flex-col items-center transition-all w-full`}
-                >
-                  <span className="text-xs font-bold text-gray-500 mb-1">{ZONE_CONFIG.penalty.label}</span>
-                  <span className="text-xl font-bold text-gray-800">{percentage}%</span>
-                  <span className="text-xs text-gray-400">({stats.shots})</span>
-                  {stats.shots > 0 && (
-                    <span className="text-xs text-green-600 mt-1">
-                      {stats.efficiency.toFixed(0)}% eff
-                    </span>
-                  )}
-                </button>
-              );
-            })()}
+            {renderZoneButton('7m')}
           </div>
         </div>
       </div>
+      <p className="text-xs text-gray-500 mt-2 text-center">
+        {isGoalkeeper ? 'Viewing saves/shots from zone' : 'Viewing goals/shots from zone (shooter perspective)'}
+      </p>
     </div>
   );
 }
