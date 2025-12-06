@@ -94,6 +94,12 @@ export class TeamRepository {
     });
   }
 
+  async countBySeason(seasonId: string): Promise<number> {
+    return prisma.team.count({
+      where: { seasonId },
+    });
+  }
+
   async assignPlayer(
     teamId: string,
     playerId: string,

@@ -1,16 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SeasonService } from '../src/services/season-service';
 import { SeasonRepository } from '../src/repositories/season-repository';
+import { TeamRepository } from '../src/repositories/team-repository';
 
 vi.mock('../src/repositories/season-repository');
+vi.mock('../src/repositories/team-repository');
 
 describe('SeasonService', () => {
   let service: SeasonService;
   let repository: SeasonRepository;
+  let teamRepository: TeamRepository;
 
   beforeEach(() => {
     repository = new SeasonRepository();
-    service = new SeasonService(repository);
+    teamRepository = new TeamRepository();
+    service = new SeasonService(repository, teamRepository);
     vi.clearAllMocks();
   });
 
@@ -76,10 +80,18 @@ describe('SeasonService', () => {
   it('delete calls repository.delete', async () => {
     const deletedSeason = { id: '1', name: 'Deleted', startDate: new Date(), endDate: new Date() };
     vi.mocked(repository.delete).mockResolvedValue(deletedSeason);
+    vi.mocked(teamRepository.countBySeason).mockResolvedValue(0);
 
     const result = await service.delete('1');
 
     expect(repository.delete).toHaveBeenCalledWith('1');
     expect(result).toEqual(deletedSeason);
+  });
+
+  it('delete throws error if season has associated teams', async () => {
+    vi.mocked(teamRepository.countBySeason).mockResolvedValue(5);
+
+    await expect(service.delete('1')).rejects.toThrow('Cannot delete season with associated teams');
+    expect(repository.delete).not.toHaveBeenCalled();
   });
 });

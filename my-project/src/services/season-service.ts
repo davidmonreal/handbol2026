@@ -1,9 +1,13 @@
 import { Season } from '@prisma/client';
 import { BaseService } from './base-service';
 import { SeasonRepository } from '../repositories/season-repository';
+import { TeamRepository } from '../repositories/team-repository';
 
 export class SeasonService extends BaseService<Season> {
-  constructor(repository: SeasonRepository) {
+  constructor(
+    repository: SeasonRepository,
+    private teamRepository: TeamRepository,
+  ) {
     super(repository);
   }
 
@@ -22,5 +26,15 @@ export class SeasonService extends BaseService<Season> {
       throw new Error('End date must be after start date');
     }
     return super.update(id, data);
+  }
+
+  async delete(id: string): Promise<Season> {
+    const teamCount = await this.teamRepository.countBySeason(id);
+    if (teamCount > 0) {
+      throw new Error(
+        'Cannot delete season with associated teams. Please delete or reassign the teams first.',
+      );
+    }
+    return super.delete(id);
   }
 }
