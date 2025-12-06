@@ -72,6 +72,10 @@ export const usePlayerForm = (playerId?: string) => {
             const teams = await teamsRes.json();
             const seasons = await seasonsRes.json();
 
+            // Sort data alphabetically
+            clubs.sort((a: Club, b: Club) => a.name.localeCompare(b.name));
+            teams.sort((a: Team, b: Team) => a.name.localeCompare(b.name));
+
             let playerTeams: any[] = [];
 
             if (isEditMode && playerId) {

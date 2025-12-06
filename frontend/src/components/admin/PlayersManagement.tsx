@@ -36,6 +36,7 @@ export const PlayersManagement = () => {
         entityNamePlural: 'Players',
         apiEndpoint: '/api/players',
         pagination: true,
+        defaultSort: { key: 'name', direction: 'asc' },
 
         columns: [
             {

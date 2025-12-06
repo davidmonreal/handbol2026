@@ -284,6 +284,24 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
             const value = item[field];
             return value?.toString().toLowerCase().includes(searchLower);
         });
+    }).sort((a, b) => {
+        if (!config.defaultSort) return 0;
+
+        const { key, direction } = config.defaultSort;
+        const valA = a[key];
+        const valB = b[key];
+
+        if (typeof valA === 'string' && typeof valB === 'string') {
+            return direction === 'asc'
+                ? valA.localeCompare(valB)
+                : valB.localeCompare(valA);
+        }
+
+        if (typeof valA === 'number' && typeof valB === 'number') {
+            return direction === 'asc' ? valA - valB : valB - valA;
+        }
+
+        return 0;
     });
 
     const renderFormField = (field: FormFieldConfig) => {

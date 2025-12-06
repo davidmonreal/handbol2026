@@ -168,4 +168,8 @@ export interface CrudConfig<T> {
     pagination?: boolean;
     filterSlot?: React.ReactNode;
     serverFilters?: Record<string, string>;
+    defaultSort?: {
+        key: keyof T;
+        direction: 'asc' | 'desc';
+    };
 }

@@ -23,6 +23,10 @@ export const TeamsManagement = () => {
                 const clubsData = await clubsRes.json();
                 const seasonsData = await seasonsRes.json();
 
+                // Sort data for dropdowns
+                clubsData.sort((a: Club, b: Club) => a.name.localeCompare(b.name));
+                seasonsData.sort((a: Season, b: Season) => a.name.localeCompare(b.name));
+
                 setClubs(clubsData);
                 setSeasons(seasonsData);
             } catch (error) {
@@ -37,6 +41,7 @@ export const TeamsManagement = () => {
         entityName: 'Team',
         entityNamePlural: 'Teams',
         apiEndpoint: '/api/teams',
+        defaultSort: { key: 'name', direction: 'asc' },
 
         columns: [
             {
