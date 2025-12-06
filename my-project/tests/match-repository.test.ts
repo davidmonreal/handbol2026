@@ -25,20 +25,34 @@ describe('MatchRepository', () => {
 
   it('findAll returns all matches ordered by date desc', async () => {
     const mockMatches = [
-      { id: '1', date: new Date(), homeTeamId: 'h1', awayTeamId: 'a1', isFinished: false },
-      { id: '2', date: new Date(), homeTeamId: 'h2', awayTeamId: 'a2', isFinished: false },
+      {
+        id: '1',
+        date: new Date(),
+        homeTeamId: 'h1',
+        awayTeamId: 'a1',
+        isFinished: false,
+        homeScore: 0,
+        awayScore: 0,
+      },
+      {
+        id: '2',
+        date: new Date(),
+        homeTeamId: 'h2',
+        awayTeamId: 'a2',
+        isFinished: false,
+        homeScore: 0,
+        awayScore: 0,
+      },
     ];
     (prisma.match.findMany as any).mockResolvedValue(mockMatches);
 
     const result = await repository.findAll();
 
+    // Events removed for performance - scores come from DB columns
     expect(prisma.match.findMany).toHaveBeenCalledWith({
       include: {
         homeTeam: { include: { club: true } },
         awayTeam: { include: { club: true } },
-        events: {
-          select: { teamId: true, type: true, subtype: true },
-        },
       },
       orderBy: { date: 'desc' },
     });

@@ -29,7 +29,7 @@ describe('TeamRepository', () => {
     vi.clearAllMocks();
   });
 
-  it('findAll returns all teams with club, season and players', async () => {
+  it('findAll returns all teams with club and season (optimized - no players)', async () => {
     const mockTeams = [
       {
         id: '1',
@@ -40,18 +40,17 @@ describe('TeamRepository', () => {
         seasonId: 's1',
         club: { id: 'c1', name: 'Mataró' },
         season: { id: 's1', name: '2024-2025' },
-        players: [],
       },
     ];
     vi.mocked(prisma.team.findMany).mockResolvedValue(mockTeams);
 
     const result = await repository.findAll();
 
+    // Players removed for performance - use getTeamPlayers() when needed
     expect(prisma.team.findMany).toHaveBeenCalledWith({
       include: {
         club: true,
         season: true,
-        players: { include: { player: true } },
       },
       orderBy: { name: 'asc' },
     });

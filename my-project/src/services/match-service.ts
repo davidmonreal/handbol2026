@@ -10,20 +10,9 @@ export class MatchService extends BaseService<Match> {
   }
 
   async getAll(): Promise<any[]> {
-    const matches = await this.matchRepository.findAll();
-    return matches.map((match) => {
-      // Filter for goals: check both type and subtype to be safe
-      const goals = match.events.filter(
-        (e) => e.type === 'GOAL' || e.subtype === 'Goal' || e.type === 'Goal',
-      );
-
-      const homeScore = goals.filter((e) => e.teamId === match.homeTeamId).length;
-      const awayScore = goals.filter((e) => e.teamId === match.awayTeamId).length;
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { events, ...rest } = match;
-      return { ...rest, homeScore, awayScore };
-    });
+    // Scores are maintained in homeScore/awayScore columns by GameEventService
+    // No need to fetch and filter events - significant performance improvement
+    return this.matchRepository.findAll();
   }
 
   // getById can be removed if BaseService provides it, otherwise keep it.

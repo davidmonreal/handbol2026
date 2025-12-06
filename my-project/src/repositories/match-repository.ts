@@ -7,9 +7,7 @@ export class MatchRepository {
       include: {
         homeTeam: { include: { club: true } },
         awayTeam: { include: { club: true } },
-        events: {
-          select: { teamId: true, type: true, subtype: true },
-        },
+        // Events removed - scores are in homeScore/awayScore columns
       },
       orderBy: { date: 'desc' },
     });

@@ -66,4 +66,58 @@ describe('MatchService', () => {
     });
     expect(result).toEqual(createdMatch);
   });
+
+  describe('getAll', () => {
+    it('returns matches with homeScore and awayScore from DB columns', async () => {
+      const mockMatches = [
+        {
+          id: 'm1',
+          date: new Date('2024-10-10'),
+          homeTeamId: 'h1',
+          awayTeamId: 'a1',
+          homeScore: 25,
+          awayScore: 22,
+          isFinished: true,
+          homeTeam: { id: 'h1', name: 'Home Team', club: { name: 'Club A' } },
+          awayTeam: { id: 'a1', name: 'Away Team', club: { name: 'Club B' } },
+        },
+        {
+          id: 'm2',
+          date: new Date('2024-10-11'),
+          homeTeamId: 'h2',
+          awayTeamId: 'a2',
+          homeScore: 30,
+          awayScore: 28,
+          isFinished: false,
+          homeTeam: { id: 'h2', name: 'Home Team 2', club: { name: 'Club C' } },
+          awayTeam: { id: 'a2', name: 'Away Team 2', club: { name: 'Club D' } },
+        },
+      ];
+
+      vi.mocked(repository.findAll).mockResolvedValue(mockMatches as any);
+
+      const result = await service.getAll();
+
+      expect(repository.findAll).toHaveBeenCalled();
+      expect(result).toHaveLength(2);
+
+      // Verify scores come directly from DB columns
+      expect(result[0].homeScore).toBe(25);
+      expect(result[0].awayScore).toBe(22);
+      expect(result[1].homeScore).toBe(30);
+      expect(result[1].awayScore).toBe(28);
+
+      // Verify team info is included
+      expect(result[0].homeTeam.name).toBe('Home Team');
+      expect(result[0].awayTeam.club.name).toBe('Club B');
+    });
+
+    it('returns empty array when no matches exist', async () => {
+      vi.mocked(repository.findAll).mockResolvedValue([]);
+
+      const result = await service.getAll();
+
+      expect(result).toEqual([]);
+    });
+  });
 });

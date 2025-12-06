@@ -7,11 +7,8 @@ export class TeamRepository {
       include: {
         club: true,
         season: true,
-        players: {
-          include: {
-            player: true,
-          },
-        },
+        // Players removed - list view doesn't need full roster
+        // Use getTeamPlayers() when players are needed
       },
       orderBy: { name: 'asc' },
     });

@@ -33,6 +33,9 @@ model Team {
   players     PlayerTeamSeason[]
   club        Club               @relation(fields: [clubId], references: [id])
   season      Season             @relation(fields: [seasonId], references: [id])
+
+  @@index([clubId])
+  @@index([seasonId])
 }
 
 model Player {
@@ -55,6 +58,8 @@ model PlayerTeamSeason {
   team     Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@unique([playerId, teamId])
+  @@index([playerId])
+  @@index([teamId])
 }
 
 model Match {
@@ -68,6 +73,9 @@ model Match {
   events     GameEvent[]
   awayTeam   Team        @relation("AwayTeam", fields: [awayTeamId], references: [id])
   homeTeam   Team        @relation("HomeTeam", fields: [homeTeamId], references: [id])
+
+  @@index([homeTeamId])
+  @@index([awayTeamId])
 }
 
 model GameEvent {
@@ -89,6 +97,11 @@ model GameEvent {
   activeGoalkeeper   Player? @relation("ActiveGoalkeeper", fields: [activeGoalkeeperId], references: [id])
   match              Match   @relation(fields: [matchId], references: [id])
   player             Player? @relation("EventPlayer", fields: [playerId], references: [id])
+
+  @@index([matchId])
+  @@index([teamId])
+  @@index([playerId])
+  @@index([activeGoalkeeperId])
 }
 
 enum Handedness {
