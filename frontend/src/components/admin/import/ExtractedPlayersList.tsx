@@ -30,6 +30,9 @@ interface ExtractedPlayersListProps {
     editingPlayerIndex: number | null;
     onSaveEditedPlayer: (player: ExtractedPlayer) => void;
     onCancelEdit: () => void;
+    // Success State Props
+    importedCount: number | null;
+    onGoToPlayers: () => void;
 }
 
 export const ExtractedPlayersList = ({
@@ -56,32 +59,44 @@ export const ExtractedPlayersList = ({
     isCheckingDuplicates,
     editingPlayerIndex,
     onSaveEditedPlayer,
-    onCancelEdit
+    onCancelEdit,
+    importedCount,
+    onGoToPlayers
 }: ExtractedPlayersListProps) => {
+
+    // If import is successful, only show the success header/button or maybe just the container?
+    // User said "List must disappear". We'll keep the container but empty the list, and show the Success Button.
+
     return (
         <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold">
-                    Extracted Players ({extractedPlayers.length})
+                    {importedCount !== null
+                        ? 'Importació Completada'
+                        : `Extracted Players (${extractedPlayers.length})`}
                 </h2>
-                <button
-                    onClick={onClearAll}
-                    className="text-sm text-gray-600 hover:text-gray-900"
-                >
-                    Clear all
-                </button>
+                {!importedCount && (
+                    <button
+                        onClick={onClearAll}
+                        className="text-sm text-gray-600 hover:text-gray-900"
+                    >
+                        Clear all
+                    </button>
+                )}
             </div>
 
-            <TeamSelector
-                teams={teams}
-                selectedTeamId={selectedTeamId}
-                onTeamChange={onTeamChange}
-                onCreateTeam={onCreateTeam}
-                isCheckingDuplicates={isCheckingDuplicates}
-            />
+            {!importedCount && (
+                <TeamSelector
+                    teams={teams}
+                    selectedTeamId={selectedTeamId}
+                    onTeamChange={onTeamChange}
+                    onCreateTeam={onCreateTeam}
+                    isCheckingDuplicates={isCheckingDuplicates}
+                />
+            )}
 
             <div className="mt-6 space-y-4">
-                {extractedPlayers.map((player, index) => {
+                {!importedCount && extractedPlayers.map((player, index) => {
                     const duplicate = duplicates.get(index);
                     const isReviewing = reviewingDuplicates.get(index);
                     const playerMergeChoices = mergeChoices.get(index) || new Map();
@@ -105,18 +120,18 @@ export const ExtractedPlayersList = ({
                         );
                     }
 
-                    // If editing, show inline editor (using MergeComparisonRow in edit mode)
+                    // If editing, show inline editor
                     if (isEditing) {
                         return (
                             <MergeComparisonRow
                                 key={index}
                                 newPlayer={player}
-                                existingPlayer={null} // No existing player when editing new import
+                                existingPlayer={null}
                                 action={undefined}
-                                mergeChoices={new Map()} // Not used in edit mode
-                                onActionChange={() => { }} // Not used in edit mode
-                                onFieldChoiceChange={() => { }} // Not used in edit mode
-                                onConfirmMerge={() => { }} // Not used in edit mode
+                                mergeChoices={new Map()}
+                                onActionChange={() => { }}
+                                onFieldChoiceChange={() => { }}
+                                onConfirmMerge={() => { }}
                                 isEditing={true}
                                 onSave={onSaveEditedPlayer}
                                 onCancel={onCancelEdit}
@@ -140,16 +155,25 @@ export const ExtractedPlayersList = ({
                 })}
             </div>
 
-            <button
-                onClick={onConfirmImport}
-                disabled={!selectedTeamId || isProcessing || (duplicates.size > 0 && duplicates.size !== duplicateActions.size)}
-                className="w-full mt-6 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-                {isProcessing ? 'Importing...' : !selectedTeamId ? 'Select Team First' :
-                    (duplicates.size > 0 && duplicates.size !== duplicateActions.size) ?
-                        `Resolve ${duplicates.size - duplicateActions.size} Duplicates` :
-                        `Import ${extractedPlayers.filter((_, i) => duplicateActions.get(i) !== 'skip').length} Players`}
-            </button>
+            {importedCount !== null ? (
+                <button
+                    onClick={onGoToPlayers}
+                    className="w-full mt-6 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-semibold text-lg animate-fade-in"
+                >
+                    {`Importació correcte! (${importedCount} jugadors). Anar a la llista.`}
+                </button>
+            ) : (
+                <button
+                    onClick={onConfirmImport}
+                    disabled={!selectedTeamId || isProcessing || (duplicates.size > 0 && duplicates.size !== duplicateActions.size)}
+                    className="w-full mt-6 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {isProcessing ? 'Importing...' : !selectedTeamId ? 'Select Team First' :
+                        (duplicates.size > 0 && duplicates.size !== duplicateActions.size) ?
+                            `Resolve ${duplicates.size - duplicateActions.size} Duplicates` :
+                            `Import ${extractedPlayers.filter((_, i) => duplicateActions.get(i) !== 'skip').length} Players`}
+                </button>
+            )}
         </div>
     );
 };

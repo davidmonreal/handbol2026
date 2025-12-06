@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { usePlayerImport } from '../../hooks/usePlayerImport';
 import { ImageUpload } from './import/ImageUpload';
 import { ImagePreview } from './import/ImagePreview';
@@ -11,24 +10,6 @@ export const ImportPlayers = () => {
     const navigate = useNavigate();
     const { state, actions } = usePlayerImport();
     const [importedCount, setImportedCount] = useState<number | null>(null);
-
-    if (importedCount !== null) {
-        return (
-            <div className="p-6 max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[60vh]">
-                <div className="bg-green-100 text-green-700 p-6 rounded-full mb-6">
-                    <Check size={64} />
-                </div>
-                <h2 className="text-3xl font-bold text-gray-800 mb-4">Importació completada</h2>
-                <p className="text-xl text-gray-600 mb-8">{importedCount} jugadors importats correctament</p>
-                <button
-                    onClick={() => navigate('/players')}
-                    className="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-lg transition-colors shadow-lg"
-                >
-                    Tornar a la llista de jugadors
-                </button>
-            </div>
-        );
-    }
 
     return (
         <div className="p-6 max-w-7xl mx-auto">
@@ -86,7 +67,10 @@ export const ImportPlayers = () => {
                     onConfirmMerge={actions.handleConfirmMerge}
                     onConfirmImport={() => actions.handleConfirmImport((_summary, count) => {
                         setImportedCount(count);
+                        // Optional: scrollToBottom or ensure button is visible
                     })}
+                    importedCount={importedCount}
+                    onGoToPlayers={() => navigate('/players')}
                     isProcessing={state.isProcessing}
                     isCheckingDuplicates={state.isCheckingDuplicates}
                     // Edit Props
