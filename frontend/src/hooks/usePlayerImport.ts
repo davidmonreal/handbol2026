@@ -182,7 +182,7 @@ export const usePlayerImport = () => {
         }
     };
 
-    const handleConfirmImport = async (onSuccess: (summary: string[]) => void) => {
+    const handleConfirmImport = async (onSuccess: (summary: string[], totalImported: number) => void) => {
         if (!selectedTeamId) {
             setError('Please select a team before importing');
             return;
@@ -238,7 +238,7 @@ export const usePlayerImport = () => {
             if (mergedCount > 0) summary.push(`${mergedCount} merged`);
             if (skippedCount > 0) summary.push(`${skippedCount} skipped`);
 
-            onSuccess(summary);
+            onSuccess(summary, createdCount + mergedCount);
 
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to import players');
