@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import { useStatisticsCalculator } from '../useStatisticsCalculator';
+import { useStatisticsCalculator } from './useStatisticsCalculator';
 import type { MatchEvent } from '../../../../types';
 
 describe('useStatisticsCalculator', () => {

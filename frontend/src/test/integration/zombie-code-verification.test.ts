@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { toTitleCase } from '../utils/textUtils';
-import { transformBackendEvents, transformBackendEvent } from '../utils/eventTransformers';
-import { TEAM_CATEGORIES, parseTeamName } from '../utils/teamUtils';
+import { toTitleCase } from '../../utils/textUtils';
+import { transformBackendEvents, transformBackendEvent } from '../../utils/eventTransformers';
+import { TEAM_CATEGORIES, parseTeamName } from '../../utils/teamUtils';
 
 /**
  * Zombie Code Verification Tests

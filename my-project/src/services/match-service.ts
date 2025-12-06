@@ -61,6 +61,9 @@ export class MatchService extends BaseService<Match> {
       homeTeamId: string;
       awayTeamId: string;
       isFinished: boolean;
+      videoUrl: string | null;
+      firstHalfVideoStart: number | null;
+      secondHalfVideoStart: number | null;
     }>,
   ): Promise<Match> {
     const updateData: Record<string, any> = { ...data };

@@ -369,7 +369,7 @@ const MatchTracker = () => {
                   team={editingEvent.teamId === homeTeam.id ? homeTeam : visitorTeam}
                   onSave={handleSaveEdit}
                   onCancel={handleCancelEdit}
-                  onDelete={deleteEvent}
+                  onDelete={(eventId) => deleteEvent(eventId, true)}
                 />
               </div>
             ) : selectedPlayerId ? (
@@ -433,7 +433,7 @@ const MatchTracker = () => {
 
         {/* Recent Events */}
         <div className="mt-8">
-          <EventList maxEvents={5} onEditEvent={handleEditEvent} />
+          <EventList initialEventsToShow={5} onEditEvent={handleEditEvent} />
         </div>
       </div>
     </div>

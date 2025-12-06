@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseTeamName } from '../teamUtils';
+import { parseTeamName } from './teamUtils';
 
 describe('parseTeamName', () => {
     it('detects category at the start', () => {

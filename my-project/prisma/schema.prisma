@@ -63,16 +63,19 @@ model PlayerTeamSeason {
 }
 
 model Match {
-  id         String      @id @default(uuid())
-  date       DateTime
-  homeTeamId String
-  awayTeamId String
-  isFinished Boolean     @default(false)
-  homeScore  Int         @default(0)
-  awayScore  Int         @default(0)
-  events     GameEvent[]
-  awayTeam   Team        @relation("AwayTeam", fields: [awayTeamId], references: [id])
-  homeTeam   Team        @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  id                   String      @id @default(uuid())
+  date                 DateTime
+  homeTeamId           String
+  awayTeamId           String
+  isFinished           Boolean     @default(false)
+  homeScore            Int         @default(0)
+  awayScore            Int         @default(0)
+  videoUrl             String?
+  firstHalfVideoStart  Int?        // Video timestamp when 1st half starts
+  secondHalfVideoStart Int?        // Video timestamp when 2nd half starts
+  events               GameEvent[]
+  awayTeam             Team        @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  homeTeam             Team        @relation("HomeTeam", fields: [homeTeamId], references: [id])
 
   @@index([homeTeamId])
   @@index([awayTeamId])
@@ -82,6 +85,7 @@ model GameEvent {
   id                 String  @id @default(uuid())
   matchId            String
   timestamp          Int
+  videoTimestamp     Int?
   playerId           String?
   teamId             String
   type               String

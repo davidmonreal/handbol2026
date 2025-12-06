@@ -6,7 +6,7 @@ export class GameEventService {
   constructor(
     private repository: GameEventRepository,
     private matchRepository: MatchRepository,
-  ) { }
+  ) {}
 
   async getAll(filters?: { teamId?: string; playerId?: string }): Promise<GameEvent[]> {
     return this.repository.findAll(filters);
@@ -34,6 +34,7 @@ export class GameEventService {
     sanctionType?: string;
     hasOpposition?: boolean;
     isCounterAttack?: boolean;
+    videoTimestamp?: number;
   }): Promise<GameEvent> {
     const event = await this.repository.create(data);
 
@@ -72,6 +73,24 @@ export class GameEventService {
   }
 
   async delete(id: string): Promise<GameEvent> {
-    return this.repository.delete(id);
+    // First get the event to check if it's a goal
+    const event = await this.repository.findById(id);
+
+    // Delete the event
+    const deletedEvent = await this.repository.delete(id);
+
+    // If it was a goal, recalculate match score
+    if (event && event.type === 'Shot' && event.subtype === 'Goal') {
+      const match = await this.matchRepository.findById(event.matchId);
+      if (match) {
+        if (event.teamId === match.homeTeamId && match.homeScore > 0) {
+          await this.matchRepository.update(match.id, { homeScore: match.homeScore - 1 });
+        } else if (event.teamId === match.awayTeamId && match.awayScore > 0) {
+          await this.matchRepository.update(match.id, { awayScore: match.awayScore - 1 });
+        }
+      }
+    }
+
+    return deletedEvent;
   }
 }

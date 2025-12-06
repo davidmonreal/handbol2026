@@ -1,6 +1,7 @@
 import type { ZoneType } from '../../../types';
 import { ZONE_CONFIG } from '../../../config/zones';
 import { FLOW_CONFIG } from '../../../config/flows';
+import { ZoneSelector } from '../shared/ZoneSelector';
 
 interface TurnoverFlowProps {
   selectedAction: string | null;
@@ -50,14 +51,25 @@ export const TurnoverFlow = ({
             </div>
           </>
         ) : (
-          <>
-            <h3 className="text-lg font-bold text-gray-800 mb-4">3. Where? (Optional)</h3>
-            <div className="grid grid-cols-3 gap-2">
-              <button onClick={() => { onZoneSelect('9m-CB'); onFinalizeEvent(undefined, '9m-CB'); }} className="p-3 bg-gray-100 hover:bg-gray-200 rounded text-sm">9m Area</button>
-              <button onClick={() => { onZoneSelect('6m-CB'); onFinalizeEvent(undefined, '6m-CB'); }} className="p-3 bg-gray-100 hover:bg-gray-200 rounded text-sm">6m Area</button>
-              <button onClick={() => { onZoneSelect(null); onFinalizeEvent(); }} className="p-3 border-2 border-gray-200 rounded text-gray-500 text-sm">Skip</button>
-            </div>
-          </>
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-gray-800">3. Where? (Optional)</h3>
+
+            {/* Reuse ZoneSelector component */}
+            <ZoneSelector
+              selectedZone={null}
+              onZoneSelect={(zone) => { onZoneSelect(zone); onFinalizeEvent(undefined, zone); }}
+              hidePenalty={true}
+              variant="minimal"
+            />
+
+            {/* Skip button */}
+            <button
+              onClick={() => { onZoneSelect(null); onFinalizeEvent(); }}
+              className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:bg-gray-50 text-sm font-medium transition-colors"
+            >
+              Skip (Midfield / Unknown)
+            </button>
+          </div>
         )}
       </div>
     )}

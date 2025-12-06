@@ -1,19 +1,64 @@
-import { Edit2 } from 'lucide-react';
+import { Edit2, Play } from 'lucide-react';
 import type { MatchEvent } from '../../../types';
 import { useMatch } from '../../../context/MatchContext';
 
 interface EventItemProps {
     event: MatchEvent;
     onEdit?: (event: MatchEvent) => void;
+    onSeekToVideo?: (videoTimestamp: number) => void;
+    isVideoLoaded?: boolean;
+    getVideoTimeFromMatch?: (matchTime: number) => number | null;
 }
 
-export const EventItem = ({ event, onEdit }: EventItemProps) => {
+export const EventItem = ({
+    event,
+    onEdit,
+    onSeekToVideo,
+    isVideoLoaded = false,
+    getVideoTimeFromMatch,
+}: EventItemProps) => {
     const { homeTeam, visitorTeam } = useMatch();
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const formatVideoTime = (seconds: number): string => {
+        const hrs = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        if (hrs > 0) {
+            return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    // Calculate video timestamp from event's match time using calibration
+    const getCalculatedVideoTime = (): number | null => {
+        // First try stored videoTimestamp
+        if (event.videoTimestamp !== undefined && event.videoTimestamp !== null) {
+            return event.videoTimestamp;
+        }
+        // Otherwise calculate from match time using calibration
+        if (getVideoTimeFromMatch && event.timestamp !== undefined) {
+            return getVideoTimeFromMatch(event.timestamp);
+        }
+        return null;
+    };
+
+    const calculatedVideoTime = getCalculatedVideoTime();
+
+    // Seek 3 seconds before the event so user can see the play develop
+    const VIDEO_SEEK_OFFSET_SECONDS = 3;
+
+    const handleSeekToVideo = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (calculatedVideoTime !== null && onSeekToVideo) {
+            const seekTime = Math.max(0, calculatedVideoTime - VIDEO_SEEK_OFFSET_SECONDS);
+            onSeekToVideo(seekTime);
+        }
     };
 
     const getTeam = () => {
@@ -70,6 +115,9 @@ export const EventItem = ({ event, onEdit }: EventItemProps) => {
         return tags;
     };
 
+    // Show play button if we can calculate video time (from stored or from calibration)
+    const canSeekToVideo = calculatedVideoTime !== null && isVideoLoaded && onSeekToVideo;
+
     return (
         <div className="p-3 hover:bg-gray-50 transition-colors group">
             <button
@@ -86,10 +134,22 @@ export const EventItem = ({ event, onEdit }: EventItemProps) => {
                             #{player?.number || '?'} {player?.name || 'Unknown'}
                         </span>
                     </div>
-                    {/* Edit Icon Hint */}
-                    <span className="opacity-0 group-hover:opacity-100 text-gray-400 transition-opacity">
-                        <Edit2 size={14} />
-                    </span>
+                    {/* Edit Icon + Video Seek */}
+                    <div className="flex items-center gap-2">
+                        {/* Video Seek Button - show when video is calibrated and loaded */}
+                        {canSeekToVideo && (
+                            <button
+                                onClick={handleSeekToVideo}
+                                className="p-1 rounded-full bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 transition-colors"
+                                title={`Go to video ${formatVideoTime(calculatedVideoTime)}`}
+                            >
+                                <Play size={12} fill="currentColor" />
+                            </button>
+                        )}
+                        <span className="opacity-0 group-hover:opacity-100 text-gray-400 transition-opacity">
+                            <Edit2 size={14} />
+                        </span>
+                    </div>
                 </div>
 
                 {/* Second Line: Category, Zone, Result, Context */}

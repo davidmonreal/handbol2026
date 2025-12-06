@@ -41,7 +41,7 @@ export const EventEditCategory = ({ event, onSave, onCancel }: EventEditCategory
 
     const confirmDelete = async () => {
         setShowDeleteConfirmation(false);
-        await deleteEvent(event.id);
+        await deleteEvent(event.id, true); // skipConfirmation=true since we already confirmed
         onSave();
     };
 

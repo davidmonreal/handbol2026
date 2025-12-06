@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom'; // Fix: Import jest-dom for toBeInTheDocument
-import { CrudManager } from '../components/admin/shared/CrudManager';
-import type { CrudConfig } from '../types';
+import { CrudManager } from '../../components/admin/shared/CrudManager';
+import type { CrudConfig } from '../../types';
 
 // Mock API globally
 const mockFetch = vi.fn();

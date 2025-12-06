@@ -5,6 +5,7 @@ import { MatchProvider } from './context/MatchContext';
 import { AdminLayout } from './components/admin/AdminLayout';
 import Dashboard from './components/Dashboard';
 import MatchTracker from './components/MatchTracker';
+import VideoMatchTracker from './components/VideoMatchTracker';
 import Statistics from './components/Statistics';
 import { MatchesManagement } from './components/admin/MatchesManagement';
 import { ClubsManagement } from './components/admin/ClubsManagement';
@@ -72,6 +73,7 @@ function App() {
               <Route path="statistics" element={<Statistics />} />
             </Route>
             <Route path="/match-tracker/:matchId" element={<MatchTracker />} />
+            <Route path="/video-tracker/:matchId" element={<VideoMatchTracker />} />
           </Routes>
         </Router>
       </MatchProvider>

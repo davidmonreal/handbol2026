@@ -10,6 +10,7 @@ export type ZoneType = '6m-LW' | '6m-LB' | '6m-CB' | '6m-RB' | '6m-RW' | '9m-LB'
 export interface MatchEvent {
     id: string;
     timestamp: number;
+    videoTimestamp?: number;
     playerId: string | null;
     playerName?: string;
     playerNumber?: number;

@@ -1,4 +1,14 @@
-import type { MatchEvent } from '../types';
+import type { MatchEvent, ZoneType, FlowType } from '../types';
+import { ZONE_CONFIG } from '../config/zones';
+
+/**
+ * Map target index (1-9) to goal zone tag
+ */
+export const TARGET_TO_ZONE_MAP: Record<number, string> = {
+    1: 'TL', 2: 'TM', 3: 'TR',
+    4: 'ML', 5: 'MM', 6: 'MR',
+    7: 'BL', 8: 'BM', 9: 'BR',
+};
 
 /**
  * Helper function to convert goalZone to goalTarget (1-9)
@@ -16,14 +26,14 @@ export const goalZoneToTarget = (zone: string | null): number | undefined => {
 /**
  * Helper function to convert position+distance to zone format
  */
-export const positionDistanceToZone = (position: string | null, distance: string | null): any => {
+export const positionDistanceToZone = (position: string | null, distance: string | null): ZoneType | undefined => {
     if (!position || !distance) return undefined;
 
     // Map backend position+distance to frontend zone format
     if (distance === '7M') return '7m';
 
     const distancePrefix = distance === '6M' ? '6m' : '9m';
-    return `${distancePrefix}-${position.toUpperCase()}` as any;
+    return `${distancePrefix}-${position.toUpperCase()}` as ZoneType;
 };
 
 /**
@@ -57,4 +67,82 @@ export const transformBackendEvent = (e: any): MatchEvent => ({
  */
 export const transformBackendEvents = (events: any[]): MatchEvent[] => {
     return events.map(transformBackendEvent);
+};
+
+/**
+ * State for recording a new event
+ */
+export interface RecordingState {
+    teamId: string;
+    playerId: string;
+    flowType: FlowType;
+    selectedAction: string;
+    selectedZone: ZoneType | null;
+    isCollective: boolean;
+    hasOpposition: boolean;
+    isCounterAttack: boolean;
+    matchTime: number;
+    videoTime?: number;
+    defenseFormation?: string;
+    targetIndex?: number;
+}
+
+/**
+ * Parse zone string into position and distance
+ */
+const parseZone = (zone: ZoneType | null): { position?: string; distance?: string } => {
+    if (!zone) return {};
+
+    if (zone === '7m') {
+        return { distance: '7M', position: undefined };
+    }
+
+    const parts = zone.split('-');
+    if (parts.length === 2) {
+        const distance = parts[0] === '6m' ? '6M' : '9M';
+        const position = parts[1];
+        return { distance, position };
+    }
+
+    return {};
+};
+
+/**
+ * Create a MatchEvent from recording state
+ * Extracts logic from VideoMatchTracker.handleFinalizeEvent
+ */
+export const createEventFromRecording = (state: RecordingState): MatchEvent => {
+    const { position, distance } = parseZone(state.selectedZone);
+    const isPenalty = state.selectedZone === ZONE_CONFIG.penalty.zone;
+
+    // Context flags are disabled for 7m penalty
+    const isCollective = isPenalty ? false : state.isCollective;
+    const hasOpposition = isPenalty ? false : state.hasOpposition;
+    const isCounterAttack = isPenalty ? false : state.isCounterAttack;
+
+    const goalZoneTag = state.targetIndex ? TARGET_TO_ZONE_MAP[state.targetIndex] : undefined;
+
+    return {
+        id: Date.now().toString(),
+        timestamp: state.matchTime,
+        videoTimestamp: state.videoTime,
+        teamId: state.teamId,
+        playerId: state.playerId,
+        category: state.flowType!,
+        action: state.selectedAction,
+        zone: state.selectedZone || undefined,
+        position,
+        distance,
+        goalTarget: state.targetIndex,
+        goalZoneTag,
+        isCollective: state.flowType === 'Shot' ? isCollective : undefined,
+        hasOpposition: state.flowType === 'Shot' ? hasOpposition : undefined,
+        isCounterAttack: state.flowType === 'Shot' ? isCounterAttack : undefined,
+        context: state.flowType === 'Shot' ? {
+            isCollective,
+            hasOpposition,
+            isCounterAttack,
+        } : undefined,
+        defenseFormation: state.defenseFormation,
+    };
 };
