@@ -242,8 +242,8 @@ describe('End-to-End Data Flow Verification', () => {
       events.forEach((event: any) => {
         expect(typeof event.timestamp).toBe('number');
         expect(event.timestamp).toBeGreaterThanOrEqual(0);
-        // Assuming max match time is 3600 seconds (60 minutes)
-        expect(event.timestamp).toBeLessThanOrEqual(3600);
+        // Assuming max match time is 7200 seconds (120 minutes) to account for overtime
+        expect(event.timestamp).toBeLessThanOrEqual(7200);
       });
     });
   });
