@@ -1,5 +1,20 @@
-// Shared types for all entities across the application
-// Single source of truth for data structures
+// =============================================================================
+// SINGLE SOURCE OF TRUTH FOR ALL APPLICATION TYPES
+// =============================================================================
+// This file is the canonical location for all shared types.
+// Do NOT create duplicate type definitions elsewhere in the codebase.
+// =============================================================================
+
+// ============ Core Value Types ============
+
+export type FlowType = 'Shot' | 'Turnover' | 'Sanction' | null;
+export type ShotResult = 'Goal' | 'Save' | 'Miss' | 'Post' | 'Block';
+export type TurnoverType = 'Pass' | 'Catch' | 'Dribble' | 'Steps' | 'Area' | 'Offensive Foul';
+export type SanctionType = 'Foul' | 'Yellow' | '2min' | 'Red' | 'Blue Card';
+export type DefenseType = '6-0' | '5-1' | '3-2-1' | '3-3' | '4-2' | 'Mixed';
+export type ZoneType = '6m-LW' | '6m-LB' | '6m-CB' | '6m-RB' | '6m-RW' | '9m-LB' | '9m-CB' | '9m-RB' | '7m';
+
+// ============ Entity Types ============
 
 export interface Club {
     id: string;
@@ -25,6 +40,7 @@ export interface Player {
             name: string;
             category?: string;
             club: {
+                id: string;
                 name: string;
             };
         };
@@ -38,7 +54,8 @@ export interface Team {
     club?: { id: string; name: string };
     season?: { id: string; name: string };
     color: string;
-    players?: Player[];
+    // Players with their role in this specific team
+    players?: { player: Player; role?: string }[];
     isMyTeam?: boolean;
 }
 
@@ -53,6 +70,34 @@ export interface Match {
     homeScore?: number;
     awayScore?: number;
     status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+}
+
+export interface MatchEvent {
+    id: string;
+    timestamp: number;
+    videoTimestamp?: number;
+    playerId: string | null;
+    playerName?: string;
+    playerNumber?: number;
+    teamId: string;
+    category: string; // 'Shot', 'Turnover', 'Sanction'
+    action: string; // 'Goal', 'Save', 'Miss', 'Post', 'Pass', 'Steps', etc.
+    zone?: ZoneType;
+    position?: string;
+    distance?: string;
+    goalTarget?: number; // 1-9
+    goalZoneTag?: string; // 'TL', 'TM', 'TR', etc.
+    isCollective?: boolean;
+    hasOpposition?: boolean;
+    isCounterAttack?: boolean;
+    sanctionType?: SanctionType;
+    context?: {
+        isCollective?: boolean;
+        hasOpposition?: boolean;
+        isCounterAttack?: boolean;
+    };
+    defenseFormation?: string;
+    activeGoalkeeperId?: string;
 }
 
 export interface GameEvent {
@@ -73,16 +118,17 @@ export interface GameEvent {
     activeGoalkeeperId?: string | null;
 }
 
-// API Response types
+// ============ API Types ============
+
 export interface ApiResponse<T> {
     data?: T;
     error?: string;
 }
 
-// Generic list response
 export type ListResponse<T> = T[];
 
-// Form field configuration for generic CRUD
+// ============ CRUD Manager Types ============
+
 export interface FormFieldConfig {
     name: string;
     label: string;
@@ -90,10 +136,9 @@ export interface FormFieldConfig {
     required?: boolean;
     options?: { value: string | number; label: string }[];
     placeholder?: string;
-    validation?: (value: any) => string | undefined;
+    transform?: (value: unknown) => unknown;
 }
 
-// Table column configuration for generic CRUD
 export interface ColumnConfig<T> {
     key: keyof T | string;
     label: string;
@@ -101,23 +146,26 @@ export interface ColumnConfig<T> {
     sortable?: boolean;
 }
 
-// Generic CRUD configuration
 export interface CrudConfig<T> {
-    entityName: string;          // "Club", "Player"
-    entityNamePlural: string;    // "Clubs", "Players"
-    apiEndpoint: string;          // "/api/clubs"
-    columns: ColumnConfig<T>[];   // Table columns
-    formFields: FormFieldConfig[]; // Form inputs
-    searchFields: (keyof T)[];    // Fields to search in
-    formatFormData?: (data: any) => any;  // Transform before sending
-    formatDisplayData?: (item: T) => any; // Transform for display
+    entityName: string;
+    entityNamePlural: string;
+    apiEndpoint: string;
+    columns: ColumnConfig<T>[];
+    formFields: FormFieldConfig[];
+    searchFields: (keyof T)[];
+    formatFormData?: (data: Record<string, unknown>) => Partial<T>;
+    mapItemToForm?: (item: T) => Record<string, unknown>;
     customActions?: Array<{
-        icon: React.ComponentType<any>;
+        icon: React.ComponentType<{ size?: number }>;
         label: string;
         onClick: (item: T) => void;
         className?: string;
     }>;
-    headerActions?: React.ReactNode; // Custom buttons in header
-    customFilter?: (item: T, searchTerm: string) => boolean; // Custom search logic
-    mapItemToForm?: (item: T) => any; // Transform item to form data
+    headerActions?: React.ReactNode;
+    customFilter?: (item: T, searchTerm: string) => boolean;
+    onEdit?: (item: T) => void;
+    onCreate?: () => void;
+    pagination?: boolean;
+    filterSlot?: React.ReactNode;
+    serverFilters?: Record<string, string>;
 }
