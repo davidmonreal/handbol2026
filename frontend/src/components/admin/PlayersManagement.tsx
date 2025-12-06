@@ -17,6 +17,8 @@ export const PlayersManagement = () => {
                 const response = await fetch(`${API_BASE_URL}/api/clubs`);
                 const data = await response.json();
                 if (Array.isArray(data)) {
+                    // Sort clubs alphabetically
+                    data.sort((a: Club, b: Club) => a.name.localeCompare(b.name));
                     setClubs(data);
                 }
             } catch (error) {

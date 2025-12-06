@@ -5,6 +5,7 @@ const clubsConfig: CrudConfig<Club> = {
     entityName: 'Club',
     entityNamePlural: 'Clubs',
     apiEndpoint: '/api/clubs',
+    defaultSort: { key: 'name', direction: 'asc' },
 
     columns: [
         {
