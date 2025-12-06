@@ -81,8 +81,8 @@ const Dashboard = () => {
             <button
               onClick={() => navigate(`/video-tracker/${match.id}`)}
               className={`hidden lg:flex items-center px-2 py-1.5 text-xs font-medium rounded-lg transition-colors ${match.videoUrl
-                  ? 'bg-red-600 text-white hover:bg-red-700'
-                  : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
+                ? 'bg-red-600 text-white hover:bg-red-700'
+                : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
                 }`}
               title={match.videoUrl ? 'Track with YouTube video' : 'Add YouTube video'}
             >
@@ -92,13 +92,28 @@ const Dashboard = () => {
             </button>
           </div>
         ) : (
-          <button
-            onClick={() => navigate(`/match-tracker/${match.id}`)}
-            className="flex items-center px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <Edit2 size={12} className="mr-1.5" />
-            Edit
-          </button>
+          <div className="flex items-center gap-2">
+            {/* YouTube Video Tracker - Desktop Only */}
+            <button
+              onClick={() => navigate(`/video-tracker/${match.id}`)}
+              className={`hidden lg:flex items-center px-2 py-1.5 text-xs font-medium rounded-lg transition-colors ${match.videoUrl
+                ? 'bg-red-600 text-white hover:bg-red-700'
+                : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
+                }`}
+              title={match.videoUrl ? 'Track with YouTube video' : 'Add YouTube video'}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => navigate(`/match-tracker/${match.id}`)}
+              className="flex items-center px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Edit2 size={12} className="mr-1.5" />
+              Edit
+            </button>
+          </div>
         )}
       </div>
 
@@ -110,12 +125,12 @@ const Dashboard = () => {
           <div className="text-xs text-gray-500 truncate">{match.homeTeam?.club?.name || 'Unknown Club'}</div>
         </div>
 
-        {isPending ? (
+        {isPending && !match.homeScore && !match.awayScore ? (
           <div className="px-4 text-gray-400 font-medium">VS</div>
         ) : (
           <div className="px-4 flex items-center justify-center gap-3 min-w-[100px]">
             <span className="text-3xl font-bold text-gray-900">{match.homeScore ?? 0}</span>
-            <span className="text-gray-400 text-xs uppercase tracking-wider font-medium">vs</span>
+            <span className="text-gray-400 text-3xl font-light pb-1">:</span>
             <span className="text-3xl font-bold text-gray-900">{match.awayScore ?? 0}</span>
           </div>
         )}

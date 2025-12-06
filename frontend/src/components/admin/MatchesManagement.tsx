@@ -80,11 +80,17 @@ export const MatchesManagement = () => {
                 render: (match) => (
                     <div className="text-center font-bold">
                         {match.isFinished ? (
-                            <span className="bg-gray-100 px-2 py-1 rounded">
-                                {match.homeScore ?? 0} : {match.awayScore ?? 0}
+                            <span className="inline-flex items-center gap-1 font-bold text-gray-900 bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                                <span>{match.homeScore ?? 0}</span>
+                                <span className="text-gray-400">:</span>
+                                <span>{match.awayScore ?? 0}</span>
                             </span>
                         ) : (
-                            <span className="text-gray-400">-:-</span>
+                            <span className="text-gray-400 flex items-center justify-center gap-1">
+                                <span>-</span>
+                                <span>:</span>
+                                <span>-</span>
+                            </span>
                         )}
                     </div>
                 ),
