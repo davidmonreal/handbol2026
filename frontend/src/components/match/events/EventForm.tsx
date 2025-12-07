@@ -351,7 +351,7 @@ export const EventForm = ({
                             key={cat}
                             onClick={() => handleCategoryChange(cat)}
                             className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${selectedCategory === cat
-                                ? 'bg-indigo-600 text-white shadow-sm'
+                                ? 'bg-indigo-500 text-white shadow-sm'
                                 : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
                                 }`}
                         >
@@ -386,7 +386,7 @@ export const EventForm = ({
                                     key={result.value}
                                     onClick={() => setSelectedAction(result.value)}
                                     className={`px-2 py-2.5 rounded-lg text-sm font-semibold transition-all flex flex-col items-center justify-center gap-1.5 ${selectedAction === result.value
-                                        ? 'bg-indigo-600 text-white shadow-lg ring-2 ring-indigo-300'
+                                        ? 'bg-indigo-500 text-white shadow-lg ring-2 ring-indigo-200'
                                         : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-indigo-300'
                                         }`}
                                 >
@@ -405,7 +405,7 @@ export const EventForm = ({
                                 key={type.value}
                                 onClick={() => setSelectedAction(type.value)}
                                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${selectedAction === type.value
-                                    ? 'bg-indigo-600 text-white shadow-sm'
+                                    ? 'bg-indigo-500 text-white shadow-sm'
                                     : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
                                     }`}
                             >

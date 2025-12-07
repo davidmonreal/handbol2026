@@ -209,12 +209,27 @@ const MatchTracker = () => {
           onTeamSelect={handleTeamSelect}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Player Selection & Defense */}
-          <div className="lg:col-span-4 space-y-6">
+        {/* Event Form (Creation/Editing) */}
+        <div className="animate-fade-in">
+          {activeTeam ? (
+            <div className="mb-8">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  {editingEvent ? (
+                    <>
+                      <span className="text-indigo-600">Edit Event</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-green-600">New Event</span>
+                      <span className="text-sm font-normal text-gray-500 ml-2">
+                        (Click an event below to edit)
+                      </span>
+                    </>
+                  )}
+                </h2>
+              </div>
 
-            {/* Event Form (Creation/Editing) */}
-            {activeTeam ? (
               <EventForm
                 key={editingEvent ? editingEvent.id : `new-event-${activeTeamId}`}
                 event={editingEvent}
@@ -227,12 +242,12 @@ const MatchTracker = () => {
                 onCancel={handleCancelEdit}
                 onDelete={(eventId) => deleteEvent(eventId, true)}
               />
-            ) : (
-              <div className="bg-gray-50 rounded-xl p-8 text-center text-gray-500 border-2 border-dashed mb-8">
-                Select a team above to start tracking
-              </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="bg-gray-50 rounded-xl p-8 text-center text-gray-500 border-2 border-dashed mb-8">
+              Select a team above to start tracking
+            </div>
+          )}
         </div>
 
         <div className="mt-8">

@@ -259,6 +259,7 @@ const VideoMatchTrackerContent = () => {
                         setEvents([]);
                     }}
                     onTeamSelect={handleTeamSelect}
+                    showCalibration={false}
                 />
 
                 {/* 2. VIDEO SECTION */}
