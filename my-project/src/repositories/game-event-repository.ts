@@ -109,8 +109,8 @@ export class GameEventRepository {
     if (shouldDerive) {
       // If position/distance present in partial update use them, otherwise fetch current values
       const current = await prisma.gameEvent.findUnique({ where: { id } });
-      const position = data.position ?? current?.position;
-      const distance = data.distance ?? current?.distance;
+      const position = data.position ?? (current?.position || undefined);
+      const distance = data.distance ?? (current?.distance || undefined);
       const zone = deriveZone(position, distance);
       updateData = { ...data, zone };
     }
