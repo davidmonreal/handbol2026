@@ -1,4 +1,5 @@
 import { Play, Pause, RotateCcw, Plus, Minus } from 'lucide-react';
+import { useMatch } from '../../context/MatchContext';
 
 interface MatchTeam {
   id: string;
@@ -43,6 +44,9 @@ export const Scoreboard = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Get calibration from context
+  const { realTimeFirstHalfStart, realTimeSecondHalfStart, setRealTimeCalibration } = useMatch();
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-2 md:p-3 mb-4">
       <div className="flex justify-between items-center">
@@ -66,15 +70,45 @@ export const Scoreboard = ({
           </div>
         </div>
 
-        {/* Timer */}
-        <div className="flex flex-col items-center px-2 md:px-4">
-          <div className="text-2xl md:text-4xl font-mono font-bold text-gray-900 mb-2">{formatTime(time)}</div>
-          <div className="flex gap-2">
-            <button onClick={onTogglePlay} className={`p-2 rounded-full ${isPlaying ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-600'}`}>
-              {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+        {/* Timer & Controls */}
+        <div className="flex flex-col items-center px-2 md:px-4 space-y-3">
+          <div className="flex flex-col items-center">
+            <div className="text-2xl md:text-4xl font-mono font-bold text-gray-900 mb-2">{formatTime(time)}</div>
+            <div className="flex gap-2">
+              <button onClick={onTogglePlay} className={`p-2 rounded-full ${isPlaying ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-600'}`}>
+                {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+              </button>
+              <button onClick={onReset} className="p-2 rounded-full bg-red-100 text-red-600">
+                <RotateCcw size={16} />
+              </button>
+            </div>
+          </div>
+
+          {/* Calibration Buttons */}
+          <div className="flex gap-2 text-xs">
+            <button
+              onClick={() => setRealTimeCalibration(1, Date.now())}
+              disabled={!!realTimeFirstHalfStart}
+              className={`px-3 py-1 rounded-md font-medium transition-colors ${realTimeFirstHalfStart
+                ? 'bg-green-50 text-green-700 cursor-default'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              title={realTimeFirstHalfStart ? `Started at ${new Date(realTimeFirstHalfStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Start 1st Half'}
+            >
+              {realTimeFirstHalfStart ? '1H Started' : 'Start 1H'}
             </button>
-            <button onClick={onReset} className="p-2 rounded-full bg-red-100 text-red-600">
-              <RotateCcw size={16} />
+            <button
+              onClick={() => setRealTimeCalibration(2, Date.now())}
+              disabled={!realTimeFirstHalfStart || !!realTimeSecondHalfStart}
+              className={`px-3 py-1 rounded-md font-medium transition-colors ${realTimeSecondHalfStart
+                ? 'bg-green-50 text-green-700 cursor-default'
+                : !realTimeFirstHalfStart
+                  ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              title={realTimeSecondHalfStart ? `Started at ${new Date(realTimeSecondHalfStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Start 2nd Half'}
+            >
+              {realTimeSecondHalfStart ? '2H Started' : 'Start 2H'}
             </button>
           </div>
         </div>

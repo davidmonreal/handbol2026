@@ -2,18 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMatch } from '../context/MatchContext';
 import { VideoSyncProvider, useVideoSync } from '../context/VideoSyncContext';
-import type { FlowType, ZoneType, MatchEvent } from '../types';
+import type { MatchEvent } from '../types';
 import { API_BASE_URL } from '../config/api';
-import { createEventFromRecording } from '../utils/eventTransformers';
-import { useEventRecording } from '../hooks/useEventRecording';
 import { Scoreboard } from './match/Scoreboard';
-import { PlayerSelector } from './match/PlayerSelector';
-import { FlowSelector } from './match/FlowSelector';
-import { ShotFlow } from './match/flows/ShotFlow';
-import { SanctionFlow } from './match/flows/SanctionFlow';
-import { TurnoverFlow } from './match/flows/TurnoverFlow';
 import { EventList } from './match/events/EventList';
-import { EventEditResult } from './match/events/EventEditResult';
+import { EventForm } from './match/events/EventForm';
 import { YouTubePlayer } from './video/YouTubePlayer';
 import { VideoUrlInput } from './video/VideoUrlInput';
 import { VideoCalibration } from './video/VideoCalibration';
@@ -49,6 +42,10 @@ const VideoMatchTrackerContent = () => {
         matchId: contextMatchId
     } = useMatch();
 
+    // Refs for scrolling
+    const eventFormRef = useRef<HTMLDivElement>(null);
+    const videoPlayerRef = useRef<HTMLDivElement>(null);
+
     // Ref to track context match ID without triggering effect re-runs
     const contextMatchIdRef = useRef(contextMatchId);
     useEffect(() => {
@@ -77,6 +74,10 @@ const VideoMatchTrackerContent = () => {
                 if (!response.ok) throw new Error('Failed to load match');
 
                 const data = await response.json();
+
+                if (!data.homeTeam || !data.awayTeam) {
+                    throw new Error('Invalid match data: Missing team information');
+                }
 
                 const transformTeam = (teamData: any, color: string) => ({
                     id: teamData.id,
@@ -110,96 +111,36 @@ const VideoMatchTrackerContent = () => {
     // Load goalkeeper from localStorage on mount
     useEffect(() => {
         if (!matchId || !visitorTeam?.players) return;
-        const savedGkId = localStorage.getItem(`goalkeeper-${matchId}`);
-        if (savedGkId) {
-            const gk = visitorTeam.players.find(p => p.id === savedGkId);
-            if (gk) {
-                setSelectedOpponentGoalkeeper(gk);
-            }
-        }
-    }, [matchId, visitorTeam?.players, setSelectedOpponentGoalkeeper]);
-
-    // Save goalkeeper to localStorage when changed
-    useEffect(() => {
-        if (!matchId || !selectedOpponentGoalkeeper) return;
-        localStorage.setItem(`goalkeeper-${matchId}`, selectedOpponentGoalkeeper.id);
-    }, [matchId, selectedOpponentGoalkeeper]);
-
-    // Local Selection State (Transient)
-    const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
+        // Logic handled by unified effect below or EventForm, but we need to ensure global state is hydrated
+        // We defer to active team logic below
+    }, [matchId, visitorTeam?.players]);
 
     // Editing State
     const [editingEvent, setEditingEvent] = useState<MatchEvent | null>(null);
 
-    // Flow State - Use custom hook for cleaner state management
-    const {
-        flowType,
-        selectedAction,
-        selectedZone,
-        isCollective,
-        hasOpposition,
-        isCounterAttack,
-        setFlowType,
-        setSelectedAction,
-        setSelectedZone,
-        toggleCollective,
-        toggleOpposition,
-        toggleCounterAttack,
-        resetPlayState,
-    } = useEventRecording();
-
     const handleTeamSelect = (teamId: string) => {
         setActiveTeamId(teamId);
-        setSelectedPlayerId(null);
         setEditingEvent(null);
-        resetPlayState();
-    };
-
-    const handleFlowSelect = (type: FlowType) => {
-        setFlowType(type);
     };
 
     const handleEditEvent = (event: MatchEvent) => {
+        // Switch active team to event's team if different, to ensure correct context
+        if (event.teamId !== activeTeamId) {
+            setActiveTeamId(event.teamId);
+        }
         setEditingEvent(event);
-        setSelectedPlayerId(null);
-        resetPlayState();
+        // Scroll to Event Form instead of top
+        if (eventFormRef.current) {
+            eventFormRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     };
 
-    const handleSaveEdit = async (updatedEvent: MatchEvent) => {
-        if (!editingEvent) return;
-        await updateEvent(editingEvent.id, updatedEvent);
-        setEditingEvent(null);
-    };
-
-    const handleCancelEdit = () => {
-        setEditingEvent(null);
-    };
-
-    const handleFinalizeEvent = (targetIndex?: number, zoneOverride?: ZoneType) => {
-        if (!activeTeamId || !selectedPlayerId || !flowType || !selectedAction) return;
-
-        const finalZone = zoneOverride || selectedZone || null;
-
-        // Use utility function for creating event from recording state
-        const newEvent = createEventFromRecording({
-            teamId: activeTeamId,
-            playerId: selectedPlayerId,
-            flowType,
-            selectedAction,
-            selectedZone: finalZone,
-            isCollective,
-            hasOpposition,
-            isCounterAttack,
-            matchTime: time,
-            videoTime: isVideoLoaded ? currentVideoTime : undefined,
-            defenseFormation,
-            targetIndex,
-        });
-
-        addEvent(newEvent);
-
-        setSelectedPlayerId(null);
-        resetPlayState();
+    const handleSeekToVideo = (time: number) => {
+        seekToTime(time);
+        // Scroll to Video Player
+        if (videoPlayerRef.current) {
+            videoPlayerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     };
 
     const getActiveTeam = () => {
@@ -208,7 +149,58 @@ const VideoMatchTrackerContent = () => {
         return null;
     };
 
+    const getOpponentTeam = () => {
+        if (activeTeamId === homeTeam?.id) return visitorTeam;
+        if (activeTeamId === visitorTeam?.id) return homeTeam;
+        return null;
+    };
+
     const activeTeam = getActiveTeam();
+    const opponentTeam = getOpponentTeam();
+
+    const handleSaveEvent = async (event: MatchEvent, opponentGkId?: string) => {
+        // 1. Handle Goalkeeper Persistence/Update
+        if (opponentGkId && opponentTeam && matchId) { // Check matchId is defined
+            const gk = opponentTeam.players.find(p => p.id === opponentGkId);
+            if (gk) {
+                setSelectedOpponentGoalkeeper(gk);
+                // Save specific to match AND active team perspective
+                localStorage.setItem(`goalkeeper-${matchId}-${activeTeamId}`, gk.id);
+            }
+        }
+
+        // 2. Add or Update Event
+        if (editingEvent) {
+            // Update
+            await updateEvent(editingEvent.id, event);
+            setEditingEvent(null);
+        } else {
+            // Create
+            const newEvent: MatchEvent = {
+                ...event,
+                timestamp: time,
+                videoTimestamp: isVideoLoaded ? currentVideoTime : undefined,
+                defenseFormation,
+            };
+            addEvent(newEvent);
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setEditingEvent(null);
+    };
+
+    // Resume GK from localStorage whenever active/opponent team changes
+    useEffect(() => {
+        if (!opponentTeam || !matchId || !activeTeamId) return;
+        const savedGkId = localStorage.getItem(`goalkeeper-${matchId}-${activeTeamId}`);
+        if (savedGkId) {
+            const gk = opponentTeam.players.find(p => p.id === savedGkId);
+            if (gk) setSelectedOpponentGoalkeeper(gk);
+        } else {
+            setSelectedOpponentGoalkeeper(null);
+        }
+    }, [activeTeamId, opponentTeam, matchId, setSelectedOpponentGoalkeeper]);
 
     if (!homeTeam || !visitorTeam) {
         return <div className="p-8 text-center">Loading match data...</div>;
@@ -230,10 +222,7 @@ const VideoMatchTrackerContent = () => {
                             Back to Dashboard
                         </button>
                         <h1 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                            <svg className="w-5 h-5 text-red-600" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                            </svg>
-                            Video Tracker: {homeTeam.name} vs {visitorTeam.name}
+                            <span className="hidden md:inline">Video Tracker:</span> {homeTeam.name} vs {visitorTeam.name}
                         </h1>
                         <button
                             onClick={() => navigate(`/statistics?matchId=${matchId}${activeTeamId ? `&activeTeamId=${activeTeamId}` : ''}`)}
@@ -249,7 +238,7 @@ const VideoMatchTrackerContent = () => {
             </nav>
 
             <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
-                {/* 1. SCOREBOARD - Always at top */}
+                {/* 1. SCOREBOARD */}
                 <Scoreboard
                     homeTeam={homeTeam}
                     visitorTeam={visitorTeam}
@@ -272,180 +261,65 @@ const VideoMatchTrackerContent = () => {
                     onTeamSelect={handleTeamSelect}
                 />
 
-                {/* 2. VIDEO SECTION - URL Input OR Video Player + Calibration */}
+                {/* 2. VIDEO SECTION */}
                 {!isVideoLoaded ? (
                     <VideoUrlInput matchId={matchId!} />
                 ) : (
-                    <div className="space-y-4">
-                        {/* Video Player - Full width */}
+                    <div className="space-y-4" ref={videoPlayerRef}>
                         <YouTubePlayer />
-                        {/* Calibration Controls - Below video */}
                         <VideoCalibration />
                     </div>
                 )}
 
-                {/* 3. TRACKING TOOLS - Player Selection + Flow Recording */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    {/* Left Column: Player Selection & Opponent GK */}
-                    <div className="lg:col-span-4 space-y-6">
-                        {/* Player Selection */}
-                        {activeTeam ? (
-                            <PlayerSelector
+                {/* 3. EVENT FORM */}
+                <div className="animate-fade-in" ref={eventFormRef}>
+                    {activeTeam ? (
+                        <div className="mb-8">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                    {editingEvent ? (
+                                        <>
+                                            <span className="text-indigo-600">Edit Event</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="text-green-600">New Event</span>
+                                            <span className="text-sm font-normal text-gray-500 ml-2">
+                                                (Click an event below to edit)
+                                            </span>
+                                        </>
+                                    )}
+                                </h2>
+                            </div>
+
+                            <EventForm
+                                key={editingEvent ? editingEvent.id : `new-event-${activeTeamId}`}
+                                event={editingEvent}
                                 team={activeTeam}
-                                selectedPlayerId={selectedPlayerId}
-                                onPlayerSelect={(playerId) => {
-                                    setSelectedPlayerId(playerId);
-                                    resetPlayState();
-                                    setEditingEvent(null);
+                                opponentTeam={opponentTeam || undefined}
+                                initialState={{
+                                    opponentGoalkeeperId: selectedOpponentGoalkeeper?.id
                                 }}
+                                onSave={handleSaveEvent}
+                                onCancel={handleCancelEdit}
+                                onDelete={(eventId) => deleteEvent(eventId, true)}
                             />
-                        ) : (
-                            <div className="bg-gray-50 rounded-xl p-8 text-center text-gray-500 border-2 border-dashed">
-                                Select a team to view players
-                            </div>
-                        )}
-
-                        {/* Opponent Goalkeepers Selection */}
-                        {activeTeam && (
-                            <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
-                                <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wider">
-                                    Opponent Goalkeeper
-                                </h3>
-                                <div className="space-y-2">
-                                    {(() => {
-                                        const opponentTeam = activeTeam.id === homeTeam?.id ? visitorTeam : homeTeam;
-                                        const goalkeepers = opponentTeam?.players.filter(p => p.isGoalkeeper) || [];
-
-                                        if (goalkeepers.length === 0) {
-                                            return <div className="text-sm text-gray-400 italic">No goalkeepers found</div>;
-                                        }
-
-                                        return goalkeepers.map(gk => (
-                                            <button
-                                                key={gk.id}
-                                                onClick={() => setSelectedOpponentGoalkeeper(gk)}
-                                                className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${selectedOpponentGoalkeeper?.id === gk.id
-                                                    ? 'bg-orange-50 border-orange-500 ring-1 ring-orange-500'
-                                                    : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                                                    }`}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <span className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${selectedOpponentGoalkeeper?.id === gk.id
-                                                        ? 'bg-orange-500 text-white'
-                                                        : 'bg-gray-200 text-gray-600'
-                                                        }`}>
-                                                        {gk.number}
-                                                    </span>
-                                                    <span className={`font-medium ${selectedOpponentGoalkeeper?.id === gk.id ? 'text-orange-900' : 'text-gray-700'
-                                                        }`}>
-                                                        {gk.name}
-                                                    </span>
-                                                </div>
-                                                {selectedOpponentGoalkeeper?.id === gk.id && (
-                                                    <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-                                                )}
-                                            </button>
-                                        ));
-                                    })()}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Right Column: Recording Interface OR Editing Interface */}
-                    <div className="lg:col-span-8">
-                        {editingEvent ? (
-                            <div className="bg-white rounded-xl shadow-sm p-6 border border-indigo-100">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                        Edit Event
-                                    </h2>
-                                    <button
-                                        onClick={handleCancelEdit}
-                                        className="text-gray-400 hover:text-gray-600"
-                                    >
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
-                                </div>
-                                <EventEditResult
-                                    event={editingEvent}
-                                    team={editingEvent.teamId === homeTeam.id ? homeTeam : visitorTeam}
-                                    onSave={handleSaveEdit}
-                                    onCancel={handleCancelEdit}
-                                    onDelete={(eventId) => deleteEvent(eventId, true)}
-                                />
-                            </div>
-                        ) : selectedPlayerId ? (
-                            <div className="space-y-6">
-
-                                {/* 1. Flow Selection */}
-                                <FlowSelector
-                                    flowType={flowType}
-                                    onFlowSelect={handleFlowSelect}
-                                    onEditFlow={() => { setFlowType(null); resetPlayState(); }}
-                                />
-
-                                {/* 2. SHOT FLOW */}
-                                {flowType === 'Shot' && (
-                                    <ShotFlow
-                                        selectedZone={selectedZone}
-                                        selectedAction={selectedAction}
-                                        isCollective={isCollective}
-                                        hasOpposition={hasOpposition}
-                                        isCounterAttack={isCounterAttack}
-                                        onZoneSelect={setSelectedZone}
-                                        onActionSelect={setSelectedAction}
-                                        onToggleCollective={toggleCollective}
-                                        onToggleOpposition={toggleOpposition}
-                                        onToggleCounter={toggleCounterAttack}
-                                        onEditZone={() => { setSelectedZone(null); setSelectedAction(null); }}
-                                        onEditResult={() => setSelectedAction(null)}
-                                        onFinalizeEvent={handleFinalizeEvent}
-                                    />
-                                )}
-
-                                {/* 2. SANCTION FLOW */}
-                                {flowType === 'Sanction' && (
-                                    <SanctionFlow
-                                        selectedAction={selectedAction}
-                                        onActionSelect={setSelectedAction}
-                                        onZoneSelect={setSelectedZone}
-                                        onEditSeverity={() => { setSelectedAction(null); setSelectedZone(null); }}
-                                        onFinalizeEvent={handleFinalizeEvent}
-                                    />
-                                )}
-
-                                {/* 3. TURNOVER FLOW */}
-                                {flowType === 'Turnover' && (
-                                    <TurnoverFlow
-                                        selectedAction={selectedAction}
-                                        onActionSelect={setSelectedAction}
-                                        onZoneSelect={setSelectedZone}
-                                        onFinalizeEvent={handleFinalizeEvent}
-                                    />
-                                )}
-
-                            </div>
-                        ) : (
-                            <div className="h-full flex items-center justify-center text-gray-400 bg-gray-50 rounded-xl border-2 border-dashed p-12">
-                                Select a player to record stats
-                            </div>
-                        )}
-                    </div>
+                        </div>
+                    ) : (
+                        <div className="bg-gray-50 rounded-xl p-8 text-center text-gray-500 border-2 border-dashed mb-8">
+                            Select a team above to start tracking
+                        </div>
+                    )}
                 </div>
 
                 {/* 4. RECENT EVENTS */}
                 <EventList
-                    initialEventsToShow={5}
+                    initialEventsToShow={10}
                     onEditEvent={handleEditEvent}
-                    onSeekToVideo={seekToTime}
+                    onSeekToVideo={handleSeekToVideo}
                     isVideoLoaded={isVideoLoaded}
                     getVideoTimeFromMatch={getVideoTimeFromMatch}
+                    filterTeamId={activeTeamId}
                 />
             </div>
         </div>

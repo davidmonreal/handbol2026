@@ -97,6 +97,7 @@ model GameEvent {
   subtype            String?
   position           String?
   distance           String?
+  zone               String?
   isCollective       Boolean @default(false)
   hasOpposition      Boolean @default(true)
   isCounterAttack    Boolean @default(false)

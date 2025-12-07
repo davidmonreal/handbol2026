@@ -47,6 +47,9 @@ interface MatchContextType {
   setMatchData: (id: string, home: Team, visitor: Team, preserveState?: boolean) => void;
   selectedOpponentGoalkeeper: Player | null;
   setSelectedOpponentGoalkeeper: React.Dispatch<React.SetStateAction<Player | null>>;
+  realTimeFirstHalfStart: number | null;
+  realTimeSecondHalfStart: number | null;
+  setRealTimeCalibration: (half: 1 | 2, timestamp: number) => void;
 }
 
 const MatchContext = createContext<MatchContextType | undefined>(undefined);
@@ -236,11 +239,48 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     return true; // Success
   };
 
-  const setMatchData = useCallback(async (id: string, home: Team, visitor: Team, preserveState = false) => {
+  const [realTimeFirstHalfStart, setRealTimeFirstHalfStart] = useState<number | null>(null);
+  const [realTimeSecondHalfStart, setRealTimeSecondHalfStart] = useState<number | null>(null);
 
+  const setRealTimeCalibration = async (half: 1 | 2, timestamp: number) => {
+    if (half === 1) setRealTimeFirstHalfStart(timestamp);
+    else setRealTimeSecondHalfStart(timestamp);
+
+    // Persist to backend if possible (could update the Match entity)
+    if (matchId) {
+      try {
+        await fetch(`${API_BASE_URL}/api/matches/${matchId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(half === 1 ? { realTimeFirstHalfStart: timestamp } : { realTimeSecondHalfStart: timestamp })
+        });
+      } catch (error) {
+        console.error('Failed to save calibration', error);
+      }
+    }
+  };
+
+  const setMatchData = useCallback(async (id: string, home: Team, visitor: Team, preserveState = false) => {
     setMatchId(id);
     setHomeTeam(home);
     setVisitorTeam(visitor);
+
+    // Initial load of match-level data (like calibration) should happen here or separately
+    // Ideally the caller passes it, or we fetch it here.
+    // For now assuming the caller might pass it or we fetch full match details again if needed?
+    // Actually, setMatchData is usually called AFTER fetching match details.
+    // Let's ensure we fetch/set these values if they exist on the match object.
+    // Currently setMatchData args don't include the match object itself... 
+    // We should probably rely on the caller to update this state or fetch it here.
+    // Let's make a quick fetch to get these details if we don't change the signature.
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/matches/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRealTimeFirstHalfStart(data.realTimeFirstHalfStart || null);
+        setRealTimeSecondHalfStart(data.realTimeSecondHalfStart || null);
+      }
+    } catch (e) { /* ignore */ }
 
     // Load existing events from backend
     try {
@@ -282,7 +322,10 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
           isCollective: e.isCollective || false,
           hasOpposition: e.hasOpposition || false,
           isCounterAttack: e.isCounterAttack || false,
-          zone: e.goalZone as ZoneType | undefined,
+          zone: (e.distance === '7M' ? '7m' :
+            (e.distance && e.position) ? `${e.distance === '6M' ? '6m' : '9m'}-${e.position}` as ZoneType : undefined
+          ),
+          goalZoneTag: e.goalZone, // Explicitly map goalZone to goalZoneTag
           sanctionType: e.sanctionType as SanctionType | undefined,
         }));
 
@@ -337,7 +380,10 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
       visitorTeam, setVisitorTeam,
       matchId, setMatchId,
       setMatchData,
-      selectedOpponentGoalkeeper, setSelectedOpponentGoalkeeper
+      selectedOpponentGoalkeeper, setSelectedOpponentGoalkeeper,
+      realTimeFirstHalfStart,
+      realTimeSecondHalfStart,
+      setRealTimeCalibration
     }}>
       {children}
     </MatchContext.Provider>

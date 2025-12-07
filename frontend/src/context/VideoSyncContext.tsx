@@ -78,6 +78,7 @@ const getCalibrationKey = (matchId: string) => `video-position-${matchId}`;
 
 export const VideoSyncProvider = ({ children, matchId }: VideoSyncProviderProps) => {
     const [state, setState] = useState<VideoSyncState>(INITIAL_STATE);
+    const isInitialized = useRef(false);
 
     // Load video URL and calibration from backend on mount
     useEffect(() => {
@@ -105,6 +106,12 @@ export const VideoSyncProvider = ({ children, matchId }: VideoSyncProviderProps)
                     const dbFirstHalf = matchData.firstHalfVideoStart ?? null;
                     const dbSecondHalf = matchData.secondHalfVideoStart ?? null;
 
+                    // Determine initial video time:
+                    // 1. Last saved position (user was watching)
+                    // 2. First half start (fresh calibrated match)
+                    // 3. 0 (fresh uncalibrated match)
+                    const initialTime = lastVideoTime ?? dbFirstHalf ?? 0;
+
                     if (matchData.videoUrl) {
                         const videoId = extractVideoId(matchData.videoUrl);
                         if (videoId) {
@@ -116,8 +123,9 @@ export const VideoSyncProvider = ({ children, matchId }: VideoSyncProviderProps)
                                 firstHalfStart: dbFirstHalf,
                                 secondHalfStart: dbSecondHalf,
                                 isCalibrated: dbFirstHalf !== null,
-                                currentVideoTime: lastVideoTime || 0,
+                                currentVideoTime: initialTime,
                             });
+                            isInitialized.current = true;
                             return;
                         }
                     }
@@ -131,9 +139,11 @@ export const VideoSyncProvider = ({ children, matchId }: VideoSyncProviderProps)
                             isCalibrated: true,
                         }));
                     }
+                    isInitialized.current = true;
                 }
             } catch (error) {
                 console.error('Error loading match data:', error);
+                isInitialized.current = true;
             }
         };
 
@@ -163,6 +173,8 @@ export const VideoSyncProvider = ({ children, matchId }: VideoSyncProviderProps)
 
     // Save video time position to localStorage (debounced - not every update)
     useEffect(() => {
+        if (!isInitialized.current) return;
+
         const calibrationKey = getCalibrationKey(matchId);
         const savedLocal = localStorage.getItem(calibrationKey);
         let current: { lastVideoTime?: number } = {};

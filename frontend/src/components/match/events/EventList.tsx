@@ -11,6 +11,7 @@ interface EventListProps {
     onSeekToVideo?: (videoTimestamp: number) => void;
     isVideoLoaded?: boolean;
     getVideoTimeFromMatch?: (matchTime: number) => number | null;
+    filterTeamId?: string | null;
 }
 
 export const EventList = ({
@@ -20,14 +21,20 @@ export const EventList = ({
     onSeekToVideo,
     isVideoLoaded = false,
     getVideoTimeFromMatch,
+    filterTeamId,
 }: EventListProps) => {
     const { events } = useMatch();
     const [eventsToShow, setEventsToShow] = useState(initialEventsToShow);
 
+    // Filter events if necessary
+    const filteredEvents = filterTeamId
+        ? events.filter(e => e.teamId === filterTeamId)
+        : events;
+
     // Get recent events (most recent first)
-    const recentEvents = [...events].reverse().slice(0, eventsToShow);
-    const hasMoreEvents = events.length > eventsToShow;
-    const remainingEvents = events.length - eventsToShow;
+    const recentEvents = [...filteredEvents].reverse().slice(0, eventsToShow);
+    const hasMoreEvents = filteredEvents.length > eventsToShow;
+    const remainingEvents = filteredEvents.length - eventsToShow;
 
     const handleShowMore = () => {
         setEventsToShow(prev => prev + incrementBy);

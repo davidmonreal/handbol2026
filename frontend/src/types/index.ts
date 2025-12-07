@@ -70,6 +70,8 @@ export interface Match {
     homeScore?: number;
     awayScore?: number;
     status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+    realTimeFirstHalfStart?: number;
+    realTimeSecondHalfStart?: number;
 }
 
 export interface MatchEvent {

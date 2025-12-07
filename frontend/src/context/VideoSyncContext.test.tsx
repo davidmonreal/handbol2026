@@ -61,7 +61,7 @@ describe('VideoSyncContext', () => {
         });
 
         it('should load video URL from backend on mount', async () => {
-            const mockVideoUrl = 'https://www.youtube.com/watch?v=test123';
+            const mockVideoUrl = 'https://www.youtube.com/watch?v=test1234567';
             mockFetch.mockImplementation(() => Promise.resolve({
                 ok: true,
                 json: () => Promise.resolve({
@@ -78,7 +78,7 @@ describe('VideoSyncContext', () => {
             });
 
             expect(result.current.videoUrl).toBe(mockVideoUrl);
-            expect(result.current.videoId).toBe('test123');
+            expect(result.current.videoId).toBe('test1234567');
         });
 
         it('should load calibration from backend on mount', async () => {
@@ -130,28 +130,28 @@ describe('VideoSyncContext', () => {
 
             // Standard watch URL
             act(() => {
-                result.current.setVideoUrl('https://www.youtube.com/watch?v=abc123');
+                result.current.setVideoUrl('https://www.youtube.com/watch?v=abc12345678');
             });
-            expect(result.current.videoId).toBe('abc123');
+            expect(result.current.videoId).toBe('abc12345678');
 
             // Short URL
             act(() => {
-                result.current.setVideoUrl('https://youtu.be/def456');
+                result.current.setVideoUrl('https://youtu.be/def45678901');
             });
-            expect(result.current.videoId).toBe('def456');
+            expect(result.current.videoId).toBe('def45678901');
 
             // Embed URL
             act(() => {
-                result.current.setVideoUrl('https://www.youtube.com/embed/ghi789');
+                result.current.setVideoUrl('https://www.youtube.com/embed/ghi78901234');
             });
-            expect(result.current.videoId).toBe('ghi789');
+            expect(result.current.videoId).toBe('ghi78901234');
         });
 
         it('should clear video state', async () => {
             mockFetch.mockImplementation(() => Promise.resolve({
                 ok: true,
                 json: () => Promise.resolve({
-                    videoUrl: 'https://www.youtube.com/watch?v=test',
+                    videoUrl: 'https://www.youtube.com/watch?v=tester12345',
                     firstHalfVideoStart: 100,
                 }),
             }));
@@ -319,7 +319,7 @@ describe('VideoSyncContext', () => {
             mockFetch.mockImplementation(() => Promise.resolve({
                 ok: true,
                 json: () => Promise.resolve({
-                    videoUrl: 'https://www.youtube.com/watch?v=test',
+                    videoUrl: 'https://www.youtube.com/watch?v=tester12345',
                     firstHalfVideoStart: 100,
                 }),
             }));
@@ -353,6 +353,83 @@ describe('VideoSyncContext', () => {
             });
 
             expect(localStorageMock.removeItem).toHaveBeenCalledWith(`video-position-${testMatchId}`);
+        });
+    });
+    describe('Persistence & Initialization', () => {
+        const TEST_VIDEO_ID = 'dQw4w9WgXcQ';
+        const TEST_URL = `https://www.youtube.com/watch?v=${TEST_VIDEO_ID}`;
+
+        it('should NOT overwrite localStorage with 0 on initial mount before data load', async () => {
+            const savedTime = 500;
+            localStorageMock.setItem(`video-position-${testMatchId}`, JSON.stringify({ lastVideoTime: savedTime }));
+
+            // Make fetch slow to simulate loading delay
+            let resolveFetch: (value: any) => void;
+            const fetchPromise = new Promise((resolve) => { resolveFetch = resolve; });
+            mockFetch.mockReturnValue(fetchPromise);
+
+            const { result } = renderHook(() => useVideoSync(), { wrapper });
+
+            // Initial state is 0, but isInitialized should be false
+            expect(result.current.currentVideoTime).toBe(0);
+
+            // Ensure localStorage was NOT overwritten with 0
+            expect(localStorageMock.setItem).not.toHaveBeenCalledWith(
+                expect.stringContaining(testMatchId),
+                expect.stringContaining('"lastVideoTime":0')
+            );
+
+            // Resolve fetch
+            resolveFetch!({
+                ok: true,
+                json: () => Promise.resolve({
+                    videoUrl: TEST_URL,
+                    firstHalfVideoStart: 100,
+                }),
+            });
+
+            await waitFor(() => {
+                expect(result.current.isVideoLoaded).toBe(true);
+            });
+
+            // Should use localStorage value (500) over calibration (100)
+            expect(result.current.currentVideoTime).toBe(savedTime);
+        });
+
+        it('should initialize to firstHalfVideoStart if no localStorage exists (Calibrated)', async () => {
+            mockFetch.mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({
+                    videoUrl: TEST_URL,
+                    firstHalfVideoStart: 120,
+                }),
+            });
+
+            const { result } = renderHook(() => useVideoSync(), { wrapper });
+
+            await waitFor(() => {
+                expect(result.current.isVideoLoaded).toBe(true);
+            });
+
+            expect(result.current.currentVideoTime).toBe(120);
+        });
+
+        it('should initialize to 0 if no localStorage and no Calibration', async () => {
+            mockFetch.mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({
+                    videoUrl: TEST_URL,
+                    firstHalfVideoStart: null,
+                }),
+            });
+
+            const { result } = renderHook(() => useVideoSync(), { wrapper });
+
+            await waitFor(() => {
+                expect(result.current.isVideoLoaded).toBe(true);
+            });
+
+            expect(result.current.currentVideoTime).toBe(0);
         });
     });
 });

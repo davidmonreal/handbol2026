@@ -59,3 +59,23 @@
 - Use: on GitHub, New issue → tria la plantilla, assigna responsable, ajusta criteris d’acceptació.
 - PRs: vincula l’issue al PR (`Closes #<num>`), afegeix passos de verificació i mantén l’abast petit.
 - Tancament: el PR ha de tancar l’issue automàticament; actualitza aquesta guia si el flux canvia.
+
+## GameEvent Zone Derivation
+
+The `GameEvent` model includes a canonical `zone` field that is derived and persisted by the backend at create/update time. This ensures consistent zone representation across the application:
+
+- **7m (Penalty)**: events with `distance: '7M'` → `zone: '7m'` (position is intentionally omitted).
+- **6m Line**: events with `distance: '6M'` + position (e.g., LW, CB) → `zone: '6m-LW'`, `zone: '6m-CB'`, etc.
+- **9m Line**: events with `distance: '9M'` + position → `zone: '9m-LB'`, `zone: '9m-RB'`, etc.
+
+**Backend Implementation** (in `repositories/game-event-repository.ts`):
+
+- The `create()` and `update()` methods derive `zone` based on `position` and `distance` fields before persisting.
+- Special case: 7m penalties have `distance = '7M'` and `position = null` → they correctly yield `zone = '7m'`.
+
+**Frontend Usage** (in `utils/eventTransformers.ts`):
+
+- Backend now provides the canonical `zone` on all `GameEvent` responses.
+- Frontend uses `zone` directly; client-side derivation is a fallback for backward compatibility only.
+
+**Testing**: See `tests/game-event-zone.test.ts` for zone derivation tests including 7m penalties, zone updates on field changes, and null handling.

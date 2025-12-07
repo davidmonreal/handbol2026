@@ -60,8 +60,19 @@ export class GameEventRepository {
     isCounterAttack?: boolean;
     activeGoalkeeperId?: string;
   }): Promise<GameEvent> {
+    // derive canonical zone for storage
+    const deriveZone = (position?: string, distance?: string): string | undefined => {
+      if (distance === '7M') return '7m';
+      if (!position || !distance) return undefined;
+      const prefix = distance === '6M' ? '6m' : '9m';
+      return `${prefix}-${position.toUpperCase()}`;
+    };
+
+    const zone = deriveZone(data.position, data.distance);
+    const dataWithZone = { ...data, zone };
+
     return prisma.gameEvent.create({
-      data,
+      data: dataWithZone,
       include: {
         player: true,
       },
@@ -85,9 +96,28 @@ export class GameEventRepository {
       activeGoalkeeperId: string;
     }>,
   ): Promise<GameEvent> {
+    // If position/distance are being updated, recalculate zone
+    const deriveZone = (position?: string, distance?: string): string | undefined => {
+      if (distance === '7M') return '7m';
+      if (!position || !distance) return undefined;
+      const prefix = distance === '6M' ? '6m' : '9m';
+      return `${prefix}-${position.toUpperCase()}`;
+    };
+
+    const shouldDerive = 'position' in data || 'distance' in data || 'goalZone' in data;
+    let updateData: Record<string, unknown> = { ...data };
+    if (shouldDerive) {
+      // If position/distance present in partial update use them, otherwise fetch current values
+      const current = await prisma.gameEvent.findUnique({ where: { id } });
+      const position = data.position ?? current?.position;
+      const distance = data.distance ?? current?.distance;
+      const zone = deriveZone(position, distance);
+      updateData = { ...data, zone };
+    }
+
     return prisma.gameEvent.update({
       where: { id },
-      data,
+      data: updateData,
       include: {
         player: true,
       },

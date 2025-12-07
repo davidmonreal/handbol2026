@@ -25,6 +25,7 @@ export const goalZoneToTarget = (zone: string | null): number | undefined => {
 
 /**
  * Helper function to convert position+distance to zone format
+ * (Fallback only — backend now provides canonical `zone` on all GameEvents)
  */
 export const positionDistanceToZone = (position: string | null, distance: string | null): ZoneType | undefined => {
     if (!position || !distance) return undefined;
@@ -50,6 +51,7 @@ interface BackendEvent {
     sanctionType?: string;
     position?: string;
     distance?: string;
+    zone?: string; // Canonical zone derived by backend (e.g. '7m' or '6m-LW')
     goalZone?: string;
     isCollective?: boolean;
     hasOpposition?: boolean;
@@ -69,7 +71,7 @@ export const transformBackendEvent = (e: BackendEvent): MatchEvent => ({
     teamId: e.teamId,
     category: e.type,
     action: (e.type === 'Sanction' && e.sanctionType) ? e.sanctionType : (e.subtype || e.type),
-    zone: positionDistanceToZone(e.position || null, e.distance || null), // Convert position+distance to zone
+    zone: e.zone as ZoneType | undefined, // Use canonical zone from backend
     goalTarget: goalZoneToTarget(e.goalZone || null), // Convert goalZone to number 1-9
     isCollective: e.isCollective,
     hasOpposition: e.hasOpposition,
