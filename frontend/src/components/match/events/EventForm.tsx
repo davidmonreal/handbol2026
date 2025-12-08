@@ -48,6 +48,7 @@ export const EventForm = ({
     onDelete
 }: EventFormProps) => {
     const [saveMessage, setSaveMessage] = useState<string | null>(null);
+    const saveMessageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     // State initialization
     const [selectedPlayerId, setSelectedPlayerId] = useState<string>(
         event?.playerId || initialState?.playerId || ''
@@ -88,6 +89,12 @@ export const EventForm = ({
             setSaveMessage(null);
         }
     }, [event, initialState]);
+    // Clear any pending timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (saveMessageTimeoutRef.current) clearTimeout(saveMessageTimeoutRef.current);
+        };
+    }, []);
 
     // Save Goalkeeper selection to localStorage when it changes
     useEffect(() => {
@@ -214,6 +221,8 @@ export const EventForm = ({
 
         onSave(updatedEvent, selectedOpponentGkId);
         setSaveMessage('Jugada introduïda');
+        if (saveMessageTimeoutRef.current) clearTimeout(saveMessageTimeoutRef.current);
+        saveMessageTimeoutRef.current = setTimeout(() => setSaveMessage(null), 3000);
 
         // Reset if creating (optional, depends on interaction model. existing model closes modal. 
         // if creating, maybe we want to keep it open? Plan says "Unified form". 
@@ -498,24 +507,28 @@ export const EventForm = ({
 
             {/* Action Buttons */}
             <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-300">
-                {event ? (
-                    <button
-                        onClick={handleDelete}
-                        className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-700 font-medium transition-colors"
-                        data-testid="delete-event-button"
-                    >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        Delete
-                    </button>
-                ) : (
-                    <div>
-                        {saveMessage && (
-                            <span className="text-sm text-green-600 font-medium">{saveMessage}</span>
-                        )}
-                    </div>
-                )}
+                <div className="flex items-center gap-3">
+                    {event && (
+                        <button
+                            onClick={handleDelete}
+                            className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-700 font-medium transition-colors"
+                            data-testid="delete-event-button"
+                        >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Delete
+                        </button>
+                    )}
+                    {saveMessage && (
+                        <span className="text-sm text-green-600 font-medium flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            {saveMessage}
+                        </span>
+                    )}
+                </div>
 
                 <div className="flex gap-2">
                     <button
