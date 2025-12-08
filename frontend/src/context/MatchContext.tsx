@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import type { MatchEvent, DefenseType, ZoneType, SanctionType } from '../types';
+import { goalZoneToTarget } from '../utils/eventTransformers';
 import { API_BASE_URL } from '../config/api';
 
 type ScoreMode = 'live' | 'manual';
@@ -351,6 +352,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
             (e.distance && e.position) ? `${e.distance === '6M' ? '6m' : '9m'}-${e.position}` as ZoneType : undefined
           ),
           goalZoneTag: e.goalZone, // Explicitly map goalZone to goalZoneTag
+          goalTarget: goalZoneToTarget(e.goalZone || null),
           sanctionType: e.sanctionType as SanctionType | undefined,
         }));
 
