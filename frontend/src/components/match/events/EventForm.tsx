@@ -91,6 +91,10 @@ export const EventForm = ({
         } else {
             // leaving edit mode; keep any success message visible
             prevEventIdRef.current = null;
+            // Reset context toggles to defaults when the form returns to creation mode
+            setIsCollective(true);
+            setHasOpposition(false);
+            setIsCounterAttack(false);
         }
     }, [event]);
 
@@ -236,6 +240,11 @@ export const EventForm = ({
         console.log('[EventForm] Save confirmation shown');
         if (saveMessageTimeoutRef.current) clearTimeout(saveMessageTimeoutRef.current);
         // Keep the message until user dismisses or a new save occurs
+
+        // After saving, restore context toggles to defaults (Collective, Free, Static)
+        setIsCollective(true);
+        setHasOpposition(false);
+        setIsCounterAttack(false);
 
         // Reset if creating (optional, depends on interaction model. existing model closes modal. 
         // if creating, maybe we want to keep it open? Plan says "Unified form". 
