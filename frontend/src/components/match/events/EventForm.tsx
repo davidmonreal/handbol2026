@@ -260,7 +260,7 @@ export const EventForm = ({
     const sortedPlayers = [...team.players].sort((a, b) => a.number - b.number);
 
     return (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-6">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-6 relative">
 
             {/* Top Row: Player & Goalkeeper */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -545,7 +545,7 @@ export const EventForm = ({
 
             {saveMessage && (
                 <div
-                    className="mt-3 flex items-center gap-2 px-4 py-2 rounded-lg bg-green-50 text-green-700 text-sm font-semibold border border-green-200"
+                    className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold shadow-lg border border-green-700"
                     role="status"
                     aria-live="polite"
                     data-testid="save-message"
