@@ -25,15 +25,15 @@ export const VideoCalibration = () => {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const formatMatchTime = (seconds: number): string => {
+    const formatMatchTime = (seconds: number, isSecondHalf: boolean): string => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
-        const half = seconds >= 30 * 60 ? '2H' : '1H';
-        const adjustedMins = seconds >= 30 * 60 ? mins - 30 : mins;
-        return `${adjustedMins}:${secs.toString().padStart(2, '0')} (${half})`;
+        const half = isSecondHalf ? '2H' : '1H';
+        return `${mins}:${secs.toString().padStart(2, '0')} (${half})`;
     };
 
     const currentMatchTime = isCalibrated ? getMatchTimeFromVideo(currentVideoTime) : 0;
+    const isSecondHalf = isCalibrated && secondHalfStart !== null && currentVideoTime >= secondHalfStart;
 
     // When calibrated, show only a compact bar unless expanded
     if (isCalibrated && !isExpanded) {
@@ -49,7 +49,7 @@ export const VideoCalibration = () => {
                     </div>
                     <div className="bg-indigo-100 rounded-lg px-3 py-1">
                         <span className="font-mono text-lg text-indigo-900 font-bold">
-                            {formatMatchTime(currentMatchTime)}
+                            {formatMatchTime(currentMatchTime, isSecondHalf)}
                         </span>
                     </div>
                 </div>

@@ -53,21 +53,21 @@ describe('EventItem', () => {
             render(<EventItem {...defaultProps} />);
 
             // 305 seconds = 05:05
-            expect(screen.getByText('05:05')).toBeInTheDocument();
+            expect(screen.getByText('05:05 (1H)')).toBeInTheDocument();
         });
 
         it('should format single digit seconds with leading zero', () => {
             const event = { ...baseEvent, timestamp: 61 }; // 1:01
             render(<EventItem {...defaultProps} event={event} />);
 
-            expect(screen.getByText('01:01')).toBeInTheDocument();
+            expect(screen.getByText('01:01 (1H)')).toBeInTheDocument();
         });
 
         it('should handle zero timestamp', () => {
             const event = { ...baseEvent, timestamp: 0 };
             render(<EventItem {...defaultProps} event={event} />);
 
-            expect(screen.getByText('00:00')).toBeInTheDocument();
+            expect(screen.getByText('00:00 (1H)')).toBeInTheDocument();
         });
     });
 

@@ -12,6 +12,7 @@ interface EventListProps {
     isVideoLoaded?: boolean;
     getVideoTimeFromMatch?: (matchTime: number) => number | null;
     filterTeamId?: string | null;
+    secondHalfStart?: number | null;
 }
 
 export const EventList = ({
@@ -22,6 +23,7 @@ export const EventList = ({
     isVideoLoaded = false,
     getVideoTimeFromMatch,
     filterTeamId,
+    secondHalfStart,
 }: EventListProps) => {
     const { events } = useMatch();
     const [eventsToShow, setEventsToShow] = useState(initialEventsToShow);
@@ -61,6 +63,7 @@ export const EventList = ({
                             onSeekToVideo={onSeekToVideo}
                             isVideoLoaded={isVideoLoaded}
                             getVideoTimeFromMatch={getVideoTimeFromMatch}
+                            secondHalfStart={secondHalfStart}
                         />
                     ))
                 )}

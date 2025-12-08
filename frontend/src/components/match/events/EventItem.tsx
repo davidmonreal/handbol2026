@@ -8,6 +8,7 @@ interface EventItemProps {
     onSeekToVideo?: (videoTimestamp: number) => void;
     isVideoLoaded?: boolean;
     getVideoTimeFromMatch?: (matchTime: number) => number | null;
+    secondHalfStart?: number | null;
 }
 
 export const EventItem = ({
@@ -16,13 +17,15 @@ export const EventItem = ({
     onSeekToVideo,
     isVideoLoaded = false,
     getVideoTimeFromMatch,
+    secondHalfStart = null,
 }: EventItemProps) => {
     const { homeTeam, visitorTeam } = useMatch();
+    const HALF_DURATION_SECONDS = 30 * 60;
 
-    const formatTime = (seconds: number) => {
+    const formatTimeWithHalf = (seconds: number, halfLabel: '1H' | '2H') => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')} (${halfLabel})`;
     };
 
     const formatVideoTime = (seconds: number): string => {
@@ -49,6 +52,13 @@ export const EventItem = ({
     };
 
     const calculatedVideoTime = getCalculatedVideoTime();
+    const isSecondHalfEvent = (() => {
+        if (secondHalfStart !== null && calculatedVideoTime !== null) {
+            return calculatedVideoTime >= secondHalfStart;
+        }
+        // Fallback: use match timestamp only if we don't have video info
+        return event.timestamp >= HALF_DURATION_SECONDS;
+    })();
 
     // Seek 3 seconds before the event so user can see the play develop
     const VIDEO_SEEK_OFFSET_SECONDS = 3;
@@ -137,7 +147,7 @@ export const EventItem = ({
                 <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2 text-sm">
                         <span className="font-mono text-gray-500 font-medium">
-                            {formatTime(event.timestamp)}
+                            {formatTimeWithHalf(event.timestamp, isSecondHalfEvent ? '2H' : '1H')}
                         </span>
                         <span className="font-medium text-gray-700 group-hover:text-indigo-600 transition-colors">
                             #{player?.number || '?'} {player?.name || 'Unknown'}

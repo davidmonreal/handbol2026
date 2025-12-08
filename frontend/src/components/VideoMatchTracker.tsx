@@ -22,6 +22,7 @@ const VideoMatchTrackerContent = () => {
         getMatchTimeFromVideo,
         getVideoTimeFromMatch,
         isCalibrated,
+        secondHalfStart,
         seekToTime,
     } = useVideoSync();
 
@@ -313,6 +314,7 @@ const VideoMatchTrackerContent = () => {
                     isVideoLoaded={isVideoLoaded}
                     getVideoTimeFromMatch={getVideoTimeFromMatch}
                     filterTeamId={activeTeamId}
+                    secondHalfStart={secondHalfStart}
                 />
             </div>
         </div>
