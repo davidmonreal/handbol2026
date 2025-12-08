@@ -222,7 +222,7 @@ export const EventForm = ({
         onSave(updatedEvent, selectedOpponentGkId);
         setSaveMessage('Jugada introduïda');
         if (saveMessageTimeoutRef.current) clearTimeout(saveMessageTimeoutRef.current);
-        saveMessageTimeoutRef.current = setTimeout(() => setSaveMessage(null), 3000);
+        saveMessageTimeoutRef.current = setTimeout(() => setSaveMessage(null), 8000);
 
         // Reset if creating (optional, depends on interaction model. existing model closes modal. 
         // if creating, maybe we want to keep it open? Plan says "Unified form". 
