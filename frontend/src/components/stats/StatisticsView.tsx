@@ -1,36 +1,16 @@
 import { useState, useMemo } from 'react';
 import { Users, Filter, X } from 'lucide-react';
 import type { MatchEvent, ZoneType } from '../../types';
+import type { StatisticsViewProps } from './types';
 import { StatisticsPanel } from './StatisticsPanel';
 import { PlayerStatisticsTable } from './PlayerStatisticsTable';
 import { FiltersBar } from './FiltersBar';
 import { usePlayerBaselines } from './hooks/usePlayerBaselines';
 
-interface StatisticsViewProps {
-  events: MatchEvent[];
-  title?: React.ReactNode;
-  subtitle?: string;
-  context: 'match' | 'player' | 'team';
-  onPlayerClick?: (playerId: string | null) => void;
-  selectedPlayerId?: string | null;
-  showComparison?: boolean;
-  teamId?: string | null;
-  matchData?: {
-    homeTeam: { id: string; name: string; club?: { name: string }; category?: string; players: any[] };
-    awayTeam: { id: string; name: string; club?: { name: string }; category?: string; players: any[] };
-    homeTeamId: string;
-    awayTeamId: string;
-  };
-  teamData?: {
-    players: any[];
-  };
-  onTeamChange?: (teamId: string) => void;
-  onBack?: () => void;
-}
-
 export function StatisticsView({
   events,
   foulEvents,
+  disableFoulToggle,
   title,
   subtitle,
   context,
@@ -119,7 +99,7 @@ export function StatisticsView({
     : null;
 
   // Apply all filters for both own team (selected) and opponent (for fouls)
-  const baseFoulEvents = foulEvents || [];
+  const baseFoulEvents: MatchEvent[] = foulEvents || [];
 
   const { filteredEvents, filteredFoulEvents } = useMemo(() => {
     const passesFilters = (e: MatchEvent, teamIdConstraint: string | null) => {
@@ -273,6 +253,7 @@ export function StatisticsView({
           context,
           isGoalkeeper: isGoalkeeperView,
         }}
+        disableFoulToggle={disableFoulToggle ?? !!filterPlayer}
         comparison={showComparison ? { playerAverages: playerBaselines } : undefined}
         onZoneFilter={handleZoneFilter}
       />

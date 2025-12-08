@@ -11,6 +11,7 @@ import { calculateZoneColors, getHeatmapColorClasses } from './utils/heatmapUtil
 export function ZoneDistribution({
   zoneStats,
   foulZoneStats,
+  disableFoulToggle,
   onZoneClick,
   selectedZone,
   className = '',
@@ -97,7 +98,12 @@ export function ZoneDistribution({
         {foulZoneStats && (
           <button
             onClick={() => setMode(mode === 'goals' ? 'fouls' : 'goals')}
-            className="px-3 py-1 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
+            disabled={disableFoulToggle}
+            className={`px-3 py-1 text-sm font-medium rounded-lg border border-gray-300 transition-colors ${
+              disableFoulToggle
+                ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
           >
             {mode === 'fouls' ? 'View Goals' : 'View Fouls'}
           </button>

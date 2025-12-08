@@ -108,6 +108,7 @@ export interface GoalHeatmapProps {
 export interface ZoneDistributionProps {
     zoneStats: Map<ZoneType | '7m', ZoneStatistics>;
     foulZoneStats?: Map<ZoneType | '7m', ZoneStatistics>;
+    disableFoulToggle?: boolean;
     onZoneClick?: (zone: ZoneType | '7m' | null) => void;
     selectedZone?: ZoneType | '7m' | null;
     className?: string;
@@ -129,7 +130,30 @@ export interface StatCardProps {
  */
 export interface StatisticsPanelProps {
     data: StatisticsData;
+    disableFoulToggle?: boolean;
     comparison?: ComparisonData;
     className?: string;
     onZoneFilter?: (zone: ZoneType | '7m' | null) => void;
+}
+
+export interface StatisticsViewProps {
+    events: MatchEvent[];
+    foulEvents?: MatchEvent[];
+    context: StatisticsContext;
+    title?: React.ReactNode;
+    subtitle?: string;
+    disableFoulToggle?: boolean;
+    onPlayerClick?: (playerId: string | null) => void;
+    selectedPlayerId?: string | null;
+    showComparison?: boolean;
+    teamId?: string | null;
+    matchData?: {
+      homeTeam: { id: string; name: string; club?: { name: string }; category?: string; players: any[] };
+      awayTeam: { id: string; name: string; club?: { name: string }; category?: string; players: any[] };
+      homeTeamId: string;
+      awayTeamId: string;
+    };
+    teamData?: { players: any[] };
+    onTeamChange?: (teamId: string) => void;
+    onBack?: () => void;
 }

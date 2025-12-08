@@ -27,6 +27,7 @@ import type { StatisticsPanelProps } from './types';
  */
 export function StatisticsPanel({
   data,
+  disableFoulToggle,
   comparison,
   className = '',
   onZoneFilter,
@@ -88,6 +89,7 @@ export function StatisticsPanel({
           isGoalkeeper={data.isGoalkeeper}
           zoneStats={stats.zoneStats}
           foulZoneStats={data.context === 'player' ? undefined : stats.foulZoneStats}
+          disableFoulToggle={disableFoulToggle}
           onZoneClick={handleZoneClick}
           selectedZone={selectedZone}
         />
