@@ -521,11 +521,15 @@ export const EventForm = ({
                             Delete
                         </button>
                     )}
+                </div>
+
+                <div className="flex gap-2 items-center flex-wrap justify-end">
                     {saveMessage && (
                         <div
                             className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-50 text-green-700 text-sm font-semibold border border-green-200"
                             role="status"
                             aria-live="polite"
+                            data-testid="save-message"
                         >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -533,9 +537,6 @@ export const EventForm = ({
                             {saveMessage}
                         </div>
                     )}
-                </div>
-
-                <div className="flex gap-2">
                     <button
                         onClick={onCancel}
                         className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
