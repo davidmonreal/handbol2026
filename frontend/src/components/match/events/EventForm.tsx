@@ -70,6 +70,7 @@ export const EventForm = ({
     const [isGkListOpen, setIsGkListOpen] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
+    const prevEventIdRef = useRef<string | null>(null);
     // Initialize/Update state when editing a specific event
     useEffect(() => {
         if (event) {
@@ -81,7 +82,13 @@ export const EventForm = ({
             setIsCollective(event.isCollective || false);
             setHasOpposition(event.hasOpposition || false);
             setIsCounterAttack(event.isCounterAttack || false);
-            setSaveMessage(null); // clear message when switching to edit mode
+            if (prevEventIdRef.current !== event.id) {
+                setSaveMessage(null); // clear only when switching to a different edit target
+            }
+            prevEventIdRef.current = event.id;
+        } else {
+            // leaving edit mode; keep any success message visible
+            prevEventIdRef.current = null;
         }
     }, [event]);
 
