@@ -26,23 +26,7 @@ export const EventList = ({
     const { events } = useMatch();
     const [eventsToShow, setEventsToShow] = useState(initialEventsToShow);
 
-    // If no team selected, don't show any events and display an informational message instead
-    if (filterTeamId === null) {
-        return (
-            <div className="bg-white rounded-lg shadow">
-                <div className="px-4 py-3 border-b border-gray-200">
-                    <h3 className="font-bold text-gray-700 uppercase text-xs tracking-wider">
-                        Select a team to view existing events
-                    </h3>
-                </div>
-                <div className="p-4 text-center text-gray-500 text-sm">
-                    Plays already recorded will appear here once you pick one of the two teams above.
-                </div>
-            </div>
-        );
-    }
-
-    // Filter events if necessary
+    // Filter events if necessary; if no team selected, show all events
     const filteredEvents = filterTeamId
         ? events.filter(e => e.teamId === filterTeamId)
         : events;
@@ -56,14 +40,6 @@ export const EventList = ({
         setEventsToShow(prev => prev + incrementBy);
     };
 
-    if (events.length === 0) {
-        return (
-            <div className="bg-white rounded-lg shadow p-4 text-center text-gray-500 text-sm">
-                No events recorded yet
-            </div>
-        );
-    }
-
     return (
         <div className="bg-white rounded-lg shadow">
             <div className="px-4 py-3 border-b border-gray-200">
@@ -72,16 +48,22 @@ export const EventList = ({
                 </h3>
             </div>
             <div className="divide-y divide-gray-100">
-                {recentEvents.map(event => (
-                    <EventItem
-                        key={event.id}
-                        event={event}
-                        onEdit={onEditEvent}
-                        onSeekToVideo={onSeekToVideo}
-                        isVideoLoaded={isVideoLoaded}
-                        getVideoTimeFromMatch={getVideoTimeFromMatch}
-                    />
-                ))}
+                {recentEvents.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500 text-sm">
+                        No events recorded yet
+                    </div>
+                ) : (
+                    recentEvents.map(event => (
+                        <EventItem
+                            key={event.id}
+                            event={event}
+                            onEdit={onEditEvent}
+                            onSeekToVideo={onSeekToVideo}
+                            isVideoLoaded={isVideoLoaded}
+                            getVideoTimeFromMatch={getVideoTimeFromMatch}
+                        />
+                    ))
+                )}
             </div>
             {hasMoreEvents && (
                 <button

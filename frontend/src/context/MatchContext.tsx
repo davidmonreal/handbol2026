@@ -275,6 +275,10 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     setMatchId(id);
     setHomeTeam(home);
     setVisitorTeam(visitor);
+    if (!preserveState && !activeTeamId) {
+      // Default to home team when loading a new match so the UI is immediately usable
+      setActiveTeamId(home.id);
+    }
 
     // We'll enrich matchMeta with data fetched from the backend if it wasn't provided
     let fetchedMeta: MatchMeta | undefined;
@@ -334,8 +338,11 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
         }
         const backendEvents: BackendEvent[] = await response.json();
 
+        // Defensive: ensure we have an array before mapping
+        const safeEvents = Array.isArray(backendEvents) ? backendEvents : [];
+
         // Transform backend events to MatchEvent format
-        const transformedEvents: MatchEvent[] = backendEvents.map((e) => ({
+        const transformedEvents: MatchEvent[] = safeEvents.map((e) => ({
           id: e.id,
           timestamp: e.timestamp,
           playerId: e.playerId,
@@ -396,7 +403,6 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
 
     // Only reset these if not preserving state
     if (!preserveState) {
-      setActiveTeamId(null);
       setDefenseFormation('6-0');
     }
   }, []);

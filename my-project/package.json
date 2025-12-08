@@ -13,13 +13,15 @@
     "format": "prettier . --write",
     "prepare": "husky install",
     "vercel-build": "prisma generate",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "cleanup:test-data": "tsx tests/utils/cleanup-test-data.ts"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
     "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^7.1.0",
     "@typescript-eslint/parser": "^7.1.0",
+    "dotenv": "^17.2.3",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",

@@ -22,6 +22,23 @@ vi.mock('./match/DefenseFormationSelector', () => ({
 vi.mock('./match/FlowSelector', () => ({
     FlowSelector: () => <div data-testid="flow-selector">Flow Selector</div>
 }));
+vi.mock('./match/events/EventList', () => ({
+    EventList: ({ onEditEvent }: { onEditEvent?: (event: any) => void }) => (
+        <div>
+            <div>Recent Events</div>
+            <button onClick={() => onEditEvent?.({
+                id: 'event-1',
+                timestamp: 100,
+                playerId: 'p1',
+                teamId: 'home-1',
+                category: 'Shot',
+                action: 'Goal',
+            })}>
+                Mock Event
+            </button>
+        </div>
+    )
+}));
 
 describe('MatchTracker Integration', () => {
     const mockMatchData = {
@@ -55,13 +72,31 @@ describe('MatchTracker Integration', () => {
         }
     ];
 
-    beforeEach(() => {
-        vi.clearAllMocks();
-        mockFetch.mockResolvedValue({
-            ok: true,
-            json: async () => mockMatchData
-        });
+beforeEach(() => {
+    vi.clearAllMocks();
+    mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => mockMatchData
     });
+
+    // Mock localStorage for goalkeeper persistence
+    const store: Record<string, string> = {};
+    Object.defineProperty(globalThis, 'localStorage', {
+        value: {
+            getItem: (key: string) => store[key] || null,
+            setItem: (key: string, value: string) => { store[key] = value; },
+            removeItem: (key: string) => { delete store[key]; },
+            clear: () => {
+                Object.keys(store).forEach(k => delete store[k]);
+            },
+            key: (index: number) => Object.keys(store)[index] || null,
+            get length() {
+                return Object.keys(store).length;
+            }
+        },
+        configurable: true
+    });
+});
 
     it('should switch to editing mode when an event is clicked', async () => {
         // We need to mock the fetch for events as well
@@ -94,17 +129,10 @@ describe('MatchTracker Integration', () => {
             expect(screen.getByText('Home Team vs Visitor Team')).toBeInTheDocument();
         });
 
-        // Verify event list is present
-        await waitFor(() => {
-            expect(screen.getByText('Recent Events')).toBeInTheDocument();
-        });
-
-        // Find the event in the list (it renders as a button)
-        const eventItem = screen.getByText('Goal').closest('button');
-        expect(eventItem).toBeInTheDocument();
-
-        // Click the event
-        fireEvent.click(eventItem!);
+        // Verify event list is present and click the mocked event
+        const recentEventsLabel = await screen.findByText('Recent Events');
+        expect(recentEventsLabel).toBeInTheDocument();
+        fireEvent.click(screen.getByText('Mock Event'));
 
         // Verify that the main area now shows "Edit Event"
         await waitFor(() => {

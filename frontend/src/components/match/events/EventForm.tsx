@@ -74,6 +74,9 @@ export const EventForm = ({
     // Initialize/Update state when editing a specific event
     useEffect(() => {
         if (event) {
+            // Avoid resetting local edits when the same event object is re-created
+            if (prevEventIdRef.current === event.id) return;
+
             setSelectedPlayerId(event.playerId || '');
             setSelectedCategory(event.category);
             setSelectedAction(event.action);
@@ -82,9 +85,8 @@ export const EventForm = ({
             setIsCollective(event.isCollective || false);
             setHasOpposition(event.hasOpposition || false);
             setIsCounterAttack(event.isCounterAttack || false);
-            if (prevEventIdRef.current !== event.id) {
-                setSaveMessage(null); // clear only when switching to a different edit target
-            }
+
+            setSaveMessage(null); // clear only when switching to a different edit target
             prevEventIdRef.current = event.id;
         } else {
             // leaving edit mode; keep any success message visible
@@ -139,9 +141,9 @@ export const EventForm = ({
     ];
 
     const sanctionTypes: { value: SanctionType; label: string; color: string }[] = [
-        { value: 'Foul', label: 'Foul', color: 'bg-gray-600' },
-        { value: 'Yellow', label: 'Yellow', color: 'bg-yellow-500' },
+        { value: 'Foul', label: 'Common Foul', color: 'bg-gray-600' },
         { value: '2min', label: '2 min', color: 'bg-blue-600' },
+        { value: 'Yellow', label: 'Yellow', color: 'bg-yellow-500' },
         { value: 'Red', label: 'Red', color: 'bg-red-600' },
         { value: 'Blue Card', label: 'Blue', color: 'bg-blue-800' },
     ];
@@ -371,16 +373,16 @@ export const EventForm = ({
             <div>
                 <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Category</div>
                 <div className="grid grid-cols-3 gap-2">
-                    {['Shot', 'Turnover', 'Sanction'].map(cat => (
+                    {[{ value: 'Shot', label: 'Shot' }, { value: 'Sanction', label: 'Foul' }, { value: 'Turnover', label: 'Turnover' }].map(cat => (
                         <button
-                            key={cat}
-                            onClick={() => handleCategoryChange(cat)}
-                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${selectedCategory === cat
+                            key={cat.value}
+                            onClick={() => handleCategoryChange(cat.value)}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${selectedCategory === cat.value
                                 ? 'bg-indigo-500 text-white shadow-sm'
                                 : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
                                 }`}
                         >
-                            {cat}
+                            {cat.label}
                         </button>
                     ))}
                 </div>
@@ -442,19 +444,39 @@ export const EventForm = ({
                     )}
 
                     {selectedCategory === 'Sanction' && (
-                        <div className="grid grid-cols-3 gap-2">
-                            {sanctionTypes.map(sanction => (
-                                <button
-                                    key={sanction.value}
-                                    onClick={() => setSelectedAction(sanction.value)}
-                                    className={`px-3 py-2 rounded-lg text-sm font-medium text-white transition-all ${selectedAction === sanction.value
-                                        ? `${sanction.color} shadow-lg ring-2 ring-offset-2 ring-indigo-500`
-                                        : `${sanction.color} opacity-60 hover:opacity-100`
-                                        }`}
-                                >
-                                    {sanction.label}
-                                </button>
-                            ))}
+                        <div className="space-y-2">
+                            <div className="grid grid-cols-2 gap-2">
+                                {sanctionTypes
+                                    .filter(s => s.value === 'Foul' || s.value === '2min')
+                                    .map(sanction => (
+                                        <button
+                                            key={sanction.value}
+                                            onClick={() => setSelectedAction(sanction.value)}
+                                            className={`px-3 py-2 rounded-lg text-sm font-medium text-white transition-all ${selectedAction === sanction.value
+                                                ? `${sanction.color} shadow-lg ring-2 ring-offset-2 ring-indigo-500`
+                                                : `${sanction.color} opacity-60 hover:opacity-100`
+                                                }`}
+                                        >
+                                            {sanction.label}
+                                        </button>
+                                    ))}
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                                {sanctionTypes
+                                    .filter(s => s.value === 'Yellow' || s.value === 'Red' || s.value === 'Blue Card')
+                                    .map(sanction => (
+                                        <button
+                                            key={sanction.value}
+                                            onClick={() => setSelectedAction(sanction.value)}
+                                            className={`px-3 py-2 rounded-lg text-sm font-medium text-white transition-all ${selectedAction === sanction.value
+                                                ? `${sanction.color} shadow-lg ring-2 ring-offset-2 ring-indigo-500`
+                                                : `${sanction.color} opacity-60 hover:opacity-100`
+                                                }`}
+                                        >
+                                            {sanction.label}
+                                        </button>
+                                    ))}
+                            </div>
                         </div>
                     )}
                 </div>

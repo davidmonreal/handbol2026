@@ -120,11 +120,13 @@ describe('EventEditResult', () => {
         );
 
         // Open player dropdown
-        const playerButton = screen.getByText('Test Player');
+        const playerButton = screen.getAllByText('Test Player')[0];
         fireEvent.click(playerButton);
 
         // Select other player
-        const otherPlayerButton = screen.getByText('Other Player');
+        const otherPlayerButton = screen
+            .getAllByText('Other Player')
+            .find(el => el.tagName === 'BUTTON')!;
         fireEvent.click(otherPlayerButton);
 
         // Save

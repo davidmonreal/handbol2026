@@ -120,10 +120,18 @@ export const EventItem = ({
 
     return (
         <div className="p-3 hover:bg-gray-50 transition-colors group">
-            <button
+            <div
                 onClick={() => onEdit?.(event)}
-                className="w-full text-left"
+                className="w-full text-left cursor-pointer"
                 data-testid={`event-item-${event.id}`}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onEdit?.(event);
+                    }
+                }}
             >
                 {/* First Line: Time, Player */}
                 <div className="flex items-center justify-between mb-1">
@@ -140,6 +148,7 @@ export const EventItem = ({
                         {/* Video Seek Button - show when video is calibrated and loaded */}
                         {canSeekToVideo && (
                             <button
+                                type="button"
                                 onClick={handleSeekToVideo}
                                 className="p-1 rounded-full bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 transition-colors"
                                 title={`Go to video ${formatVideoTime(calculatedVideoTime)}`}
@@ -197,7 +206,7 @@ export const EventItem = ({
                         </span>
                     ))}
                 </div>
-            </button>
+            </div>
         </div>
     );
 };

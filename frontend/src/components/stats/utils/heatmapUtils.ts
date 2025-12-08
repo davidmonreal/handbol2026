@@ -23,49 +23,29 @@ export type HeatmapColor = 'red' | 'orange' | 'yellow' | 'default';
 export function calculateZoneColors(
     zoneStats: Map<string | number, { shots: number }>
 ): Map<string | number, HeatmapColor> {
-    // Convert Map to array of [id, stats]
-    const statsArray = Array.from(zoneStats.entries());
-
-    // Sort by shots descending
-    // We use stable sort principles implicitly, but for identical values order doesn't strictly matter 
-    // until we assign the base indices.
-    statsArray.sort((a, b) => b[1].shots - a[1].shots);
-
     const colors = new Map<string | number, HeatmapColor>();
 
-    statsArray.forEach((item, index) => {
-        const [id, stats] = item;
+    // Build a list of unique, non-zero shot counts in descending order to rank ties as a single bucket.
+    const uniqueCounts = Array.from(
+        new Set(
+            Array.from(zoneStats.values())
+                .map((s) => s.shots)
+                .filter((count) => count > 0)
+        )
+    ).sort((a, b) => b - a);
 
-        // Determine base color based on index
-        let color: HeatmapColor = 'default';
+    // Helper to get color based on the rank of the shot count bucket
+    const getColorForCount = (shots: number): HeatmapColor => {
+        if (shots === 0) return 'default';
+        const rank = uniqueCounts.indexOf(shots);
+        if (rank === 0) return 'red';       // Highest bucket
+        if (rank === 1) return 'orange';    // Second bucket
+        if (rank === 2) return 'yellow';    // Third bucket
+        return 'default';
+    };
 
-        // Check for 0 shots - usually shouldn't happen if map only has active, but good to check
-        if (stats.shots === 0) {
-            colors.set(id, 'default');
-            return;
-        }
-
-        if (index === 0) {
-            color = 'red';
-        } else if (index >= 1 && index <= 2) {
-            color = 'orange';
-        } else if (index >= 3 && index <= 4) {
-            color = 'yellow';
-        }
-
-        // Tie-breaking logic: verify with previous item
-        if (index > 0) {
-            const prevItem = statsArray[index - 1];
-            if (stats.shots === prevItem[1].shots) {
-                // Inherit color from previous
-                const prevColor = colors.get(prevItem[0]);
-                if (prevColor) {
-                    color = prevColor;
-                }
-            }
-        }
-
-        colors.set(id, color);
+    zoneStats.forEach((stats, id) => {
+        colors.set(id, getColorForCount(stats.shots));
     });
 
     return colors;

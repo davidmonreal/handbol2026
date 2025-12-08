@@ -124,7 +124,7 @@ describe('MatchContext', () => {
             });
 
             await waitFor(() => {
-                expect(result.current.activeTeamId).toBe(null);
+                expect(result.current.activeTeamId).toBe('team-home');
                 expect(result.current.defenseFormation).toBe('6-0');
                 expect(result.current.homeTeam?.id).toBe('team-home');
                 expect(result.current.visitorTeam?.id).toBe('team-away');

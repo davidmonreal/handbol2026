@@ -108,6 +108,13 @@ const MatchTracker = () => {
     return null;
   };
 
+  // Ensure we have an active team selected once teams are loaded
+  useEffect(() => {
+    if (!activeTeamId && homeTeam) {
+      setActiveTeamId(homeTeam.id);
+    }
+  }, [activeTeamId, homeTeam, setActiveTeamId]);
+
   const activeTeam = getActiveTeam();
   const opponentTeam = getOpponentTeam();
 

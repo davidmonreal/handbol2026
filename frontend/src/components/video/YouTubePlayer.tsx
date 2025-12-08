@@ -73,7 +73,12 @@ export const YouTubePlayer = () => {
         const tag = document.createElement('script');
         tag.src = 'https://www.youtube.com/iframe_api';
         const firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+        // In test environments there may be no script tag; guard the insertion
+        if (firstScriptTag?.parentNode) {
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        } else {
+            document.head.appendChild(tag);
+        }
 
         window.onYouTubeIframeAPIReady = () => {
             setIsApiLoaded(true);

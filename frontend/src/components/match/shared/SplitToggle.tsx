@@ -5,27 +5,48 @@ interface SplitToggleProps {
   onChange: (value: boolean) => void;
   leftOption: { label: string; icon: LucideIcon | LucideIcon[] };
   rightOption: { label: string; icon: LucideIcon | LucideIcon[] };
+  colorClass?: 'purple' | 'orange' | 'cyan';
 }
 
 export const SplitToggle = ({
   value,
   onChange,
   leftOption,
-  rightOption
+  rightOption,
+  colorClass = 'purple',
 }: SplitToggleProps) => {
+  const colorStyles: Record<'purple' | 'orange' | 'cyan', { active: string; inactive: string; border: string }> = {
+    purple: {
+      active: 'bg-purple-50 text-purple-700',
+      inactive: 'bg-gray-50 text-gray-400',
+      border: 'border-purple-500',
+    },
+    orange: {
+      active: 'bg-orange-50 text-orange-700',
+      inactive: 'bg-gray-50 text-gray-400',
+      border: 'border-orange-500',
+    },
+    cyan: {
+      active: 'bg-cyan-50 text-cyan-700',
+      inactive: 'bg-gray-50 text-gray-400',
+      border: 'border-cyan-500',
+    },
+  };
+
   const getStateClasses = (isActive: boolean) => {
+    const palette = colorStyles[colorClass];
     if (!isActive) {
-      return `bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-indigo-300`;
+      return `${palette.inactive} ${palette.border} border-2`;
     }
     
-    return `bg-indigo-500 text-white shadow-lg ring-2 ring-indigo-200`;
+    return `${palette.active} ${palette.border}`;
   };
 
   return (
     <div className="grid grid-cols-2 gap-0 rounded-xl overflow-hidden shadow-sm">
       <button
         onClick={() => onChange(false)}
-        className={`px-2 py-2.5 font-bold border-r-0 rounded-l-xl transition-all flex flex-col items-center justify-center gap-1.5 ${getStateClasses(!value)}`}
+        className={`px-2 py-2.5 font-bold border border-r-0 rounded-l-xl transition-all flex flex-col items-center justify-center gap-1.5 ${getStateClasses(!value)}`}
       >
         {Array.isArray(leftOption.icon) ? (
           <div className="flex items-center gap-1">
@@ -39,7 +60,7 @@ export const SplitToggle = ({
 
       <button
         onClick={() => onChange(true)}
-        className={`px-2 py-2.5 font-bold rounded-r-xl transition-all flex flex-col items-center justify-center gap-1.5 ${getStateClasses(value)}`}
+        className={`px-2 py-2.5 font-bold border rounded-r-xl transition-all flex flex-col items-center justify-center gap-1.5 ${getStateClasses(value)}`}
       >
         {Array.isArray(rightOption.icon) ? (
           <div className="flex items-center gap-1">

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ZONE_CONFIG } from '../../config/zones';
+import { ZONE_CONFIG, getZoneLabel } from '../../config/zones';
 import type { ZoneType } from '../../types';
 import type { ZoneDistributionProps } from './types';
 import { calculateZoneColors, getHeatmapColorClasses } from './utils/heatmapUtils';
@@ -55,6 +55,9 @@ export function ZoneDistribution({
         </span>
         <span className="text-xs opacity-75">
           {stats.shots > 0 ? `${stats.efficiency.toFixed(0)}%` : '-'}
+        </span>
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-600 mt-1">
+          {getZoneLabel(zone as ZoneType)}
         </span>
       </button>
     );

@@ -10,11 +10,11 @@ import { MatchProvider } from '../../context/MatchContext';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mock the video components since they depend on YouTube API
-vi.mock('../../video/YouTubePlayer', () => ({
+vi.mock('../../components/video/YouTubePlayer', () => ({
     YouTubePlayer: () => <div data-testid="youtube-player">YouTube Player Mock</div>,
 }));
 
-vi.mock('../../video/VideoUrlInput', () => ({
+vi.mock('../../components/video/VideoUrlInput', () => ({
     VideoUrlInput: ({ onVideoSubmit }: { onVideoSubmit: () => void }) => (
         <div data-testid="video-url-input">
             <button onClick={onVideoSubmit}>Load Video</button>
@@ -22,7 +22,7 @@ vi.mock('../../video/VideoUrlInput', () => ({
     ),
 }));
 
-vi.mock('../../video/VideoCalibration', () => ({
+vi.mock('../../components/video/VideoCalibration', () => ({
     VideoCalibration: () => <div data-testid="video-calibration">Video Calibration Mock</div>,
 }));
 
@@ -166,16 +166,8 @@ describe('VideoMatchTracker Integration', () => {
                 expect(screen.getByText('Home Team')).toBeInTheDocument();
             });
 
-            // Select a team to activate the form
-            // Assuming Scoreboard has buttons to select team. 
-            // We need to trigger handleTeamSelect.
-            // But activeTeamId is null initially.
-            // Let's click the team name or similar if available, or simulate it.
-            // Since Scoreboard implementation details vary, we might just look for "Select a team above" text first.
-            expect(screen.getByText(/Select a team above to start tracking/i)).toBeInTheDocument();
-
-            // To properly test the form, we'd need to simulate team selection.
-            // For now, let's establish that the initial state is correct (waiting for team).
+            // Active team defaults to home, so form should be active
+            expect(screen.getByText(/Select Player/i)).toBeInTheDocument();
         });
     });
 
@@ -185,4 +177,3 @@ describe('VideoMatchTracker Integration', () => {
         });
     });
 });
-

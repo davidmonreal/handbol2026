@@ -1,4 +1,4 @@
-import { AlertCircle, XCircle } from 'lucide-react';
+import { XCircle } from 'lucide-react';
 
 interface ErrorMessageProps {
     title?: string;
@@ -41,41 +41,6 @@ export const ErrorMessage = ({
                     </div>
                 )}
             </div>
-        </div>
-    );
-};
-
-/**
- * Empty state component
- */
-export const EmptyState = ({
-    icon: Icon = AlertCircle,
-    title,
-    description,
-    actionLabel,
-    onAction
-}: {
-    icon?: any;
-    title: string;
-    description?: string;
-    actionLabel?: string;
-    onAction?: () => void;
-}) => {
-    return (
-        <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-            <Icon className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-            <h3 className="text-sm font-medium text-gray-900">{title}</h3>
-            {description && (
-                <p className="mt-1 text-sm text-gray-500">{description}</p>
-            )}
-            {actionLabel && onAction && (
-                <button
-                    onClick={onAction}
-                    className="mt-4 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200"
-                >
-                    {actionLabel}
-                </button>
-            )}
         </div>
     );
 };

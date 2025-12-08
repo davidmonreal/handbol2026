@@ -16,8 +16,8 @@ export const EventEditCategory = ({ event, onSave, onCancel }: EventEditCategory
 
     const categories: { value: FlowType; label: string; icon: string }[] = [
         { value: 'Shot', label: 'Shot', icon: '🎯' },
+        { value: 'Sanction', label: 'Foul', icon: '⚠️' },
         { value: 'Turnover', label: 'Turnover', icon: '❌' },
-        { value: 'Sanction', label: 'Sanction', icon: '⚠️' },
     ];
 
     const handleSelect = (category: FlowType) => {

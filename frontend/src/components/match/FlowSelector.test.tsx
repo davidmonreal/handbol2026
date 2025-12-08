@@ -13,8 +13,8 @@ describe('FlowSelector', () => {
     );
 
     expect(screen.getByText('Shot')).toBeInTheDocument();
-    expect(screen.getByText('Turnover')).toBeInTheDocument();
     expect(screen.getByText('Foul')).toBeInTheDocument();
+    expect(screen.getByText('Turnover')).toBeInTheDocument();
   });
 
   it('calls onFlowSelect when a button is clicked', () => {
