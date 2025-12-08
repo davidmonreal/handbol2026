@@ -444,6 +444,7 @@ export const EventForm = ({
                             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((target) => (
                                 <button
                                     key={target}
+                                    aria-label={`goal-target-${target}`}
                                     onClick={() => setSelectedTarget(target)}
                                     className={`border-2 rounded-md transition-all shadow-sm ${selectedTarget === target
                                         ? 'bg-indigo-600 border-indigo-600'
