@@ -62,8 +62,6 @@ describe('StatisticsView', () => {
         matchData={mockMatchData}
       />
     );
-    expect(screen.getByText('Viewing:')).toBeInTheDocument();
-    expect(screen.getByText('Home Team')).toBeInTheDocument();
     expect(screen.getByText('Switch to Away Team')).toBeInTheDocument();
   });
 
@@ -79,7 +77,6 @@ describe('StatisticsView', () => {
     const switchButton = screen.getByText('Switch to Away Team');
     fireEvent.click(switchButton);
 
-    expect(screen.getByText('Away Team')).toBeInTheDocument();
     expect(screen.getByText('Switch to Home Team')).toBeInTheDocument();
   });
 
@@ -161,8 +158,7 @@ describe('StatisticsView', () => {
         />
       );
 
-      expect(screen.getByText('Viewing:')).toBeInTheDocument();
-      expect(screen.getByText('AB Investiments Joventut Mataró CADET Groc')).toBeInTheDocument();
+      expect(screen.getByText('Switch to La Roca CADET A')).toBeInTheDocument();
     });
 
     it('should display full team info in Switch button', () => {
@@ -194,8 +190,7 @@ describe('StatisticsView', () => {
         />
       );
 
-      // Should show category + name only
-      expect(screen.getByText('CADET Groc')).toBeInTheDocument();
+      expect(screen.getByText('Switch to La Roca CADET A')).toBeInTheDocument();
     });
 
     it('should handle team without category', () => {
@@ -215,8 +210,7 @@ describe('StatisticsView', () => {
         />
       );
 
-      // Should show club + name only
-      expect(screen.getByText('AB Investiments Joventut Mataró Groc')).toBeInTheDocument();
+      expect(screen.getByText('Switch to La Roca CADET A')).toBeInTheDocument();
     });
 
     it('should handle team with only name', () => {
@@ -237,8 +231,7 @@ describe('StatisticsView', () => {
         />
       );
 
-      // Should show name only
-      expect(screen.getByText('Groc')).toBeInTheDocument();
+      expect(screen.getByText('Switch to La Roca CADET A')).toBeInTheDocument();
     });
 
     it('should update team display when switching teams', () => {
@@ -250,17 +243,70 @@ describe('StatisticsView', () => {
         />
       );
 
-      // Initially showing home team
-      expect(screen.getByText('AB Investiments Joventut Mataró CADET Groc')).toBeInTheDocument();
       expect(screen.getByText('Switch to La Roca CADET A')).toBeInTheDocument();
 
       // Click switch button
       const switchButton = screen.getByText('Switch to La Roca CADET A');
       fireEvent.click(switchButton);
 
-      // Now showing away team
-      expect(screen.getByText('La Roca CADET A')).toBeInTheDocument();
       expect(screen.getByText('Switch to AB Investiments Joventut Mataró CADET Groc')).toBeInTheDocument();
     });
+  });
+
+  it('shows foul toggle for team context (using opponent foulEvents)', () => {
+    const teamEvents: MatchEvent[] = [
+      {
+        id: 'a1',
+        timestamp: 1,
+        teamId: 'teamA',
+        category: 'Shot',
+        action: 'Goal',
+        zone: '6m-CB',
+      },
+    ];
+
+    const opponentEvents: MatchEvent[] = [
+      {
+        id: 'b1',
+        timestamp: 2,
+        teamId: 'teamB',
+        matchId: 'm1',
+        category: 'Shot',
+        action: 'Goal',
+        zone: '9m-LB',
+      },
+      {
+        id: 'b2',
+        timestamp: 3,
+        teamId: 'teamB',
+        matchId: 'm1',
+        category: 'Sanction',
+        action: 'Foul',
+        zone: '9m-LB',
+      },
+    ];
+
+    render(
+      <StatisticsView
+        events={teamEvents}
+        foulEvents={opponentEvents}
+        context="team"
+      />
+    );
+
+    // Toggle button should be present because foulEvents are provided in team context
+    expect(screen.getByText('View Fouls')).toBeInTheDocument();
+  });
+
+  it('hides foul toggle for player context even if foulEvents exist', () => {
+    render(
+      <StatisticsView
+        events={mockEvents}
+        foulEvents={mockEvents}
+        context="player"
+      />
+    );
+
+    expect(screen.queryByText('View Fouls')).not.toBeInTheDocument();
   });
 });

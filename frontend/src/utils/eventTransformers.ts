@@ -40,6 +40,7 @@ export const positionDistanceToZone = (position: string | null, distance: string
 interface BackendEvent {
     id: string;
     timestamp: number;
+    matchId: string;
     playerId: string;
     player?: {
         name: string;
@@ -69,6 +70,7 @@ export const transformBackendEvent = (e: BackendEvent): MatchEvent => ({
     playerName: e.player?.name,
     playerNumber: e.player?.number,
     teamId: e.teamId,
+    matchId: e.matchId,
     category: e.type,
     action: (e.type === 'Sanction' && e.sanctionType) ? e.sanctionType : (e.subtype || e.type),
     zone: e.zone as ZoneType | undefined, // Use canonical zone from backend

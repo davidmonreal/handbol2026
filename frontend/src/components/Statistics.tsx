@@ -20,6 +20,7 @@ const Statistics = () => {
   // State
   const [data, setData] = useState<any>(null);
   const [statsEvents, setStatsEvents] = useState<MatchEvent[]>([]);
+  const [foulStatsEvents, setFoulStatsEvents] = useState<MatchEvent[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -66,10 +67,19 @@ const Statistics = () => {
           const teamData = await teamRes.json();
           setData(teamData);
 
-          // Load team events
-          const eventsRes = await fetch(`${API_BASE_URL}/api/game-events?teamId=${teamId}`);
+          // Load all events to derive both team and opponent data
+          const eventsRes = await fetch(`${API_BASE_URL}/api/game-events`);
           const eventsData = await eventsRes.json();
-          setStatsEvents(transformBackendEvents(eventsData));
+          const transformed = transformBackendEvents(eventsData);
+
+          const teamEvents = transformed.filter((e: MatchEvent) => e.teamId === teamId);
+          const matchesForTeam = new Set(teamEvents.map(e => e.matchId).filter(Boolean));
+          const opponentEvents = transformed.filter(
+            (e: MatchEvent) => e.teamId !== teamId && e.matchId && matchesForTeam.has(e.matchId)
+          );
+
+          setStatsEvents(teamEvents);
+          setFoulStatsEvents(opponentEvents);
         }
       } catch (error) {
         console.error('Error loading statistics:', error);
@@ -95,10 +105,13 @@ const Statistics = () => {
   // Determine title
   const title = useMemo(() => {
     if (matchId && data) {
-      const currentTeamName = selectedTeamId === data.homeTeamId
-        ? data.homeTeam.name
-        : data.awayTeam.name;
-      return `Match Statistics: ${currentTeamName}`;
+      const currentTeam = selectedTeamId === data.homeTeamId ? data.homeTeam : data.awayTeam;
+      const parts = [];
+      if (currentTeam?.club?.name) parts.push(currentTeam.club.name);
+      if (currentTeam?.category) parts.push(currentTeam.category);
+      if (currentTeam?.name) parts.push(currentTeam.name);
+      const displayName = parts.join(' ');
+      return `Match Statistics: ${displayName || 'Team'}`;
     }
     if (playerId && data) {
       return (
@@ -149,6 +162,7 @@ const Statistics = () => {
     <div className="p-4 md:p-6 max-w-7xl mx-auto">
       <StatisticsView
         events={displayEvents}
+        foulEvents={foulStatsEvents}
         context={context}
         title={title}
         subtitle={playerId ? `#${data?.number} • All Time Stats` : (teamId ? `${data?.club?.name} • ${data?.category} • All Matches` : undefined)}

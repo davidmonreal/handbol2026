@@ -78,6 +78,7 @@ export interface MatchEvent {
     id: string;
     timestamp: number;
     videoTimestamp?: number;
+    matchId?: string;
     playerId: string | null;
     playerName?: string;
     playerNumber?: number;

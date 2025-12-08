@@ -87,7 +87,7 @@ export function StatisticsPanel({
         <ZoneDistribution
           isGoalkeeper={data.isGoalkeeper}
           zoneStats={stats.zoneStats}
-          foulZoneStats={stats.foulZoneStats}
+          foulZoneStats={data.context === 'player' ? undefined : stats.foulZoneStats}
           onZoneClick={handleZoneClick}
           selectedZone={selectedZone}
         />

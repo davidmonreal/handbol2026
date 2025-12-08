@@ -30,6 +30,7 @@ interface StatisticsViewProps {
 
 export function StatisticsView({
   events,
+  foulEvents,
   title,
   subtitle,
   context,
@@ -118,6 +119,8 @@ export function StatisticsView({
     : null;
 
   // Apply all filters for both own team (selected) and opponent (for fouls)
+  const baseFoulEvents = foulEvents || [];
+
   const { filteredEvents, filteredFoulEvents } = useMemo(() => {
     const passesFilters = (e: MatchEvent, teamIdConstraint: string | null) => {
       if (context === 'match' && teamIdConstraint && e.teamId !== teamIdConstraint) return false;
@@ -142,10 +145,12 @@ export function StatisticsView({
     };
 
     const own = events.filter(e => passesFilters(e, selectedTeamId || null));
-    const rival = opponentTeamId ? events.filter(e => passesFilters(e, opponentTeamId)) : [];
+    const rival = opponentTeamId
+      ? events.filter(e => passesFilters(e, opponentTeamId))
+      : baseFoulEvents.filter(e => passesFilters(e, null));
 
     return { filteredEvents: own, filteredFoulEvents: rival };
-  }, [events, context, selectedTeamId, opponentTeamId, filterZone, filterPlayer, filterOpposition, filterCollective, filterCounterAttack, getPlayerInfo]);
+  }, [events, baseFoulEvents, context, selectedTeamId, opponentTeamId, filterZone, filterPlayer, filterOpposition, filterCollective, filterCounterAttack, getPlayerInfo]);
 
   // Determine if we're viewing goalkeeper statistics
   const isGoalkeeperView = useMemo(() => {
@@ -192,16 +197,12 @@ export function StatisticsView({
         <div className="flex items-center w-full">
           {/* Team Switcher */}
           {context === 'match' && matchData && (
-            <div className="flex items-center gap-2 mr-auto">
-              <span className="text-sm text-gray-600">Viewing:</span>
-              <span className="font-semibold text-gray-900">
-                {selectedTeamId === matchData.homeTeamId ? formatTeamDisplay(matchData.homeTeam) : formatTeamDisplay(matchData.awayTeam)}
-              </span>
+            <div className="flex items-center gap-3 mr-auto">
               <button
                 onClick={() => handleTeamSwitch(
                   selectedTeamId === matchData.homeTeamId ? matchData.awayTeamId : matchData.homeTeamId
                 )}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-800 rounded-lg border border-indigo-200 hover:bg-indigo-200 transition-colors text-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
