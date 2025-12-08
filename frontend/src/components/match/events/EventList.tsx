@@ -68,7 +68,7 @@ export const EventList = ({
         <div className="bg-white rounded-lg shadow">
             <div className="px-4 py-3 border-b border-gray-200">
                 <h3 className="font-bold text-gray-700 uppercase text-xs tracking-wider">
-                    Recent Events ({recentEvents.length} of {events.length})
+                    Recent Events ({recentEvents.length} of {filteredEvents.length})
                 </h3>
             </div>
             <div className="divide-y divide-gray-100">
