@@ -17,8 +17,24 @@ describe('Full Application Lifecycle Integration Test', () => {
   // Cleanup before and after
   const cleanup = async () => {
     // Delete in reverse order of dependencies
-    await prisma.gameEvent.deleteMany({ where: { matchId } });
-    await prisma.match.deleteMany({ where: { id: matchId } });
+    await prisma.gameEvent.deleteMany({
+      where: {
+        OR: [
+          matchId ? { matchId } : undefined,
+          homeTeamId ? { teamId: homeTeamId } : undefined,
+          awayTeamId ? { teamId: awayTeamId } : undefined,
+        ].filter(Boolean) as unknown as { matchId: string }[],
+      },
+    });
+    await prisma.match.deleteMany({
+      where: {
+        OR: [
+          matchId ? { id: matchId } : undefined,
+          homeTeamId ? { homeTeamId } : undefined,
+          awayTeamId ? { awayTeamId } : undefined,
+        ].filter(Boolean) as unknown as { id?: string; homeTeamId?: string; awayTeamId?: string }[],
+      },
+    });
     await prisma.playerTeamSeason.deleteMany({
       where: { teamId: { in: [homeTeamId, awayTeamId] } },
     });
