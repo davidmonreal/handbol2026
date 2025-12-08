@@ -126,8 +126,6 @@ export function useStatisticsCalculator(
             });
         }
 
-        // Fouls efficiency (share of total fouls per zone)
-        const totalFouls = fouls.length;
         foulZoneStats.forEach((stats) => {
             stats.efficiency = stats.shots > 0 ? (stats.goals / stats.shots) * 100 : 0; // % fouls over plays in zone
         });

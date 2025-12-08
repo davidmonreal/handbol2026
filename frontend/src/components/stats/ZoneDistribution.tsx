@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ZONE_CONFIG, getZoneLabel } from '../../config/zones';
 import type { ZoneType } from '../../types';
 import type { ZoneDistributionProps } from './types';
@@ -19,13 +19,6 @@ export function ZoneDistribution({
   const [mode, setMode] = useState<'goals' | 'fouls'>('goals');
 
   const activeStats = mode === 'fouls' && foulZoneStats ? foulZoneStats : zoneStats;
-
-  const totalFouls = useMemo(() => {
-    if (mode !== 'fouls' || !foulZoneStats) return 0;
-    let total = 0;
-    foulZoneStats.forEach(s => { total += s.shots; });
-    return total;
-  }, [mode, foulZoneStats]);
 
   // Combine all stats to calculate relative colors across the whole court
   const zoneColors = calculateZoneColors(
