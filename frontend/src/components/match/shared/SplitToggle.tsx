@@ -34,7 +34,7 @@ export const SplitToggle = ({
         ) : (
           <leftOption.icon size={20} />
         )}
-        <span className="text-xs uppercase tracking-wider">{leftOption.label}</span>
+        <span className="text-xs capitalize tracking-wide">{leftOption.label}</span>
       </button>
 
       <button
@@ -48,7 +48,7 @@ export const SplitToggle = ({
         ) : (
           <rightOption.icon size={20} />
         )}
-        <span className="text-xs uppercase tracking-wider">{rightOption.label}</span>
+        <span className="text-xs capitalize tracking-wide">{rightOption.label}</span>
       </button>
     </div>
   );

@@ -460,7 +460,7 @@ export const EventForm = ({
             {selectedCategory === 'Shot' && (
                 <div>
                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Context</div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <SplitToggle
                             value={isCollective}
                             onChange={setIsCollective}
