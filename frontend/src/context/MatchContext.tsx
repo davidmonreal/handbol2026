@@ -275,17 +275,8 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     setHomeTeam(home);
     setVisitorTeam(visitor);
 
-    const hasManualScores = matchMeta?.homeScore !== undefined || matchMeta?.awayScore !== undefined;
-    const currentScoreMode: ScoreMode = matchMeta?.isFinished ? 'manual' : 'live';
-    setScoreMode(currentScoreMode);
-
-    if (currentScoreMode === 'manual') {
-      setHomeScore(matchMeta?.homeScore ?? 0);
-      setVisitorScore(matchMeta?.awayScore ?? 0);
-    } else {
-      setHomeScore(0);
-      setVisitorScore(0);
-    }
+    // We'll enrich matchMeta with data fetched from the backend if it wasn't provided
+    let fetchedMeta: MatchMeta | undefined;
 
     // Initial load of match-level data (like calibration) should happen here or separately
     try {
@@ -294,8 +285,27 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
         const data = await res.json();
         setRealTimeFirstHalfStart(data.realTimeFirstHalfStart || null);
         setRealTimeSecondHalfStart(data.realTimeSecondHalfStart || null);
+        fetchedMeta = {
+          isFinished: data.isFinished,
+          homeScore: data.homeScore,
+          awayScore: data.awayScore,
+          // if backend exposes status in the future we can add it here
+        };
       }
     } catch (e) { /* ignore */ }
+
+    const effectiveMeta = matchMeta ?? fetchedMeta;
+    const hasManualScores = effectiveMeta?.homeScore !== undefined || effectiveMeta?.awayScore !== undefined;
+    const currentScoreMode: ScoreMode = effectiveMeta?.isFinished ? 'manual' : 'live';
+    setScoreMode(currentScoreMode);
+
+    if (currentScoreMode === 'manual') {
+      setHomeScore(effectiveMeta?.homeScore ?? 0);
+      setVisitorScore(effectiveMeta?.awayScore ?? 0);
+    } else {
+      setHomeScore(0);
+      setVisitorScore(0);
+    }
 
     // Load existing events from backend
     try {
