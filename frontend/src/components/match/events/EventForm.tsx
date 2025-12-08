@@ -70,7 +70,7 @@ export const EventForm = ({
     const [isGkListOpen, setIsGkListOpen] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
-    // Initialize/Update state when props change
+    // Initialize/Update state when editing a specific event
     useEffect(() => {
         if (event) {
             setSelectedPlayerId(event.playerId || '');
@@ -81,14 +81,17 @@ export const EventForm = ({
             setIsCollective(event.isCollective || false);
             setHasOpposition(event.hasOpposition || false);
             setIsCounterAttack(event.isCounterAttack || false);
-            setSaveMessage(null);
-        } else {
-            // Creation mode defaults or strictly from initialState if provided
+            setSaveMessage(null); // clear message when switching to edit mode
+        }
+    }, [event]);
+
+    // Apply initial state (e.g., stored opponent GK) without clearing the save message
+    useEffect(() => {
+        if (!event) {
             if (initialState?.playerId) setSelectedPlayerId(initialState.playerId);
             if (initialState?.opponentGoalkeeperId) setSelectedOpponentGkId(initialState.opponentGoalkeeperId);
-            setSaveMessage(null);
         }
-    }, [event, initialState]);
+    }, [initialState, event]);
     // Clear any pending timeout on unmount
     useEffect(() => {
         return () => {
@@ -223,7 +226,7 @@ export const EventForm = ({
         setSaveMessage('Jugada introduïda');
         console.log('[EventForm] Save confirmation shown');
         if (saveMessageTimeoutRef.current) clearTimeout(saveMessageTimeoutRef.current);
-        saveMessageTimeoutRef.current = setTimeout(() => setSaveMessage(null), 30000);
+        // Keep the message until user dismisses or a new save occurs
 
         // Reset if creating (optional, depends on interaction model. existing model closes modal. 
         // if creating, maybe we want to keep it open? Plan says "Unified form". 
@@ -554,6 +557,16 @@ export const EventForm = ({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     {saveMessage}
+                    <button
+                        onClick={() => {
+                            if (saveMessageTimeoutRef.current) clearTimeout(saveMessageTimeoutRef.current);
+                            setSaveMessage(null);
+                        }}
+                        className="ml-2 text-white/80 hover:text-white focus:outline-none"
+                        aria-label="Close save confirmation"
+                    >
+                        ×
+                    </button>
                 </div>
             )}
 
