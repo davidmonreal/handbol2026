@@ -123,6 +123,7 @@ export const EventItem = ({
             <button
                 onClick={() => onEdit?.(event)}
                 className="w-full text-left"
+                data-testid={`event-item-${event.id}`}
             >
                 {/* First Line: Time, Player */}
                 <div className="flex items-center justify-between mb-1">

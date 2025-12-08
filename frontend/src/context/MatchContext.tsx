@@ -297,7 +297,8 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
 
     const effectiveMeta = matchMeta ?? fetchedMeta;
     const hasManualScores = effectiveMeta?.homeScore !== undefined || effectiveMeta?.awayScore !== undefined;
-    const currentScoreMode: ScoreMode = effectiveMeta?.isFinished ? 'manual' : 'live';
+    // Only use manual mode if match is finished AND has explicit scores set
+    const currentScoreMode: ScoreMode = effectiveMeta?.isFinished && hasManualScores ? 'manual' : 'live';
     setScoreMode(currentScoreMode);
 
     if (currentScoreMode === 'manual') {
@@ -369,10 +370,9 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
         if (currentScoreMode === 'live') {
           setHomeScore(homeGoals);
           setVisitorScore(visitorGoals);
-        } else if (!hasManualScores) {
-          // Fallback to event totals if we don't have manual scores for a finished match
-          setHomeScore(homeGoals);
-          setVisitorScore(visitorGoals);
+        } else if (currentScoreMode === 'manual') {
+          // Keep the manual scores that were already set - don't recalculate from events
+          // Manual scores are the source of truth for finished matches
         }
       } else {
         // No events yet, start fresh

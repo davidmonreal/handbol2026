@@ -265,7 +265,7 @@ describe('MatchContext', () => {
             });
         });
 
-        it('should fall back to event totals when finished match has no manual scores', async () => {
+        it('should stay live and use event totals when finished match has no manual scores', async () => {
             mockFetch
                 .mockResolvedValueOnce(mockMatchDetailsResponse() as any)
                 .mockResolvedValueOnce({
@@ -296,7 +296,7 @@ describe('MatchContext', () => {
             });
 
             await waitFor(() => {
-                expect(result.current.scoreMode).toBe('manual');
+                expect(result.current.scoreMode).toBe('live');
                 expect(result.current.homeScore).toBe(1);
                 expect(result.current.visitorScore).toBe(0);
             });
@@ -481,6 +481,141 @@ describe('MatchContext', () => {
                 expect(result.current.scoreMode).toBe('manual');
                 expect(result.current.homeScore).toBe(5);
                 expect(result.current.visitorScore).toBe(6);
+            });
+        });
+    });
+
+    describe('deleteEvent', () => {
+        it('should decrement score when deleting a goal in live mode', async () => {
+            mockFetch
+                .mockResolvedValueOnce(mockMatchDetailsResponse() as any)
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => [
+                        {
+                            id: 'e1',
+                            timestamp: 100,
+                            playerId: 'p1',
+                            teamId: 'team-home',
+                            type: 'Shot',
+                            subtype: 'Goal',
+                            player: { name: 'Player 1', number: 10 }
+                        },
+                        {
+                            id: 'e2',
+                            timestamp: 200,
+                            playerId: 'p2',
+                            teamId: 'team-away',
+                            type: 'Shot',
+                            subtype: 'Save',
+                            player: { name: 'Player 2', number: 12 }
+                        }
+                    ]
+                });
+
+            const { result } = renderHook(() => useMatch(), { wrapper });
+
+            await act(async () => {
+                await result.current.setMatchData(
+                    mockMatchData.id,
+                    {
+                        id: mockMatchData.homeTeam.id,
+                        name: mockMatchData.homeTeam.name,
+                        color: 'yellow',
+                        players: []
+                    },
+                    {
+                        id: mockMatchData.awayTeam.id,
+                        name: mockMatchData.awayTeam.name,
+                        color: 'white',
+                        players: []
+                    }
+                );
+            });
+
+            await waitFor(() => {
+                expect(result.current.homeScore).toBe(1);
+                expect(result.current.events).toHaveLength(2);
+            });
+
+            mockFetch.mockResolvedValueOnce({ ok: true });
+
+            await act(async () => {
+                await result.current.deleteEvent('e1', true);
+            });
+
+            await waitFor(() => {
+                expect(result.current.homeScore).toBe(0);
+                expect(result.current.events).toHaveLength(1);
+                expect(result.current.events.find(e => e.id === 'e1')).toBeUndefined();
+            });
+        });
+
+        it('should keep manual score locked when deleting a goal in a finished match', async () => {
+            mockFetch
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({
+                        realTimeFirstHalfStart: null,
+                        realTimeSecondHalfStart: null,
+                        isFinished: true,
+                        homeScore: 5,
+                        awayScore: 6
+                    })
+                } as any)
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => [
+                        {
+                            id: 'e1',
+                            timestamp: 100,
+                            playerId: 'p1',
+                            teamId: 'team-home',
+                            type: 'Shot',
+                            subtype: 'Goal',
+                            player: { name: 'Player 1', number: 10 }
+                        }
+                    ]
+                });
+
+            const { result } = renderHook(() => useMatch(), { wrapper });
+
+            await act(async () => {
+                await result.current.setMatchData(
+                    mockMatchData.id,
+                    {
+                        id: mockMatchData.homeTeam.id,
+                        name: mockMatchData.homeTeam.name,
+                        color: 'yellow',
+                        players: []
+                    },
+                    {
+                        id: mockMatchData.awayTeam.id,
+                        name: mockMatchData.awayTeam.name,
+                        color: 'white',
+                        players: []
+                    }
+                );
+            });
+
+            await waitFor(() => {
+                expect(result.current.scoreMode).toBe('manual');
+                expect(result.current.homeScore).toBe(5);
+                expect(result.current.visitorScore).toBe(6);
+                expect(result.current.events).toHaveLength(1);
+            });
+
+            mockFetch.mockResolvedValueOnce({ ok: true });
+
+            await act(async () => {
+                await result.current.deleteEvent('e1', true);
+            });
+
+            await waitFor(() => {
+                expect(result.current.scoreMode).toBe('manual');
+                expect(result.current.homeScore).toBe(5);
+                expect(result.current.visitorScore).toBe(6);
+                expect(result.current.events).toHaveLength(0);
             });
         });
     });

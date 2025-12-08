@@ -1,4 +1,5 @@
-import { Plus, Minus } from 'lucide-react';
+import { Plus, Minus, Lock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useMatch } from '../../context/MatchContext';
 
 interface MatchTeam {
@@ -40,8 +41,8 @@ export const Scoreboard = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Get calibration from context
-  const { realTimeFirstHalfStart, realTimeSecondHalfStart, setRealTimeCalibration, scoreMode } = useMatch();
+  // Get calibration and match id from context
+  const { realTimeFirstHalfStart, realTimeSecondHalfStart, setRealTimeCalibration, scoreMode, matchId } = useMatch();
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-2 md:p-3 mb-4">
@@ -50,6 +51,7 @@ export const Scoreboard = ({
         <div
           className={`text-center flex-1 p-2 rounded-lg cursor-pointer transition-colors ${activeTeamId === homeTeam.id ? 'bg-blue-50 border-2 border-blue-500' : 'hover:bg-gray-50'}`}
           onClick={() => onTeamSelect(homeTeam.id)}
+          data-testid="home-team-card"
         >
           <div className="mb-1">
             <h2 className="text-sm md:text-lg font-bold text-gray-800 leading-tight">
@@ -59,7 +61,7 @@ export const Scoreboard = ({
               <div className="text-xs text-gray-500">{homeTeam.club.name}</div>
             )}
           </div>
-          <div className="text-3xl md:text-5xl font-bold text-blue-600 mb-2">{homeScore}</div>
+          <div className="text-3xl md:text-5xl font-bold text-blue-600 mb-2" data-testid="home-score">{homeScore}</div>
           {scoreMode !== 'manual' && (
             <div className="flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => onHomeScoreChange(Math.max(0, homeScore - 1))} className="p-1 rounded bg-gray-100 hover:bg-gray-200"><Minus size={14} /></button>
@@ -73,8 +75,14 @@ export const Scoreboard = ({
           <div className="flex flex-col items-center">
             <div className="text-2xl md:text-4xl font-mono font-bold text-gray-900 mb-2">{formatTime(time)}</div>
             {scoreMode === 'manual' && (
-              <div className="text-[11px] font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
-                Result locked (manual)
+              <div className="text-[11px] font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md flex items-center gap-2">
+                <Lock size={12} />
+                <span>Score locked</span>
+                {matchId && (
+                  <Link to={`/matches/${matchId}/edit`} className="text-xs text-indigo-600 hover:underline ml-1">
+                    Edit
+                  </Link>
+                )}
               </div>
             )}
           </div>
@@ -114,6 +122,7 @@ export const Scoreboard = ({
         <div
           className={`text-center flex-1 p-2 rounded-lg cursor-pointer transition-colors ${activeTeamId === visitorTeam.id ? 'bg-red-50 border-2 border-red-500' : 'hover:bg-gray-50'}`}
           onClick={() => onTeamSelect(visitorTeam.id)}
+          data-testid="visitor-team-card"
         >
           <div className="mb-1">
             <h2 className="text-sm md:text-lg font-bold text-gray-800 leading-tight">
@@ -123,7 +132,7 @@ export const Scoreboard = ({
               <div className="text-xs text-gray-500">{visitorTeam.club.name}</div>
             )}
           </div>
-          <div className="text-3xl md:text-5xl font-bold text-red-600 mb-2">{visitorScore}</div>
+          <div className="text-3xl md:text-5xl font-bold text-red-600 mb-2" data-testid="visitor-score">{visitorScore}</div>
           {scoreMode !== 'manual' && (
             <div className="flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => onVisitorScoreChange(Math.max(0, visitorScore - 1))} className="p-1 rounded bg-gray-100 hover:bg-gray-200"><Minus size={14} /></button>

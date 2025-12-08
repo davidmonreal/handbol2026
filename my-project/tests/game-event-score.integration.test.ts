@@ -146,4 +146,38 @@ describe('Integration: game events mutate match score atomically', () => {
     const eventsAfterDelete = await prisma.gameEvent.count({ where: { id: event.id } });
     expect(eventsAfterDelete).toBe(0);
   });
+
+  it('does NOT modify score for finished matches when creating or deleting goals', async () => {
+    const { match, homeTeam } = await createMatch();
+
+    // Manually mark finished with a manual score
+    const finished = await matchRepository.update(match.id, {
+      isFinished: true,
+      homeScore: 33,
+      awayScore: 26,
+    });
+
+    // Create goal should NOT change manual score
+    await gameEventService.create({
+      matchId: finished.id,
+      timestamp: 15,
+      teamId: homeTeam.id,
+      type: 'Shot',
+      subtype: 'Goal',
+      position: 'LW',
+      distance: '6M',
+    });
+
+    const afterCreate = await matchRepository.findById(finished.id);
+    expect(afterCreate?.homeScore).toBe(33);
+    expect(afterCreate?.awayScore).toBe(26);
+
+    // Delete goal should also NOT change manual score
+    const events = await gameEventRepository.findByMatchId(finished.id);
+    await Promise.all(events.map(e => gameEventService.delete(e.id)));
+
+    const afterDelete = await matchRepository.findById(finished.id);
+    expect(afterDelete?.homeScore).toBe(33);
+    expect(afterDelete?.awayScore).toBe(26);
+  });
 });

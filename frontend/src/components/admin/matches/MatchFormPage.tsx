@@ -85,6 +85,17 @@ export const MatchFormPage = () => {
             return;
         }
 
+        // Validate that finished matches have a result set
+        if (status === 'FINISHED') {
+            const homeScoreNum = homeScore !== '' ? parseInt(homeScore) : 0;
+            const awayScoreNum = awayScore !== '' ? parseInt(awayScore) : 0;
+            
+            if (homeScoreNum === 0 && awayScoreNum === 0) {
+                setError('Finished matches must have a result (score cannot be 0-0)');
+                return;
+            }
+        }
+
         setIsSaving(true);
         setError(null);
 

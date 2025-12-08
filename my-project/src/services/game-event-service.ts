@@ -36,14 +36,19 @@ export class GameEventService {
     isCounterAttack?: boolean;
     videoTimestamp?: number;
   }): Promise<GameEvent> {
-    // Only update match scores while the match is live
+    // Fetch match to check status
     const match = await this.matchRepository.findById(data.matchId);
-    const shouldUpdateScore = !!match && !match.isFinished;
+    if (!match) {
+      throw new Error(`Match ${data.matchId} not found`);
+    }
+
+    // Only update match scores while the match is live
+    const shouldUpdateScore = !match.isFinished;
 
     const event = await this.repository.create(data);
 
-    // Update match score if it's a goal
-    if (shouldUpdateScore && match && data.type === 'Shot' && data.subtype === 'Goal') {
+    // Update match score if it's a goal AND match is not finished
+    if (shouldUpdateScore && data.type === 'Shot' && data.subtype === 'Goal') {
       if (data.teamId === match.homeTeamId) {
         await this.matchRepository.update(match.id, { homeScore: match.homeScore + 1 });
       } else if (data.teamId === match.awayTeamId) {

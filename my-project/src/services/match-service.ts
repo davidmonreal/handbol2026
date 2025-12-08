@@ -15,11 +15,14 @@ export class MatchService extends BaseService<Match> {
     return this.matchRepository.findAll();
   }
 
-  // getById can be removed if BaseService provides it, otherwise keep it.
-  // For now, assuming BaseService handles basic CRUD, so it's removed.
-  // async getById(id: string): Promise<Match | null> {
-  //   return this.matchRepository.findById(id);
-  // }
+  async findById(id: string): Promise<Match | null> {
+    const match = await this.matchRepository.findById(id);
+    if (!match) return null;
+
+    // No automatic recalculation: if match is finished, scores are manual (truth)
+    // Goals only contribute to statistics when match is not finished
+    return match;
+  }
 
   async create(data: {
     date: string | Date;
