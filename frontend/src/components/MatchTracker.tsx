@@ -15,7 +15,6 @@ const MatchTracker = () => {
   const {
     homeScore, setHomeScore,
     visitorScore, setVisitorScore,
-    scoreMode,
     time,
     activeTeamId, setActiveTeamId,
     defenseFormation,
