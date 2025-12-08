@@ -36,17 +36,18 @@ export class GameEventService {
     isCounterAttack?: boolean;
     videoTimestamp?: number;
   }): Promise<GameEvent> {
+    // Only update match scores while the match is live
+    const match = await this.matchRepository.findById(data.matchId);
+    const shouldUpdateScore = !!match && !match.isFinished;
+
     const event = await this.repository.create(data);
 
     // Update match score if it's a goal
-    if (data.type === 'Shot' && data.subtype === 'Goal') {
-      const match = await this.matchRepository.findById(data.matchId);
-      if (match) {
-        if (data.teamId === match.homeTeamId) {
-          await this.matchRepository.update(match.id, { homeScore: match.homeScore + 1 });
-        } else if (data.teamId === match.awayTeamId) {
-          await this.matchRepository.update(match.id, { awayScore: match.awayScore + 1 });
-        }
+    if (shouldUpdateScore && match && data.type === 'Shot' && data.subtype === 'Goal') {
+      if (data.teamId === match.homeTeamId) {
+        await this.matchRepository.update(match.id, { homeScore: match.homeScore + 1 });
+      } else if (data.teamId === match.awayTeamId) {
+        await this.matchRepository.update(match.id, { awayScore: match.awayScore + 1 });
       }
     }
 
@@ -75,19 +76,18 @@ export class GameEventService {
   async delete(id: string): Promise<GameEvent> {
     // First get the event to check if it's a goal
     const event = await this.repository.findById(id);
+    const match = event ? await this.matchRepository.findById(event.matchId) : null;
+    const shouldUpdateScore = !!match && !match.isFinished;
 
     // Delete the event
     const deletedEvent = await this.repository.delete(id);
 
     // If it was a goal, recalculate match score
-    if (event && event.type === 'Shot' && event.subtype === 'Goal') {
-      const match = await this.matchRepository.findById(event.matchId);
-      if (match) {
-        if (event.teamId === match.homeTeamId && match.homeScore > 0) {
-          await this.matchRepository.update(match.id, { homeScore: match.homeScore - 1 });
-        } else if (event.teamId === match.awayTeamId && match.awayScore > 0) {
-          await this.matchRepository.update(match.id, { awayScore: match.awayScore - 1 });
-        }
+    if (shouldUpdateScore && event && match && event.type === 'Shot' && event.subtype === 'Goal') {
+      if (event.teamId === match.homeTeamId && match.homeScore > 0) {
+        await this.matchRepository.update(match.id, { homeScore: match.homeScore - 1 });
+      } else if (event.teamId === match.awayTeamId && match.awayScore > 0) {
+        await this.matchRepository.update(match.id, { awayScore: match.awayScore - 1 });
       }
     }
 

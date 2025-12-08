@@ -57,6 +57,22 @@ describe('PlayerController', () => {
     expect(res.json).toHaveBeenCalledWith({ data: mockPlayers, total: 50, skip: 0, take: 20 });
   });
 
+  it('getAll clamps pagination bounds and forwards filters', async () => {
+    req.query = { skip: '-5', take: '500', search: 'anna', clubId: 'club-123' };
+    vi.mocked(service.getAllPaginated).mockResolvedValue([]);
+    vi.mocked(service.count).mockResolvedValue(0);
+
+    await controller.getAll(req as Request, res as Response);
+
+    expect(service.getAllPaginated).toHaveBeenCalledWith({
+      skip: 0,
+      take: 100,
+      search: 'anna',
+      clubId: 'club-123',
+    });
+    expect(service.count).toHaveBeenCalledWith({ search: 'anna', clubId: 'club-123' });
+  });
+
   it('getById returns a player if found', async () => {
     req.params = { id: '1' };
     const mockPlayer = {
@@ -138,6 +154,16 @@ describe('PlayerController', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ error: 'Player number must be positive' });
+  });
+
+  it('create returns 400 for invalid handedness', async () => {
+    req.body = { name: 'Invalid', number: '8', handedness: 'MIDDLE' };
+    vi.mocked(service.create).mockRejectedValue(new Error('Handedness must be LEFT or RIGHT'));
+
+    await controller.create(req as Request, res as Response);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Handedness must be LEFT or RIGHT' });
   });
 
   it('update modifies a player', async () => {

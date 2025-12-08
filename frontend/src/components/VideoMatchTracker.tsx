@@ -96,7 +96,11 @@ const VideoMatchTrackerContent = () => {
                 const visitor = transformTeam(data.awayTeam, 'bg-white');
 
                 const shouldPreserveState = contextMatchIdRef.current === data.id;
-                setMatchData(data.id, home, visitor, shouldPreserveState);
+                setMatchData(data.id, home, visitor, shouldPreserveState, {
+                    isFinished: data.isFinished,
+                    homeScore: data.homeScore,
+                    awayScore: data.awayScore,
+                });
             } catch (error) {
                 console.error('Error loading match:', error);
             }

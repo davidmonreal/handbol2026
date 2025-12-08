@@ -169,4 +169,25 @@ describe('GameEvent Zone Derivation', () => {
 
     expect(updated.zone).toBe('9m-CB');
   });
+
+  it('should recalculate zone when distance and position change together', async () => {
+    const event = await repository.create({
+      matchId,
+      timestamp: 107,
+      teamId,
+      type: 'Shot',
+      subtype: 'Goal',
+      distance: '6M',
+      position: 'LW',
+    });
+
+    const updated = await repository.update(event.id, {
+      distance: '9M',
+      position: 'RB',
+    });
+
+    expect(updated.zone).toBe('9m-RB');
+    expect(updated.distance).toBe('9M');
+    expect(updated.position).toBe('RB');
+  });
 });

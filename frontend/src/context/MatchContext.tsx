@@ -3,6 +3,14 @@ import type { ReactNode } from 'react';
 import type { MatchEvent, DefenseType, ZoneType, SanctionType } from '../types';
 import { API_BASE_URL } from '../config/api';
 
+type ScoreMode = 'live' | 'manual';
+
+interface MatchMeta {
+  isFinished?: boolean;
+  homeScore?: number;
+  awayScore?: number;
+}
+
 interface Player {
   id: string;
   number: number;
@@ -25,6 +33,7 @@ interface MatchContextType {
   setHomeScore: React.Dispatch<React.SetStateAction<number>>;
   visitorScore: number;
   setVisitorScore: React.Dispatch<React.SetStateAction<number>>;
+  scoreMode: ScoreMode;
   isPlaying: boolean;
   setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
   time: number;
@@ -44,7 +53,7 @@ interface MatchContextType {
   setVisitorTeam: React.Dispatch<React.SetStateAction<Team | null>>;
   matchId: string | null;
   setMatchId: React.Dispatch<React.SetStateAction<string | null>>;
-  setMatchData: (id: string, home: Team, visitor: Team, preserveState?: boolean) => void;
+  setMatchData: (id: string, home: Team, visitor: Team, preserveState?: boolean, matchMeta?: MatchMeta) => void;
   selectedOpponentGoalkeeper: Player | null;
   setSelectedOpponentGoalkeeper: React.Dispatch<React.SetStateAction<Player | null>>;
   realTimeFirstHalfStart: number | null;
@@ -57,6 +66,7 @@ const MatchContext = createContext<MatchContextType | undefined>(undefined);
 export const MatchProvider = ({ children }: { children: ReactNode }) => {
   const [homeScore, setHomeScore] = useState(0);
   const [visitorScore, setVisitorScore] = useState(0);
+  const [scoreMode, setScoreMode] = useState<ScoreMode>('live');
   const [isPlaying, setIsPlaying] = useState(false);
   const [time, setTime] = useState(0);
   const [events, setEvents] = useState<MatchEvent[]>([]);
@@ -72,7 +82,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     setEvents(prev => [...prev, event]);
 
     // Update Score Logic
-    if (event.category === 'Shot' && event.action === 'Goal') {
+    if (scoreMode === 'live' && event.category === 'Shot' && event.action === 'Goal') {
       if (event.teamId === homeTeam?.id) setHomeScore(s => s + 1);
       else if (event.teamId === visitorTeam?.id) setVisitorScore(s => s + 1);
     }
@@ -138,7 +148,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     setEvents(updatedEvents);
 
     // Recalculate scores if needed - using the updated events array directly
-    if (affectsScore) {
+    if (affectsScore && scoreMode === 'live') {
       const homeGoals = updatedEvents.filter(e =>
         e.category === 'Shot' && e.action === 'Goal' && e.teamId === homeTeam?.id
       ).length;
@@ -209,7 +219,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     setEvents(updatedEvents);
 
     // Recalculate scores if needed - using the updated events array directly
-    if (isGoal) {
+    if (isGoal && scoreMode === 'live') {
       const homeGoals = updatedEvents.filter(e =>
         e.category === 'Shot' && e.action === 'Goal' && e.teamId === homeTeam?.id
       ).length;
@@ -260,19 +270,24 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const setMatchData = useCallback(async (id: string, home: Team, visitor: Team, preserveState = false) => {
+  const setMatchData = useCallback(async (id: string, home: Team, visitor: Team, preserveState = false, matchMeta?: MatchMeta) => {
     setMatchId(id);
     setHomeTeam(home);
     setVisitorTeam(visitor);
 
+    const hasManualScores = matchMeta?.homeScore !== undefined || matchMeta?.awayScore !== undefined;
+    const currentScoreMode: ScoreMode = matchMeta?.isFinished ? 'manual' : 'live';
+    setScoreMode(currentScoreMode);
+
+    if (currentScoreMode === 'manual') {
+      setHomeScore(matchMeta?.homeScore ?? 0);
+      setVisitorScore(matchMeta?.awayScore ?? 0);
+    } else {
+      setHomeScore(0);
+      setVisitorScore(0);
+    }
+
     // Initial load of match-level data (like calibration) should happen here or separately
-    // Ideally the caller passes it, or we fetch it here.
-    // For now assuming the caller might pass it or we fetch full match details again if needed?
-    // Actually, setMatchData is usually called AFTER fetching match details.
-    // Let's ensure we fetch/set these values if they exist on the match object.
-    // Currently setMatchData args don't include the match object itself... 
-    // We should probably rely on the caller to update this state or fetch it here.
-    // Let's make a quick fetch to get these details if we don't change the signature.
     try {
       const res = await fetch(`${API_BASE_URL}/api/matches/${id}`);
       if (res.ok) {
@@ -339,19 +354,29 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
           e.category === 'Shot' && e.action === 'Goal' && e.teamId === visitor.id
         ).length;
 
-        setHomeScore(homeGoals);
-        setVisitorScore(visitorGoals);
+        if (currentScoreMode === 'live') {
+          setHomeScore(homeGoals);
+          setVisitorScore(visitorGoals);
+        } else if (!hasManualScores) {
+          // Fallback to event totals if we don't have manual scores for a finished match
+          setHomeScore(homeGoals);
+          setVisitorScore(visitorGoals);
+        }
       } else {
         // No events yet, start fresh
         setEvents([]);
-        setHomeScore(0);
-        setVisitorScore(0);
+        if (currentScoreMode === 'live') {
+          setHomeScore(0);
+          setVisitorScore(0);
+        }
       }
     } catch (error) {
       console.error('Error loading events:', error);
       setEvents([]);
-      setHomeScore(0);
-      setVisitorScore(0);
+      if (currentScoreMode === 'live') {
+        setHomeScore(0);
+        setVisitorScore(0);
+      }
     }
 
     setTime(0);
@@ -368,6 +393,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     <MatchContext.Provider value={{
       homeScore, setHomeScore,
       visitorScore, setVisitorScore,
+      scoreMode,
       isPlaying, setIsPlaying,
       time, setTime,
       events, setEvents,

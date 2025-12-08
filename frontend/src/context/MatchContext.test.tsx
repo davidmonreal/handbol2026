@@ -54,6 +54,11 @@ const mockEvents = [
     }
 ];
 
+const mockMatchDetailsResponse = () => ({
+    ok: true,
+    json: async () => ({ realTimeFirstHalfStart: null, realTimeSecondHalfStart: null })
+});
+
 describe('MatchContext', () => {
     beforeEach(() => {
         mockFetch.mockClear();
@@ -65,10 +70,12 @@ describe('MatchContext', () => {
 
     describe('setMatchData', () => {
         it('should load match data and reset state when preserveState is false (default)', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => mockEvents
-            });
+            mockFetch
+                .mockResolvedValueOnce(mockMatchDetailsResponse() as any)
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockEvents
+                });
 
             const { result } = renderHook(() => useMatch(), { wrapper });
 
@@ -125,10 +132,12 @@ describe('MatchContext', () => {
         });
 
         it('should preserve state when preserveState is true', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => mockEvents
-            });
+            mockFetch
+                .mockResolvedValueOnce(mockMatchDetailsResponse() as any)
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockEvents
+                });
 
             const { result } = renderHook(() => useMatch(), { wrapper });
 
@@ -182,10 +191,12 @@ describe('MatchContext', () => {
         });
 
         it('should load events from backend and calculate scores', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => mockEvents
-            });
+            mockFetch
+                .mockResolvedValueOnce(mockMatchDetailsResponse() as any)
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockEvents
+                });
 
             const { result } = renderHook(() => useMatch(), { wrapper });
 
@@ -217,11 +228,87 @@ describe('MatchContext', () => {
             });
         });
 
-        it('should handle empty events gracefully', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => []
+        it('should lock to manual scores when match is finished', async () => {
+            mockFetch
+                .mockResolvedValueOnce(mockMatchDetailsResponse() as any)
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockEvents
+                });
+
+            const { result } = renderHook(() => useMatch(), { wrapper });
+
+            await act(async () => {
+                await result.current.setMatchData(
+                    mockMatchData.id,
+                    {
+                        id: mockMatchData.homeTeam.id,
+                        name: mockMatchData.homeTeam.name,
+                        color: 'yellow',
+                        players: []
+                    },
+                    {
+                        id: mockMatchData.awayTeam.id,
+                        name: mockMatchData.awayTeam.name,
+                        color: 'white',
+                        players: []
+                    },
+                    false,
+                    { isFinished: true, homeScore: 25, awayScore: 23 }
+                );
             });
+
+            await waitFor(() => {
+                expect(result.current.scoreMode).toBe('manual');
+                expect(result.current.homeScore).toBe(25);
+                expect(result.current.visitorScore).toBe(23);
+            });
+        });
+
+        it('should fall back to event totals when finished match has no manual scores', async () => {
+            mockFetch
+                .mockResolvedValueOnce(mockMatchDetailsResponse() as any)
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => mockEvents
+                });
+
+            const { result } = renderHook(() => useMatch(), { wrapper });
+
+            await act(async () => {
+                await result.current.setMatchData(
+                    mockMatchData.id,
+                    {
+                        id: mockMatchData.homeTeam.id,
+                        name: mockMatchData.homeTeam.name,
+                        color: 'yellow',
+                        players: []
+                    },
+                    {
+                        id: mockMatchData.awayTeam.id,
+                        name: mockMatchData.awayTeam.name,
+                        color: 'white',
+                        players: []
+                    },
+                    false,
+                    { isFinished: true }
+                );
+            });
+
+            await waitFor(() => {
+                expect(result.current.scoreMode).toBe('manual');
+                expect(result.current.homeScore).toBe(1);
+                expect(result.current.visitorScore).toBe(0);
+            });
+        });
+
+        it('should handle empty events gracefully', async () => {
+            mockFetch
+                .mockResolvedValueOnce(mockMatchDetailsResponse() as any)
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => []
+                });
 
             const { result } = renderHook(() => useMatch(), { wrapper });
 
@@ -251,7 +338,9 @@ describe('MatchContext', () => {
         });
 
         it('should handle backend errors and reset scores', async () => {
-            mockFetch.mockRejectedValueOnce(new Error('Network error'));
+            mockFetch
+                .mockResolvedValueOnce(mockMatchDetailsResponse() as any)
+                .mockRejectedValueOnce(new Error('Network error'));
 
             const { result } = renderHook(() => useMatch(), { wrapper });
 
@@ -281,10 +370,12 @@ describe('MatchContext', () => {
         });
 
         it('should reset time and isPlaying regardless of preserveState', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => []
-            });
+            mockFetch
+                .mockResolvedValueOnce(mockMatchDetailsResponse() as any)
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => []
+                });
 
             const { result } = renderHook(() => useMatch(), { wrapper });
 
@@ -311,10 +402,12 @@ describe('MatchContext', () => {
 
     describe('addEvent', () => {
         it('should update score when adding goal event', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => []
-            });
+            mockFetch
+                .mockResolvedValueOnce(mockMatchDetailsResponse() as any)
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => []
+                });
 
             const { result } = renderHook(() => useMatch(), { wrapper });
 
@@ -345,6 +438,49 @@ describe('MatchContext', () => {
             await waitFor(() => {
                 expect(result.current.homeScore).toBe(1);
                 expect(result.current.events).toHaveLength(1);
+            });
+        });
+
+        it('should not change locked manual score when adding events', async () => {
+            mockFetch
+                .mockResolvedValueOnce(mockMatchDetailsResponse() as any)
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => []
+                });
+
+            const { result } = renderHook(() => useMatch(), { wrapper });
+
+            await act(async () => {
+                await result.current.setMatchData(
+                    'match-1',
+                    { id: 'team1', name: 'Team 1', color: 'red', players: [] },
+                    { id: 'team2', name: 'Team 2', color: 'blue', players: [] },
+                    false,
+                    { isFinished: true, homeScore: 5, awayScore: 6 }
+                );
+            });
+
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ id: 'new-event' })
+            });
+
+            await act(async () => {
+                await result.current.addEvent({
+                    id: 'e1',
+                    timestamp: 100,
+                    playerId: 'p1',
+                    teamId: 'team1',
+                    category: 'Shot',
+                    action: 'Goal'
+                });
+            });
+
+            await waitFor(() => {
+                expect(result.current.scoreMode).toBe('manual');
+                expect(result.current.homeScore).toBe(5);
+                expect(result.current.visitorScore).toBe(6);
             });
         });
     });

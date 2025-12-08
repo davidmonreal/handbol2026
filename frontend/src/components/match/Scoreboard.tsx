@@ -41,7 +41,7 @@ export const Scoreboard = ({
   };
 
   // Get calibration from context
-  const { realTimeFirstHalfStart, realTimeSecondHalfStart, setRealTimeCalibration } = useMatch();
+  const { realTimeFirstHalfStart, realTimeSecondHalfStart, setRealTimeCalibration, scoreMode } = useMatch();
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-2 md:p-3 mb-4">
@@ -70,6 +70,11 @@ export const Scoreboard = ({
         <div className="flex flex-col items-center px-2 md:px-4 space-y-3">
           <div className="flex flex-col items-center">
             <div className="text-2xl md:text-4xl font-mono font-bold text-gray-900 mb-2">{formatTime(time)}</div>
+            {scoreMode === 'manual' && (
+              <div className="text-[11px] font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
+                Result locked (manual)
+              </div>
+            )}
           </div>
 
           {/* Calibration Buttons - Only show in MatchTracker (not VideoMatchTracker) */}
