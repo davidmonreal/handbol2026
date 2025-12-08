@@ -60,10 +60,12 @@ export const Scoreboard = ({
             )}
           </div>
           <div className="text-3xl md:text-5xl font-bold text-blue-600 mb-2">{homeScore}</div>
-          <div className="flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => onHomeScoreChange(Math.max(0, homeScore - 1))} className="p-1 rounded bg-gray-100 hover:bg-gray-200"><Minus size={14} /></button>
-            <button onClick={() => onHomeScoreChange(homeScore + 1)} className="p-1 rounded bg-blue-100 text-blue-600 hover:bg-blue-200"><Plus size={14} /></button>
-          </div>
+          {scoreMode !== 'manual' && (
+            <div className="flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => onHomeScoreChange(Math.max(0, homeScore - 1))} className="p-1 rounded bg-gray-100 hover:bg-gray-200"><Minus size={14} /></button>
+              <button onClick={() => onHomeScoreChange(homeScore + 1)} className="p-1 rounded bg-blue-100 text-blue-600 hover:bg-blue-200"><Plus size={14} /></button>
+            </div>
+          )}
         </div>
 
         {/* Timer & Controls */}
@@ -122,10 +124,12 @@ export const Scoreboard = ({
             )}
           </div>
           <div className="text-3xl md:text-5xl font-bold text-red-600 mb-2">{visitorScore}</div>
-          <div className="flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => onVisitorScoreChange(Math.max(0, visitorScore - 1))} className="p-1 rounded bg-gray-100 hover:bg-gray-200"><Minus size={14} /></button>
-            <button onClick={() => onVisitorScoreChange(visitorScore + 1)} className="p-1 rounded bg-red-100 text-red-600 hover:bg-red-200"><Plus size={14} /></button>
-          </div>
+          {scoreMode !== 'manual' && (
+            <div className="flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => onVisitorScoreChange(Math.max(0, visitorScore - 1))} className="p-1 rounded bg-gray-100 hover:bg-gray-200"><Minus size={14} /></button>
+              <button onClick={() => onVisitorScoreChange(visitorScore + 1)} className="p-1 rounded bg-red-100 text-red-600 hover:bg-red-200"><Plus size={14} /></button>
+            </div>
+          )}
         </div>
       </div>
     </div>
