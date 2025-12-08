@@ -344,7 +344,7 @@ export const EventForm = ({
 
             {/* 1. Category Selection */}
             <div>
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Category</div>
+                <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Category</div>
                 <div className="grid grid-cols-3 gap-2">
                     {['Shot', 'Turnover', 'Sanction'].map(cat => (
                         <button
@@ -363,7 +363,7 @@ export const EventForm = ({
 
             {/* 2. Zone Selection (Always visible) */}
             <div>
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Select Zone</div>
+                <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Select Zone</div>
                 <ZoneSelector
                     selectedZone={selectedZone}
                     onZoneSelect={setSelectedZone}
@@ -373,7 +373,7 @@ export const EventForm = ({
 
             {/* 3. Action Selection */}
             <div>
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                     {selectedCategory === 'Shot' ? 'Result' : selectedCategory === 'Turnover' ? 'Type' : 'Severity'}
                 </div>
 
@@ -459,7 +459,7 @@ export const EventForm = ({
             {/* 5. Context Toggles (Only for Shot) */}
             {selectedCategory === 'Shot' && (
                 <div>
-                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Context</div>
+                    <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Context</div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <SplitToggle
                             value={isCollective}
