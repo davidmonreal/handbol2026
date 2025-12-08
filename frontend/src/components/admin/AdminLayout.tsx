@@ -23,11 +23,7 @@ export const AdminLayout = () => {
                 <span className="font-bold text-xl">Handbol 2026</span>
               </Link>
             </div>
-            <div className="flex items-center space-x-4">
-              <Link to="/statistics" className="text-gray-600 hover:text-indigo-600 font-medium">
-                Statistics
-              </Link>
-            </div>
+            <div className="flex items-center space-x-4" />
           </div>
         </div>
       </nav>
