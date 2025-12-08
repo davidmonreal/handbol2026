@@ -29,9 +29,7 @@ const VideoMatchTrackerContent = () => {
     const {
         homeScore, setHomeScore,
         visitorScore, setVisitorScore,
-        isPlaying, setIsPlaying,
         time, setTime,
-        setEvents,
         activeTeamId, setActiveTeamId,
         defenseFormation,
         addEvent,
@@ -245,19 +243,9 @@ const VideoMatchTrackerContent = () => {
                     homeScore={homeScore}
                     visitorScore={visitorScore}
                     time={time}
-                    isPlaying={isPlaying}
                     activeTeamId={activeTeamId}
                     onHomeScoreChange={setHomeScore}
                     onVisitorScoreChange={setVisitorScore}
-                    onTogglePlay={() => setIsPlaying(!isPlaying)}
-                    onReset={() => {
-                        setIsPlaying(false);
-                        setTime(0);
-                        setHomeScore(0);
-                        setVisitorScore(0);
-                        setActiveTeamId(null);
-                        setEvents([]);
-                    }}
                     onTeamSelect={handleTeamSelect}
                     showCalibration={false}
                 />

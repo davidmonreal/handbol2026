@@ -466,21 +466,18 @@ export const EventForm = ({
                             onChange={setIsCollective}
                             leftOption={{ label: 'Individual', icon: User }}
                             rightOption={{ label: 'Collective', icon: Users }}
-                            colorClass="purple"
                         />
                         <SplitToggle
                             value={hasOpposition}
                             onChange={setHasOpposition}
                             leftOption={{ label: 'Free', icon: User }}
                             rightOption={{ label: 'Opposition', icon: [User, Users] }}
-                            colorClass="orange"
                         />
                         <SplitToggle
                             value={isCounterAttack}
                             onChange={setIsCounterAttack}
                             leftOption={{ label: 'Static', icon: ArrowLeftRight }}
                             rightOption={{ label: 'Counter', icon: ArrowUp }}
-                            colorClass="cyan"
                         />
                     </div>
                 </div>

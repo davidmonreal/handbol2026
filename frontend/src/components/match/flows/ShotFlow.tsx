@@ -77,7 +77,6 @@ export const ShotFlow = ({
                   onChange={(val) => !val ? onToggleCollective() : onToggleCollective()} // Toggle logic needs to match boolean
                   leftOption={{ label: 'Individual', icon: User }}
                   rightOption={{ label: 'Collective', icon: Users }}
-                  colorClass="purple"
                 />
 
                 <SplitToggle
@@ -85,7 +84,6 @@ export const ShotFlow = ({
                   onChange={(val) => !val ? onToggleOpposition() : onToggleOpposition()}
                   leftOption={{ label: 'Free', icon: User }}
                   rightOption={{ label: 'Opposition', icon: [User, Users] }}
-                  colorClass="orange"
                 />
 
                 <SplitToggle
@@ -93,7 +91,6 @@ export const ShotFlow = ({
                   onChange={(val) => !val ? onToggleCounter() : onToggleCounter()}
                   leftOption={{ label: 'Static', icon: ArrowLeftRight }}
                   rightOption={{ label: 'Counter', icon: ArrowUp }}
-                  colorClass="cyan"
                 />
               </div>
             )}

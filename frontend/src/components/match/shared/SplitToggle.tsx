@@ -5,15 +5,13 @@ interface SplitToggleProps {
   onChange: (value: boolean) => void;
   leftOption: { label: string; icon: LucideIcon | LucideIcon[] };
   rightOption: { label: string; icon: LucideIcon | LucideIcon[] };
-  colorClass: 'purple' | 'orange' | 'cyan';
 }
 
 export const SplitToggle = ({
   value,
   onChange,
   leftOption,
-  rightOption,
-  colorClass
+  rightOption
 }: SplitToggleProps) => {
   const getStateClasses = (isActive: boolean) => {
     if (!isActive) {

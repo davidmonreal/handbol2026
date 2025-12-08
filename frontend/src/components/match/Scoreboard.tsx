@@ -15,12 +15,9 @@ interface ScoreboardProps {
   homeScore: number;
   visitorScore: number;
   time: number;
-  isPlaying: boolean;
   activeTeamId: string | null;
   onHomeScoreChange: (score: number) => void;
   onVisitorScoreChange: (score: number) => void;
-  onTogglePlay: () => void;
-  onReset: () => void;
   onTeamSelect: (teamId: string) => void;
   showCalibration?: boolean; // Show calibration buttons (for MatchTracker only)
 }
@@ -31,12 +28,9 @@ export const Scoreboard = ({
   homeScore,
   visitorScore,
   time,
-  isPlaying,
   activeTeamId,
   onHomeScoreChange,
   onVisitorScoreChange,
-  onTogglePlay,
-  onReset,
   onTeamSelect,
   showCalibration = true
 }: ScoreboardProps) => {
