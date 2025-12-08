@@ -222,7 +222,7 @@ export const EventForm = ({
         onSave(updatedEvent, selectedOpponentGkId);
         setSaveMessage('Jugada introduïda');
         if (saveMessageTimeoutRef.current) clearTimeout(saveMessageTimeoutRef.current);
-        saveMessageTimeoutRef.current = setTimeout(() => setSaveMessage(null), 8000);
+        saveMessageTimeoutRef.current = setTimeout(() => setSaveMessage(null), 12000);
 
         // Reset if creating (optional, depends on interaction model. existing model closes modal. 
         // if creating, maybe we want to keep it open? Plan says "Unified form". 
@@ -521,12 +521,16 @@ export const EventForm = ({
                         </button>
                     )}
                     {saveMessage && (
-                        <span className="text-sm text-green-600 font-medium flex items-center gap-1">
+                        <div
+                            className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-50 text-green-700 text-sm font-semibold border border-green-200"
+                            role="status"
+                            aria-live="polite"
+                        >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
                             {saveMessage}
-                        </span>
+                        </div>
                     )}
                 </div>
 
