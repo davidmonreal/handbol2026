@@ -439,19 +439,24 @@ export const EventForm = ({
                     <h4 className="text-sm font-bold text-gray-500 mb-3 text-center">
                         {selectedAction === 'Goal' ? 'Select Goal Target' : 'Select Save Location'}
                     </h4>
-                    <div className="max-w-[200px] mx-auto aspect-square bg-gray-100 rounded-lg p-2 border-4 border-gray-200">
-                        <div className="grid grid-cols-3 grid-rows-3 gap-2 h-full">
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((target) => (
-                                <button
-                                    key={target}
-                                    aria-label={`goal-target-${target}`}
-                                    onClick={() => setSelectedTarget(target)}
-                                    className={`border-2 rounded-md transition-all shadow-sm ${selectedTarget === target
-                                        ? 'bg-indigo-600 border-indigo-600'
-                                        : 'bg-white border-gray-200 hover:border-indigo-500 hover:bg-indigo-50'
+                    <div className="max-w-[220px] mx-auto bg-white rounded-xl p-2 border border-gray-200 shadow-sm">
+                        <div className="grid grid-cols-3 gap-2">
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((target) => {
+                                const isActive = selectedTarget === target;
+                                return (
+                                    <button
+                                        key={target}
+                                        aria-label={`goal-target-${target}`}
+                                        aria-pressed={isActive}
+                                        onClick={() => setSelectedTarget(target)}
+                                        className={`h-14 rounded-lg transition-all border-2 flex items-center justify-center ${
+                                            isActive
+                                                ? 'bg-indigo-600 border-indigo-600 shadow-sm'
+                                                : 'bg-white border-gray-200 hover:border-indigo-500 hover:bg-indigo-50'
                                         }`}
-                                />
-                            ))}
+                                    />
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
