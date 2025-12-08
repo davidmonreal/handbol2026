@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     User, Users, ArrowUp, ArrowLeftRight,
     Target, Wind, Ban, Hand, Goal as GoalIcon,
