@@ -26,6 +26,22 @@ export const EventList = ({
     const { events } = useMatch();
     const [eventsToShow, setEventsToShow] = useState(initialEventsToShow);
 
+    // If no team selected, don't show any events and display an informational message instead
+    if (filterTeamId === null) {
+        return (
+            <div className="bg-white rounded-lg shadow">
+                <div className="px-4 py-3 border-b border-gray-200">
+                    <h3 className="font-bold text-gray-700 uppercase text-xs tracking-wider">
+                        Select a team to view existing events
+                    </h3>
+                </div>
+                <div className="p-4 text-center text-gray-500 text-sm">
+                    Plays already recorded will appear here once you pick one of the two teams above.
+                </div>
+            </div>
+        );
+    }
+
     // Filter events if necessary
     const filteredEvents = filterTeamId
         ? events.filter(e => e.teamId === filterTeamId)
