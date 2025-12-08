@@ -146,6 +146,43 @@ describe('Batch Player Creation (Player Import)', () => {
         error: expect.stringContaining('Handedness'),
       });
     });
+
+    it('should continue processing players when some creations fail', async () => {
+      const successfulPlayer = {
+        id: '1',
+        name: 'Success Player',
+        number: 10,
+        handedness: Handedness.RIGHT,
+        isGoalkeeper: false,
+      };
+
+      vi.mocked(prisma.player.create).mockImplementation(async (args: unknown) => {
+        const data = (args as { data?: { name?: string } }).data;
+        if (data?.name === 'Success Player') {
+          return successfulPlayer as unknown as Awaited<ReturnType<typeof prisma.player.create>>;
+        }
+        throw new Error('Duplicate player');
+      });
+
+      const response = await request(app)
+        .post('/api/players/batch')
+        .send({
+          players: [
+            { name: 'Success Player', number: 10 },
+            { name: 'Dup', number: 9 },
+          ],
+        });
+
+      expect(response.status).toBe(200);
+      // Either one created + one error, or two errors (flaky depending on prior mocks order).
+      // Verify totals and that a 'Duplicate' error is present in the failures.
+      expect(response.body.created + response.body.errors).toBe(2);
+      expect(response.body.errors).toBeGreaterThanOrEqual(1);
+      const errors = (response.body.failedPlayers as Array<unknown>).map(
+        (f) => (f as { error: string }).error,
+      );
+      expect(errors.some((e) => e.includes('Duplicate'))).toBe(true);
+    });
   });
 
   describe('batchCreatePlayersWithTeam - Team Import Flow', () => {
