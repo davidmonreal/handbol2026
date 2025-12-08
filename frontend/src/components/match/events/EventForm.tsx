@@ -48,7 +48,7 @@ export const EventForm = ({
     onDelete
 }: EventFormProps) => {
     const [saveMessage, setSaveMessage] = useState<string | null>(null);
-    const saveMessageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const saveMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // State initialization
     const [selectedPlayerId, setSelectedPlayerId] = useState<string>(
         event?.playerId || initialState?.playerId || ''

@@ -59,7 +59,7 @@ describe('Seed Data Format Validation', () => {
       where: { type: 'Sanction' },
     });
 
-    const validSanctionTypes = ['Yellow', '2min', 'Red'];
+    const validSanctionTypes = ['Foul', 'Yellow', '2min', 'Red', 'Blue Card'];
 
     sanctionEvents.forEach((event) => {
       if (event.sanctionType) {
