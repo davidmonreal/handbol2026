@@ -507,7 +507,7 @@ export const EventForm = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-300">
+            <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-300 flex-wrap">
                 <div className="flex items-center gap-3">
                     {event && (
                         <button
@@ -524,19 +524,6 @@ export const EventForm = ({
                 </div>
 
                 <div className="flex gap-2 items-center flex-wrap justify-end">
-                    {saveMessage && (
-                        <div
-                            className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-50 text-green-700 text-sm font-semibold border border-green-200"
-                            role="status"
-                            aria-live="polite"
-                            data-testid="save-message"
-                        >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                            {saveMessage}
-                        </div>
-                    )}
                     <button
                         onClick={onCancel}
                         className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
@@ -555,6 +542,20 @@ export const EventForm = ({
                     </button>
                 </div>
             </div>
+
+            {saveMessage && (
+                <div
+                    className="mt-3 flex items-center gap-2 px-4 py-2 rounded-lg bg-green-50 text-green-700 text-sm font-semibold border border-green-200"
+                    role="status"
+                    aria-live="polite"
+                    data-testid="save-message"
+                >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    {saveMessage}
+                </div>
+            )}
 
             <ConfirmationModal
                 isOpen={showDeleteConfirmation}
