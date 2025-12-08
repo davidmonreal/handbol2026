@@ -113,13 +113,14 @@ export function StatisticsView({
     teamId
   );
 
-  // Apply all filters
-  const filteredEvents = useMemo(() => {
+  const opponentTeamId = matchData
+    ? (selectedTeamId === matchData.homeTeamId ? matchData.awayTeamId : matchData.homeTeamId)
+    : null;
 
-
-    const filtered = events.filter(e => {
-      // Filter by team in match context
-      if (context === 'match' && selectedTeamId && e.teamId !== selectedTeamId) return false;
+  // Apply all filters for both own team (selected) and opponent (for fouls)
+  const { filteredEvents, filteredFoulEvents } = useMemo(() => {
+    const passesFilters = (e: MatchEvent, teamIdConstraint: string | null) => {
+      if (context === 'match' && teamIdConstraint && e.teamId !== teamIdConstraint) return false;
       if (filterZone && e.zone !== filterZone) return false;
 
       // Player filter with goalkeeper support
@@ -127,14 +128,9 @@ export function StatisticsView({
         const playerInfo = getPlayerInfo(filterPlayer);
 
         if (playerInfo.isGoalkeeper) {
-          // For goalkeepers: ONLY include events where they are the active goalkeeper
-          // (not events where they scored a goal themselves)
           if (e.activeGoalkeeperId !== filterPlayer) return false;
-
-          // Only show Shot events (Goals and Saves) for goalkeepers
           if (e.category === 'Shot' && !['Goal', 'Save'].includes(e.action)) return false;
         } else {
-          // For field players: only show events where they are the playerId
           if (e.playerId !== filterPlayer) return false;
         }
       }
@@ -143,11 +139,13 @@ export function StatisticsView({
       if (filterCollective !== null && (e.isCollective ?? e.context?.isCollective) !== filterCollective) return false;
       if (filterCounterAttack !== null && (e.isCounterAttack ?? e.context?.isCounterAttack) !== filterCounterAttack) return false;
       return true;
-    });
+    };
 
+    const own = events.filter(e => passesFilters(e, selectedTeamId || null));
+    const rival = opponentTeamId ? events.filter(e => passesFilters(e, opponentTeamId)) : [];
 
-    return filtered;
-  }, [events, context, selectedTeamId, filterZone, filterPlayer, filterOpposition, filterCollective, filterCounterAttack]);
+    return { filteredEvents: own, filteredFoulEvents: rival };
+  }, [events, context, selectedTeamId, opponentTeamId, filterZone, filterPlayer, filterOpposition, filterCollective, filterCounterAttack, getPlayerInfo]);
 
   // Determine if we're viewing goalkeeper statistics
   const isGoalkeeperView = useMemo(() => {
@@ -269,6 +267,7 @@ export function StatisticsView({
       <StatisticsPanel
         data={{
           events: filteredEvents,
+          foulEvents: filteredFoulEvents,
           title: '',
           context,
           isGoalkeeper: isGoalkeeperView,

@@ -99,5 +99,94 @@ describe('useStatisticsCalculator', () => {
     it('handles zero shots correctly', () => {
         const { result } = renderHook(() => useStatisticsCalculator([], undefined, true));
         expect(result.current.efficiency).toBe(0);
+        expect(result.current.foulZoneStats.size).toBeGreaterThan(0);
+    });
+
+    it('calculates foul rate per zone (fouls / plays)', () => {
+        const events: MatchEvent[] = [
+            {
+                id: '1',
+                timestamp: 1,
+                teamId: 't1',
+                category: 'Shot',
+                action: 'Goal',
+                zone: '6m-CB',
+            },
+            {
+                id: '2',
+                timestamp: 2,
+                teamId: 't1',
+                category: 'Sanction',
+                action: 'Foul',
+                zone: '6m-CB',
+            },
+            {
+                id: '3',
+                timestamp: 3,
+                teamId: 't1',
+                category: 'Sanction',
+                action: 'Foul',
+                zone: '9m-LB',
+            },
+        ] as MatchEvent[];
+
+        const { result } = renderHook(() => useStatisticsCalculator(events, undefined, false));
+        const zone6 = result.current.foulZoneStats.get('6m-CB');
+        const zone9 = result.current.foulZoneStats.get('9m-LB');
+
+        expect(zone6?.shots).toBe(2); // 1 shot + 1 foul = plays
+        expect(zone6?.goals).toBe(1); // fouls
+        expect(zone6?.efficiency).toBeCloseTo(50, 1);
+
+        expect(zone9?.shots).toBe(1); // only foul -> 1 play
+        expect(zone9?.goals).toBe(1);
+        expect(zone9?.efficiency).toBeCloseTo(100, 1);
+    });
+
+    it('uses foulEvents (opponent) as source for foul distribution', () => {
+        const teamEvents: MatchEvent[] = [
+            {
+                id: '1',
+                timestamp: 1,
+                teamId: 'teamA',
+                category: 'Shot',
+                action: 'Goal',
+                zone: '6m-CB',
+            },
+        ] as MatchEvent[];
+
+        const opponentEvents: MatchEvent[] = [
+            {
+                id: '2',
+                timestamp: 2,
+                teamId: 'teamB',
+                category: 'Shot',
+                action: 'Goal',
+                zone: '9m-LB',
+            },
+            {
+                id: '3',
+                timestamp: 3,
+                teamId: 'teamB',
+                category: 'Sanction',
+                action: 'Foul',
+                zone: '9m-LB',
+            },
+        ] as MatchEvent[];
+
+        const { result } = renderHook(() =>
+            useStatisticsCalculator(teamEvents, undefined, false, opponentEvents)
+        );
+
+        // Own zone should not accumulate fouls when foulEvents provided
+        const ownZone = result.current.foulZoneStats.get('6m-CB');
+        expect(ownZone?.shots).toBe(0);
+        expect(ownZone?.goals).toBe(0);
+
+        // Opponent zone counts their plays/fouls
+        const opponentZone = result.current.foulZoneStats.get('9m-LB');
+        expect(opponentZone?.shots).toBe(2); // 1 shot + 1 foul
+        expect(opponentZone?.goals).toBe(1); // fouls stored in goals
+        expect(opponentZone?.efficiency).toBeCloseTo(50, 1);
     });
 });

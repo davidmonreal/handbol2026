@@ -16,11 +16,15 @@ import type {
 export function useStatisticsCalculator(
     events: MatchEvent[],
     comparison?: ComparisonData,
-    isGoalkeeper: boolean = false
+    isGoalkeeper: boolean = false,
+    foulEvents?: MatchEvent[]
 ): CalculatedStats {
     return useMemo(() => {
         // Filter only shot events
         const shots = events.filter(e => e.category === 'Shot');
+        const foulEventSource = foulEvents ?? events;
+        const foulShots = foulEventSource.filter(e => e.category === 'Shot');
+        const fouls = foulEventSource.filter(e => e.category === 'Sanction');
         const goals = shots.filter(e => e.action === 'Goal');
         const saves = shots.filter(e => e.action === 'Save');
         const misses = shots.filter(e => e.action === 'Miss');
@@ -43,22 +47,44 @@ export function useStatisticsCalculator(
 
         // Calculate zone statistics
         const zoneStats = new Map<ZoneType | '7m', ZoneStatistics>();
+        const foulZoneStats = new Map<ZoneType | '7m', ZoneStatistics>();
 
         // Initialize all zones with zero values
         [...ZONE_CONFIG.sixMeter, ...ZONE_CONFIG.nineMeter, ZONE_CONFIG.penalty].forEach(({ zone }) => {
             zoneStats.set(zone, { shots: 0, goals: 0, efficiency: 0 });
+            foulZoneStats.set(zone, { shots: 0, goals: 0, efficiency: 0 }); // shots = plays, goals = fouls
         });
 
-        // Count shots and goals per zone
+        // Count shots/goals and plays/fouls per zone
         shots.forEach(shot => {
             if (!shot.zone) return;
 
-            const stats = zoneStats.get(shot.zone);
-            if (stats) {
-                stats.shots++;
+            const shotStats = zoneStats.get(shot.zone);
+            if (shotStats) {
+                shotStats.shots++;
                 if (shot.action === 'Goal') {
-                    stats.goals++;
+                    shotStats.goals++;
                 }
+            }
+        });
+
+        // For foul view: plays = shots + fouls of the selected source (team or opponent)
+        foulShots.forEach(shot => {
+            if (!shot.zone) return;
+
+            const foulStats = foulZoneStats.get(shot.zone);
+            if (foulStats) {
+                foulStats.shots++; // plays in this zone
+            }
+        });
+
+        fouls.forEach(foul => {
+            if (!foul.zone) return;
+
+            const foulStats = foulZoneStats.get(foul.zone);
+            if (foulStats) {
+                foulStats.shots++; // plays
+                foulStats.goals++; // fouls count (reuse goals field)
             }
         });
 
@@ -99,6 +125,12 @@ export function useStatisticsCalculator(
                 stats.efficiency = stats.shots > 0 ? (stats.goals / stats.shots) * 100 : 0;
             });
         }
+
+        // Fouls efficiency (share of total fouls per zone)
+        const totalFouls = fouls.length;
+        foulZoneStats.forEach((stats) => {
+            stats.efficiency = stats.shots > 0 ? (stats.goals / stats.shots) * 100 : 0; // % fouls over plays in zone
+        });
 
         // Calculate goal target statistics (1-9)
         const goalTargetStats = new Map<number, GoalTargetStatistics>();
@@ -189,6 +221,7 @@ export function useStatisticsCalculator(
             totalPosts: posts.length,
             efficiency,
             zoneStats,
+            foulZoneStats,
             playerStats,
             goalTargetStats,
         };

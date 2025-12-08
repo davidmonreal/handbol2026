@@ -34,7 +34,7 @@ export function StatisticsPanel({
   const [selectedZone, setSelectedZone] = useState<ZoneType | '7m' | null>(null);
 
   // Calculate all statistics from events
-  const stats = useStatisticsCalculator(data.events, comparison, data.isGoalkeeper);
+  const stats = useStatisticsCalculator(data.events, comparison, data.isGoalkeeper, data.foulEvents);
 
 
 
@@ -43,7 +43,7 @@ export function StatisticsPanel({
     ? data.events.filter(e => e.zone === selectedZone)
     : data.events;
 
-  const filteredStats = useStatisticsCalculator(filteredEvents, comparison, data.isGoalkeeper);
+  const filteredStats = useStatisticsCalculator(filteredEvents, comparison, data.isGoalkeeper, data.foulEvents);
 
 
 
@@ -87,6 +87,7 @@ export function StatisticsPanel({
         <ZoneDistribution
           isGoalkeeper={data.isGoalkeeper}
           zoneStats={stats.zoneStats}
+          foulZoneStats={stats.foulZoneStats}
           onZoneClick={handleZoneClick}
           selectedZone={selectedZone}
         />

@@ -21,23 +21,24 @@ export type HeatmapColor = 'red' | 'orange' | 'yellow' | 'default';
  * @returns Map of zone ID to HeatmapColor strings
  */
 export function calculateZoneColors(
-    zoneStats: Map<string | number, { shots: number }>
+    zoneStats: Map<string | number, { shots: number; efficiency?: number }>,
+    getValue: (stats: { shots: number; efficiency?: number }) => number = (stats) => stats.shots
 ): Map<string | number, HeatmapColor> {
     const colors = new Map<string | number, HeatmapColor>();
 
-    // Build a list of unique, non-zero shot counts in descending order to rank ties as a single bucket.
+    // Build a list of unique, non-zero values (shots or efficiency) in descending order to rank ties as a single bucket.
     const uniqueCounts = Array.from(
         new Set(
             Array.from(zoneStats.values())
-                .map((s) => s.shots)
-                .filter((count) => count > 0)
+                .map((stats) => getValue(stats))
+                .filter((value) => value > 0)
         )
     ).sort((a, b) => b - a);
 
-    // Helper to get color based on the rank of the shot count bucket
-    const getColorForCount = (shots: number): HeatmapColor => {
-        if (shots === 0) return 'default';
-        const rank = uniqueCounts.indexOf(shots);
+    // Helper to get color based on the rank of the value bucket
+    const getColorForValue = (value: number): HeatmapColor => {
+        if (value === 0) return 'default';
+        const rank = uniqueCounts.indexOf(value);
         if (rank === 0) return 'red';       // Highest bucket
         if (rank === 1) return 'orange';    // Second bucket
         if (rank === 2) return 'yellow';    // Third bucket
@@ -45,7 +46,8 @@ export function calculateZoneColors(
     };
 
     zoneStats.forEach((stats, id) => {
-        colors.set(id, getColorForCount(stats.shots));
+        const value = getValue(stats);
+        colors.set(id, getColorForValue(value));
     });
 
     return colors;

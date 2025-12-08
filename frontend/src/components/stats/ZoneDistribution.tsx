@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ZONE_CONFIG, getZoneLabel } from '../../config/zones';
 import type { ZoneType } from '../../types';
 import type { ZoneDistributionProps } from './types';
@@ -10,18 +10,31 @@ import { calculateZoneColors, getHeatmapColorClasses } from './utils/heatmapUtil
  */
 export function ZoneDistribution({
   zoneStats,
+  foulZoneStats,
   onZoneClick,
   selectedZone,
   className = '',
   isGoalkeeper = false
 }: ZoneDistributionProps) {
+  const [mode, setMode] = useState<'goals' | 'fouls'>('goals');
+
+  const activeStats = mode === 'fouls' && foulZoneStats ? foulZoneStats : zoneStats;
+
+  const totalFouls = useMemo(() => {
+    if (mode !== 'fouls' || !foulZoneStats) return 0;
+    let total = 0;
+    foulZoneStats.forEach(s => { total += s.shots; });
+    return total;
+  }, [mode, foulZoneStats]);
+
   // Combine all stats to calculate relative colors across the whole court
-  const zoneColors = useMemo(() => {
-    return calculateZoneColors(zoneStats);
-  }, [zoneStats]);
+  const zoneColors = calculateZoneColors(
+    activeStats,
+    mode === 'fouls' ? (stats) => stats.efficiency ?? 0 : (stats) => stats.shots
+  );
 
   const renderZoneButton = (zone: ZoneType | '7m') => {
-    const stats = zoneStats.get(zone);
+    const stats = activeStats.get(zone);
     if (!stats) return null; // Should not happen given we init all zones
 
     const isSelected = selectedZone === zone;
@@ -42,6 +55,8 @@ export function ZoneDistribution({
     // For GK: Saves = Shots - Goals (since shots includes both)
     // For Player: Goals
     const value = isGoalkeeper ? (stats.shots - stats.goals) : stats.goals;
+    const fouls = stats.goals;
+    const plays = stats.shots;
 
     return (
       <button
@@ -50,12 +65,25 @@ export function ZoneDistribution({
         disabled={!onZoneClick}
         className={`p-2 rounded-lg border-2 flex flex-col items-center justify-center min-h-[80px] w-full transition-colors ${colorClasses} ${borderClass} ${baseClass}`}
       >
-        <span className="text-xl font-bold">
-          {value}/{stats.shots}
-        </span>
-        <span className="text-xs opacity-75">
-          {stats.shots > 0 ? `${stats.efficiency.toFixed(0)}%` : '-'}
-        </span>
+        {mode === 'fouls' ? (
+          <>
+            <span className="text-xl font-bold">
+              {fouls}/{plays}
+            </span>
+            <span className="text-xs opacity-75">
+              {plays > 0 ? `${stats.efficiency.toFixed(0)}% fouls` : '-'}
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="text-xl font-bold">
+              {value}/{stats.shots}
+            </span>
+            <span className="text-xs opacity-75">
+              {stats.shots > 0 ? `${stats.efficiency.toFixed(0)}%` : '-'}
+            </span>
+          </>
+        )}
         <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-600 mt-1">
           {getZoneLabel(zone as ZoneType)}
         </span>
@@ -65,9 +93,23 @@ export function ZoneDistribution({
 
   return (
     <div className={`bg-white rounded-xl shadow-lg p-6 ${className}`}>
-      <h3 className="text-lg font-bold text-gray-800 mb-4">
-        {isGoalkeeper ? 'Saves Distribution (Court Zones)' : 'Goal Distribution (Court Zones)'}
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-gray-800">
+          {mode === 'fouls'
+            ? 'Foul Distribution (Own court zones)'
+            : isGoalkeeper
+              ? 'Saves Distribution (Court Zones)'
+              : 'Goal Distribution (Rival court zones)'}
+        </h3>
+        {foulZoneStats && (
+          <button
+            onClick={() => setMode(mode === 'goals' ? 'fouls' : 'goals')}
+            className="px-3 py-1 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            {mode === 'fouls' ? 'View Goals' : 'View Fouls'}
+          </button>
+        )}
+      </div>
       <div className="space-y-3">
         {/* 6m Line */}
         <div>
@@ -91,7 +133,9 @@ export function ZoneDistribution({
         </div>
       </div>
       <p className="text-xs text-gray-500 mt-2 text-center">
-        {isGoalkeeper ? 'Viewing saves/shots from zone' : 'Viewing goals/shots from zone (shooter perspective)'}
+        {mode === 'fouls'
+          ? 'Viewing fouls by own court zones'
+          : (isGoalkeeper ? 'Viewing saves/shots from zone' : 'Viewing goals/shots from rival court zones (shooter perspective)')}
       </p>
     </div>
   );

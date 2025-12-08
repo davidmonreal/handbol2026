@@ -13,6 +13,8 @@ export type StatisticsContext = 'player' | 'team' | 'match';
  */
 export interface StatisticsData {
     events: MatchEvent[];
+    /** Optional alternative event set to compute foul distribution (e.g., opponent plays) */
+    foulEvents?: MatchEvent[];
     title: string;
     subtitle?: string;
     context: StatisticsContext;
@@ -41,6 +43,8 @@ export interface CalculatedStats {
 
     /** Map of zone -> { shots, goals, efficiency } */
     zoneStats: Map<ZoneType | '7m', ZoneStatistics>;
+    /** Map of zone -> fouls (stored in shots) for sanction heatmap */
+    foulZoneStats: Map<ZoneType | '7m', ZoneStatistics>;
 
     /** Map of playerId -> player statistics */
     playerStats: Map<string, PlayerStatistics>;
@@ -103,6 +107,7 @@ export interface GoalHeatmapProps {
  */
 export interface ZoneDistributionProps {
     zoneStats: Map<ZoneType | '7m', ZoneStatistics>;
+    foulZoneStats?: Map<ZoneType | '7m', ZoneStatistics>;
     onZoneClick?: (zone: ZoneType | '7m' | null) => void;
     selectedZone?: ZoneType | '7m' | null;
     className?: string;
