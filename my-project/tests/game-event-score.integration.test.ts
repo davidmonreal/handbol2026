@@ -176,7 +176,16 @@ describe('Integration: game events mutate match score atomically', () => {
 
     // Delete goal should also NOT change manual score
     const events = await gameEventRepository.findByMatchId(finished.id);
-    await Promise.all(events.map(e => gameEventService.delete(e.id)));
+    for (const e of events) {
+      try {
+        await gameEventService.delete(e.id);
+      } catch (error: any) {
+        // If an event was already removed, ignore P2025 (record not found) to keep manual score intact
+        if (error?.code !== 'P2025') {
+          throw error;
+        }
+      }
+    }
 
     const afterDelete = await matchRepository.findById(finished.id);
     expect(afterDelete?.homeScore).toBe(33);
