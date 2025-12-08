@@ -47,6 +47,7 @@ export const EventForm = ({
     onCancel,
     onDelete
 }: EventFormProps) => {
+    const [saveMessage, setSaveMessage] = useState<string | null>(null);
     // State initialization
     const [selectedPlayerId, setSelectedPlayerId] = useState<string>(
         event?.playerId || initialState?.playerId || ''
@@ -79,10 +80,12 @@ export const EventForm = ({
             setIsCollective(event.isCollective || false);
             setHasOpposition(event.hasOpposition || false);
             setIsCounterAttack(event.isCounterAttack || false);
+            setSaveMessage(null);
         } else {
             // Creation mode defaults or strictly from initialState if provided
             if (initialState?.playerId) setSelectedPlayerId(initialState.playerId);
             if (initialState?.opponentGoalkeeperId) setSelectedOpponentGkId(initialState.opponentGoalkeeperId);
+            setSaveMessage(null);
         }
     }, [event, initialState]);
 
@@ -210,6 +213,7 @@ export const EventForm = ({
         // This implies the state should be lifted or persisted immediately on change, not just on save.
 
         onSave(updatedEvent, selectedOpponentGkId);
+        setSaveMessage('Jugada introduïda');
 
         // Reset if creating (optional, depends on interaction model. existing model closes modal. 
         // if creating, maybe we want to keep it open? Plan says "Unified form". 
@@ -221,7 +225,7 @@ export const EventForm = ({
             setSelectedAction(null);
             setSelectedZone(null);
             setSelectedTarget(undefined);
-            // Keep player? Maybe. 
+            setSelectedPlayerId('');
         }
     };
 
@@ -240,6 +244,7 @@ export const EventForm = ({
     const selectedPlayer = team.players.find(p => p.id === selectedPlayerId);
     const selectedOpponentGk = opponentTeam?.players.find(p => p.id === selectedOpponentGkId);
     const opponentGoalkeepers = opponentTeam?.players.filter(p => p.isGoalkeeper) || [];
+    const isPlayerSelected = !!selectedPlayerId;
 
     // Sort players by number
     const sortedPlayers = [...team.players].sort((a, b) => a.number - b.number);
@@ -361,133 +366,135 @@ export const EventForm = ({
                 </div>
             </div>
 
-            {/* 2. Zone Selection (Always visible) */}
-            <div>
-                <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Select Zone</div>
-                <ZoneSelector
-                    selectedZone={selectedZone}
-                    onZoneSelect={setSelectedZone}
-                    variant="minimal"
-                />
-            </div>
-
-            {/* 3. Action Selection */}
-            <div>
-                <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                    {selectedCategory === 'Shot' ? 'Result' : selectedCategory === 'Turnover' ? 'Type' : 'Severity'}
+            <div className={isPlayerSelected ? 'space-y-6' : 'space-y-6 opacity-50 pointer-events-none'}>
+                {/* 2. Zone Selection (Always visible) */}
+                <div>
+                    <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Select Zone</div>
+                    <ZoneSelector
+                        selectedZone={selectedZone}
+                        onZoneSelect={setSelectedZone}
+                        variant="minimal"
+                    />
                 </div>
 
-                {selectedCategory === 'Shot' && (
-                    <div className="grid grid-cols-5 gap-2">
-                        {shotResults.map(result => {
-                            const Icon = result.icon;
-                            return (
-                                <button
-                                    key={result.value}
-                                    onClick={() => setSelectedAction(result.value)}
-                                    className={`px-2 py-2.5 rounded-lg text-sm font-semibold transition-all flex flex-col items-center justify-center gap-1.5 ${selectedAction === result.value
-                                        ? 'bg-indigo-500 text-white shadow-lg ring-2 ring-indigo-200'
-                                        : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-indigo-300'
-                                        }`}
-                                >
-                                    <Icon size={20} />
-                                    <span className="text-xs">{result.label}</span>
-                                </button>
-                            );
-                        })}
+                {/* 3. Action Selection */}
+                <div>
+                    <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        {selectedCategory === 'Shot' ? 'Result' : selectedCategory === 'Turnover' ? 'Type' : 'Severity'}
                     </div>
-                )}
 
-                {selectedCategory === 'Turnover' && (
-                    <div className="grid grid-cols-3 gap-2">
-                        {turnoverTypes.map(type => (
-                            <button
-                                key={type.value}
-                                onClick={() => setSelectedAction(type.value)}
-                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${selectedAction === type.value
-                                    ? 'bg-indigo-500 text-white shadow-sm'
-                                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                                    }`}
-                            >
-                                {type.label}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                {selectedCategory === 'Sanction' && (
-                    <div className="grid grid-cols-3 gap-2">
-                        {sanctionTypes.map(sanction => (
-                            <button
-                                key={sanction.value}
-                                onClick={() => setSelectedAction(sanction.value)}
-                                className={`px-3 py-2 rounded-lg text-sm font-medium text-white transition-all ${selectedAction === sanction.value
-                                    ? `${sanction.color} shadow-lg ring-2 ring-offset-2 ring-indigo-500`
-                                    : `${sanction.color} opacity-60 hover:opacity-100`
-                                    }`}
-                            >
-                                {sanction.label}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* 4. Target Selection (Only for Goal/Save) */}
-            {(selectedCategory === 'Shot' && (selectedAction === 'Goal' || selectedAction === 'Save')) && (
-                <div className="animate-fade-in bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                    <h4 className="text-sm font-bold text-gray-500 mb-3 text-center">
-                        {selectedAction === 'Goal' ? 'Select Goal Target' : 'Select Save Location'}
-                    </h4>
-                    <div className="max-w-[220px] mx-auto bg-white rounded-xl p-2 border border-gray-200 shadow-sm">
-                        <div className="grid grid-cols-3 gap-2">
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((target) => {
-                                const isActive = selectedTarget === target;
+                    {selectedCategory === 'Shot' && (
+                        <div className="grid grid-cols-5 gap-2">
+                            {shotResults.map(result => {
+                                const Icon = result.icon;
                                 return (
                                     <button
-                                        key={target}
-                                        aria-label={`goal-target-${target}`}
-                                        aria-pressed={isActive}
-                                        onClick={() => setSelectedTarget(target)}
-                                        className={`h-14 rounded-lg transition-all border-2 flex items-center justify-center ${
-                                            isActive
-                                                ? 'bg-indigo-600 border-indigo-600 shadow-sm'
-                                                : 'bg-white border-gray-200 hover:border-indigo-500 hover:bg-indigo-50'
-                                        }`}
-                                    />
+                                        key={result.value}
+                                        onClick={() => setSelectedAction(result.value)}
+                                        className={`px-2 py-2.5 rounded-lg text-sm font-semibold transition-all flex flex-col items-center justify-center gap-1.5 ${selectedAction === result.value
+                                            ? 'bg-indigo-500 text-white shadow-lg ring-2 ring-indigo-200'
+                                            : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-indigo-300'
+                                            }`}
+                                    >
+                                        <Icon size={20} />
+                                        <span className="text-xs">{result.label}</span>
+                                    </button>
                                 );
                             })}
                         </div>
-                    </div>
-                </div>
-            )}
+                    )}
 
-            {/* 5. Context Toggles (Only for Shot) */}
-            {selectedCategory === 'Shot' && (
-                <div>
-                    <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Context</div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <SplitToggle
-                            value={isCollective}
-                            onChange={setIsCollective}
-                            leftOption={{ label: 'Individual', icon: User }}
-                            rightOption={{ label: 'Collective', icon: Users }}
-                        />
-                        <SplitToggle
-                            value={hasOpposition}
-                            onChange={setHasOpposition}
-                            leftOption={{ label: 'Free', icon: User }}
-                            rightOption={{ label: 'Opposition', icon: [User, Users] }}
-                        />
-                        <SplitToggle
-                            value={isCounterAttack}
-                            onChange={setIsCounterAttack}
-                            leftOption={{ label: 'Static', icon: ArrowLeftRight }}
-                            rightOption={{ label: 'Counter', icon: ArrowUp }}
-                        />
-                    </div>
+                    {selectedCategory === 'Turnover' && (
+                        <div className="grid grid-cols-3 gap-2">
+                            {turnoverTypes.map(type => (
+                                <button
+                                    key={type.value}
+                                    onClick={() => setSelectedAction(type.value)}
+                                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${selectedAction === type.value
+                                        ? 'bg-indigo-500 text-white shadow-sm'
+                                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                                        }`}
+                                >
+                                    {type.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {selectedCategory === 'Sanction' && (
+                        <div className="grid grid-cols-3 gap-2">
+                            {sanctionTypes.map(sanction => (
+                                <button
+                                    key={sanction.value}
+                                    onClick={() => setSelectedAction(sanction.value)}
+                                    className={`px-3 py-2 rounded-lg text-sm font-medium text-white transition-all ${selectedAction === sanction.value
+                                        ? `${sanction.color} shadow-lg ring-2 ring-offset-2 ring-indigo-500`
+                                        : `${sanction.color} opacity-60 hover:opacity-100`
+                                        }`}
+                                >
+                                    {sanction.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
-            )}
+
+                {/* 4. Target Selection (Only for Goal/Save) */}
+                {(selectedCategory === 'Shot' && (selectedAction === 'Goal' || selectedAction === 'Save')) && (
+                    <div className="animate-fade-in bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                        <h4 className="text-sm font-bold text-gray-500 mb-3 text-center">
+                            {selectedAction === 'Goal' ? 'Select Goal Target' : 'Select Save Location'}
+                        </h4>
+                        <div className="max-w-[220px] mx-auto bg-white rounded-xl p-2 border border-gray-200 shadow-sm">
+                            <div className="grid grid-cols-3 gap-2">
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((target) => {
+                                    const isActive = selectedTarget === target;
+                                    return (
+                                        <button
+                                            key={target}
+                                            aria-label={`goal-target-${target}`}
+                                            aria-pressed={isActive}
+                                            onClick={() => setSelectedTarget(target)}
+                                            className={`h-14 rounded-lg transition-all border-2 flex items-center justify-center ${
+                                                isActive
+                                                    ? 'bg-indigo-600 border-indigo-600 shadow-sm'
+                                                    : 'bg-white border-gray-200 hover:border-indigo-500 hover:bg-indigo-50'
+                                            }`}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 5. Context Toggles (Only for Shot) */}
+                {selectedCategory === 'Shot' && (
+                    <div>
+                        <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Context</div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <SplitToggle
+                                value={isCollective}
+                                onChange={setIsCollective}
+                                leftOption={{ label: 'Individual', icon: User }}
+                                rightOption={{ label: 'Collective', icon: Users }}
+                            />
+                            <SplitToggle
+                                value={hasOpposition}
+                                onChange={setHasOpposition}
+                                leftOption={{ label: 'Free', icon: User }}
+                                rightOption={{ label: 'Opposition', icon: [User, Users] }}
+                            />
+                            <SplitToggle
+                                value={isCounterAttack}
+                                onChange={setIsCounterAttack}
+                                leftOption={{ label: 'Static', icon: ArrowLeftRight }}
+                                rightOption={{ label: 'Counter', icon: ArrowUp }}
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Action Buttons */}
             <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-300">
@@ -503,7 +510,11 @@ export const EventForm = ({
                         Delete
                     </button>
                 ) : (
-                    <div></div> // Spacer
+                    <div>
+                        {saveMessage && (
+                            <span className="text-sm text-green-600 font-medium">{saveMessage}</span>
+                        )}
+                    </div>
                 )}
 
                 <div className="flex gap-2">
@@ -515,7 +526,8 @@ export const EventForm = ({
                     </button>
                     <button
                         onClick={handleSave}
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors flex items-center gap-2"
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={!isPlayerSelected}
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
