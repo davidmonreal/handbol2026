@@ -115,7 +115,6 @@ export function FiltersBar({
       {onPlayWindowChange && playWindowOptions.length > 0 && (
         <div className="w-full sm:w-auto">
           <DropdownSelect
-            label={<span className="text-xs font-semibold text-gray-500">Plays</span>}
             options={playWindowOptions.map((opt) => ({
               label: opt.label,
               value: `${opt.value.start}-${opt.value.end}`,
