@@ -25,7 +25,7 @@ export function DropdownSelect<T extends string | number>({
       {label ? <span className="text-xs font-semibold text-gray-500">{label}</span> : null}
       <div className="relative">
         <select
-          className="text-xs font-semibold text-gray-700 border border-gray-200 rounded-md px-2.5 py-1.5 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+          className="text-sm font-semibold text-gray-800 border border-gray-200 rounded-xl px-3.5 py-2 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 min-w-[170px]"
           value={value ?? ''}
           onChange={(e) => {
             const val = e.target.value;

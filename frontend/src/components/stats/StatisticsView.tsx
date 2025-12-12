@@ -175,25 +175,26 @@ export function StatisticsView({
 
   // Play window filter (by recency in current filteredEvents)
   const playWindowOptions = useMemo(() => {
-    const total = filteredEvents.length;
+    const shotEvents = filteredEvents.filter(e => e.category === 'Shot');
+    const total = shotEvents.length;
     const options: { label: string; value: { start: number; end: number } }[] = [];
-    if (total >= 5) options.push({ label: 'Last 5 plays', value: { start: Math.max(total - 5, 0), end: total } });
-    if (total >= 10) options.push({ label: 'Plays 5–10', value: { start: Math.max(total - 10, 0), end: Math.max(total - 5, 0) } });
-    if (total >= 15) options.push({ label: 'Plays 10–15', value: { start: Math.max(total - 15, 0), end: Math.max(total - 10, 0) } });
+    if (total >= 5) options.push({ label: 'Show last 5 shots', value: { start: Math.max(total - 5, 0), end: total } });
+    if (total >= 10) options.push({ label: 'Shots 6–10', value: { start: Math.max(total - 10, 0), end: Math.max(total - 5, 0) } });
+    if (total >= 15) options.push({ label: 'Shots 11–15', value: { start: Math.max(total - 15, 0), end: Math.max(total - 10, 0) } });
     return options;
-  }, [filteredEvents.length]);
+  }, [filteredEvents]);
 
   const applyPlayWindow = useMemo(() => {
-    if (!playWindowOptions.length) return filteredEvents;
+    if (!selectedPlayWindow) return filteredEvents;
+    const shotEvents = filteredEvents.filter(e => e.category === 'Shot');
     const selected = playWindowOptions.find(opt =>
-      selectedPlayWindow && opt.value.start === selectedPlayWindow.start && opt.value.end === selectedPlayWindow.end
+      opt.value.start === selectedPlayWindow.start && opt.value.end === selectedPlayWindow.end
     );
-    if (!selected && selectedPlayWindow) {
+    if (!selected) {
       setSelectedPlayWindow(null);
       return filteredEvents;
     }
-    if (!selected) return filteredEvents;
-    return filteredEvents.slice(selected.value.start, selected.value.end);
+    return shotEvents.slice(selected.value.start, selected.value.end);
   }, [filteredEvents, playWindowOptions, selectedPlayWindow]);
 
   const handlePlayerClick = (playerId: string | null) => {

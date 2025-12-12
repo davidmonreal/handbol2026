@@ -25,7 +25,7 @@ export function FiltersBar({
   onPlayWindowChange,
 }: FiltersBarProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2 md:gap-3">
+    <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full">
       <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Filters:</span>
       
       {/* Opposition Group */}
