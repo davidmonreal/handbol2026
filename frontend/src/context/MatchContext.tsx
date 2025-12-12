@@ -56,7 +56,7 @@ interface MatchContextType {
   setVisitorTeam: React.Dispatch<React.SetStateAction<Team | null>>;
   matchId: string | null;
   setMatchId: React.Dispatch<React.SetStateAction<string | null>>;
-  setMatchData: (id: string, home: Team, visitor: Team, preserveState?: boolean, matchMeta?: MatchMeta) => void;
+  setMatchData: (id: string, home: Team, visitor: Team, preserveState?: boolean, matchMeta?: MatchMeta) => Promise<void>;
   toggleTeamLock: (teamId: string, locked: boolean) => Promise<void>;
   isTeamLocked: (teamId: string | null) => boolean;
   selectedOpponentGoalkeeper: Player | null;
@@ -295,23 +295,25 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     // We'll enrich matchMeta with data fetched from the backend if it wasn't provided
     let fetchedMeta: MatchMeta | undefined;
 
-    // Initial load of match-level data (like calibration) should happen here or separately
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/matches/${id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setRealTimeFirstHalfStart(data.realTimeFirstHalfStart || null);
-        setRealTimeSecondHalfStart(data.realTimeSecondHalfStart || null);
-        fetchedMeta = {
-          isFinished: data.isFinished,
-          homeScore: data.homeScore,
-          awayScore: data.awayScore,
-          homeEventsLocked: data.homeEventsLocked,
-          awayEventsLocked: data.awayEventsLocked,
-          // if backend exposes status in the future we can add it here
-        };
-      }
-    } catch (e) { /* ignore */ }
+    // Avoid an extra round-trip if caller already provided matchMeta (e.g., fetched in the page)
+    if (!matchMeta) {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/matches/${id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setRealTimeFirstHalfStart(data.realTimeFirstHalfStart || null);
+          setRealTimeSecondHalfStart(data.realTimeSecondHalfStart || null);
+          fetchedMeta = {
+            isFinished: data.isFinished,
+            homeScore: data.homeScore,
+            awayScore: data.awayScore,
+            homeEventsLocked: data.homeEventsLocked,
+            awayEventsLocked: data.awayEventsLocked,
+            // if backend exposes status in the future we can add it here
+          };
+        }
+      } catch (e) { /* ignore */ }
+    }
 
     const effectiveMeta = matchMeta ?? fetchedMeta;
     const hasManualScores = effectiveMeta?.homeScore !== undefined || effectiveMeta?.awayScore !== undefined;
@@ -433,13 +435,28 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     if (isAway) payload.awayEventsLocked = locked;
 
     try {
-      await fetch(`${API_BASE_URL}/api/matches/${matchId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/matches/${matchId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (isHome) setHomeEventsLocked(locked);
-      if (isAway) setAwayEventsLocked(locked);
+      if (!res.ok) {
+        console.error('Failed to update lock state on backend', res.statusText);
+        return;
+      }
+
+      // Trust backend as source of truth in case another flag changed concurrently
+      const updatedMatch = await res.json();
+      if (typeof updatedMatch.homeEventsLocked === 'boolean') {
+        setHomeEventsLocked(updatedMatch.homeEventsLocked);
+      } else if (isHome) {
+        setHomeEventsLocked(locked);
+      }
+      if (typeof updatedMatch.awayEventsLocked === 'boolean') {
+        setAwayEventsLocked(updatedMatch.awayEventsLocked);
+      } else if (isAway) {
+        setAwayEventsLocked(locked);
+      }
     } catch (error) {
       console.error('Failed to update lock state', error);
     }

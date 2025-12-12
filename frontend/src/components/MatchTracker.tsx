@@ -27,6 +27,7 @@ const MatchTracker = () => {
     toggleTeamLock,
     isTeamLocked
   } = useMatch();
+  const [matchLoaded, setMatchLoaded] = useState(false);
 
   // Ref to track context match ID without triggering effect re-runs
   const contextMatchIdRef = useRef(contextMatchId);
@@ -39,11 +40,13 @@ const MatchTracker = () => {
     if (!matchId) return;
 
     if (contextMatchIdRef.current === matchId && homeTeam && visitorTeam) {
+      setMatchLoaded(true);
       return;
     }
 
     const loadMatchData = async () => {
       try {
+        setMatchLoaded(false);
         const response = await fetch(`${API_BASE_URL}/api/matches/${matchId}`);
         if (!response.ok) throw new Error('Failed to load match');
 
@@ -68,13 +71,17 @@ const MatchTracker = () => {
         const visitor = transformTeam(data.awayTeam, 'bg-white');
 
         const shouldPreserveState = contextMatchIdRef.current === data.id;
-        setMatchData(data.id, home, visitor, shouldPreserveState, {
+        await setMatchData(data.id, home, visitor, shouldPreserveState, {
           isFinished: data.isFinished,
           homeScore: data.homeScore,
           awayScore: data.awayScore,
+          homeEventsLocked: data.homeEventsLocked,
+          awayEventsLocked: data.awayEventsLocked,
         });
+        setMatchLoaded(true);
       } catch (error) {
         console.error('Error loading match:', error);
+        setMatchLoaded(true);
       }
     };
 
@@ -163,7 +170,7 @@ const MatchTracker = () => {
   }, [activeTeamId, opponentTeam, matchId, setSelectedOpponentGoalkeeper]);
 
 
-  if (!homeTeam || !visitorTeam) {
+  if (!homeTeam || !visitorTeam || !matchLoaded) {
     return <div className="p-8 text-center">Loading match data...</div>;
   }
 

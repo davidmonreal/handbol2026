@@ -1,28 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Calendar, Clock, MapPin, ChevronRight, Play, Edit2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { Plus, ChevronRight } from 'lucide-react';
 import { API_BASE_URL } from '../config/api';
 import { LoadingGrid, ErrorMessage } from './common';
+import { MatchCard } from './match/MatchCard';
+import type { DashboardMatch } from './match/MatchCard';
 
-interface Team {
-  id: string;
-  name: string;
-  category?: string;
-  club: { name: string };
-}
-
-interface Match {
-  id: string;
-  date: string;
-  homeTeam: Team;
-  awayTeam: Team;
-  isFinished: boolean;
-  location?: string;
-  homeScore?: number;
-  awayScore?: number;
-  videoUrl?: string | null;
-}
+type Match = DashboardMatch;
 
 // ...
 
@@ -32,6 +16,9 @@ const Dashboard = () => {
   const [pastMatches, setPastMatches] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const myPendingMatches = pendingMatches.filter(
+    match => match.homeTeam?.isMyTeam || match.awayTeam?.isMyTeam,
+  );
 
   useEffect(() => {
     fetchMatches();
@@ -58,99 +45,6 @@ const Dashboard = () => {
       setIsLoading(false);
     }
   };
-
-  const MatchCard = ({ match, isPending }: { match: Match; isPending: boolean }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex items-center text-gray-500 text-sm">
-          <Calendar size={14} className="mr-1.5" />
-          <span className="mr-3">{format(new Date(match.date), 'MMM d, yyyy')}</span>
-          <Clock size={14} className="mr-1.5" />
-          <span>{format(new Date(match.date), 'HH:mm')}</span>
-        </div>
-        {isPending ? (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate(`/match-tracker/${match.id}`)}
-              className="flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              <Play size={12} className="mr-1.5" />
-              Play
-            </button>
-            {/* YouTube Video Tracker - Desktop Only */}
-            <button
-              onClick={() => navigate(`/video-tracker/${match.id}`)}
-              className={`hidden lg:flex items-center px-2 py-1.5 text-xs font-medium rounded-lg transition-colors ${match.videoUrl
-                ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
-                }`}
-              title={match.videoUrl ? 'Track with YouTube video' : 'Add YouTube video'}
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-              </svg>
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            {/* YouTube Video Tracker - Desktop Only */}
-            <button
-              onClick={() => navigate(`/video-tracker/${match.id}`)}
-              className={`hidden lg:flex items-center px-2 py-1.5 text-xs font-medium rounded-lg transition-colors ${match.videoUrl
-                ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
-                }`}
-              title={match.videoUrl ? 'Track with YouTube video' : 'Add YouTube video'}
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-              </svg>
-            </button>
-            <button
-              onClick={() => navigate(`/match-tracker/${match.id}`)}
-              className="flex items-center px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Edit2 size={12} className="mr-1.5" />
-              Edit
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex-1 text-right min-w-0">
-          <div className="font-semibold text-gray-900 truncate">
-            {match.homeTeam?.category && `${match.homeTeam.category} `}{match.homeTeam?.name || 'Unknown Team'}
-          </div>
-          <div className="text-xs text-gray-500 truncate">{match.homeTeam?.club?.name || 'Unknown Club'}</div>
-        </div>
-
-        {isPending && !match.homeScore && !match.awayScore ? (
-          <div className="px-4 text-gray-400 font-medium">VS</div>
-        ) : (
-          <div className="px-4 flex items-center justify-center gap-3 min-w-[100px]">
-            <span className="text-3xl font-bold text-gray-900">{match.homeScore ?? 0}</span>
-            <span className="text-gray-400 text-3xl font-light pb-1">:</span>
-            <span className="text-3xl font-bold text-gray-900">{match.awayScore ?? 0}</span>
-          </div>
-        )}
-
-        <div className="flex-1 text-left min-w-0">
-          <div className="font-semibold text-gray-900 truncate">
-            {match.awayTeam?.category && `${match.awayTeam.category} `}{match.awayTeam?.name || 'Unknown Team'}
-          </div>
-          <div className="text-xs text-gray-500 truncate">{match.awayTeam?.club?.name || 'Unknown Club'}</div>
-        </div>
-      </div>
-
-      {match.location && (
-        <div className="flex items-center text-gray-400 text-xs mt-2 pt-2 border-t border-gray-50">
-          <MapPin size={12} className="mr-1" />
-          {match.location}
-        </div>
-      )}
-    </div>
-  );
 
   if (isLoading) {
     return (
@@ -200,19 +94,23 @@ const Dashboard = () => {
       )}
 
       {/* Next matches strip (first three upcoming) */}
-      {pendingMatches.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-emerald-500 rounded-full" />
-            <h2 className="text-lg font-semibold text-gray-900">Upcoming for your teams</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pendingMatches.slice(0, 3).map(match => (
+      <section className="space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 bg-emerald-500 rounded-full" />
+          <h2 className="text-lg font-semibold text-gray-900">Upcoming for your teams</h2>
+        </div>
+        {myPendingMatches.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 xl:gap-10">
+            {myPendingMatches.slice(0, 3).map(match => (
               <MatchCard key={`next-${match.id}`} match={match} isPending={true} />
             ))}
           </div>
-        </section>
-      )}
+        ) : (
+          <div className="text-sm text-gray-500 bg-gray-50 border border-dashed border-gray-200 rounded-xl p-4">
+            No upcoming matches for your teams.
+          </div>
+        )}
+      </section>
 
       {/* Pending Matches */}
       <section>
@@ -230,7 +128,7 @@ const Dashboard = () => {
         </div>
 
         {pendingMatches.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">
             {pendingMatches.map(match => (
               <MatchCard key={match.id} match={match} isPending={true} />
             ))}
@@ -260,7 +158,7 @@ const Dashboard = () => {
         </div>
 
         {pastMatches.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">
             {pastMatches.map(match => (
               <MatchCard key={match.id} match={match} isPending={false} />
             ))}

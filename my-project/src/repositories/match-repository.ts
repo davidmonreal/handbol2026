@@ -54,6 +54,11 @@ export class MatchRepository {
       isFinished: boolean;
       homeScore: number;
       awayScore: number;
+      homeEventsLocked: boolean;
+      awayEventsLocked: boolean;
+      videoUrl: string | null;
+      firstHalfVideoStart: number | null;
+      secondHalfVideoStart: number | null;
     }>,
   ): Promise<Match> {
     return prisma.match.update({
