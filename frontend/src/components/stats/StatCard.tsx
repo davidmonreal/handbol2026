@@ -26,9 +26,9 @@ const valueColorClasses = {
  */
 export function StatCard({ label, value, color = 'gray', className = '' }: StatCardProps) {
   return (
-    <div className={`${colorClasses[color]} rounded-lg p-4 ${className}`}>
-      <div className={`text-sm ${color !== 'gray' ? 'font-medium' : ''}`}>{label}</div>
-      <div className={`text-2xl font-bold ${valueColorClasses[color]}`}>{value}</div>
+    <div className={`${colorClasses[color]} rounded-lg p-3 sm:p-4 ${className}`}>
+      <div className={`text-xs sm:text-sm ${color !== 'gray' ? 'font-medium' : ''}`}>{label}</div>
+      <div className={`text-xl sm:text-2xl font-bold ${valueColorClasses[color]}`}>{value}</div>
     </div>
   );
 }

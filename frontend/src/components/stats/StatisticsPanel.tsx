@@ -62,7 +62,7 @@ export function StatisticsPanel({
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+      <div className="grid grid-cols-3 gap-3 md:grid-cols-6 md:gap-4">
         <StatCard
           label={data.isGoalkeeper ? "Goals Conceded" : "Goals"}
           value={filteredStats.totalGoals}
