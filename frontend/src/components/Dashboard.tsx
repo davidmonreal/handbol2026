@@ -204,7 +204,7 @@ const Dashboard = () => {
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-emerald-500 rounded-full" />
-            <h2 className="text-base font-semibold text-gray-900">Upcoming for your teams</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Upcoming for your teams</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {pendingMatches.slice(0, 3).map(match => (
