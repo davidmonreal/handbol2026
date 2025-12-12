@@ -307,7 +307,7 @@ export function StatisticsView({
       {/* Player Statistics Table */}
       <div className="hidden md:block">
         <PlayerStatisticsTable
-          events={filteredEvents}
+          events={applyPlayWindow}
           onPlayerClick={handlePlayerClick}
           selectedPlayerId={filterPlayer}
           subtitle={filterZone ? `(from ${filterZone})` : subtitle || '(Overall)'}
