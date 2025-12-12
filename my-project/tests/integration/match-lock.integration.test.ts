@@ -12,26 +12,45 @@ describe('Integration: match lock persistence', () => {
   let matchId: string;
   let originalHomeLocked = false;
   let originalAwayLocked = false;
+  let createdMatchId: string | null = null;
 
   beforeAll(async () => {
-    const match = await prisma.match.findFirst();
-    if (!match) {
-      throw new Error('No matches found in database. Seed the DB before running this test.');
+    // Create an isolated match using two teams that already have players
+    const homeTeam = await prisma.team.findFirst({
+      where: { players: { some: {} } },
+    });
+    const awayTeam = await prisma.team.findFirst({
+      where: { id: { not: homeTeam?.id || undefined }, players: { some: {} } },
+    });
+
+    if (!homeTeam || !awayTeam) {
+      throw new Error(
+        'No suitable teams with players found. Seed the DB before running this test.',
+      );
     }
+
+    const match = await prisma.match.create({
+      data: {
+        date: new Date(),
+        homeTeamId: homeTeam.id,
+        awayTeamId: awayTeam.id,
+        isFinished: false,
+        homeEventsLocked: false,
+        awayEventsLocked: false,
+      },
+    });
+
+    createdMatchId = match.id;
     matchId = match.id;
-    originalHomeLocked = !!match.homeEventsLocked;
-    originalAwayLocked = !!match.awayEventsLocked;
+    originalHomeLocked = false;
+    originalAwayLocked = false;
   });
 
   afterAll(async () => {
-    // Restore original lock state to avoid side effects on other tests/manual data
-    await prisma.match.update({
-      where: { id: matchId },
-      data: {
-        homeEventsLocked: originalHomeLocked,
-        awayEventsLocked: originalAwayLocked,
-      },
-    });
+    if (createdMatchId) {
+      await prisma.gameEvent.deleteMany({ where: { matchId: createdMatchId } });
+      await prisma.match.delete({ where: { id: createdMatchId } });
+    }
     await prisma.$disconnect();
   });
 
