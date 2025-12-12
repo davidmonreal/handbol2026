@@ -9,43 +9,47 @@ describe('Integration Tests: Match Event Flow', () => {
   let testMatchId: string;
   let testTeamId: string;
   let testPlayerId: string;
+  let createdMatchId: string | null = null;
 
   beforeAll(async () => {
-    // Get a match whose home team has players and is not locked/finished
-    const match = await prisma.match.findFirst({
+    // Build an isolated match with teams that have players to avoid locks/collisions
+    const teamWithPlayers = await prisma.team.findFirst({
+      where: { players: { some: {} } },
+      include: { players: { include: { player: true } } },
+    });
+    const anotherTeam = await prisma.team.findFirst({
       where: {
-        isFinished: false,
-        homeEventsLocked: false,
-        awayEventsLocked: false,
-        homeTeam: {
-          players: {
-            some: {},
-          },
-        },
-      },
-      include: {
-        homeTeam: {
-          include: {
-            players: {
-              include: {
-                player: true,
-              },
-            },
-          },
-        },
+        id: { not: teamWithPlayers?.id || undefined },
+        players: { some: {} },
       },
     });
 
-    if (!match || !match.homeTeam.players.length) {
-      throw new Error('No suitable match with players found in database. Run seed first.');
+    if (!teamWithPlayers || !anotherTeam || !teamWithPlayers.players.length) {
+      throw new Error('No suitable teams with players found. Seed the DB first.');
     }
 
+    const match = await prisma.match.create({
+      data: {
+        date: new Date(),
+        homeTeamId: teamWithPlayers.id,
+        awayTeamId: anotherTeam.id,
+        isFinished: false,
+        homeEventsLocked: false,
+        awayEventsLocked: false,
+      },
+    });
+
+    createdMatchId = match.id;
     testMatchId = match.id;
-    testTeamId = match.homeTeamId;
-    testPlayerId = match.homeTeam.players[0]?.player.id;
+    testTeamId = teamWithPlayers.id;
+    testPlayerId = teamWithPlayers.players[0].player.id;
   });
 
   afterAll(async () => {
+    if (createdMatchId) {
+      await prisma.gameEvent.deleteMany({ where: { matchId: createdMatchId } });
+      await prisma.match.delete({ where: { id: createdMatchId } });
+    }
     await prisma.$disconnect();
   });
 
