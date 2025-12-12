@@ -4,7 +4,7 @@ import prisma from '../../src/lib/prisma';
 const patterns = {
   club: ['Test', 'Club-', 'Integration'],
   team: ['Home-', 'Away-', 'Team-', 'Integration', 'Test'],
-  season: ['Season-', 'Integration'],
+  season: ['Season-', 'Integration', 'Test'],
   player: ['Test', 'Integration', 'Player-'],
 };
 
@@ -20,7 +20,13 @@ export async function cleanupTestData() {
   const clubIds = clubsToDelete.map((c) => c.id);
 
   const seasonsToDelete = await prisma.season.findMany({
-    where: { OR: buildStartsWith(patterns.season) },
+    where: {
+      OR: [
+        ...buildStartsWith(patterns.season),
+        { name: { contains: 'test', mode: 'insensitive' as const } },
+        { name: { contains: 'integration', mode: 'insensitive' as const } },
+      ],
+    },
     select: { id: true },
   });
   const seasonIds = seasonsToDelete.map((s) => s.id);

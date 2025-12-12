@@ -22,6 +22,7 @@ export const MatchFormPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const isEditMode = !!id;
+    const fromPath = (location.state as { from?: string } | undefined)?.from;
 
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -128,8 +129,10 @@ export const MatchFormPage = () => {
             const awayTeam = teams.find(t => t.id === selectedAwayTeamId);
             const successMessage = `Match ${isEditMode ? 'updated' : 'created'}: ${homeTeam?.name || 'Team'} vs ${awayTeam?.name || 'Team'}`;
 
-            if (location.state?.from) {
-                navigate(location.state.from, { state: { message: successMessage } });
+            if (fromPath) {
+                navigate(fromPath, { state: { message: successMessage } });
+            } else if (window.history.length > 1) {
+                navigate(-1);
             } else {
                 navigate('/matches', { state: { message: successMessage } });
             }
@@ -154,8 +157,10 @@ export const MatchFormPage = () => {
             <div className="flex items-center gap-4 mb-6">
                 <button
                     onClick={() => {
-                        if (location.state?.from) {
-                            navigate(location.state.from);
+                        if (fromPath) {
+                            navigate(fromPath);
+                        } else if (window.history.length > 1) {
+                            navigate(-1);
                         } else {
                             navigate('/matches');
                         }

@@ -10,6 +10,8 @@ interface MatchMeta {
   isFinished?: boolean;
   homeScore?: number;
   awayScore?: number;
+  homeEventsLocked?: boolean;
+  awayEventsLocked?: boolean;
 }
 
 interface Player {
@@ -55,6 +57,8 @@ interface MatchContextType {
   matchId: string | null;
   setMatchId: React.Dispatch<React.SetStateAction<string | null>>;
   setMatchData: (id: string, home: Team, visitor: Team, preserveState?: boolean, matchMeta?: MatchMeta) => void;
+  toggleTeamLock: (teamId: string, locked: boolean) => Promise<void>;
+  isTeamLocked: (teamId: string | null) => boolean;
   selectedOpponentGoalkeeper: Player | null;
   setSelectedOpponentGoalkeeper: React.Dispatch<React.SetStateAction<Player | null>>;
   realTimeFirstHalfStart: number | null;
@@ -77,8 +81,16 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
   const [visitorTeam, setVisitorTeam] = useState<Team | null>(null);
   const [matchId, setMatchId] = useState<string | null>(null);
   const [selectedOpponentGoalkeeper, setSelectedOpponentGoalkeeper] = useState<Player | null>(null);
+  const [homeEventsLocked, setHomeEventsLocked] = useState(false);
+  const [awayEventsLocked, setAwayEventsLocked] = useState(false);
 
   const addEvent = async (event: MatchEvent) => {
+    // Prevent adding if team locked
+    if ((event.teamId === homeTeam?.id && homeEventsLocked) || (event.teamId === visitorTeam?.id && awayEventsLocked)) {
+      console.warn('Events locked for this team');
+      return;
+    }
+
     // Add to local state immediately for UI responsiveness
     setEvents(prev => [...prev, event]);
 
@@ -294,6 +306,8 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
           isFinished: data.isFinished,
           homeScore: data.homeScore,
           awayScore: data.awayScore,
+          homeEventsLocked: data.homeEventsLocked,
+          awayEventsLocked: data.awayEventsLocked,
           // if backend exposes status in the future we can add it here
         };
       }
@@ -312,6 +326,9 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
       setHomeScore(0);
       setVisitorScore(0);
     }
+
+    setHomeEventsLocked(!!effectiveMeta?.homeEventsLocked);
+    setAwayEventsLocked(!!effectiveMeta?.awayEventsLocked);
 
     // Load existing events from backend
     try {
@@ -407,6 +424,34 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const toggleTeamLock = useCallback(async (teamId: string, locked: boolean) => {
+    if (!matchId) return;
+    const isHome = teamId === homeTeam?.id;
+    const isAway = teamId === visitorTeam?.id;
+    const payload: Record<string, unknown> = {};
+    if (isHome) payload.homeEventsLocked = locked;
+    if (isAway) payload.awayEventsLocked = locked;
+
+    try {
+      await fetch(`${API_BASE_URL}/api/matches/${matchId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (isHome) setHomeEventsLocked(locked);
+      if (isAway) setAwayEventsLocked(locked);
+    } catch (error) {
+      console.error('Failed to update lock state', error);
+    }
+  }, [matchId, homeTeam?.id, visitorTeam?.id]);
+
+  const isTeamLocked = useCallback((teamId: string | null) => {
+    if (!teamId) return false;
+    if (teamId === homeTeam?.id) return homeEventsLocked;
+    if (teamId === visitorTeam?.id) return awayEventsLocked;
+    return false;
+  }, [homeTeam?.id, visitorTeam?.id, homeEventsLocked, awayEventsLocked]);
+
   return (
     <MatchContext.Provider value={{
       homeScore, setHomeScore,
@@ -427,7 +472,9 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
       selectedOpponentGoalkeeper, setSelectedOpponentGoalkeeper,
       realTimeFirstHalfStart,
       realTimeSecondHalfStart,
-      setRealTimeCalibration
+      setRealTimeCalibration,
+      toggleTeamLock,
+      isTeamLocked
     }}>
       {children}
     </MatchContext.Provider>

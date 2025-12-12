@@ -23,7 +23,9 @@ const MatchTracker = () => {
     deleteEvent,
     homeTeam, visitorTeam, setMatchData,
     selectedOpponentGoalkeeper, setSelectedOpponentGoalkeeper,
-    matchId: contextMatchId
+    matchId: contextMatchId,
+    toggleTeamLock,
+    isTeamLocked
   } = useMatch();
 
   // Ref to track context match ID without triggering effect re-runs
@@ -117,6 +119,7 @@ const MatchTracker = () => {
 
   const activeTeam = getActiveTeam();
   const opponentTeam = getOpponentTeam();
+  const activeTeamLocked = isTeamLocked(activeTeamId);
 
 
   const handleSaveEvent = async (event: MatchEvent, opponentGkId?: string) => {
@@ -220,14 +223,46 @@ const MatchTracker = () => {
                     </>
                   ) : (
                     <>
-                      <span className="text-green-600">New Event</span>
+                      <span className="text-green-600">
+                        New Event{activeTeam ? ` for ${activeTeam.name}` : ''}
+                      </span>
                       <span className="text-sm font-normal text-gray-500 ml-2">
                         (Click an event below to edit)
                       </span>
                     </>
                   )}
                 </h2>
+                {activeTeam && (
+                  <button
+                    onClick={() => toggleTeamLock(activeTeam.id, !activeTeamLocked)}
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${activeTeamLocked
+                      ? 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                      : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                      }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={activeTeamLocked ? 'M12 11c1.657 0 3-1.343 3-3V5a3 3 0 10-6 0v3c0 1.657 1.343 3 3 3z M5 11h14v8a2 2 0 01-2 2H7a2 2 0 01-2-2v-8z' : 'M12 11c1.657 0 3-1.343 3-3V5a3 3 0 10-6 0v3c0 1.657 1.343 3 3 3z M5 11h14v8a2 2 0 01-2 2H7a2 2 0 01-2-2v-8z'} />
+                    </svg>
+                    {activeTeamLocked ? 'Unlock events' : 'Lock events'}
+                  </button>
+                )}
               </div>
+              {activeTeamLocked && (
+                <div className="flex items-center gap-2 text-[11px] font-medium text-gray-600 bg-gray-100 px-3 py-2 rounded-md mb-3">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.657 0 3-1.343 3-3V5a3 3 0 10-6 0v3c0 1.657 1.343 3 3 3z M5 11h14v8a2 2 0 01-2 2H7a2 2 0 01-2-2v-8z" />
+                  </svg>
+                  <span>New events locked for this team</span>
+                  {matchId && (
+                    <button
+                      onClick={() => navigate(`/matches/${matchId}/edit`)}
+                      className="text-xs text-indigo-600 hover:underline ml-1"
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
+              )}
 
               <EventForm
                 key={editingEvent ? editingEvent.id : `new-event-${activeTeamId}`}
@@ -240,6 +275,7 @@ const MatchTracker = () => {
                 onSave={handleSaveEvent}
                 onCancel={handleCancelEdit}
                 onDelete={(eventId) => deleteEvent(eventId, true)}
+                locked={activeTeamLocked}
               />
             </div>
           ) : (

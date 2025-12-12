@@ -42,6 +42,15 @@ export class GameEventService {
       throw new Error(`Match ${data.matchId} not found`);
     }
 
+    // Block new events if the team is locked
+    const isHome = data.teamId === match.homeTeamId;
+    const isAway = data.teamId === match.awayTeamId;
+    const homeLocked = (match as { homeEventsLocked?: boolean }).homeEventsLocked ?? false;
+    const awayLocked = (match as { awayEventsLocked?: boolean }).awayEventsLocked ?? false;
+    if ((isHome && homeLocked) || (isAway && awayLocked)) {
+      throw new Error('Events are locked for this team');
+    }
+
     // Only update match scores while the match is live
     const shouldUpdateScore = !match.isFinished;
 

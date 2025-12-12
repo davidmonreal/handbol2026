@@ -67,6 +67,8 @@ export class MatchService extends BaseService<Match> {
       videoUrl: string | null;
       firstHalfVideoStart: number | null;
       secondHalfVideoStart: number | null;
+      homeEventsLocked: boolean;
+      awayEventsLocked: boolean;
     }>,
   ): Promise<Match> {
     const updateData: Record<string, any> = { ...data };

@@ -36,6 +36,7 @@ interface EventFormProps {
     onSave: (event: MatchEvent, opponentGkId?: string) => void;
     onCancel: () => void;
     onDelete?: (eventId: string) => void;
+    locked?: boolean;
 }
 
 export const EventForm = ({
@@ -45,7 +46,8 @@ export const EventForm = ({
     initialState,
     onSave,
     onCancel,
-    onDelete
+    onDelete,
+    locked = false
 }: EventFormProps) => {
     const [saveMessage, setSaveMessage] = useState<string | null>(null);
     const saveMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -160,6 +162,7 @@ export const EventForm = ({
     };
 
     const handleSave = () => {
+        if (locked) return;
         // Validation: Player required
         if (!selectedPlayerId) {
             // Could show error
@@ -280,11 +283,16 @@ export const EventForm = ({
     // Sort players by number
     const sortedPlayers = [...team.players].sort((a, b) => a.number - b.number);
 
+    const lockClass = locked ? 'opacity-50 pointer-events-none' : '';
+
     return (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-6 relative">
+            {locked && (
+                <div className="absolute inset-0 bg-white/40 rounded-lg pointer-events-none" aria-hidden />
+            )}
 
             {/* Top Row: Player & Goalkeeper */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${lockClass}`}>
                 {/* 0. Player Selection */}
                 <div className="relative">
                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Player</div>
@@ -379,7 +387,7 @@ export const EventForm = ({
             </div>
 
             {/* 1. Category Selection */}
-            <div>
+            <div className={lockClass}>
                 <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Category</div>
                 <div className="grid grid-cols-3 gap-2">
                     {[{ value: 'Shot', label: 'Shot' }, { value: 'Sanction', label: 'Foul' }, { value: 'Turnover', label: 'Turnover' }].map(cat => (
@@ -397,9 +405,9 @@ export const EventForm = ({
                 </div>
             </div>
 
-            <div className={isPlayerSelected ? 'space-y-6' : 'space-y-6 opacity-50 pointer-events-none'}>
+            <div className={isPlayerSelected ? `space-y-6 ${lockClass}` : `space-y-6 opacity-50 pointer-events-none ${lockClass}`}>
                 {/* 2. Zone Selection (Always visible) */}
-                <div>
+                <div className={lockClass}>
                     <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Select Zone</div>
                     <ZoneSelector
                         selectedZone={selectedZone}
@@ -409,7 +417,7 @@ export const EventForm = ({
                 </div>
 
                 {/* 3. Action Selection */}
-                <div>
+                <div className={lockClass}>
                     <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                         {selectedCategory === 'Shot' ? 'Result' : selectedCategory === 'Turnover' ? 'Type' : 'Severity'}
                     </div>
