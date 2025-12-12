@@ -7,6 +7,9 @@ interface FiltersBarProps {
   setFilterOpposition: (value: boolean | null) => void;
   setFilterCollective: (value: boolean | null) => void;
   setFilterCounterAttack: (value: boolean | null) => void;
+  playWindowOptions?: { label: string; value: { start: number; end: number } }[];
+  selectedPlayWindow?: { start: number; end: number } | null;
+  onPlayWindowChange?: (range: { start: number; end: number } | null) => void;
 }
 
 export function FiltersBar({
@@ -16,16 +19,19 @@ export function FiltersBar({
   setFilterOpposition,
   setFilterCollective,
   setFilterCounterAttack,
+  playWindowOptions = [],
+  selectedPlayWindow,
+  onPlayWindowChange,
 }: FiltersBarProps) {
   return (
-    <>
+    <div className="flex items-center gap-2 md:gap-3 flex-wrap">
       <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Filters:</span>
       
       {/* Opposition Group */}
-      <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
+      <div className="flex bg-gray-100 rounded-lg p-0.5 gap-1">
         <button
           onClick={() => setFilterOpposition(filterOpposition === false ? null : false)}
-          className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+          className={`px-2.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1 ${
             filterOpposition === false
               ? 'bg-white text-orange-600 shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
@@ -36,7 +42,7 @@ export function FiltersBar({
         </button>
         <button
           onClick={() => setFilterOpposition(filterOpposition === true ? null : true)}
-          className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+          className={`px-2.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1 ${
             filterOpposition === true
               ? 'bg-white text-orange-600 shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
@@ -50,10 +56,10 @@ export function FiltersBar({
       <div className="w-px h-6 bg-gray-200"></div>
 
       {/* Collective Group */}
-      <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
+      <div className="flex bg-gray-100 rounded-lg p-0.5 gap-1">
         <button
           onClick={() => setFilterCollective(filterCollective === false ? null : false)}
-          className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+          className={`px-2.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1 ${
             filterCollective === false
               ? 'bg-white text-purple-600 shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
@@ -64,7 +70,7 @@ export function FiltersBar({
         </button>
         <button
           onClick={() => setFilterCollective(filterCollective === true ? null : true)}
-          className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+          className={`px-2.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1 ${
             filterCollective === true
               ? 'bg-white text-purple-600 shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
@@ -78,10 +84,10 @@ export function FiltersBar({
       <div className="w-px h-6 bg-gray-200"></div>
 
       {/* Counter Group */}
-      <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
+      <div className="flex bg-gray-100 rounded-lg p-0.5 gap-1">
         <button
           onClick={() => setFilterCounterAttack(filterCounterAttack === false ? null : false)}
-          className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+          className={`px-2.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1 ${
             filterCounterAttack === false
               ? 'bg-white text-cyan-600 shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
@@ -92,7 +98,7 @@ export function FiltersBar({
         </button>
         <button
           onClick={() => setFilterCounterAttack(filterCounterAttack === true ? null : true)}
-          className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+          className={`px-2.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1 ${
             filterCounterAttack === true
               ? 'bg-white text-cyan-600 shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
@@ -102,6 +108,32 @@ export function FiltersBar({
           Counter
         </button>
       </div>
-    </>
+      {/* Play window dropdown */}
+      {onPlayWindowChange && playWindowOptions.length > 0 && (
+        <div className="ml-auto">
+          <label className="sr-only">Plays window</label>
+          <select
+            className="text-xs font-semibold text-gray-700 border border-gray-200 rounded-md px-2.5 py-1.5 bg-white shadow-sm"
+            value={selectedPlayWindow ? `${selectedPlayWindow.start}-${selectedPlayWindow.end}` : ''}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (!value) {
+                onPlayWindowChange(null);
+                return;
+              }
+              const [start, end] = value.split('-').map(Number);
+              onPlayWindowChange({ start, end });
+            }}
+          >
+            <option value="">All plays</option>
+            {playWindowOptions.map(opt => (
+              <option key={`${opt.value.start}-${opt.value.end}`} value={`${opt.value.start}-${opt.value.end}`}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+    </div>
   );
 }

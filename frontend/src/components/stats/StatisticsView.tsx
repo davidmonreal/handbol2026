@@ -40,6 +40,7 @@ export function StatisticsView({
   const [filterOpposition, setFilterOpposition] = useState<boolean | null>(null);
   const [filterCollective, setFilterCollective] = useState<boolean | null>(null);
   const [filterCounterAttack, setFilterCounterAttack] = useState<boolean | null>(null);
+  const [selectedPlayWindow, setSelectedPlayWindow] = useState<{ start: number; end: number } | null>(null);
 
   // Team selection for match context (controlled or uncontrolled)
   const [internalSelectedTeamId, setInternalSelectedTeamId] = useState<string | null>(
@@ -172,6 +173,29 @@ export function StatisticsView({
     setFilterZone(zone);
   };
 
+  // Play window filter (by recency in current filteredEvents)
+  const playWindowOptions = useMemo(() => {
+    const total = filteredEvents.length;
+    const options: { label: string; value: { start: number; end: number } }[] = [];
+    if (total >= 5) options.push({ label: 'Last 5 plays', value: { start: Math.max(total - 5, 0), end: total } });
+    if (total >= 10) options.push({ label: 'Plays 5–10', value: { start: Math.max(total - 10, 0), end: Math.max(total - 5, 0) } });
+    if (total >= 15) options.push({ label: 'Plays 10–15', value: { start: Math.max(total - 15, 0), end: Math.max(total - 10, 0) } });
+    return options;
+  }, [filteredEvents.length]);
+
+  const applyPlayWindow = useMemo(() => {
+    if (!playWindowOptions.length) return filteredEvents;
+    const selected = playWindowOptions.find(opt =>
+      selectedPlayWindow && opt.value.start === selectedPlayWindow.start && opt.value.end === selectedPlayWindow.end
+    );
+    if (!selected && selectedPlayWindow) {
+      setSelectedPlayWindow(null);
+      return filteredEvents;
+    }
+    if (!selected) return filteredEvents;
+    return filteredEvents.slice(selected.value.start, selected.value.end);
+  }, [filteredEvents, playWindowOptions, selectedPlayWindow]);
+
   const handlePlayerClick = (playerId: string | null) => {
     // Don't apply filter in player context (already viewing single player)
     if (context === 'player') return;
@@ -235,6 +259,9 @@ export function StatisticsView({
           setFilterOpposition={setFilterOpposition}
           setFilterCollective={setFilterCollective}
           setFilterCounterAttack={setFilterCounterAttack}
+          playWindowOptions={playWindowOptions}
+          selectedPlayWindow={selectedPlayWindow}
+          onPlayWindowChange={setSelectedPlayWindow}
         />
 
         {/* Player Filter Badge */}
@@ -265,7 +292,7 @@ export function StatisticsView({
       {/* Statistics Panel (Cards + Heatmap + Zones) */}
       <StatisticsPanel
         data={{
-          events: filteredEvents,
+          events: applyPlayWindow,
           foulEvents: filteredFoulEvents,
           title: '',
           context,
