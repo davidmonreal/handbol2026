@@ -7,6 +7,7 @@ import { PlayerStatisticsTable } from './PlayerStatisticsTable';
 import { FiltersBar } from './FiltersBar';
 import { usePlayerBaselines } from './hooks/usePlayerBaselines';
 import { GoalFlowChart } from './GoalFlowChart';
+import { usePlayWindow } from './hooks/usePlayWindow';
 
 const HALF_DURATION_SECONDS = 30 * 60;
 
@@ -40,7 +41,6 @@ export function StatisticsView({
   const [filterOpposition, setFilterOpposition] = useState<boolean | null>(null);
   const [filterCollective, setFilterCollective] = useState<boolean | null>(null);
   const [filterCounterAttack, setFilterCounterAttack] = useState<boolean | null>(null);
-  const [selectedPlayWindow, setSelectedPlayWindow] = useState<{ start: number; end: number } | null>(null);
 
   // Team selection for match context (controlled or uncontrolled)
   const [internalSelectedTeamId, setInternalSelectedTeamId] = useState<string | null>(
@@ -174,28 +174,7 @@ export function StatisticsView({
   };
 
   // Play window filter (by recency in current filteredEvents)
-  const playWindowOptions = useMemo(() => {
-    const shotEvents = filteredEvents.filter(e => e.category === 'Shot');
-    const total = shotEvents.length;
-    const options: { label: string; value: { start: number; end: number } }[] = [];
-    if (total >= 5) options.push({ label: 'Show last 5 shots', value: { start: Math.max(total - 5, 0), end: total } });
-    if (total >= 10) options.push({ label: 'Shots 6–10', value: { start: Math.max(total - 10, 0), end: Math.max(total - 5, 0) } });
-    if (total >= 15) options.push({ label: 'Shots 11–15', value: { start: Math.max(total - 15, 0), end: Math.max(total - 10, 0) } });
-    return options;
-  }, [filteredEvents]);
-
-  const applyPlayWindow = useMemo(() => {
-    if (!selectedPlayWindow) return filteredEvents;
-    const shotEvents = filteredEvents.filter(e => e.category === 'Shot');
-    const selected = playWindowOptions.find(opt =>
-      opt.value.start === selectedPlayWindow.start && opt.value.end === selectedPlayWindow.end
-    );
-    if (!selected) {
-      setSelectedPlayWindow(null);
-      return filteredEvents;
-    }
-    return shotEvents.slice(selected.value.start, selected.value.end);
-  }, [filteredEvents, playWindowOptions, selectedPlayWindow]);
+  const { options: playWindowOptions, selected: selectedPlayWindow, setSelected: setSelectedPlayWindow, filteredEvents: playWindowEvents } = usePlayWindow(filteredEvents);
 
   const handlePlayerClick = (playerId: string | null) => {
     // Don't apply filter in player context (already viewing single player)
@@ -293,7 +272,7 @@ export function StatisticsView({
       {/* Statistics Panel (Cards + Heatmap + Zones) */}
       <StatisticsPanel
         data={{
-          events: applyPlayWindow,
+          events: playWindowEvents,
           foulEvents: filteredFoulEvents,
           title: '',
           context,
@@ -307,7 +286,7 @@ export function StatisticsView({
       {/* Player Statistics Table */}
       <div className="hidden md:block">
         <PlayerStatisticsTable
-          events={applyPlayWindow}
+          events={playWindowEvents}
           onPlayerClick={handlePlayerClick}
           selectedPlayerId={filterPlayer}
           subtitle={filterZone ? `(from ${filterZone})` : subtitle || '(Overall)'}
