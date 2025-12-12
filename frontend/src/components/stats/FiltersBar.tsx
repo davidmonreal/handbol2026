@@ -1,4 +1,5 @@
 import { User, Users, Shield, Activity, TrendingUp } from 'lucide-react';
+import { DropdownSelect } from '../common';
 
 interface FiltersBarProps {
   filterOpposition: boolean | null;
@@ -24,7 +25,7 @@ export function FiltersBar({
   onPlayWindowChange,
 }: FiltersBarProps) {
   return (
-    <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+    <div className="flex flex-wrap items-center gap-2 md:gap-3">
       <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Filters:</span>
       
       {/* Opposition Group */}
@@ -108,30 +109,28 @@ export function FiltersBar({
           Counter
         </button>
       </div>
+      {/* Spacer to push dropdown right on larger screens */}
+      <div className="flex-1 min-w-[1px]" />
       {/* Play window dropdown */}
       {onPlayWindowChange && playWindowOptions.length > 0 && (
-        <div className="ml-auto">
-          <label className="sr-only">Plays window</label>
-          <select
-            className="text-xs font-semibold text-gray-700 border border-gray-200 rounded-md px-2.5 py-1.5 bg-white shadow-sm"
-            value={selectedPlayWindow ? `${selectedPlayWindow.start}-${selectedPlayWindow.end}` : ''}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (!value) {
+        <div className="w-full sm:w-auto">
+          <DropdownSelect
+            label={<span className="text-xs font-semibold text-gray-500">Plays</span>}
+            options={playWindowOptions.map((opt) => ({
+              label: opt.label,
+              value: `${opt.value.start}-${opt.value.end}`,
+            }))}
+            value={selectedPlayWindow ? `${selectedPlayWindow.start}-${selectedPlayWindow.end}` : null}
+            onChange={(val) => {
+              if (!val) {
                 onPlayWindowChange(null);
                 return;
               }
-              const [start, end] = value.split('-').map(Number);
+              const [start, end] = String(val).split('-').map(Number);
               onPlayWindowChange({ start, end });
             }}
-          >
-            <option value="">All plays</option>
-            {playWindowOptions.map(opt => (
-              <option key={`${opt.value.start}-${opt.value.end}`} value={`${opt.value.start}-${opt.value.end}`}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            placeholder="All plays"
+          />
         </div>
       )}
     </div>
