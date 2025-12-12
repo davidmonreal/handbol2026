@@ -277,24 +277,28 @@ export function StatisticsView({
       />
 
       {/* Player Statistics Table */}
-      <PlayerStatisticsTable
-        events={filteredEvents}
-        onPlayerClick={handlePlayerClick}
-        selectedPlayerId={filterPlayer}
-        subtitle={filterZone ? `(from ${filterZone})` : subtitle || '(Overall)'}
-        getPlayerInfo={matchData || teamData ? getPlayerInfo : undefined}
-      />
+      <div className="hidden md:block">
+        <PlayerStatisticsTable
+          events={filteredEvents}
+          onPlayerClick={handlePlayerClick}
+          selectedPlayerId={filterPlayer}
+          subtitle={filterZone ? `(from ${filterZone})` : subtitle || '(Overall)'}
+          getPlayerInfo={matchData || teamData ? getPlayerInfo : undefined}
+        />
+      </div>
 
       {/* Goal flow chart - only for match context */}
       {context === 'match' && selectedTeamId && opponentTeamId && (
-        <GoalFlowChart
-          events={[...filteredEvents, ...filteredOpponentEvents]}
-          selectedTeamId={selectedTeamId}
-          opponentTeamId={opponentTeamId}
-          secondHalfMarkSeconds={HALF_DURATION_SECONDS}
-          teamName={selectedTeamName}
-          opponentName={opponentTeamName}
-        />
+        <div className="hidden md:block">
+          <GoalFlowChart
+            events={[...filteredEvents, ...filteredOpponentEvents]}
+            selectedTeamId={selectedTeamId}
+            opponentTeamId={opponentTeamId}
+            secondHalfMarkSeconds={HALF_DURATION_SECONDS}
+            teamName={selectedTeamName}
+            opponentName={opponentTeamName}
+          />
+        </div>
       )}
     </div>
   );
