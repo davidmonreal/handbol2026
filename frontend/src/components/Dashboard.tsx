@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ChevronRight } from 'lucide-react';
+import { Plus, ChevronRight, Calendar } from 'lucide-react';
 import { API_BASE_URL } from '../config/api';
 import { LoadingGrid, ErrorMessage } from './common';
 import { MatchCard } from './match/MatchCard';
