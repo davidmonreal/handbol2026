@@ -264,6 +264,7 @@ export const EventForm = ({
     };
 
     const handleDelete = () => {
+        if (locked) return;
         setShowDeleteConfirmation(true);
     };
 
@@ -556,12 +557,13 @@ export const EventForm = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-300 flex-wrap">
+            <div className={`flex items-center justify-between gap-3 pt-3 border-t border-gray-300 flex-wrap ${locked ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <div className="flex items-center gap-3">
                     {event && (
                         <button
                             onClick={handleDelete}
-                            className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-700 font-medium transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-700 font-medium transition-colors disabled:text-gray-300 disabled:hover:text-gray-300"
+                            disabled={locked}
                             data-testid="delete-event-button"
                         >
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -574,15 +576,16 @@ export const EventForm = ({
 
                 <div className="flex gap-2 items-center flex-wrap justify-end">
                     <button
-                        onClick={onCancel}
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                        onClick={() => { if (!locked) onCancel(); }}
+                        disabled={locked}
+                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors disabled:text-gray-400 disabled:border-gray-200 disabled:hover:bg-white"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSave}
                         className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={!isPlayerSelected}
+                        disabled={!isPlayerSelected || locked}
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

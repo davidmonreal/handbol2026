@@ -252,15 +252,7 @@ const MatchTracker = () => {
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.657 0 3-1.343 3-3V5a3 3 0 10-6 0v3c0 1.657 1.343 3 3 3z M5 11h14v8a2 2 0 01-2 2H7a2 2 0 01-2-2v-8z" />
                   </svg>
-                  <span>New events locked for this team</span>
-                  {matchId && (
-                    <button
-                      onClick={() => navigate(`/matches/${matchId}/edit`)}
-                      className="text-xs text-indigo-600 hover:underline ml-1"
-                    >
-                      Edit
-                    </button>
-                  )}
+                  <span>Events management locked. Unlock to add or edit events.</span>
                 </div>
               )}
 
