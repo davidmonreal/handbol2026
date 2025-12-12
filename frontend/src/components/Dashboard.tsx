@@ -33,9 +33,6 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Quick snapshot for the very next games (top strip)
-  const nextMatches = pendingMatches.slice(0, 3);
-
   useEffect(() => {
     fetchMatches();
   }, []);
@@ -203,46 +200,15 @@ const Dashboard = () => {
       )}
 
       {/* Next matches strip (first three upcoming) */}
-      {nextMatches.length > 0 && (
+      {pendingMatches.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-emerald-500 rounded-full" />
-            <h2 className="text-base font-semibold text-gray-900">Properes dels teus equips</h2>
+            <h2 className="text-base font-semibold text-gray-900">Upcoming for your teams</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {nextMatches.map(match => (
-              <div
-                key={`next-${match.id}`}
-                className="bg-white border border-gray-100 rounded-lg p-3 shadow-sm hover:shadow transition-shadow"
-              >
-                <div className="flex items-center text-gray-500 text-xs gap-2 mb-2">
-                  <Calendar size={12} />
-                  <span>{format(new Date(match.date), 'MMM d, yyyy')}</span>
-                  <span aria-hidden>•</span>
-                  <Clock size={12} />
-                  <span>{format(new Date(match.date), 'HH:mm')}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-semibold text-gray-900 truncate">
-                    {match.homeTeam?.category && `${match.homeTeam.category} `}
-                    {match.homeTeam?.name || 'Equip local'}
-                  </div>
-                  <span className="text-gray-400 text-xs font-medium">vs</span>
-                  <div className="text-sm font-semibold text-gray-900 text-right truncate">
-                    {match.awayTeam?.category && `${match.awayTeam.category} `}
-                    {match.awayTeam?.name || 'Equip visitant'}
-                  </div>
-                </div>
-                <div className="mt-2 flex justify-end">
-                  <button
-                    onClick={() => navigate(`/match-tracker/${match.id}`)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-md hover:bg-indigo-700 transition-colors"
-                  >
-                    <Play size={12} />
-                    Play
-                  </button>
-                </div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {pendingMatches.slice(0, 3).map(match => (
+              <MatchCard key={`next-${match.id}`} match={match} isPending={true} />
             ))}
           </div>
         </section>
