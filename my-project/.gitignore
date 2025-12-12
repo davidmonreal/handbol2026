@@ -3,6 +3,7 @@ dist/
 coverage/
 .env
 .DS_Store
+backend.log
 
 /src/generated/prisma
 /src/generated/zod
