@@ -53,10 +53,21 @@ describe('PlayerService', () => {
     expect(result).toEqual(createdPlayer);
   });
 
-  it('create throws error if number is not positive', async () => {
-    const invalidData = { name: 'Invalid', number: 0, handedness: 'RIGHT', isGoalkeeper: false };
+  it('create allows zero dorsal numbers', async () => {
+    const zeroNumberData = { name: 'Unknown', number: 0, handedness: 'RIGHT', isGoalkeeper: false };
+    const created = { id: 'new', ...zeroNumberData };
+    vi.mocked(repository.create).mockResolvedValue(created);
 
-    await expect(service.create(invalidData)).rejects.toThrow('Player number must be positive');
+    const result = await service.create(zeroNumberData);
+
+    expect(repository.create).toHaveBeenCalledWith(zeroNumberData);
+    expect(result).toEqual(created);
+  });
+
+  it('create throws error if number is negative', async () => {
+    const invalidData = { name: 'Invalid', number: -1, handedness: 'RIGHT', isGoalkeeper: false };
+
+    await expect(service.create(invalidData)).rejects.toThrow('Player number must be zero or positive');
     expect(repository.create).not.toHaveBeenCalled();
   });
 
@@ -89,11 +100,11 @@ describe('PlayerService', () => {
     expect(result).toEqual(updatedPlayer);
   });
 
-  it('update throws error if number is not positive', async () => {
+  it('update throws error if number is negative', async () => {
     const invalidData = { number: -5 };
 
     await expect(service.update('1', invalidData)).rejects.toThrow(
-      'Player number must be positive',
+      'Player number must be zero or positive',
     );
     expect(repository.update).not.toHaveBeenCalled();
   });

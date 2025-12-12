@@ -17,11 +17,12 @@ describe('Integration: game events mutate match score atomically', () => {
   let clubId: string;
   const createdMatches: string[] = [];
   const createdTeams: string[] = [];
+  const timestampSuffix = Date.now();
 
   beforeAll(async () => {
     const season = await prisma.season.create({
       data: {
-        name: `Season-${Date.now()}`,
+        name: `ScoreSeason-${timestampSuffix}`,
         startDate: new Date(),
         endDate: new Date(Date.now() + 1000 * 60 * 60 * 24),
       },
@@ -29,7 +30,7 @@ describe('Integration: game events mutate match score atomically', () => {
 
     const club = await prisma.club.create({
       data: {
-        name: `Club-${Date.now()}`,
+        name: `ScoreClub-${timestampSuffix}`,
       },
     });
 
@@ -55,16 +56,17 @@ describe('Integration: game events mutate match score atomically', () => {
   });
 
   const createMatch = async () => {
+    const now = Date.now();
     const homeTeam = await prisma.team.create({
       data: {
-        name: `Home-${Date.now()}`,
+        name: `ScoreHome-${now}`,
         clubId,
         seasonId,
       },
     });
     const awayTeam = await prisma.team.create({
       data: {
-        name: `Away-${Date.now()}`,
+        name: `ScoreAway-${now}`,
         clubId,
         seasonId,
       },
