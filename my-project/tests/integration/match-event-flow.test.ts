@@ -11,8 +11,18 @@ describe('Integration Tests: Match Event Flow', () => {
   let testPlayerId: string;
 
   beforeAll(async () => {
-    // Get a match from the database
+    // Get a match whose home team has players and is not locked/finished
     const match = await prisma.match.findFirst({
+      where: {
+        isFinished: false,
+        homeEventsLocked: false,
+        awayEventsLocked: false,
+        homeTeam: {
+          players: {
+            some: {},
+          },
+        },
+      },
       include: {
         homeTeam: {
           include: {
@@ -26,8 +36,8 @@ describe('Integration Tests: Match Event Flow', () => {
       },
     });
 
-    if (!match) {
-      throw new Error('No matches found in database. Run seed first.');
+    if (!match || !match.homeTeam.players.length) {
+      throw new Error('No suitable match with players found in database. Run seed first.');
     }
 
     testMatchId = match.id;
