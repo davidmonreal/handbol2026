@@ -10,7 +10,12 @@ export class PlayerService extends BaseService<Player> {
     this.playerRepository = repository;
   }
 
-  async getAllPaginated(params: { skip: number; take: number; search?: string; clubId?: string }): Promise<Player[]> {
+  async getAllPaginated(params: {
+    skip: number;
+    take: number;
+    search?: string;
+    clubId?: string;
+  }): Promise<Player[]> {
     return this.playerRepository.findAllPaginated(params);
   }
 
@@ -20,9 +25,9 @@ export class PlayerService extends BaseService<Player> {
 
   // Override create to add business logic validation
   async create(data: Omit<Player, 'id'>): Promise<Player> {
-    // Validation: number must be positive
-    if (data.number <= 0) {
-      throw new Error('Player number must be positive');
+    // Validation: allow unknown dorsals as 0, otherwise must be positive
+    if (data.number < 0) {
+      throw new Error('Player number must be zero or positive');
     }
 
     // Validation: handedness must be LEFT or RIGHT
@@ -35,9 +40,9 @@ export class PlayerService extends BaseService<Player> {
 
   // Override update to add business logic validation
   async update(id: string, data: Partial<Omit<Player, 'id'>>): Promise<Player> {
-    // Validation: number must be positive if provided
-    if (data.number !== undefined && data.number <= 0) {
-      throw new Error('Player number must be positive');
+    // Validation: allow unknown dorsals as 0, otherwise must be positive
+    if (data.number !== undefined && data.number < 0) {
+      throw new Error('Player number must be zero or positive');
     }
 
     // Validation: handedness must be LEFT or RIGHT if provided

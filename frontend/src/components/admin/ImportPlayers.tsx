@@ -6,6 +6,7 @@ import { ImageUpload } from './import/ImageUpload';
 import { ImagePreview } from './import/ImagePreview';
 import { CreateTeamModal } from './import/CreateTeamModal';
 import { ExtractedPlayersList } from './import/ExtractedPlayersList';
+import { TeamSelector } from './import/TeamSelector';
 
 export const ImportPlayers = () => {
     const navigate = useNavigate();
@@ -33,12 +34,21 @@ export const ImportPlayers = () => {
 
             {/* TOP SECTION: Upload and Preview */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <ImageUpload
-                    onImageUpload={actions.handleImageUpload}
-                    isProcessing={state.isProcessing}
-                    onExtract={actions.handleExtract}
-                    hasImage={!!state.image}
-                />
+                <div className="flex flex-col gap-4">
+                    <ImageUpload
+                        onImageUpload={actions.handleImageUpload}
+                        isProcessing={state.isProcessing}
+                        onExtract={actions.handleExtract}
+                        hasImage={!!state.image}
+                    />
+                    <TeamSelector
+                        teams={state.teams}
+                        selectedTeamId={state.selectedTeamId}
+                        onTeamChange={actions.setSelectedTeamId}
+                        onCreateTeam={actions.handleCreateTeam}
+                        isCheckingDuplicates={state.isCheckingDuplicates}
+                    />
+                </div>
 
                 {state.image && (
                     <ImagePreview image={state.image} />
@@ -49,10 +59,7 @@ export const ImportPlayers = () => {
             {state.extractedPlayers.length > 0 && (
                 <ExtractedPlayersList
                     extractedPlayers={state.extractedPlayers}
-                    teams={state.teams}
                     selectedTeamId={state.selectedTeamId}
-                    onTeamChange={actions.setSelectedTeamId}
-                    onCreateTeam={actions.handleCreateTeam}
                     duplicates={state.duplicates}
                     duplicateActions={state.duplicateActions}
                     reviewingDuplicates={state.reviewingDuplicates}
@@ -68,12 +75,12 @@ export const ImportPlayers = () => {
                     onConfirmMerge={actions.handleConfirmMerge}
                     onConfirmImport={() => actions.handleConfirmImport((_summary, count) => {
                         setImportedCount(count);
+                        actions.setImage(null); // hide preview after final import
                         // Optional: scrollToBottom or ensure button is visible
                     })}
                     importedCount={importedCount}
                     onGoToPlayers={() => navigate('/players')}
                     isProcessing={state.isProcessing}
-                    isCheckingDuplicates={state.isCheckingDuplicates}
                     // Edit Props
                     editingPlayerIndex={state.editingPlayerIndex}
                     onSaveEditedPlayer={actions.handleSaveEditedPlayer}

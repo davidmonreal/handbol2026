@@ -6,6 +6,9 @@ import { StatisticsPanel } from './StatisticsPanel';
 import { PlayerStatisticsTable } from './PlayerStatisticsTable';
 import { FiltersBar } from './FiltersBar';
 import { usePlayerBaselines } from './hooks/usePlayerBaselines';
+import { GoalFlowChart } from './GoalFlowChart';
+
+const HALF_DURATION_SECONDS = 30 * 60;
 
 export function StatisticsView({
   events,
@@ -98,10 +101,21 @@ export function StatisticsView({
     ? (selectedTeamId === matchData.homeTeamId ? matchData.awayTeamId : matchData.homeTeamId)
     : null;
 
+  const selectedTeamData = matchData
+    ? (selectedTeamId === matchData.homeTeamId ? matchData.homeTeam : matchData.awayTeam)
+    : null;
+
+  const opponentTeamData = matchData
+    ? (selectedTeamId === matchData.homeTeamId ? matchData.awayTeam : matchData.homeTeam)
+    : null;
+
+  const selectedTeamName = selectedTeamData ? formatTeamDisplay(selectedTeamData) : 'Your team';
+  const opponentTeamName = opponentTeamData ? formatTeamDisplay(opponentTeamData) : 'Rival';
+
   // Apply all filters for both own team (selected) and opponent (for fouls)
   const baseFoulEvents: MatchEvent[] = foulEvents || [];
 
-  const { filteredEvents, filteredFoulEvents } = useMemo(() => {
+  const { filteredEvents, filteredFoulEvents, filteredOpponentEvents } = useMemo(() => {
     const passesFilters = (e: MatchEvent, teamIdConstraint: string | null) => {
       if (context === 'match' && teamIdConstraint && e.teamId !== teamIdConstraint) return false;
       if (filterZone && e.zone !== filterZone) return false;
@@ -129,7 +143,11 @@ export function StatisticsView({
       ? events.filter(e => passesFilters(e, opponentTeamId))
       : baseFoulEvents.filter(e => passesFilters(e, null));
 
-    return { filteredEvents: own, filteredFoulEvents: rival };
+    const opponentAll = opponentTeamId
+      ? events.filter(e => passesFilters(e, opponentTeamId))
+      : [];
+
+    return { filteredEvents: own, filteredFoulEvents: rival, filteredOpponentEvents: opponentAll };
   }, [events, baseFoulEvents, context, selectedTeamId, opponentTeamId, filterZone, filterPlayer, filterOpposition, filterCollective, filterCounterAttack, getPlayerInfo]);
 
   // Determine if we're viewing goalkeeper statistics
@@ -266,6 +284,18 @@ export function StatisticsView({
         subtitle={filterZone ? `(from ${filterZone})` : subtitle || '(Overall)'}
         getPlayerInfo={matchData || teamData ? getPlayerInfo : undefined}
       />
+
+      {/* Goal flow chart - only for match context */}
+      {context === 'match' && selectedTeamId && opponentTeamId && (
+        <GoalFlowChart
+          events={[...filteredEvents, ...filteredOpponentEvents]}
+          selectedTeamId={selectedTeamId}
+          opponentTeamId={opponentTeamId}
+          secondHalfMarkSeconds={HALF_DURATION_SECONDS}
+          teamName={selectedTeamName}
+          opponentName={opponentTeamName}
+        />
+      )}
     </div>
   );
 }

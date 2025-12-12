@@ -287,30 +287,35 @@ export const MergeComparisonRow = ({
                         </button>
                     </>
                 ) : (
-                    <>
+                    <div className="flex flex-col md:flex-row w-full gap-3">
                         <button
                             onClick={() => onActionChange('skip')}
-                            className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all"
+                            className="flex-1 px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all text-left"
                         >
-                            Skip (Don't Import)
+                            <div className="text-base font-semibold">Discard (do not import)</div>
+                            <div className="text-xs text-gray-600">Skip this extracted player.</div>
                         </button>
                         <button
                             onClick={() => onActionChange('keep')}
-                            className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all"
+                            className="flex-1 px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all text-left"
                         >
-                            Keep Both
+                            <div className="text-base font-semibold">Not a duplicate (create new)</div>
+                            <div className="text-xs text-gray-600">Creates a new player with the imported data.</div>
                         </button>
                         <button
                             onClick={onConfirmMerge}
                             disabled={mergeChoices.size < 4}
-                            className={`px-5 py-2 rounded-lg font-medium transition-all ${mergeChoices.size === 4
+                            className={`flex-1 px-4 py-3 rounded-lg font-medium text-left transition-all ${mergeChoices.size === 4
                                     ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
                                     : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                 }`}
                         >
-                            Confirm Data
+                            <div className="text-base font-semibold">Confirm data & link</div>
+                            <div className={`text-xs ${mergeChoices.size === 4 ? 'text-blue-50/80' : 'text-gray-500'}`}>
+                                If found, keep freshest fields and link to this team.
+                            </div>
                         </button>
-                    </>
+                    </div>
                 )}
             </div>
         </div>

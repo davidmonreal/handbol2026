@@ -1,15 +1,10 @@
-import { TeamSelector } from './TeamSelector';
 import { PlayerCard } from './PlayerCard';
 import { MergeComparisonRow } from './MergeComparisonRow';
 import type { ExtractedPlayer, DuplicateInfo } from '../../../services/playerImportService';
-import type { Team } from '../../../types';
 
 interface ExtractedPlayersListProps {
     extractedPlayers: ExtractedPlayer[];
-    teams: Team[];
     selectedTeamId: string | null;
-    onTeamChange: (id: string | null) => void;
-    onCreateTeam: (teamName: string) => void;
     duplicates: Map<number, DuplicateInfo>;
     duplicateActions: Map<number, 'merge' | 'skip' | 'keep'>;
     reviewingDuplicates: Map<number, boolean>;
@@ -25,7 +20,6 @@ interface ExtractedPlayersListProps {
     onConfirmMerge: (index: number) => void;
     onConfirmImport: () => void;
     isProcessing: boolean;
-    isCheckingDuplicates: boolean;
     // Edit Props
     editingPlayerIndex: number | null;
     onSaveEditedPlayer: (player: ExtractedPlayer) => void;
@@ -37,10 +31,7 @@ interface ExtractedPlayersListProps {
 
 export const ExtractedPlayersList = ({
     extractedPlayers,
-    teams,
     selectedTeamId,
-    onTeamChange,
-    onCreateTeam,
     duplicates,
     duplicateActions,
     reviewingDuplicates,
@@ -56,7 +47,6 @@ export const ExtractedPlayersList = ({
     onConfirmMerge,
     onConfirmImport,
     isProcessing,
-    isCheckingDuplicates,
     editingPlayerIndex,
     onSaveEditedPlayer,
     onCancelEdit,
@@ -84,16 +74,6 @@ export const ExtractedPlayersList = ({
                     </button>
                 )}
             </div>
-
-            {!importedCount && (
-                <TeamSelector
-                    teams={teams}
-                    selectedTeamId={selectedTeamId}
-                    onTeamChange={onTeamChange}
-                    onCreateTeam={onCreateTeam}
-                    isCheckingDuplicates={isCheckingDuplicates}
-                />
-            )}
 
             <div className="mt-6 space-y-4">
                 {!importedCount && extractedPlayers.map((player, index) => {
