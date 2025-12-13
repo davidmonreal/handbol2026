@@ -1,5 +1,6 @@
 import { User, Users, Shield, Activity, TrendingUp } from 'lucide-react';
 import { DropdownSelect } from '../common';
+import type { PlayWindowRange } from './hooks/usePlayWindow';
 
 interface FiltersBarProps {
   filterOpposition: boolean | null;
@@ -8,9 +9,9 @@ interface FiltersBarProps {
   setFilterOpposition: (value: boolean | null) => void;
   setFilterCollective: (value: boolean | null) => void;
   setFilterCounterAttack: (value: boolean | null) => void;
-  playWindowOptions?: { label: string; value: { start: number; end: number } }[];
-  selectedPlayWindow?: { start: number; end: number } | null;
-  onPlayWindowChange?: (range: { start: number; end: number } | null) => void;
+  playWindowOptions?: { label: string; value: PlayWindowRange }[];
+  selectedPlayWindow?: PlayWindowRange | null;
+  onPlayWindowChange?: (range: PlayWindowRange | null) => void;
 }
 
 export function FiltersBar({
@@ -117,16 +118,28 @@ export function FiltersBar({
           <DropdownSelect
             options={playWindowOptions.map((opt) => ({
               label: opt.label,
-              value: `${opt.value.start}-${opt.value.end}`,
+              value: opt.value.kind === 'half' ? `half-${opt.value.half}` : `range-${opt.value.start}-${opt.value.end}`,
             }))}
-            value={selectedPlayWindow ? `${selectedPlayWindow.start}-${selectedPlayWindow.end}` : null}
+            value={
+              selectedPlayWindow
+                ? selectedPlayWindow.kind === 'half'
+                  ? `half-${selectedPlayWindow.half}`
+                  : `range-${selectedPlayWindow.start}-${selectedPlayWindow.end}`
+                : null
+            }
             onChange={(val) => {
               if (!val) {
                 onPlayWindowChange(null);
                 return;
               }
-              const [start, end] = String(val).split('-').map(Number);
-              onPlayWindowChange({ start, end });
+              const str = String(val);
+              if (str.startsWith('half-')) {
+                const half = Number(str.split('-')[1]) as 1 | 2;
+                onPlayWindowChange({ kind: 'half', half });
+              } else {
+                const [, start, end] = str.split('-');
+                onPlayWindowChange({ kind: 'range', start: Number(start), end: Number(end) });
+              }
             }}
             placeholder="All plays"
           />

@@ -32,7 +32,7 @@ describe('MatchesManagement', () => {
                 <MatchesManagement />
             </BrowserRouter>
         );
-        expect(screen.getByText('Matches Management')).toBeInTheDocument();
+        await waitFor(() => expect(screen.getByText('Matches Management')).toBeInTheDocument());
     });
 
     it('fetches teams on mount (dependency)', async () => {
@@ -41,7 +41,7 @@ describe('MatchesManagement', () => {
                 <MatchesManagement />
             </BrowserRouter>
         );
-        expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/api/teams'));
+        await waitFor(() => expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/api/teams')));
     });
 
     it('displays matches in the table', async () => {
