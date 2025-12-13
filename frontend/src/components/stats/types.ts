@@ -120,6 +120,7 @@ export interface ZoneDistributionProps {
     selectedZone?: ZoneType | '7m' | null;
     className?: string;
     isGoalkeeper?: boolean;
+    title?: string;
 }
 
 /**

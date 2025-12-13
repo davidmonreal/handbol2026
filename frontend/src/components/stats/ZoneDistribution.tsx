@@ -15,7 +15,8 @@ export function ZoneDistribution({
   onZoneClick,
   selectedZone,
   className = '',
-  isGoalkeeper = false
+  isGoalkeeper = false,
+  title
 }: ZoneDistributionProps) {
   const [mode, setMode] = useState<'goals' | 'fouls'>('goals');
 
@@ -91,19 +92,18 @@ export function ZoneDistribution({
         <h3 className="text-lg font-bold text-gray-800">
           {mode === 'fouls'
             ? 'Foul Distribution (Own court zones)'
-            : isGoalkeeper
+            : title || (isGoalkeeper
               ? 'Saves Distribution (Court Zones)'
-              : 'Goal Distribution (Rival court zones)'}
+              : 'Goal Distribution (Rival court zones)')}
         </h3>
         {foulZoneStats && (
           <button
             onClick={() => setMode(mode === 'goals' ? 'fouls' : 'goals')}
             disabled={disableFoulToggle}
-            className={`px-3 py-1 text-sm font-medium rounded-lg border border-gray-300 transition-colors ${
-              disableFoulToggle
-                ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
-                : 'text-gray-700 hover:bg-gray-100'
-            }`}
+            className={`px-3 py-1 text-sm font-medium rounded-lg border border-gray-300 transition-colors ${disableFoulToggle
+              ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+              : 'text-gray-700 hover:bg-gray-100'
+              }`}
           >
             {mode === 'fouls' ? 'View Goals' : 'View Fouls'}
           </button>
