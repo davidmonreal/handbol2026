@@ -83,30 +83,25 @@ export function StatisticsPanel({
         ) : (
           <>
             <StatCard
-              label="Shots"
-              value={filteredStats.totalShots}
-              color="blue"
-            />
-            <StatCard
-              label="Goals"
-              value={`${filteredStats.totalGoals} (${filteredStats.efficiency.toFixed(0)}%)`}
+              label="Goals vs shots"
+              value={`${filteredStats.totalGoals}/${filteredStats.totalShots} (${filteredStats.efficiency.toFixed(0)}%)`}
               color="green"
               className="min-w-fit"
             />
             <StatCard
-              label="Misses"
+              label="Misses vs. plays"
               value={`${filteredStats.totalMisses} (${filteredStats.missesPercentage.toFixed(0)}%)`}
               color="orange"
               className="min-w-fit"
             />
             <StatCard
-              label="Turnovers"
+              label="Turnovers vs. plays"
               value={`${filteredStats.totalTurnovers} (${filteredStats.turnoversPercentage.toFixed(0)}%)`}
               color="yellow"
               className="min-w-fit"
             />
             <StatCard
-              label="Fouls Rec."
+              label="Fouls vs. plays"
               value={`${filteredStats.totalFouls} (${filteredStats.foulsPercentage.toFixed(0)}%)`}
               color="gray"
               className="min-w-fit"
