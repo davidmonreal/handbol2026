@@ -21,6 +21,9 @@ interface ScoreboardProps {
   onVisitorScoreChange: (score: number) => void;
   onTeamSelect: (teamId: string) => void;
   showCalibration?: boolean; // Show calibration buttons (for MatchTracker only)
+  showFinishButton?: boolean;
+  onFinishMatch?: () => void;
+  isFinished?: boolean;
 }
 
 export const Scoreboard = ({
@@ -33,7 +36,10 @@ export const Scoreboard = ({
   onHomeScoreChange,
   onVisitorScoreChange,
   onTeamSelect,
-  showCalibration = true
+  showCalibration = true,
+  showFinishButton = false,
+  onFinishMatch,
+  isFinished = false
 }: ScoreboardProps) => {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -115,6 +121,20 @@ export const Scoreboard = ({
                 {realTimeSecondHalfStart ? '2H Started' : 'Start 2H'}
               </button>
             </div>
+          )}
+
+          {showFinishButton && (
+            <button
+              onClick={onFinishMatch}
+              disabled={isFinished}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                isFinished
+                  ? 'bg-green-50 text-green-700 cursor-default'
+                  : 'bg-red-100 text-red-700 hover:bg-red-200'
+              }`}
+            >
+              {isFinished ? 'Match finished' : 'Finish match'}
+            </button>
           )}
         </div>
 

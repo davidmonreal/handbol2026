@@ -61,7 +61,7 @@ const mockMatchDetailsResponse = () => ({
 
 describe('MatchContext', () => {
     beforeEach(() => {
-        mockFetch.mockClear();
+        mockFetch.mockReset();
     });
 
     afterEach(() => {
@@ -266,12 +266,10 @@ describe('MatchContext', () => {
         });
 
         it('should stay live and use event totals when finished match has no manual scores', async () => {
-            mockFetch
-                .mockResolvedValueOnce(mockMatchDetailsResponse() as any)
-                .mockResolvedValueOnce({
-                    ok: true,
-                    json: async () => mockEvents
-                });
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => mockEvents
+            });
 
             const { result } = renderHook(() => useMatch(), { wrapper });
 
@@ -483,6 +481,50 @@ describe('MatchContext', () => {
                 expect(result.current.visitorScore).toBe(6);
             });
         });
+
+        it('should stamp events with the current clock time when timestamp is missing', async () => {
+            mockFetch
+                .mockResolvedValueOnce(mockMatchDetailsResponse() as any)
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => []
+                });
+
+            const { result } = renderHook(() => useMatch(), { wrapper });
+
+            await act(async () => {
+                await result.current.setMatchData(
+                    'match-1',
+                    { id: 'team1', name: 'Team 1', color: 'red', players: [] },
+                    { id: 'team2', name: 'Team 2', color: 'blue', players: [] }
+                );
+            });
+
+            act(() => {
+                result.current.setTime(123); // Clock is running at 02:03
+            });
+
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ id: 'new-event' })
+            });
+
+            await act(async () => {
+                await result.current.addEvent({
+                    // Intentionally omit timestamp to rely on clock
+                    id: 'e1',
+                    timestamp: undefined as unknown as number,
+                    playerId: 'p1',
+                    teamId: 'team1',
+                    category: 'Shot',
+                    action: 'Goal'
+                });
+            });
+
+            await waitFor(() => {
+                expect(result.current.events[0]?.timestamp).toBe(123);
+            });
+        });
     });
 
     describe('deleteEvent', () => {
@@ -618,5 +660,25 @@ describe('MatchContext', () => {
                 expect(result.current.events).toHaveLength(0);
             });
         });
+    });
+
+    it('should store real time calibration and reset clock for each half', async () => {
+        const { result } = renderHook(() => useMatch(), { wrapper });
+        const firstHalfStart = Date.now();
+        const secondHalfStart = firstHalfStart + 1000;
+
+        act(() => {
+            result.current.setRealTimeCalibration(1, firstHalfStart);
+        });
+
+        expect(result.current.realTimeFirstHalfStart).toBe(firstHalfStart);
+        expect(result.current.time).toBe(0);
+
+        act(() => {
+            result.current.setRealTimeCalibration(2, secondHalfStart);
+        });
+
+        expect(result.current.realTimeSecondHalfStart).toBe(secondHalfStart);
+        expect(result.current.time).toBe(30 * 60);
     });
 });

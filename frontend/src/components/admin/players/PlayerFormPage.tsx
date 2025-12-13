@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { usePlayerForm } from '../../../hooks/usePlayerForm';
 import { PlayerBasicInfo } from './PlayerBasicInfo';
@@ -9,6 +9,14 @@ import { PlayerTeamManager } from './PlayerTeamManager';
 export const PlayerFormPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
+    const navigationState = (location.state || {}) as {
+        from?: string;
+        preselectClubId?: string | null;
+        preselectCategory?: string;
+        preselectTeamId?: string | null;
+    };
+    const backTo = navigationState.from || '/players';
     const isEditMode = !!id;
 
     const {
@@ -22,14 +30,14 @@ export const PlayerFormPage = () => {
     } = usePlayerForm(id);
 
     // State for Team Selection (Managed here to pass to save)
-    const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
-    const [selectedCategory, setSelectedCategory] = useState<string>('SENIOR');
-    const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+    const [selectedClubId, setSelectedClubId] = useState<string | null>(navigationState.preselectClubId ?? null);
+    const [selectedCategory, setSelectedCategory] = useState<string>(navigationState.preselectCategory ?? 'SENIOR');
+    const [selectedTeamId, setSelectedTeamId] = useState<string | null>(navigationState.preselectTeamId ?? null);
 
     const handleSave = async () => {
         try {
             await handlers.savePlayer(selectedTeamId);
-            navigate('/players');
+            navigate(backTo);
         } catch (err) {
             console.error(err);
             // Error is handled in hook state usually, but validaton errors might throw
@@ -63,7 +71,7 @@ export const PlayerFormPage = () => {
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => navigate('/players')}
+                        onClick={() => navigate(backTo)}
                         className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                     >
                         <ArrowLeft className="text-gray-600" size={24} />

@@ -7,6 +7,9 @@ import { Scoreboard } from './match/Scoreboard';
 import { EventList } from './match/events/EventList';
 import { EventForm } from './match/events/EventForm';
 
+const HALF_DURATION_SECONDS = 30 * 60;
+const MATCH_DURATION_SECONDS = HALF_DURATION_SECONDS * 2;
+
 const MatchTracker = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
@@ -15,7 +18,7 @@ const MatchTracker = () => {
   const {
     homeScore, setHomeScore,
     visitorScore, setVisitorScore,
-    time,
+    time, setTime,
     activeTeamId, setActiveTeamId,
     defenseFormation,
     addEvent,
@@ -25,9 +28,12 @@ const MatchTracker = () => {
     selectedOpponentGoalkeeper, setSelectedOpponentGoalkeeper,
     matchId: contextMatchId,
     toggleTeamLock,
-    isTeamLocked
+    isTeamLocked,
+    realTimeFirstHalfStart,
+    realTimeSecondHalfStart
   } = useMatch();
   const [matchLoaded, setMatchLoaded] = useState(false);
+  const [timerStopped, setTimerStopped] = useState(false);
 
   // Ref to track context match ID without triggering effect re-runs
   const contextMatchIdRef = useRef(contextMatchId);
@@ -124,6 +130,32 @@ const MatchTracker = () => {
     }
   }, [activeTeamId, homeTeam, setActiveTeamId]);
 
+  useEffect(() => {
+    // Reset stop flag when switching matches
+    setTimerStopped(false);
+  }, [matchId]);
+
+  // Keep the visible clock in sync with real time when halves are calibrated
+  useEffect(() => {
+    if (!realTimeFirstHalfStart || timerStopped) return;
+
+    const computeTime = () => {
+      const now = Date.now();
+
+      if (realTimeSecondHalfStart) {
+        const elapsedSecond = Math.max(0, Math.floor((now - realTimeSecondHalfStart) / 1000));
+        return HALF_DURATION_SECONDS + elapsedSecond;
+      }
+
+      const elapsedFirst = Math.max(0, Math.floor((now - realTimeFirstHalfStart) / 1000));
+      return Math.min(elapsedFirst, HALF_DURATION_SECONDS); // Clamp to 30:00 until 2nd half starts
+    };
+
+    setTime(computeTime());
+    const timer = setInterval(() => setTime(computeTime()), 1000);
+    return () => clearInterval(timer);
+  }, [realTimeFirstHalfStart, realTimeSecondHalfStart, setTime, timerStopped]);
+
   const activeTeam = getActiveTeam();
   const opponentTeam = getOpponentTeam();
   const activeTeamLocked = isTeamLocked(activeTeamId);
@@ -216,6 +248,12 @@ const MatchTracker = () => {
           onHomeScoreChange={setHomeScore}
           onVisitorScoreChange={setVisitorScore}
           onTeamSelect={handleTeamSelect}
+          showFinishButton={time >= MATCH_DURATION_SECONDS || timerStopped}
+          isFinished={timerStopped}
+          onFinishMatch={() => {
+            setTimerStopped(true);
+            setTime(0);
+          }}
         />
 
         {/* Event Form (Creation/Editing) */}

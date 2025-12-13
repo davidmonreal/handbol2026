@@ -67,6 +67,7 @@ interface MatchContextType {
 }
 
 const MatchContext = createContext<MatchContextType | undefined>(undefined);
+const HALF_DURATION_SECONDS = 30 * 60;
 
 export const MatchProvider = ({ children }: { children: ReactNode }) => {
   const [homeScore, setHomeScore] = useState(0);
@@ -85,6 +86,10 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
   const [awayEventsLocked, setAwayEventsLocked] = useState(false);
 
   const addEvent = async (event: MatchEvent) => {
+    // Ensure timestamp defaults to current clock if caller didn't set it
+    const timestamp = event.timestamp ?? time;
+    const eventWithTimestamp = { ...event, timestamp };
+
     // Prevent adding if team locked
     if ((event.teamId === homeTeam?.id && homeEventsLocked) || (event.teamId === visitorTeam?.id && awayEventsLocked)) {
       console.warn('Events locked for this team');
@@ -92,7 +97,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     }
 
     // Add to local state immediately for UI responsiveness
-    setEvents(prev => [...prev, event]);
+    setEvents(prev => [...prev, eventWithTimestamp]);
 
     // Update Score Logic
     if (scoreMode === 'live' && event.category === 'Shot' && event.action === 'Goal') {
@@ -108,18 +113,18 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             matchId,
-            timestamp: event.timestamp,
-            playerId: event.playerId,
-            teamId: event.teamId,
-            type: event.category,
-            subtype: event.action,
-            position: event.position,
-            distance: event.distance,
-            isCollective: event.isCollective,
-            hasOpposition: event.hasOpposition,
-            isCounterAttack: event.isCounterAttack,
-            goalZone: event.goalZoneTag,
-            sanctionType: event.sanctionType,
+            timestamp: eventWithTimestamp.timestamp,
+            playerId: eventWithTimestamp.playerId,
+            teamId: eventWithTimestamp.teamId,
+            type: eventWithTimestamp.category,
+            subtype: eventWithTimestamp.action,
+            position: eventWithTimestamp.position,
+            distance: eventWithTimestamp.distance,
+            isCollective: eventWithTimestamp.isCollective,
+            hasOpposition: eventWithTimestamp.hasOpposition,
+            isCounterAttack: eventWithTimestamp.isCounterAttack,
+            goalZone: eventWithTimestamp.goalZoneTag,
+            sanctionType: eventWithTimestamp.sanctionType,
             activeGoalkeeperId: selectedOpponentGoalkeeper?.id,
           }),
         });
@@ -266,8 +271,13 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
   const [realTimeSecondHalfStart, setRealTimeSecondHalfStart] = useState<number | null>(null);
 
   const setRealTimeCalibration = async (half: 1 | 2, timestamp: number) => {
-    if (half === 1) setRealTimeFirstHalfStart(timestamp);
-    else setRealTimeSecondHalfStart(timestamp);
+    if (half === 1) {
+      setRealTimeFirstHalfStart(timestamp);
+      setTime(0); // Reset timer to the start of the match
+    } else {
+      setRealTimeSecondHalfStart(timestamp);
+      setTime(HALF_DURATION_SECONDS); // Jump clock to start of 2nd half
+    }
 
     // Persist to backend if possible (could update the Match entity)
     if (matchId) {

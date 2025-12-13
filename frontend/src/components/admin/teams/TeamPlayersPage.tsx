@@ -98,6 +98,15 @@ export const TeamPlayersPage = () => {
         return matchesSearch && !isAssigned;
     });
 
+    const assignedPlayersSorted = (team?.players || [])
+        .filter(p => p.player)
+        .sort((a, b) => {
+            const numA = a.player?.number ?? Number.MAX_SAFE_INTEGER;
+            const numB = b.player?.number ?? Number.MAX_SAFE_INTEGER;
+            if (numA !== numB) return numA - numB;
+            return (a.player?.name || '').localeCompare(b.player?.name || '');
+        });
+
     if (isLoading) {
         return (
             <div className="flex justify-center items-center min-h-screen">
@@ -194,15 +203,15 @@ export const TeamPlayersPage = () => {
                     <h2 className="text-xl font-semibold mb-4">
                         Assigned Players
                         <span className="ml-2 px-2.5 py-0.5 text-sm font-medium bg-indigo-100 text-indigo-800 rounded-full">
-                            {team.players?.length || 0}
+                            {assignedPlayersSorted.length}
                         </span>
                     </h2>
                     <div className="max-h-[60vh] overflow-y-auto border border-gray-200 rounded-lg bg-gray-50">
-                        {!team.players || team.players.length === 0 ? (
+                        {assignedPlayersSorted.length === 0 ? (
                             <div className="p-4 text-center text-gray-500">No players assigned yet</div>
                         ) : (
                             <div className="divide-y divide-gray-200">
-                                {team.players.filter(p => p.player).map(({ player }) => (
+                                {assignedPlayersSorted.map(({ player }) => (
                                     <div key={player.id} className="p-3 flex justify-between items-center bg-white">
                                         <div>
                                             <div className="font-medium flex items-center gap-2">
@@ -229,6 +238,21 @@ export const TeamPlayersPage = () => {
                                 ))}
                             </div>
                         )}
+                    </div>
+                    <div className="mt-4 flex justify-end">
+                        <button
+                            onClick={() => navigate('/players/new', {
+                                state: {
+                                    from: `/teams/${id}/players`,
+                                    preselectClubId: team.club?.id || null,
+                                    preselectCategory: team.category || 'SENIOR',
+                                    preselectTeamId: team.id
+                                }
+                            })}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm"
+                        >
+                            Afegir un jugador
+                        </button>
                     </div>
                 </div>
             </div>
