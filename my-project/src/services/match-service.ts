@@ -67,6 +67,8 @@ export class MatchService extends BaseService<Match> {
       videoUrl: string | null;
       firstHalfVideoStart: number | null;
       secondHalfVideoStart: number | null;
+      realTimeFirstHalfStart: number | null;
+      realTimeSecondHalfStart: number | null;
       homeEventsLocked: boolean;
       awayEventsLocked: boolean;
     }>,

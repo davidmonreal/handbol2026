@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMatch } from '../context/MatchContext';
 import type { MatchEvent } from '../types';
@@ -83,6 +83,8 @@ const MatchTracker = () => {
           awayScore: data.awayScore,
           homeEventsLocked: data.homeEventsLocked,
           awayEventsLocked: data.awayEventsLocked,
+          realTimeFirstHalfStart: data.realTimeFirstHalfStart,
+          realTimeSecondHalfStart: data.realTimeSecondHalfStart,
         });
         setMatchLoaded(true);
       } catch (error) {
@@ -208,6 +210,11 @@ const MatchTracker = () => {
     }
   }, [activeTeamId, opponentTeam, matchId, setSelectedOpponentGoalkeeper]);
 
+  // Memoize initialState to prevent EventForm from resetting local state on every timer tick
+  const eventFormInitialState = useMemo(() => ({
+    opponentGoalkeeperId: selectedOpponentGoalkeeper?.id
+  }), [selectedOpponentGoalkeeper?.id]);
+
 
   if (!homeTeam || !visitorTeam || !matchLoaded) {
     return <div className="p-8 text-center">Loading match data...</div>;
@@ -313,9 +320,7 @@ const MatchTracker = () => {
                 event={editingEvent}
                 team={activeTeam}
                 opponentTeam={opponentTeam || undefined}
-                initialState={{
-                  opponentGoalkeeperId: selectedOpponentGoalkeeper?.id
-                }}
+                initialState={eventFormInitialState}
                 onSave={handleSaveEvent}
                 onCancel={handleCancelEdit}
                 onDelete={(eventId) => deleteEvent(eventId, true)}

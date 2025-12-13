@@ -12,6 +12,8 @@ interface MatchMeta {
   awayScore?: number;
   homeEventsLocked?: boolean;
   awayEventsLocked?: boolean;
+  realTimeFirstHalfStart?: number | null;
+  realTimeSecondHalfStart?: number | null;
 }
 
 interface Player {
@@ -319,6 +321,8 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
             awayScore: data.awayScore,
             homeEventsLocked: data.homeEventsLocked,
             awayEventsLocked: data.awayEventsLocked,
+            realTimeFirstHalfStart: data.realTimeFirstHalfStart,
+            realTimeSecondHalfStart: data.realTimeSecondHalfStart,
             // if backend exposes status in the future we can add it here
           };
         }
@@ -341,6 +345,14 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
 
     setHomeEventsLocked(!!effectiveMeta?.homeEventsLocked);
     setAwayEventsLocked(!!effectiveMeta?.awayEventsLocked);
+
+    // Set calibration data if provided
+    if (effectiveMeta?.realTimeFirstHalfStart !== undefined) {
+      setRealTimeFirstHalfStart(effectiveMeta.realTimeFirstHalfStart);
+    }
+    if (effectiveMeta?.realTimeSecondHalfStart !== undefined) {
+      setRealTimeSecondHalfStart(effectiveMeta.realTimeSecondHalfStart);
+    }
 
     // Load existing events from backend
     try {

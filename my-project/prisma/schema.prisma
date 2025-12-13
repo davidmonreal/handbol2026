@@ -80,6 +80,8 @@ model Match {
   videoUrl             String?
   firstHalfVideoStart  Int?        // Video timestamp when 1st half starts
   secondHalfVideoStart Int?        // Video timestamp when 2nd half starts
+  realTimeFirstHalfStart Float?    // Real timestamp (ms) when 1st half starts
+  realTimeSecondHalfStart Float?   // Real timestamp (ms) when 2nd half starts
   events               GameEvent[]
   awayTeam             Team        @relation("AwayTeam", fields: [awayTeamId], references: [id])
   homeTeam             Team        @relation("HomeTeam", fields: [homeTeamId], references: [id])
