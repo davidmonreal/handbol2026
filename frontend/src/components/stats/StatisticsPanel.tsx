@@ -82,9 +82,16 @@ export function StatisticsPanel({
           </>
         ) : (
           <>
+
             <StatCard
               label="Goals vs shots"
               value={`${filteredStats.totalGoals}/${filteredStats.totalShots} (${filteredStats.efficiency.toFixed(0)}%)`}
+              color="green"
+              className="min-w-fit"
+            />
+            <StatCard
+              label="Goals vs plays"
+              value={`${filteredStats.totalGoals} (${filteredStats.goalsPercentage.toFixed(0)}%)`}
               color="green"
               className="min-w-fit"
             />

@@ -229,6 +229,7 @@ export function useStatisticsCalculator(
         const foulsPercentage = totalPlays > 0 ? (totalFouls / totalPlays) * 100 : 0;
         const turnoversPercentage = totalPlays > 0 ? (totalTurnovers / totalPlays) * 100 : 0;
         const missesPercentage = totalPlays > 0 ? (misses.length / totalPlays) * 100 : 0;
+        const goalsPercentage = totalPlays > 0 ? (totalGoals / totalPlays) * 100 : 0;
 
         return {
             totalShots,
@@ -243,6 +244,7 @@ export function useStatisticsCalculator(
             foulsPercentage,
             turnoversPercentage,
             missesPercentage,
+            goalsPercentage,
             zoneStats,
             foulZoneStats,
             playerStats,

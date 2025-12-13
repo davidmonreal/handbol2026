@@ -46,6 +46,7 @@ export interface CalculatedStats {
     foulsPercentage: number;
     turnoversPercentage: number;
     missesPercentage: number;
+    goalsPercentage: number;
 
     /** Map of zone -> { shots, goals, efficiency } */
     zoneStats: Map<ZoneType | '7m', ZoneStatistics>;
