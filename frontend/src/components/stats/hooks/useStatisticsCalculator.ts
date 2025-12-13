@@ -23,15 +23,14 @@ export function useStatisticsCalculator(
         // Filter only shot events
         const shots = events.filter(e => e.category === 'Shot');
         const foulEventSource = foulEvents ?? events;
-        const playsForRate = events.length; // rate uses our own plays, not opponent's set
+
         const foulShots = foulEventSource.filter(e => e.category === 'Shot');
         const fouls = foulEventSource.filter(e => e.category === 'Sanction');
         const goals = shots.filter(e => e.action === 'Goal');
         const saves = shots.filter(e => e.action === 'Save');
         const misses = shots.filter(e => e.action === 'Miss');
         const posts = shots.filter(e => e.action === 'Post');
-        const totalFouls = fouls.length;
-        const foulRate = playsForRate > 0 ? (totalFouls / playsForRate) * 100 : 0;
+
 
         const totalShots = shots.length;
         const totalGoals = goals.length;
@@ -214,15 +213,32 @@ export function useStatisticsCalculator(
             playerStats.set(playerId, stats);
         });
 
+        // Calculate turnovers and total plays
+        const turnovers = events.filter(e => e.category === 'Turnover');
+        const totalTurnovers = turnovers.length;
+
+        // Calculate fouls from events (to match PlayerStatisticsTable and Offensive Plays)
+        // Include both 'Sanction' and 'Foul' categories
+        // NOTE: We only track OFFENSIVE plays. If an attack ends in a "Foul", it means
+        // the team SUFFERED a foul (was fouled by the opponent), not that they committed one.
+        const ownFouls = events.filter(e => e.category === 'Sanction' || e.category === 'Foul');
+        const totalFouls = ownFouls.length;
+
+        // Total Plays = Shots + Turnovers + Fouls
+        const totalPlays = totalShots + totalTurnovers + totalFouls;
+        const foulsPercentage = totalPlays > 0 ? (totalFouls / totalPlays) * 100 : 0;
+
         return {
             totalShots,
             totalGoals,
             totalSaves: saves.length,
             totalMisses: misses.length,
-            totalPosts: posts.length,
             totalFouls,
-            foulRate,
+            totalTurnovers,
+            foulRate: foulsPercentage, // Alias for compatibility, using correct denominator
+            totalPosts: posts.length,
             efficiency,
+            foulsPercentage,
             zoneStats,
             foulZoneStats,
             playerStats,

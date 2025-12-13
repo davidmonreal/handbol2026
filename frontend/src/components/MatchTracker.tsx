@@ -161,6 +161,13 @@ const MatchTracker = () => {
   const activeTeamLocked = isTeamLocked(activeTeamId);
 
 
+  /* 
+    NOTE: MATCH TRACKER CONTEXT
+    This tracker strictly follows OFFENSIVE plays. 
+    - events tracked for 'activeTeam' are attacks.
+    - if an event is 'Foul' or 'Sanction', it means the activeTeam SUFFERED the foul.
+    - Defensive stats (fouls committed) are derived from the opponent's offensive log.
+  */
   const handleSaveEvent = async (event: MatchEvent, opponentGkId?: string) => {
     // 1. Handle Goalkeeper Persistence/Update
     if (opponentGkId && opponentTeam && matchId) {

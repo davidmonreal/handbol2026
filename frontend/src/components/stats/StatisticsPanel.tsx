@@ -76,11 +76,16 @@ export function StatisticsPanel({
         />
         <StatCard label="Saves" value={filteredStats.totalSaves} color="yellow" />
         <StatCard label="Misses" value={filteredStats.totalMisses} color="orange" />
-        <StatCard
-          label="Fouls received / % fouls"
-          value={`${filteredStats.totalFouls} / ${filteredStats.foulRate.toFixed(1)}%`}
-          color="gray"
-        />
+        {data.context === 'player' ? (
+          <StatCard label="Posts" value={filteredStats.totalPosts} color="gray" />
+        ) : (
+          <StatCard
+            label="Fouls Rec." // Fouls Received / Total Plays
+            value={`${filteredStats.totalFouls} (${filteredStats.foulsPercentage.toFixed(0)}%)`}
+            color="gray"
+            className="min-w-fit" // Ensure text fits
+          />
+        )}
       </div>
 
       {/* Heatmaps and Zone Distribution */}

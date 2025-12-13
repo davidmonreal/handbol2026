@@ -463,6 +463,14 @@ export const EventForm = ({
 
                     {selectedCategory === 'Sanction' && (
                         <div className="space-y-2">
+                            {/* 
+                                NOTE: MATCH TRACKER LOGIC CLARIFICATION
+                                In this form, we are tracking OFFENSIVE events for the active team.
+                                When we select "Sanction" or "Foul" here, it means the player selected (who is attacking)
+                                SUFFERED/RECEIVED a foul from the opponent.
+                                It does NOT mean the player committed a foul.
+                                Defensive fouls committed by this team should be tracked when the opponent is the active team.
+                            */}
                             <div className="grid grid-cols-2 gap-2">
                                 {sanctionTypes
                                     .filter(s => s.value === 'Foul' || s.value === '2min')
@@ -515,11 +523,10 @@ export const EventForm = ({
                                             aria-label={`goal-target-${target}`}
                                             aria-pressed={isActive}
                                             onClick={() => setSelectedTarget(target)}
-                                            className={`h-14 rounded-lg transition-all border-2 flex items-center justify-center ${
-                                                isActive
+                                            className={`h-14 rounded-lg transition-all border-2 flex items-center justify-center ${isActive
                                                     ? 'bg-indigo-600 border-indigo-600 shadow-sm'
                                                     : 'bg-white border-gray-200 hover:border-indigo-500 hover:bg-indigo-50'
-                                            }`}
+                                                }`}
                                         />
                                     );
                                 })}

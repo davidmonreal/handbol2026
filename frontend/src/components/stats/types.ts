@@ -40,8 +40,10 @@ export interface CalculatedStats {
     totalMisses: number;
     totalPosts: number;
     totalFouls: number;
+    totalTurnovers: number;
     foulRate: number; // % of plays that are fouls
     efficiency: number;
+    foulsPercentage: number;
 
     /** Map of zone -> { shots, goals, efficiency } */
     zoneStats: Map<ZoneType | '7m', ZoneStatistics>;
@@ -150,10 +152,10 @@ export interface StatisticsViewProps {
     showComparison?: boolean;
     teamId?: string | null;
     matchData?: {
-      homeTeam: { id: string; name: string; club?: { name: string }; category?: string; players: any[] };
-      awayTeam: { id: string; name: string; club?: { name: string }; category?: string; players: any[] };
-      homeTeamId: string;
-      awayTeamId: string;
+        homeTeam: { id: string; name: string; club?: { name: string }; category?: string; players: any[] };
+        awayTeam: { id: string; name: string; club?: { name: string }; category?: string; players: any[] };
+        homeTeamId: string;
+        awayTeamId: string;
     };
     teamData?: { players: any[] };
     onTeamChange?: (teamId: string) => void;
