@@ -77,7 +77,7 @@ export function StatisticsPanel({
         <StatCard label="Saves" value={filteredStats.totalSaves} color="yellow" />
         <StatCard label="Misses" value={filteredStats.totalMisses} color="orange" />
         <StatCard
-          label="Faltes rebudes / % faltes"
+          label="Fouls received / % fouls"
           value={`${filteredStats.totalFouls} / ${filteredStats.foulRate.toFixed(1)}%`}
           color="gray"
         />
