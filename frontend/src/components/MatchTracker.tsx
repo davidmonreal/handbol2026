@@ -86,6 +86,9 @@ const MatchTracker = () => {
           realTimeFirstHalfStart: data.realTimeFirstHalfStart,
           realTimeSecondHalfStart: data.realTimeSecondHalfStart,
         });
+        if (data.isFinished) {
+          setTimerStopped(true);
+        }
         setMatchLoaded(true);
       } catch (error) {
         console.error('Error loading match:', error);
@@ -262,11 +265,20 @@ const MatchTracker = () => {
           onHomeScoreChange={setHomeScore}
           onVisitorScoreChange={setVisitorScore}
           onTeamSelect={handleTeamSelect}
-          showFinishButton={time >= MATCH_DURATION_SECONDS || timerStopped}
+          showFinishButton={!!realTimeSecondHalfStart || time >= MATCH_DURATION_SECONDS || timerStopped}
           isFinished={timerStopped}
-          onFinishMatch={() => {
-            setTimerStopped(true);
-            setTime(0);
+          onFinishMatch={async () => {
+            try {
+              await fetch(`${API_BASE_URL}/api/matches/${matchId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isFinished: true })
+              });
+              setTimerStopped(true);
+              setTime(0);
+            } catch (error) {
+              console.error('Failed to finish match:', error);
+            }
           }}
         />
 
