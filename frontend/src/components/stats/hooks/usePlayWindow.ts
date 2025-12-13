@@ -20,9 +20,9 @@ export function usePlayWindow(events: MatchEvent[]): UsePlayWindowResult {
     const plays = events.filter(e => ['Shot', 'Turnover', 'Sanction', 'Foul'].includes(e.category));
     const total = plays.length;
     const opts: { label: string; value: PlayWindowRange }[] = [];
-    if (total >= 5) opts.push({ label: 'Show last 5 plays', value: { kind: 'range', start: Math.max(total - 5, 0), end: total } });
-    if (total >= 10) opts.push({ label: 'Plays 6–10', value: { kind: 'range', start: Math.max(total - 10, 0), end: Math.max(total - 5, 0) } });
-    if (total >= 15) opts.push({ label: 'Plays 11–15', value: { kind: 'range', start: Math.max(total - 15, 0), end: Math.max(total - 10, 0) } });
+    if (total >= 10) opts.push({ label: 'Show last 10 plays', value: { kind: 'range', start: Math.max(total - 10, 0), end: total } });
+    if (total >= 20) opts.push({ label: 'Plays 11–20', value: { kind: 'range', start: Math.max(total - 20, 0), end: Math.max(total - 10, 0) } });
+    if (total >= 30) opts.push({ label: 'Plays 21–30', value: { kind: 'range', start: Math.max(total - 30, 0), end: Math.max(total - 20, 0) } });
     if (events.length > 0) {
       opts.push({ label: 'First half', value: { kind: 'half', half: 1 } });
       opts.push({ label: 'Second half', value: { kind: 'half', half: 2 } });
