@@ -23,6 +23,7 @@ export function useStatisticsCalculator(
         // Filter only shot events
         const shots = events.filter(e => e.category === 'Shot');
         const foulEventSource = foulEvents ?? events;
+        const playsForRate = events.length; // rate uses our own plays, not opponent's set
         const foulShots = foulEventSource.filter(e => e.category === 'Shot');
         const fouls = foulEventSource.filter(e => e.category === 'Sanction');
         const goals = shots.filter(e => e.action === 'Goal');
@@ -30,7 +31,7 @@ export function useStatisticsCalculator(
         const misses = shots.filter(e => e.action === 'Miss');
         const posts = shots.filter(e => e.action === 'Post');
         const totalFouls = fouls.length;
-        const foulRate = foulEventSource.length > 0 ? (totalFouls / foulEventSource.length) * 100 : 0;
+        const foulRate = playsForRate > 0 ? (totalFouls / playsForRate) * 100 : 0;
 
         const totalShots = shots.length;
         const totalGoals = goals.length;
