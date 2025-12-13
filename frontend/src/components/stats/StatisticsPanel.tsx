@@ -62,32 +62,42 @@ export function StatisticsPanel({
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-3 md:grid-cols-6 md:gap-4">
-        <StatCard
-          label={data.isGoalkeeper ? "Goals Conceded" : "Goals"}
-          value={filteredStats.totalGoals}
-          color={data.isGoalkeeper ? "red" : "green"}
-        />
-        <StatCard label="Shots" value={filteredStats.totalShots} color="blue" />
-        <StatCard
-          label={data.isGoalkeeper ? "Save %" : "Efficiency"}
-          value={`${filteredStats.efficiency.toFixed(1)}%`}
-          color={data.isGoalkeeper ? "green" : "purple"}
-        />
-
+      <div className="grid grid-cols-3 gap-3 md:grid-cols-5 md:gap-4">
         {data.context === 'player' ? (
           <>
+            <StatCard
+              label={data.isGoalkeeper ? "Goals Conceded" : "Goals"}
+              value={filteredStats.totalGoals}
+              color={data.isGoalkeeper ? "red" : "green"}
+            />
+            <StatCard label="Shots" value={filteredStats.totalShots} color="blue" />
+            <StatCard
+              label={data.isGoalkeeper ? "Save %" : "Efficiency"}
+              value={`${filteredStats.efficiency.toFixed(1)}%`}
+              color={data.isGoalkeeper ? "green" : "purple"}
+            />
+            <StatCard label="Saves" value={filteredStats.totalSaves} color="yellow" />
             <StatCard label="Misses" value={filteredStats.totalMisses} color="orange" />
             <StatCard label="Posts" value={filteredStats.totalPosts} color="gray" />
-            <StatCard label="Saves" value={filteredStats.totalSaves} color="yellow" />
           </>
         ) : (
           <>
+            <StatCard
+              label="Goals"
+              value={`${filteredStats.totalGoals} (${filteredStats.efficiency.toFixed(0)}%)`}
+              color="green"
+              className="min-w-fit"
+            />
             <StatCard
               label="Misses"
               value={`${filteredStats.totalMisses} (${filteredStats.missesPercentage.toFixed(0)}%)`}
               color="orange"
               className="min-w-fit"
+            />
+            <StatCard
+              label="Shots"
+              value={filteredStats.totalShots}
+              color="blue"
             />
             <StatCard
               label="Turnovers"
@@ -96,10 +106,10 @@ export function StatisticsPanel({
               className="min-w-fit"
             />
             <StatCard
-              label="Fouls Rec." // Fouls Received / Total Plays
+              label="Fouls Rec."
               value={`${filteredStats.totalFouls} (${filteredStats.foulsPercentage.toFixed(0)}%)`}
               color="gray"
-              className="min-w-fit" // Ensure text fits
+              className="min-w-fit"
             />
           </>
         )}
