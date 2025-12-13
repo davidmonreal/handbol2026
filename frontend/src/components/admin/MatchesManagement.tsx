@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, Calendar } from 'lucide-react';
+import { BarChart3, Calendar, Edit2 } from 'lucide-react';
 import { CrudManager } from './shared/CrudManager';
 import { API_BASE_URL } from '../../config/api';
 import type { Team, CrudConfig } from '../../types';
@@ -67,7 +67,9 @@ export const MatchesManagement = () => {
                 label: 'Home Team',
                 render: (match) => (
                     <div className="text-right">
-                        <div className="font-medium text-gray-900">
+                        <div
+                            className={`text-gray-900 ${match.isFinished && (match.homeScore ?? 0) > (match.awayScore ?? 0) ? 'font-extrabold' : 'font-medium'}`}
+                        >
                             {match.homeTeam.category && `${match.homeTeam.category} `}{match.homeTeam.name}
                         </div>
                         {match.homeTeam.club && <div className="text-xs text-gray-500">{match.homeTeam.club.name}</div>}
@@ -100,7 +102,9 @@ export const MatchesManagement = () => {
                 label: 'Away Team',
                 render: (match) => (
                     <div className="text-left">
-                        <div className="font-medium text-gray-900">
+                        <div
+                            className={`text-gray-900 ${match.isFinished && (match.awayScore ?? 0) > (match.homeScore ?? 0) ? 'font-extrabold' : 'font-medium'}`}
+                        >
                             {match.awayTeam.category && `${match.awayTeam.category} `}{match.awayTeam.name}
                         </div>
                         {match.awayTeam.club && <div className="text-xs text-gray-500">{match.awayTeam.club.name}</div>}
@@ -155,6 +159,39 @@ export const MatchesManagement = () => {
         ],
 
         searchFields: ['homeTeam', 'awayTeam'], // Searching by object keys might need specific handling in CrudManager or backend
+        customFilter: (match, searchTerm) => {
+            if (!searchTerm) return true;
+            const term = searchTerm.toLowerCase();
+
+            const homeHits = [
+                match.homeTeam?.name,
+                match.homeTeam?.category,
+                match.homeTeam?.club?.name,
+            ].some(val => val?.toLowerCase().includes(term));
+
+            const awayHits = [
+                match.awayTeam?.name,
+                match.awayTeam?.category,
+                match.awayTeam?.club?.name,
+            ].some(val => val?.toLowerCase().includes(term));
+
+            const statusHit = match.isFinished
+                ? 'finished'.includes(term)
+                : 'scheduled'.includes(term);
+
+            const resultHit = match.isFinished && `${match.homeScore ?? 0}:${match.awayScore ?? 0}`.includes(term);
+
+            const dateHit = new Date(match.date).toLocaleString('ca-ES', {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).toLowerCase().includes(term);
+
+            return homeHits || awayHits || statusHit || resultHit || dateHit;
+        },
 
         // Navigate to create/edit pages instead of using modal
         onCreate: () => navigate('/matches/new'),
@@ -196,12 +233,19 @@ export const MatchesManagement = () => {
 
         customActions: [
             {
+                icon: Edit2,
+                label: 'Edit Match',
+                onClick: (match) => navigate(`/matches/${match.id}/edit`),
+                className: 'text-indigo-600 hover:text-indigo-900 mr-3',
+            },
+            {
                 icon: BarChart3,
                 label: 'View Statistics',
                 onClick: (match) => navigate(`/statistics?matchId=${match.id}`),
-                className: 'text-green-600 hover:text-green-900 mr-4',
+                className: 'text-green-600 hover:text-green-900',
             },
         ],
+        hideDefaultActions: true,
     };
 
     return <CrudManager<Match> config={matchesConfig} />;

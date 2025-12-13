@@ -490,19 +490,23 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                                         >
                                             <action.icon size={18} />
                                         </button>
-                                    ))}
-                                    <button
-                                        onClick={() => handleEdit(item)}
-                                        className="text-indigo-600 hover:text-indigo-900 mr-4"
-                                    >
-                                        <Edit2 size={18} />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteClick(item.id)}
-                                        className="text-red-600 hover:text-red-900"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
+                                ))}
+                                    {!config.hideDefaultActions && (
+                                        <>
+                                            <button
+                                                onClick={() => handleEdit(item)}
+                                                className="text-indigo-600 hover:text-indigo-900 mr-4"
+                                            >
+                                                <Edit2 size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteClick(item.id)}
+                                                className="text-red-600 hover:text-red-900"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </>
+                                    )}
                                 </td>
                             </tr>
                         ))}

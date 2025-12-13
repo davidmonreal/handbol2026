@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Save, Calendar } from 'lucide-react';
+import { ArrowLeft, Save, Calendar, Trash2 } from 'lucide-react';
 import { API_BASE_URL } from '../../../config/api';
 import { SearchableSelectWithCreate } from '../../common/SearchableSelectWithCreate';
 import type { Team } from '../../../types';
@@ -26,6 +26,7 @@ export const MatchFormPage = () => {
 
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     // Data
@@ -140,6 +141,23 @@ export const MatchFormPage = () => {
             setError(err instanceof Error ? err.message : 'Failed to save match');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!isEditMode || !id) return;
+        const confirmed = window.confirm('Delete this match? This cannot be undone.');
+        if (!confirmed) return;
+        setIsDeleting(true);
+        setError(null);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/matches/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Failed to delete match');
+            navigate('/matches', { state: { message: 'Match deleted' } });
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to delete match');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -348,21 +366,33 @@ export const MatchFormPage = () => {
                 )}
 
                 {/* Actions */}
-                <div className="flex justify-end gap-3 pt-4 border-t">
-                    <button
-                        onClick={() => navigate('/matches')}
-                        className="px-6 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
-                    >
-                        <Save size={18} />
-                        {isSaving ? 'Saving...' : isEditMode ? 'Update Match' : 'Create Match'}
-                    </button>
+                <div className="flex justify-between items-center pt-4 border-t">
+                    {isEditMode ? (
+                        <button
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                        >
+                            <Trash2 size={18} />
+                            {isDeleting ? 'Deleting...' : 'Delete Match'}
+                        </button>
+                    ) : <div /> }
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => navigate('/matches')}
+                            className="px-6 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
+                        >
+                            <Save size={18} />
+                            {isSaving ? 'Saving...' : isEditMode ? 'Update Match' : 'Create Match'}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
