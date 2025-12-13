@@ -37,12 +37,12 @@ export const ZoneSelector = ({ selectedZone, onZoneSelect, hidePenalty = false, 
         ))}
       </div>
       {/* 9m Line */}
-      <div className="grid grid-cols-3 gap-2 max-w-md mx-auto">
-        {ZONE_CONFIG.nineMeter.map(({ zone, label }) => (
+      <div className="flex justify-center gap-2 w-full">
+        {ZONE_CONFIG.nineMeter.map(({ zone, label }, index) => (
           <button
             key={zone}
             onClick={() => onZoneSelect(zone)}
-            className={buttonClasses(zone)}
+            className={`${buttonClasses(zone)} ${index === 1 ? 'w-[25%]' : 'w-[20%]'}`}
           >
             {label}
           </button>
