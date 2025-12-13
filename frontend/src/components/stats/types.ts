@@ -39,6 +39,8 @@ export interface CalculatedStats {
     totalSaves: number;
     totalMisses: number;
     totalPosts: number;
+    totalFouls: number;
+    foulRate: number; // % of plays that are fouls
     efficiency: number;
 
     /** Map of zone -> { shots, goals, efficiency } */

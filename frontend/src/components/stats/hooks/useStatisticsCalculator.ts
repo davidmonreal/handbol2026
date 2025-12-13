@@ -29,6 +29,8 @@ export function useStatisticsCalculator(
         const saves = shots.filter(e => e.action === 'Save');
         const misses = shots.filter(e => e.action === 'Miss');
         const posts = shots.filter(e => e.action === 'Post');
+        const totalFouls = fouls.length;
+        const foulRate = foulEventSource.length > 0 ? (totalFouls / foulEventSource.length) * 100 : 0;
 
         const totalShots = shots.length;
         const totalGoals = goals.length;
@@ -217,6 +219,8 @@ export function useStatisticsCalculator(
             totalSaves: saves.length,
             totalMisses: misses.length,
             totalPosts: posts.length,
+            totalFouls,
+            foulRate,
             efficiency,
             zoneStats,
             foulZoneStats,
