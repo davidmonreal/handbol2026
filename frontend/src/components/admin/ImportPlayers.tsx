@@ -38,8 +38,6 @@ export const ImportPlayers = () => {
                     <ImageUpload
                         onImageUpload={actions.handleImageUpload}
                         isProcessing={state.isProcessing}
-                        onExtract={actions.handleExtract}
-                        hasImage={!!state.image}
                     />
                     <TeamSelector
                         teams={state.teams}
@@ -48,6 +46,20 @@ export const ImportPlayers = () => {
                         onCreateTeam={actions.handleCreateTeam}
                         isCheckingDuplicates={state.isCheckingDuplicates}
                     />
+
+                    {state.image && state.selectedTeamId && (
+                        <button
+                            onClick={actions.handleExtract}
+                            disabled={state.isProcessing}
+                            className="w-full bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2 font-medium shadow-sm transition-colors text-lg"
+                        >
+                            {state.isProcessing ? (
+                                'Processing...'
+                            ) : (
+                                'Extract Players'
+                            )}
+                        </button>
+                    )}
                 </div>
 
                 {state.image && (
@@ -60,6 +72,7 @@ export const ImportPlayers = () => {
                 <ExtractedPlayersList
                     extractedPlayers={state.extractedPlayers}
                     selectedTeamId={state.selectedTeamId}
+                    selectedTeam={state.teams.find(t => t.id === state.selectedTeamId)}
                     duplicates={state.duplicates}
                     duplicateActions={state.duplicateActions}
                     reviewingDuplicates={state.reviewingDuplicates}

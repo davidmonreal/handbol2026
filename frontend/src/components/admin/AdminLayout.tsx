@@ -4,11 +4,12 @@ import { NavLink, Outlet, Link } from 'react-router-dom';
 export const AdminLayout = () => {
   const navItems = [
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/matches', label: 'Matches', icon: FileText },
     { path: '/clubs', label: 'Clubs', icon: Trophy },
     { path: '/seasons', label: 'Seasons', icon: Calendar },
     { path: '/teams', label: 'Teams', icon: Users },
     { path: '/players', label: 'Players', icon: Users },
-    { path: '/matches', label: 'Matches', icon: FileText },
+
   ];
 
   return (

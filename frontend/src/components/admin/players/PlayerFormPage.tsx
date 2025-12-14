@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { usePlayerForm } from '../../../hooks/usePlayerForm';
@@ -33,6 +33,17 @@ export const PlayerFormPage = () => {
     const [selectedClubId, setSelectedClubId] = useState<string | null>(navigationState.preselectClubId ?? null);
     const [selectedCategory, setSelectedCategory] = useState<string>(navigationState.preselectCategory ?? 'SENIOR');
     const [selectedTeamId, setSelectedTeamId] = useState<string | null>(navigationState.preselectTeamId ?? null);
+
+    // Fetch team players when selection changes to check for number collisions
+    useEffect(() => {
+        if (selectedTeamId) {
+            handlers.fetchTeamPlayers(selectedTeamId);
+        }
+    }, [selectedTeamId, handlers]); // handlers.fetchTeamPlayers is stable
+
+    const teamCollision = formData.number !== '' && data.currentTeamPlayers
+        ? data.currentTeamPlayers.find((p: any) => p.player?.number === Number(formData.number))
+        : null;
 
     const handleSave = async () => {
         try {
@@ -82,7 +93,7 @@ export const PlayerFormPage = () => {
                 </div>
                 <button
                     onClick={handleSave}
-                    disabled={isSaving || (!isEditMode && !duplicateState.ignore && duplicateState.hasWarning)}
+                    disabled={isSaving || (!isEditMode && duplicateState.hasWarning) || !!teamCollision}
                     className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium shadow-sm"
                 >
                     {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
@@ -104,7 +115,7 @@ export const PlayerFormPage = () => {
                             onNumberChange={handlers.setNumber}
                             isEditMode={isEditMode}
                             duplicateState={duplicateState}
-                            onIgnoreDuplicates={handlers.setIgnoreDuplicates}
+                            onIgnoreMatch={handlers.ignoreMatch}
                         />
                     </section>
 
@@ -145,6 +156,7 @@ export const PlayerFormPage = () => {
                             onSelectedClubChange={setSelectedClubId}
                             onSelectedCategoryChange={setSelectedCategory}
                             onSelectedTeamChange={setSelectedTeamId}
+                            collision={teamCollision}
                         />
                     </section>
                 </div>

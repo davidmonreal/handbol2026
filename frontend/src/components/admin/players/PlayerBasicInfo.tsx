@@ -14,9 +14,8 @@ interface PlayerBasicInfoProps {
         matches: DuplicateMatch[];
         hasWarning: boolean;
         isChecking: boolean;
-        ignore: boolean;
     };
-    onIgnoreDuplicates: (ignore: boolean) => void;
+    onIgnoreMatch: (id: string) => void;
 }
 
 export const PlayerBasicInfo: React.FC<PlayerBasicInfoProps> = ({
@@ -26,7 +25,7 @@ export const PlayerBasicInfo: React.FC<PlayerBasicInfoProps> = ({
     onNumberChange,
     isEditMode,
     duplicateState,
-    onIgnoreDuplicates
+    onIgnoreMatch
 }) => {
     const navigate = useNavigate();
 
@@ -48,11 +47,11 @@ export const PlayerBasicInfo: React.FC<PlayerBasicInfoProps> = ({
                         {duplicateState.isChecking && (
                             <div className="flex items-center gap-2 text-sm text-gray-500">
                                 <Loader2 size={14} className="animate-spin" />
-                                <span>Checking for duplicates...</span>
+                                <span className="text-gray-500">Checking for duplicates...</span>
                             </div>
                         )}
 
-                        {!duplicateState.isChecking && !duplicateState.hasWarning && !duplicateState.ignore && (
+                        {!duplicateState.isChecking && !duplicateState.hasWarning && (
                             <div className="flex items-center gap-2 text-sm text-green-600">
                                 <CheckCircle size={14} />
                                 <span>Aquest jugador encara no existeix a la BBDD</span>
@@ -73,10 +72,13 @@ export const PlayerBasicInfo: React.FC<PlayerBasicInfoProps> = ({
             </div>
 
             {/* Full Width Duplicate Warning */}
-            {!isEditMode && duplicateState.hasWarning && !duplicateState.ignore && (
+            {!isEditMode && duplicateState.hasWarning && (
                 <div className="md:col-span-3 mt-4 border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                    <div className="bg-yellow-50 px-4 py-2 text-sm text-yellow-800 font-medium border-b border-yellow-200">
+                        Is this the player you want to create?
+                    </div>
                     {duplicateState.matches.map((match, idx) => (
-                        <div key={idx} className="bg-white p-4 flex items-center justify-between gap-4">
+                        <div key={idx} className="bg-white p-4 flex items-center justify-between gap-4 border-b last:border-b-0 border-gray-100">
                             <div className="flex-1 min-w-0">
                                 <div className="font-medium text-gray-900 flex items-center gap-2">
                                     {match.name}
@@ -94,24 +96,17 @@ export const PlayerBasicInfo: React.FC<PlayerBasicInfoProps> = ({
                             <div className="flex items-center gap-2 flex-shrink-0">
                                 <button
                                     type="button"
-                                    onClick={() => navigate(`/players/${match.id}/edit`)}
-                                    className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                    onClick={() => onIgnoreMatch(match.id)}
+                                    className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors"
                                 >
-                                    View/Edit
+                                    No, it's a different player
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => navigate('/players')}
-                                    className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                    className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
                                 >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => onIgnoreDuplicates(true)}
-                                    className="px-3 py-1.5 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-colors"
-                                >
-                                    Continue
+                                    Yes, it's the same player
                                 </button>
                             </div>
                         </div>

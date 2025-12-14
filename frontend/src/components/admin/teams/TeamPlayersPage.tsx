@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search } from 'lucide-react';
+import { ArrowLeft, Upload, Search } from 'lucide-react';
 import { API_BASE_URL } from '../../../config/api';
-import { AddIconButton, RemoveIconButton, EditIconButton } from '../../common';
+import { RemoveIconButton, EditIconButton, AddIconButton } from '../../common';
 import type { Team, Player } from '../../../types';
 
 export const TeamPlayersPage = () => {
@@ -134,23 +134,73 @@ export const TeamPlayersPage = () => {
         );
     }
 
+    // Helper to render player item content
+    const renderPlayerItem = (player: Player) => (
+        <div className="flex-1">
+            <div className="font-medium flex items-center gap-2 text-lg text-gray-900">
+                #{player.number} • {player.name}
+                {player.isGoalkeeper && (
+                    <span className="px-1.5 py-0.5 text-xs font-bold rounded bg-purple-100 text-purple-700 border border-purple-200">
+                        GK
+                    </span>
+                )}
+            </div>
+            {player.teams && player.teams.length > 0 && (
+                <div className="mt-1 flex flex-col gap-0.5">
+                    {player.teams.map((pt, idx) => (
+                        <div key={idx} className="text-sm text-gray-500">
+                            {pt.team.club.name} · {pt.team.category} · {pt.team.name}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+
     return (
-        <div className="max-w-6xl mx-auto p-6">
+        <div className="max-w-7xl mx-auto p-6">
             {/* Header */}
-            <div className="flex items-center gap-4 mb-6">
-                <button
-                    onClick={() => navigate('/teams')}
-                    className="text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                    <ArrowLeft size={24} />
-                </button>
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-800">
-                        Gestionar Plantilla
-                    </h1>
-                    <p className="text-gray-600 mt-1">
-                        {team.club?.name} · {team.category} · {team.name}
-                    </p>
+            <div className="flex items-center justify-between gap-4 mb-6">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => navigate('/teams')}
+                        className="text-gray-600 hover:text-gray-900 transition-colors"
+                        title="Back to Teams"
+                    >
+                        <ArrowLeft size={24} />
+                    </button>
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-800">
+                            Gestionar Plantilla
+                        </h1>
+                        <p className="text-gray-600 mt-1">
+                            {team.club?.name} · {team.category} · {team.name}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => navigate('/players/import', { state: { preselectedTeamId: id } })}
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
+                    >
+                        <Upload size={20} />
+                        Import Players
+                    </button>
+
+                    <button
+                        onClick={() => navigate('/players/new', {
+                            state: {
+                                from: `/teams/${id}/players`,
+                                preselectClubId: team.club?.id || null,
+                                preselectCategory: team.category || 'SENIOR',
+                                preselectTeamId: team.id
+                            }
+                        })}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm"
+                    >
+                        Create a player
+                    </button>
                 </div>
             </div>
 
@@ -175,18 +225,8 @@ export const TeamPlayersPage = () => {
                         ) : (
                             <div className="divide-y divide-gray-100">
                                 {filteredPlayers.map(player => (
-                                    <div key={player.id} className="p-3 flex justify-between items-center hover:bg-gray-50">
-                                        <div>
-                                            <div className="font-medium flex items-center gap-2">
-                                                {player.name}
-                                                {player.isGoalkeeper && (
-                                                    <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-100 text-purple-700 border border-purple-200">
-                                                        GK
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="text-sm text-gray-500">#{player.number} • {player.handedness}</div>
-                                        </div>
+                                    <div key={player.id} className="p-4 flex justify-between items-start hover:bg-gray-50 transition-colors">
+                                        {renderPlayerItem(player)}
                                         <AddIconButton
                                             onClick={() => handleAssignPlayer(player.id)}
                                             title="Afegir a l'equip"
@@ -200,31 +240,25 @@ export const TeamPlayersPage = () => {
 
                 {/* Assigned Players */}
                 <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h2 className="text-xl font-semibold mb-4">
+                    <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                         Assigned Players
-                        <span className="ml-2 px-2.5 py-0.5 text-sm font-medium bg-indigo-100 text-indigo-800 rounded-full">
+                        <span className="px-2.5 py-0.5 text-sm font-medium bg-indigo-100 text-indigo-800 rounded-full">
                             {assignedPlayersSorted.length}
                         </span>
                     </h2>
+
                     <div className="max-h-[60vh] overflow-y-auto border border-gray-200 rounded-lg bg-gray-50">
                         {assignedPlayersSorted.length === 0 ? (
-                            <div className="p-4 text-center text-gray-500">No players assigned yet</div>
+                            <div className="p-8 text-center text-gray-500">
+                                <p>No players assigned yet.</p>
+                                <p className="text-sm mt-1">Use the buttons above or the list on the left to add players.</p>
+                            </div>
                         ) : (
                             <div className="divide-y divide-gray-200">
                                 {assignedPlayersSorted.map(({ player }) => (
-                                    <div key={player.id} className="p-3 flex justify-between items-center bg-white">
-                                        <div>
-                                            <div className="font-medium flex items-center gap-2">
-                                                {player.name}
-                                                {player.isGoalkeeper && (
-                                                    <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-100 text-purple-700 border border-purple-200">
-                                                        GK
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="text-sm text-gray-500">#{player.number} • {player.handedness}</div>
-                                        </div>
-                                        <div className="flex items-center gap-2">
+                                    <div key={player.id} className="p-4 flex justify-between items-start bg-white hover:bg-gray-50 transition-colors">
+                                        {renderPlayerItem(player)}
+                                        <div className="flex items-center gap-2 ml-4">
                                             <EditIconButton
                                                 onClick={() => navigate(`/players/${player.id}/edit`, { state: { from: `/teams/${id}/players` } })}
                                                 title="Editar jugador"
@@ -238,21 +272,6 @@ export const TeamPlayersPage = () => {
                                 ))}
                             </div>
                         )}
-                    </div>
-                    <div className="mt-4 flex justify-end">
-                        <button
-                            onClick={() => navigate('/players/new', {
-                                state: {
-                                    from: `/teams/${id}/players`,
-                                    preselectClubId: team.club?.id || null,
-                                    preselectCategory: team.category || 'SENIOR',
-                                    preselectTeamId: team.id
-                                }
-                            })}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm"
-                        >
-                            Afegir un jugador
-                        </button>
                     </div>
                 </div>
             </div>

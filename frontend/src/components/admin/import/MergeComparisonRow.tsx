@@ -9,6 +9,7 @@ interface MergeComparisonRowProps {
     onActionChange: (action: 'merge' | 'skip' | 'keep') => void;
     onFieldChoiceChange: (field: string, choice: 'existing' | 'new') => void;
     onConfirmMerge: () => void;
+    selectedTeam?: any; // Ideally typed as Team, but keeping loose for now
     // Edit Mode Props
     isEditing?: boolean;
     onSave?: (player: ExtractedPlayer) => void;
@@ -77,9 +78,9 @@ const ComparisonField = ({
                                     type="button"
                                     onClick={() => setEditForm({ ...editForm, handedness: hand === 'Unknown' ? undefined : hand as 'RIGHT' | 'LEFT' })}
                                     className={`px-4 py-2 text-sm rounded-lg border-2 transition-all ${(hand === 'Unknown' && !editForm.handedness) ||
-                                            editForm.handedness === hand
-                                            ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
-                                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                        editForm.handedness === hand
+                                        ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
+                                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
                                         }`}
                                 >
                                     {hand === 'Unknown' ? 'Unknown' : hand === 'RIGHT' ? 'Right' : 'Left'}
@@ -95,8 +96,8 @@ const ComparisonField = ({
                                     type="button"
                                     onClick={() => setEditForm({ ...editForm, isGoalkeeper: isGK })}
                                     className={`px-4 py-2 text-sm rounded-lg border-2 transition-all ${editForm.isGoalkeeper === isGK
-                                            ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
-                                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                        ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
+                                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
                                         }`}
                                 >
                                     {isGK ? 'Yes' : 'No'}
@@ -117,8 +118,8 @@ const ComparisonField = ({
                 <button
                     onClick={() => onChoiceChange(field, 'existing')}
                     className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all text-left ${choice === 'existing'
-                            ? 'border-blue-500 bg-blue-50 shadow-sm'
-                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                        ? 'border-blue-500 bg-blue-50 shadow-sm'
+                        : 'border-gray-200 hover:border-gray-300 bg-white'
                         }`}
                 >
                     <span className={`text-sm ${choice === 'existing' ? 'text-blue-700 font-medium' : 'text-gray-700'}`}>
@@ -130,8 +131,8 @@ const ComparisonField = ({
                 <button
                     onClick={() => onChoiceChange(field, 'new')}
                     className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all text-left ${choice === 'new'
-                            ? 'border-blue-500 bg-blue-50 shadow-sm'
-                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                        ? 'border-blue-500 bg-blue-50 shadow-sm'
+                        : 'border-gray-200 hover:border-gray-300 bg-white'
                         }`}
                 >
                     <span className={`text-sm ${choice === 'new' ? 'text-blue-700 font-medium' : 'text-gray-700'}`}>
@@ -151,6 +152,7 @@ export const MergeComparisonRow = ({
     onActionChange,
     onFieldChoiceChange,
     onConfirmMerge,
+    selectedTeam,
     isEditing = false,
     onSave,
     onCancel
@@ -222,6 +224,19 @@ export const MergeComparisonRow = ({
         );
     }
 
+    // Determine recommendation logic
+    const isSameClub = (() => {
+        if (!existingPlayer || !selectedTeam) return false;
+        const selectedClubName = selectedTeam.club?.name;
+        const matchedTeams = existingPlayer.teams || [];
+        return matchedTeams.some(t => {
+            const tClubName = typeof t.club === 'object' && t.club !== null && 'name' in t.club
+                ? (t.club as any).name
+                : t.club;
+            return tClubName === selectedClubName;
+        });
+    })();
+
     // Merge mode - show comparison cards
     const fields: FieldKey[] = ['name', 'number', 'handedness', 'isGoalkeeper'];
 
@@ -254,6 +269,49 @@ export const MergeComparisonRow = ({
 
             {/* Comparison Fields */}
             <div className="space-y-0">
+                {/* Team Info Row (Informational) */}
+                {!isEditing && (
+                    <div className="flex items-center gap-4 py-3 border-b border-gray-100">
+                        <div className="w-24 text-sm font-medium text-gray-500">Teams</div>
+                        <div className="flex-1 flex gap-3">
+                            {/* Existing Teams */}
+                            <div className="flex-1 px-4 py-3 rounded-lg border-2 border-transparent bg-gray-50 text-gray-700 text-sm font-medium">
+                                {existingPlayer?.teams && existingPlayer.teams.length > 0 ? (
+                                    <div className="space-y-1">
+                                        {existingPlayer.teams.map((t, idx) => {
+                                            const clubName = typeof t.club === 'object' && t.club !== null && 'name' in t.club
+                                                ? (t.club as any).name
+                                                : (typeof t.club === 'string' ? t.club : 'Unknown');
+
+                                            // Ensure we display category if it exists, or a fallback if completely missing from data props
+                                            const category = t.category || '';
+
+                                            return (
+                                                <div key={idx}>
+                                                    {clubName} · {category} · {t.name}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <span className="text-gray-400 italic">No teams linked</span>
+                                )}
+                            </div>
+
+                            {/* New Team (Import Target) */}
+                            <div className="flex-1 px-4 py-3 rounded-lg border-2 border-transparent bg-indigo-50 text-indigo-700 text-sm font-medium flex items-center">
+                                {selectedTeam ? (
+                                    <span>
+                                        {selectedTeam.club?.name} · {selectedTeam.category} · {selectedTeam.name}
+                                    </span>
+                                ) : (
+                                    <span className="text-red-500 italic">No team selected</span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {fields.map((field) => (
                     <ComparisonField
                         key={field}
@@ -287,34 +345,65 @@ export const MergeComparisonRow = ({
                         </button>
                     </>
                 ) : (
-                    <div className="flex flex-col md:flex-row w-full gap-3">
-                        <button
-                            onClick={() => onActionChange('skip')}
-                            className="flex-1 px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all text-left"
-                        >
-                            <div className="text-base font-semibold">Discard (do not import)</div>
-                            <div className="text-xs text-gray-600">Skip this extracted player.</div>
-                        </button>
-                        <button
-                            onClick={() => onActionChange('keep')}
-                            className="flex-1 px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all text-left"
-                        >
-                            <div className="text-base font-semibold">Not a duplicate (create new)</div>
-                            <div className="text-xs text-gray-600">Creates a new player with the imported data.</div>
-                        </button>
-                        <button
-                            onClick={onConfirmMerge}
-                            disabled={mergeChoices.size < 4}
-                            className={`flex-1 px-4 py-3 rounded-lg font-medium text-left transition-all ${mergeChoices.size === 4
-                                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                    <div className="w-full">
+                        {/* Guidance Text */}
+                        {existingPlayer && selectedTeam && (() => {
+                            if (isSameClub) {
+                                return (
+                                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                                        <strong>Same Club Match:</strong> A player with this name exists in your club.
+                                        Link them to this team if they are the same person, or create a new player if they are different.
+                                    </div>
+                                );
+                            } else {
+                                return (
+                                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+                                        <strong>Different Club Match:</strong> A player with this name exists but in a different club.
+                                        We recommend creating a new player unless they align with an existing profile.
+                                    </div>
+                                );
+                            }
+                        })()}
+
+                        <div className="flex flex-col md:flex-row w-full gap-3">
+                            <button
+                                onClick={() => onActionChange('skip')}
+                                className="flex-1 px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all text-left"
+                            >
+                                <div className="text-base font-semibold">Skip Import</div>
+                                <div className="text-xs text-gray-600">Ignore this extracted player. No data will be saved.</div>
+                            </button>
+                            <button
+                                onClick={() => onActionChange('keep')}
+                                className={`flex-1 px-4 py-3 border rounded-lg font-medium hover:bg-opacity-90 transition-all text-left ${!isSameClub
+                                    ? 'bg-blue-600 border-blue-600 text-white shadow-md'
+                                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                                    }`}
+                            >
+                                <div className="text-base font-semibold">Create New Player</div>
+                                <div className={`text-xs ${!isSameClub ? 'text-blue-50' : 'text-gray-600'}`}>
+                                    This is a different person. Create a new profile for this team.
+                                </div>
+                            </button>
+                            <button
+                                onClick={onConfirmMerge}
+                                disabled={mergeChoices.size < 4}
+                                className={`flex-1 px-4 py-3 rounded-lg font-medium text-left transition-all ${mergeChoices.size === 4
+                                    ? isSameClub
+                                        ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
+                                        : 'bg-white border-2 border-blue-600 text-blue-700 hover:bg-blue-50'
                                     : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                }`}
-                        >
-                            <div className="text-base font-semibold">Confirm data & link</div>
-                            <div className={`text-xs ${mergeChoices.size === 4 ? 'text-blue-50/80' : 'text-gray-500'}`}>
-                                If found, keep freshest fields and link to this team.
-                            </div>
-                        </button>
+                                    }`}
+                            >
+                                <div className="text-base font-semibold">Link & Update Existing</div>
+                                <div className={`text-xs ${mergeChoices.size === 4
+                                    ? isSameClub ? 'text-blue-50' : 'text-blue-700/80'
+                                    : 'text-gray-500'
+                                    }`}>
+                                    Updates the existing profile with selected fields and adds them to this team.
+                                </div>
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

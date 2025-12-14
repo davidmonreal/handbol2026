@@ -24,6 +24,7 @@ interface PlayerTeamManagerProps {
     onSelectedClubChange: (id: string | null) => void;
     onSelectedCategoryChange: (cat: string) => void;
     onSelectedTeamChange: (id: string | null) => void;
+    collision: { player: any } | null;
 }
 
 export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
@@ -40,7 +41,8 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
     selectedTeamId,
     onSelectedClubChange,
     onSelectedCategoryChange,
-    onSelectedTeamChange
+    onSelectedTeamChange,
+    collision
 }) => {
     // UI State
     const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
@@ -174,6 +176,15 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                 Select club and category to see available teams. You can create new clubs and teams directly from the dropdowns.
             </p>
 
+            {collision && selectedTeamId && (
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800 flex items-start gap-2 animate-fadeIn">
+                    <span className="font-bold flex-shrink-0">⚠️ Number Conflict:</span>
+                    <div>
+                        Player <strong>{collision.player.name}</strong> already holds number <strong>{collision.player.number}</strong> in this team.
+                    </div>
+                </div>
+            )}
+
             {/* Modals */}
             <TeamCreationModal
                 isOpen={isTeamModalOpen}
@@ -210,6 +221,6 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                 onConfirm={confirmCreateClub}
                 onCancel={() => setCreateClubConfirmation({ isOpen: false, clubName: null })}
             />
-        </div>
+        </div >
     );
 };

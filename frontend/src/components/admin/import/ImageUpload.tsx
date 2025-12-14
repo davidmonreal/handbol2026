@@ -1,19 +1,13 @@
-import { Upload, Loader2 } from 'lucide-react';
+import { useEffect, useCallback } from 'react';
+import { Upload } from 'lucide-react';
 
 interface ImageUploadProps {
     onImageUpload: (file: File) => void;
     isProcessing: boolean;
-    onExtract: () => void;
-    hasImage: boolean;
 }
 
-export const ImageUpload = ({ onImageUpload, isProcessing, onExtract, hasImage }: ImageUploadProps) => {
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) validateAndUpload(file);
-    };
-
-    const validateAndUpload = (file: File) => {
+export const ImageUpload = ({ onImageUpload, isProcessing }: ImageUploadProps) => {
+    const validateAndUpload = useCallback((file: File) => {
         if (!file.type.startsWith('image/')) {
             alert('Please upload a valid image file (PNG, JPG, etc.)');
             return;
@@ -23,6 +17,11 @@ export const ImageUpload = ({ onImageUpload, isProcessing, onExtract, hasImage }
             return;
         }
         onImageUpload(file);
+    }, [onImageUpload]);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) validateAndUpload(file);
     };
 
     const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -39,19 +38,27 @@ export const ImageUpload = ({ onImageUpload, isProcessing, onExtract, hasImage }
         e.stopPropagation();
     };
 
-    const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        const items = e.clipboardData?.items;
-        if (!items) return;
+    // Global paste handler
+    useEffect(() => {
+        const handlePasteCallback = (e: ClipboardEvent) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
 
-        for (let i = 0; i < items.length; i++) {
-            if (items[i].type.startsWith('image/')) {
-                const file = items[i].getAsFile();
-                if (file) validateAndUpload(file);
-                break;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.startsWith('image/')) {
+                    const file = items[i].getAsFile();
+                    if (file) {
+                        e.preventDefault(); // Prevent default paste behavior if we found an image
+                        validateAndUpload(file);
+                        break;
+                    }
+                }
             }
-        }
-    };
+        };
+
+        window.addEventListener('paste', handlePasteCallback);
+        return () => window.removeEventListener('paste', handlePasteCallback);
+    }, [validateAndUpload]);
 
     return (
         <div className="bg-white rounded-xl shadow-lg p-6">
@@ -61,7 +68,6 @@ export const ImageUpload = ({ onImageUpload, isProcessing, onExtract, hasImage }
                 className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-400 transition-colors"
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
-                onPaste={handlePaste}
                 tabIndex={0}
             >
                 <input
@@ -79,22 +85,10 @@ export const ImageUpload = ({ onImageUpload, isProcessing, onExtract, hasImage }
                     </p>
                 </label>
             </div>
-
-            {hasImage && (
-                <button
-                    onClick={onExtract}
-                    disabled={isProcessing}
-                    className="w-full mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                    {isProcessing ? (
-                        <>
-                            <Loader2 className="animate-spin" size={20} />
-                            Processing...
-                        </>
-                    ) : (
-                        'Extract Players'
-                    )}
-                </button>
+            {isProcessing && (
+                <div className="mt-4 text-center text-sm text-gray-500">
+                    Processing image...
+                </div>
             )}
         </div>
     );

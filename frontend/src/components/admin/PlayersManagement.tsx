@@ -125,6 +125,8 @@ export const PlayersManagement = () => {
         // Server-side filtering by clubId
         serverFilters: selectedClubId ? { clubId: selectedClubId } : undefined,
 
+        requireSearchToCreate: true,
+
         onEdit: (player) => navigate(`/players/${player.id}/edit`),
         onCreate: () => navigate('/players/new'),
 
@@ -137,10 +139,12 @@ export const PlayersManagement = () => {
             },
         ],
 
-        headerActions: (
+        headerActions: ({ searchTerm }) => (
             <button
                 onClick={() => navigate('/players/import')}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                disabled={!searchTerm}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title={!searchTerm ? "Search to enable import" : "Import Players"}
             >
                 <Upload size={20} />
                 Import Players

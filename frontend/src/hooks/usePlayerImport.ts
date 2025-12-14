@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { playerImportService } from '../services/playerImportService';
 import type { ExtractedPlayer, DuplicateInfo } from '../services/playerImportService';
 import type { Team } from '../types';
 
 export const usePlayerImport = () => {
+    const location = useLocation();
     const [image, setImage] = useState<string | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [extractedPlayers, setExtractedPlayers] = useState<ExtractedPlayer[]>([]);
@@ -21,7 +23,11 @@ export const usePlayerImport = () => {
 
     useEffect(() => {
         loadTeams();
-    }, []);
+        // Handle pre-selection from navigation state
+        if (location.state?.preselectedTeamId) {
+            setSelectedTeamId(location.state.preselectedTeamId);
+        }
+    }, [location.state]);
 
     useEffect(() => {
         if (selectedTeamId && extractedPlayers.length > 0) {
@@ -87,8 +93,64 @@ export const usePlayerImport = () => {
         setExtractedPlayers(newPlayers);
     };
 
-    const handleRemovePlayer = (index: number) => {
-        setExtractedPlayers(extractedPlayers.filter((_, i) => i !== index));
+    const handleRemovePlayer = (indexToRemove: number) => {
+        // 1. Shift Duplicates Map
+        const newDuplicates = new Map<number, DuplicateInfo>();
+        duplicates.forEach((value, key) => {
+            if (key < indexToRemove) {
+                newDuplicates.set(key, value);
+            } else if (key > indexToRemove) {
+                newDuplicates.set(key - 1, value);
+            }
+        });
+        setDuplicates(newDuplicates);
+
+        // 2. Shift Duplicate Actions Map
+        const newActions = new Map<number, 'merge' | 'skip' | 'keep'>();
+        duplicateActions.forEach((value, key) => {
+            if (key < indexToRemove) {
+                newActions.set(key, value);
+            } else if (key > indexToRemove) {
+                newActions.set(key - 1, value);
+            }
+        });
+        setDuplicateActions(newActions);
+
+        // 3. Shift Reviewing Duplicates Map
+        const newReviewing = new Map<number, boolean>();
+        reviewingDuplicates.forEach((value, key) => {
+            if (key < indexToRemove) {
+                newReviewing.set(key, value);
+            } else if (key > indexToRemove) {
+                newReviewing.set(key - 1, value);
+            }
+        });
+        setReviewingDuplicates(newReviewing);
+
+        // 4. Shift Merge Choices
+        const newMergeChoices = new Map<number, Map<string, 'existing' | 'new'>>();
+        mergeChoices.forEach((value, key) => {
+            if (key < indexToRemove) {
+                newMergeChoices.set(key, value);
+            } else if (key > indexToRemove) {
+                newMergeChoices.set(key - 1, value);
+            }
+        });
+        setMergeChoices(newMergeChoices);
+
+        // 5. Shift Resolved Duplicates Set
+        const newResolved = new Set<number>();
+        resolvedDuplicates.forEach((val) => {
+            if (val < indexToRemove) {
+                newResolved.add(val);
+            } else if (val > indexToRemove) {
+                newResolved.add(val - 1);
+            }
+        });
+        setResolvedDuplicates(newResolved);
+
+        // 6. Remove from Array
+        setExtractedPlayers(extractedPlayers.filter((_, i) => i !== indexToRemove));
     };
 
     const handleClearAll = () => {

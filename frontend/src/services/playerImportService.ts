@@ -22,7 +22,7 @@ export interface DuplicateMatch {
     similarity: number;
     handedness?: Handedness;
     isGoalkeeper?: boolean;
-    teams?: { id: string; name: string; club: string }[];
+    teams?: { id: string; name: string; club: string; category?: string }[];
 }
 
 export interface DuplicateInfo {

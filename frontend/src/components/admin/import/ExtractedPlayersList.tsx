@@ -5,6 +5,7 @@ import type { ExtractedPlayer, DuplicateInfo } from '../../../services/playerImp
 interface ExtractedPlayersListProps {
     extractedPlayers: ExtractedPlayer[];
     selectedTeamId: string | null;
+    selectedTeam?: any;
     duplicates: Map<number, DuplicateInfo>;
     duplicateActions: Map<number, 'merge' | 'skip' | 'keep'>;
     reviewingDuplicates: Map<number, boolean>;
@@ -32,6 +33,7 @@ interface ExtractedPlayersListProps {
 export const ExtractedPlayersList = ({
     extractedPlayers,
     selectedTeamId,
+    selectedTeam,
     duplicates,
     duplicateActions,
     reviewingDuplicates,
@@ -96,6 +98,7 @@ export const ExtractedPlayersList = ({
                                 onActionChange={(newAction) => onActionChange(index, newAction)}
                                 onFieldChoiceChange={(field, choice) => onFieldChoiceChange(index, field, choice)}
                                 onConfirmMerge={() => onConfirmMerge(index)}
+                                selectedTeam={selectedTeam}
                             />
                         );
                     }

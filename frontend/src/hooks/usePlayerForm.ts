@@ -16,13 +16,13 @@ interface PlayerData {
     teams: Team[];
     seasons: Season[];
     playerTeams: any[]; // Explicit type from PlayerFormPage
+    currentTeamPlayers: any[];
 }
 
 interface DuplicateState {
     matches: DuplicateMatch[];
     hasWarning: boolean;
     isChecking: boolean;
-    ignore: boolean;
 }
 
 export const usePlayerForm = (playerId?: string) => {
@@ -44,15 +44,15 @@ export const usePlayerForm = (playerId?: string) => {
         clubs: [],
         teams: [],
         seasons: [],
-        playerTeams: []
+        playerTeams: [],
+        currentTeamPlayers: []
     });
 
     // Duplicate State
     const [duplicateState, setDuplicateState] = useState<DuplicateState>({
         matches: [],
         hasWarning: false,
-        isChecking: false,
-        ignore: false
+        isChecking: false
     });
 
     const isEditMode = !!playerId;
@@ -92,7 +92,7 @@ export const usePlayerForm = (playerId?: string) => {
                 playerTeams = player.teams || [];
             }
 
-            setData({ clubs, teams, seasons, playerTeams });
+            setData({ clubs, teams, seasons, playerTeams, currentTeamPlayers: [] });
         } catch (err) {
             console.error('Error loading data:', err);
             setError('Failed to load data');
@@ -105,21 +105,29 @@ export const usePlayerForm = (playerId?: string) => {
         loadData();
     }, [loadData]);
 
-    // Handlers
     const setName = (name: string) => {
         setFormData(prev => ({ ...prev, name: toTitleCase(name) }));
-        setDuplicateState(prev => ({ ...prev, ignore: false }));
+        // Reset warning when name changes significantly, but we rely on useEffect for logic
     };
 
     const setNumber = (number: number | '') => setFormData(prev => ({ ...prev, number }));
     const setHandedness = (handedness: 'RIGHT' | 'LEFT') => setFormData(prev => ({ ...prev, handedness }));
     const setIsGoalkeeper = (isGoalkeeper: boolean) => setFormData(prev => ({ ...prev, isGoalkeeper }));
 
-    const setIgnoreDuplicates = (ignore: boolean) => setDuplicateState(prev => ({ ...prev, ignore }));
+    const ignoreMatch = (matchId: string) => {
+        setDuplicateState(prev => {
+            const newMatches = prev.matches.filter(m => m.id !== matchId);
+            return {
+                ...prev,
+                matches: newMatches,
+                hasWarning: newMatches.length > 0
+            };
+        });
+    };
 
     // Duplicate Check Effect
     useEffect(() => {
-        if (isEditMode || formData.name.trim().length < 3 || duplicateState.ignore) {
+        if (isEditMode || formData.name.trim().length < 3) {
             setDuplicateState(prev => ({ ...prev, matches: [], hasWarning: false }));
             return;
         }
@@ -145,7 +153,7 @@ export const usePlayerForm = (playerId?: string) => {
         }, 500);
 
         return () => clearTimeout(timeoutId);
-    }, [formData.name, isEditMode, duplicateState.ignore]);
+    }, [formData.name, isEditMode]);
 
 
     const savePlayer = async (selectedTeamId?: string | null) => {
@@ -229,6 +237,18 @@ export const usePlayerForm = (playerId?: string) => {
         }));
     };
 
+    const fetchTeamPlayers = async (teamId: string) => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/teams/${teamId}/players`);
+            if (res.ok) {
+                const players = await res.json();
+                setData(prev => ({ ...prev, currentTeamPlayers: players }));
+            }
+        } catch (error) {
+            console.error('Failed to fetch team players:', error);
+        }
+    };
+
     return {
         isLoading,
         isSaving,
@@ -241,11 +261,12 @@ export const usePlayerForm = (playerId?: string) => {
             setNumber,
             setHandedness,
             setIsGoalkeeper,
-            setIgnoreDuplicates,
+            ignoreMatch,
             savePlayer,
             createClub: createClubHandler,
             createTeam: createTeamHandler,
-            removeTeam: removeTeamHandler
+            removeTeam: removeTeamHandler,
+            fetchTeamPlayers
         }
     };
 };
