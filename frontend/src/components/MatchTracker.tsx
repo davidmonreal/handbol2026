@@ -175,7 +175,9 @@ const MatchTracker = () => {
   */
   const handleSaveEvent = async (event: MatchEvent, opponentGkId?: string) => {
     // 1. Handle Goalkeeper Persistence/Update
-    if (opponentGkId && opponentTeam && matchId) {
+    // ONLY update global persistence if we are creating a NEW event.
+    // When editing, we respect the event's specific GK but don't change the default for future events.
+    if (!editingEvent && opponentGkId && opponentTeam && matchId) {
       const gk = opponentTeam.players.find(p => p.id === opponentGkId);
       if (gk) {
         setSelectedOpponentGoalkeeper(gk);
@@ -185,13 +187,17 @@ const MatchTracker = () => {
 
     // 2. Add or Update Event
     if (editingEvent) {
-      await updateEvent(editingEvent.id, event);
+      await updateEvent(editingEvent.id, {
+        ...event,
+        opponentGoalkeeperId: opponentGkId // Ensure we pass the updated GK ID
+      });
       setEditingEvent(null);
     } else {
       const newEvent: MatchEvent = {
         ...event,
         timestamp: time,
         defenseFormation,
+        opponentGoalkeeperId: opponentGkId // Pass explicit GK ID
       };
       addEvent(newEvent);
     }

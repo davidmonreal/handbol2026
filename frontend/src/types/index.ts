@@ -90,6 +90,7 @@ export interface MatchEvent {
     distance?: string;
     goalTarget?: number; // 1-9
     goalZoneTag?: string; // 'TL', 'TM', 'TR', etc.
+    opponentGoalkeeperId?: string;
     isCollective?: boolean;
     hasOpposition?: boolean;
     isCounterAttack?: boolean;

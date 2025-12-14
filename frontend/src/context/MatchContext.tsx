@@ -127,7 +127,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
             isCounterAttack: eventWithTimestamp.isCounterAttack,
             goalZone: eventWithTimestamp.goalZoneTag,
             sanctionType: eventWithTimestamp.sanctionType,
-            activeGoalkeeperId: selectedOpponentGoalkeeper?.id,
+            activeGoalkeeperId: eventWithTimestamp.opponentGoalkeeperId ?? selectedOpponentGoalkeeper?.id,
           }),
         });
 
@@ -201,6 +201,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
             isCounterAttack: updatedEvent.isCounterAttack,
             goalZone: updatedEvent.goalZoneTag,
             sanctionType: updatedEvent.sanctionType,
+            activeGoalkeeperId: updatedEvent.opponentGoalkeeperId,
           }),
         });
 

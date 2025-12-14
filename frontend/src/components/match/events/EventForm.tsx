@@ -86,6 +86,7 @@ export const EventForm = ({
             setIsCollective(event.isCollective || false);
             setHasOpposition(event.hasOpposition || false);
             setIsCounterAttack(event.isCounterAttack || false);
+            if (event.opponentGoalkeeperId) setSelectedOpponentGkId(event.opponentGoalkeeperId);
 
             setSaveMessage(null);
             prevEventIdRef.current = event.id;
@@ -266,20 +267,32 @@ export const EventForm = ({
                     </div>
 
                     {opponentGoalkeepers.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                            {opponentGoalkeepers.map(gk => (
-                                <button
-                                    key={gk.id}
-                                    onClick={() => setSelectedOpponentGkId(gk.id)}
-                                    className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold border-2 transition-all ${selectedOpponentGkId === gk.id
-                                        ? 'bg-orange-500 text-white border-orange-600 shadow-md scale-110'
-                                        : 'bg-white text-gray-600 border-gray-200 hover:border-orange-300'
-                                        }`}
-                                    title={gk.name}
-                                >
-                                    {gk.number}
-                                </button>
-                            ))}
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                            {opponentGoalkeepers.map(gk => {
+                                const nameParts = gk.name.split(' ');
+                                const shortName = nameParts.length > 1
+                                    ? `${nameParts[0]} ${nameParts[1][0]}.`
+                                    : gk.name;
+
+                                return (
+                                    <button
+                                        key={gk.id}
+                                        onClick={() => setSelectedOpponentGkId(gk.id)}
+                                        className={`flex items-center gap-2 p-2 rounded-lg border transition-all ${selectedOpponentGkId === gk.id
+                                            ? 'bg-orange-600 border-orange-600 text-white shadow-sm'
+                                            : 'bg-white border-gray-200 text-gray-700 hover:border-orange-300 hover:bg-orange-50'
+                                            }`}
+                                    >
+                                        <span className={`flex items-center justify-center w-6 h-6 rounded text-sm font-bold ${selectedOpponentGkId === gk.id ? 'bg-white/20 text-white' : 'bg-orange-100 text-orange-800'
+                                            }`}>
+                                            {gk.number}
+                                        </span>
+                                        <span className={`text-xs font-semibold truncate ${selectedOpponentGkId === gk.id ? 'text-orange-50' : 'text-gray-600'}`}>
+                                            {shortName}
+                                        </span>
+                                    </button>
+                                );
+                            })}
                         </div>
                     ) : (
                         <div className="text-sm text-gray-400 italic">No GKs found</div>
