@@ -20,9 +20,9 @@ export type HeatmapColor = 'red' | 'orange' | 'yellow' | 'default';
  * @param zoneStats Map of zone ID to stats object containing { shots: number }
  * @returns Map of zone ID to HeatmapColor strings
  */
-export function calculateZoneColors(
-    zoneStats: Map<string | number, { shots: number; efficiency?: number }>,
-    getValue: (stats: { shots: number; efficiency?: number }) => number = (stats) => stats.shots
+export function calculateZoneColors<T extends { shots: number; efficiency?: number }>(
+    zoneStats: Map<string | number, T>,
+    getValue: (stats: T) => number = (stats) => stats.shots
 ): Map<string | number, HeatmapColor> {
     const colors = new Map<string | number, HeatmapColor>();
 

@@ -12,7 +12,6 @@ export function ZoneDistribution({
   zoneStats,
   foulZoneStats,
   foulReceivedZoneStats,
-  turnoverZoneStats,
   dangerZoneStats,
   disableFoulToggle,
   onZoneClick,
