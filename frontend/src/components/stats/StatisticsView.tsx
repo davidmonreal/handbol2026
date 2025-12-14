@@ -8,6 +8,7 @@ import { FiltersBar } from './FiltersBar';
 import { usePlayerBaselines } from './hooks/usePlayerBaselines';
 import { GoalFlowChart } from './GoalFlowChart';
 import { usePlayWindow } from './hooks/usePlayWindow';
+import { useStatisticsCalculator } from './hooks/useStatisticsCalculator';
 
 const HALF_DURATION_SECONDS = 30 * 60;
 
@@ -24,6 +25,7 @@ export function StatisticsView({
   teamId,
   matchData,
   teamData,
+  playerData,
   onTeamChange,
   onBack,
 }: StatisticsViewProps) {
@@ -84,6 +86,14 @@ export function StatisticsView({
         name: teamPlayer.player.name,
         number: teamPlayer.player.number,
         isGoalkeeper: teamPlayer.player.isGoalkeeper
+      };
+    }
+
+    if (playerData && playerData.id === playerId) {
+      return {
+        name: playerData.name,
+        number: playerData.number,
+        isGoalkeeper: playerData.isGoalkeeper
       };
     }
 
@@ -153,21 +163,38 @@ export function StatisticsView({
 
   // Determine if we're viewing goalkeeper statistics
   const isGoalkeeperView = useMemo(() => {
+    // 1. If we have a specific player selected, check their role
     if (filterPlayer) {
-      // If filtering by specific player, check if they're a goalkeeper
-      return getPlayerInfo(filterPlayer).isGoalkeeper || false;
+      // First check official data source
+      const info = getPlayerInfo(filterPlayer);
+      if (info.isGoalkeeper) return true;
+
+      // Fallback: Check if this player appears as an active goalkeeper in the events
+      // (This handles cases where metadata might be missing but events are correct)
+      const appearsAsGk = events.some(e => e.activeGoalkeeperId === filterPlayer);
+      if (appearsAsGk) return true;
     }
+
+    // 2. If in player context but no filter set (unlikely for single player view, but defensive)
     if (context === 'player' && events.length > 0) {
-      // If in player context, check the first event to see if it's a goalkeeper event
-      // (events are already filtered to be goalkeeper events if the player is a GK)
+      // It's ambiguous which player is the "subject" if we don't have filterPlayer.
+      // But if we assume the events are filtered for the subject:
+      // If the events are SAVES, the subject is likely the GK (activeGoalkeeperId).
+      // If the events are SHOTS (Goals/Misses/etc) by the subject, the subject is playerId.
+
       const firstEvent = events[0];
-      if (firstEvent.activeGoalkeeperId) {
-        // If events have activeGoalkeeperId set, this is a goalkeeper view
-        return true;
+
+      // Heuristic: If we have many SAVES, it's a GK view
+      const saveCount = events.filter(e => e.action === 'Save').length;
+      if (saveCount > 0 && saveCount > events.length / 3) return true;
+
+      // Existing heuristic fallback (checks playerId, which is SHOOTER in saves, so this tends to false for GKs)
+      if (firstEvent.playerId) {
+        return getPlayerInfo(firstEvent.playerId).isGoalkeeper || false;
       }
     }
     return false;
-  }, [filterPlayer, context, events]);
+  }, [filterPlayer, context, events, getPlayerInfo]);
 
   const handleZoneFilter = (zone: ZoneType | '7m' | null) => {
     setFilterZone(zone);
@@ -183,6 +210,16 @@ export function StatisticsView({
     setFilterPlayer(playerId);
     onPlayerClick?.(playerId);
   };
+
+  // Calculate stats for the table using the shared calculator
+  const { playerStats } = useStatisticsCalculator(
+    playWindowEvents,
+    showComparison ? { playerAverages: playerBaselines } : undefined,
+    isGoalkeeperView,
+    undefined, // No separate foul events needed for player table (it uses events for everything)
+    getPlayerInfo,
+    filteredOpponentEvents // Pass opponent events to calculate correct GK stats (Saves/Conceded)
+  );
 
   return (
     <div className="space-y-6">
@@ -245,7 +282,12 @@ export function StatisticsView({
         />
 
         {/* Player Filter Badge */}
-        {filterPlayer && (
+        {/* 
+          Only show the filter badge if we are NOT in a single-player context.
+          If context is 'player', the view is already dedicated to that player, 
+          so showing a removable filter badge is redundant and confusing.
+        */}
+        {filterPlayer && context !== 'player' && (
           <button
             onClick={() => handlePlayerClick(null)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium"
@@ -286,11 +328,10 @@ export function StatisticsView({
       {/* Player Statistics Table */}
       <div className="hidden md:block">
         <PlayerStatisticsTable
-          events={playWindowEvents}
+          stats={playerStats}
           onPlayerClick={handlePlayerClick}
           selectedPlayerId={filterPlayer}
           subtitle={filterZone ? `(from ${filterZone})` : subtitle || '(Overall)'}
-          getPlayerInfo={matchData || teamData ? getPlayerInfo : undefined}
         />
       </div>
 

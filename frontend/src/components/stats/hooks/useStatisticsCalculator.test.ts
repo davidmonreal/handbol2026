@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { useStatisticsCalculator } from './useStatisticsCalculator';
-import type { MatchEvent } from '../../../../types';
+import type { MatchEvent } from '../../../types';
 
 describe('useStatisticsCalculator', () => {
     const mockEvents: MatchEvent[] = [
@@ -188,5 +188,129 @@ describe('useStatisticsCalculator', () => {
         expect(opponentZone?.shots).toBe(2); // 1 shot + 1 foul
         expect(opponentZone?.goals).toBe(1); // fouls stored in goals
         expect(opponentZone?.efficiency).toBeCloseTo(50, 1);
+    });
+
+    it('calculates detailed player statistics', () => {
+        const events: MatchEvent[] = [
+            {
+                id: '1', timestamp: 1, teamId: 't1', playerId: 'p1',
+                category: 'Shot', action: 'Goal', zone: '6m-CB',
+                context: { hasOpposition: true, isCollective: true, isCounterAttack: false }
+            },
+            {
+                id: '2', timestamp: 2, teamId: 't1', playerId: 'p1',
+                category: 'Shot', action: 'Miss', zone: '9m-LB',
+                context: { hasOpposition: false, isCollective: false, isCounterAttack: true }
+            },
+            {
+                id: '3', timestamp: 3, teamId: 't1', playerId: 'p1',
+                category: 'Sanction', action: '2min'
+            },
+        ] as MatchEvent[];
+
+        const playerResolver = (id: string) => ({ name: 'Test Player', number: 10 });
+
+        const { result } = renderHook(() =>
+            useStatisticsCalculator(events, undefined, false, undefined, playerResolver)
+        );
+
+        const stats = result.current.playerStats.get('p1');
+        expect(stats).toBeDefined();
+        expect(stats?.playerName).toBe('Test Player');
+        expect(stats?.playerNumber).toBe(10);
+        expect(stats?.goals).toBe(1);
+        expect(stats?.shots).toBe(2);
+
+        // Zone stats checks
+        expect(stats?.shots6m).toBe(1);
+        expect(stats?.goals6m).toBe(1);
+        expect(stats?.shots9m).toBe(1);
+        expect(stats?.goals9m).toBe(0);
+
+        // Context stats checks
+        expect(stats?.shotsWithOpp).toBe(1);
+        expect(stats?.goalsWithOpp).toBe(1);
+        expect(stats?.shotsNoOpp).toBe(1);
+        expect(stats?.goalsNoOpp).toBe(0);
+
+        expect(stats?.shotsCollective).toBe(1);
+        expect(stats?.goalsCollective).toBe(1);
+        expect(stats?.shotsIndividual).toBe(1);
+        expect(stats?.goalsIndividual).toBe(0);
+
+        expect(stats?.shotsStatic).toBe(1); // Counter = false
+        expect(stats?.goalsStatic).toBe(1);
+        expect(stats?.shotsCounter).toBe(1); // Counter = true
+        expect(stats?.goalsCounter).toBe(0);
+
+        // Sanction checks
+        expect(stats?.twoMinutes).toBe(1);
+    });
+
+    it('aggregates GK stats from separate gkEvents source', () => {
+        // Events: Team A offensive shots (Team B GK active)
+        const events: MatchEvent[] = [
+            {
+                id: '1', timestamp: 1, teamId: 'A', playerId: 'pA1',
+                category: 'Shot', action: 'Goal', activeGoalkeeperId: 'gkB'
+            },
+        ] as MatchEvent[];
+
+        // GK Events: Team B offensive shots (Team A GK active)
+        const gkEvents: MatchEvent[] = [
+            {
+                id: '2', timestamp: 2, teamId: 'B', playerId: 'pB1',
+                category: 'Shot', action: 'Save', activeGoalkeeperId: 'gkA'
+            },
+        ] as MatchEvent[];
+
+        const { result } = renderHook(() =>
+            useStatisticsCalculator(events, undefined, false, undefined, undefined, gkEvents)
+        );
+
+        // Should NOT have Team B GK in stats (from events)
+        expect(result.current.playerStats.has('gkB')).toBe(false);
+
+        // Should HAVE Team A GK in stats (from gkEvents)
+        const gkA = result.current.playerStats.get('gkA');
+        expect(gkA).toBeDefined();
+        expect(gkA?.saves).toBe(1);
+    });
+
+    it('correctly distinguishes between a player acting as a shooter vs as a goalkeeper', () => {
+        const gkId = 'dual-role-player';
+
+        // Scenario: The player takes a shot (Shooter) AND makes a save (Goalkeeper)
+        // 1. Player TAKES a shot (should NOT count as a save/conceded for them)
+        const offensiveEvents: MatchEvent[] = [
+            {
+                id: '1', timestamp: 1, teamId: 'A', playerId: gkId, // Player is the shooter
+                category: 'Shot', action: 'Goal', activeGoalkeeperId: 'opponent-gk'
+            }
+        ] as MatchEvent[];
+
+        // 2. Player SAVES a shot (should count as a save)
+        const defensiveEvents: MatchEvent[] = [
+            {
+                id: '2', timestamp: 2, teamId: 'B', playerId: 'opponent-shooter',
+                category: 'Shot', action: 'Save', activeGoalkeeperId: gkId // Player is the GK
+            }
+        ] as MatchEvent[];
+
+        // We use the hook with `gkEvents` populated for the defensive actions
+        const { result } = renderHook(() =>
+            useStatisticsCalculator(offensiveEvents, undefined, true, undefined, undefined, defensiveEvents)
+        );
+
+        const playerStats = result.current.playerStats.get(gkId);
+
+        // Assertions for GK stats (from defensiveEvents)
+        expect(playerStats?.saves).toBe(1);
+        expect(playerStats?.goalsConceded).toBe(0);
+
+        // Assertions for Shooter stats (from offensiveEvents)
+        // Note: The hook aggregates shooter stats into the same object if they exist in `events`
+        expect(playerStats?.goals).toBe(1);
+        expect(playerStats?.shots).toBe(1);
     });
 });

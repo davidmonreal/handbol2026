@@ -47,6 +47,7 @@ export interface CalculatedStats {
     turnoversPercentage: number;
     missesPercentage: number;
     goalsPercentage: number;
+    goalsConceded: number;
 
     /** Map of zone -> { shots, goals, efficiency } */
     zoneStats: Map<ZoneType | '7m', ZoneStatistics>;
@@ -98,6 +99,41 @@ export interface PlayerStatistics {
         baselineEfficiency: number;
         delta: number; // positive = above average, negative = below
     };
+
+    // Detailed breakdown (matching PlayerStatisticsTable requirements)
+    shots6m: number;
+    goals6m: number;
+    shots9m: number;
+    goals9m: number;
+    shots7m: number;
+    goals7m: number;
+
+    shotsWithOpp: number;
+    goalsWithOpp: number;
+    shotsNoOpp: number;
+    goalsNoOpp: number;
+
+    shotsCollective: number;
+    goalsCollective: number;
+    shotsIndividual: number;
+    goalsIndividual: number;
+
+    shotsCounter: number;
+    goalsCounter: number;
+    shotsStatic: number;
+    goalsStatic: number;
+
+    turnovers: number;
+
+    // Sanctions
+    yellowCards: number;
+    twoMinutes: number;
+    redCards: number;
+    blueCards: number;
+    commonFouls: number;
+
+    // Goalkeeper specific
+    goalsConceded: number;
 }
 
 /**
@@ -155,6 +191,7 @@ export interface StatisticsViewProps {
     selectedPlayerId?: string | null;
     showComparison?: boolean;
     teamId?: string | null;
+    playerData?: any;
     matchData?: {
         homeTeam: { id: string; name: string; club?: { name: string }; category?: string; players: any[] };
         awayTeam: { id: string; name: string; club?: { name: string }; category?: string; players: any[] };

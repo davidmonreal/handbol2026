@@ -17,12 +17,19 @@ export function useStatisticsCalculator(
     events: MatchEvent[],
     comparison?: ComparisonData,
     isGoalkeeper: boolean = false,
-    foulEvents?: MatchEvent[]
+    foulEvents?: MatchEvent[],
+    playerResolver?: (playerId: string) => { name: string; number: number; isGoalkeeper?: boolean },
+    gkEvents?: MatchEvent[]
 ): CalculatedStats {
     return useMemo(() => {
         // Filter only shot events
         const shots = events.filter(e => e.category === 'Shot');
         const foulEventSource = foulEvents ?? events;
+        // Use provided gkEvents for GK stats, or fallback to events (for backward compatibility/simple usage)
+        const gkEventSource = gkEvents ?? events;
+
+        // ... rest of logic
+
 
         const foulShots = foulEventSource.filter(e => e.category === 'Shot');
         const fouls = foulEventSource.filter(e => e.category === 'Sanction');
@@ -186,18 +193,108 @@ export function useStatisticsCalculator(
                 : 0;
 
             const firstEvent = playerEvs[0];
+            let playerName = firstEvent.playerName;
+            let playerNumber = firstEvent.playerNumber;
+
+            if (playerResolver) {
+                const info = playerResolver(playerId);
+                if (info) {
+                    playerName = info.name;
+                    playerNumber = info.number;
+                }
+            }
 
             const stats: PlayerStatistics = {
                 playerId,
-                playerName: firstEvent.playerName,
-                playerNumber: firstEvent.playerNumber,
+                playerName,
+                playerNumber,
                 shots: playerShots.length,
                 goals: playerGoals.length,
                 saves: playerSaves.length,
                 misses: playerMisses.length,
                 posts: playerPosts.length,
                 efficiency: playerEfficiency,
+
+                // Detailed stats
+                shots6m: 0,
+                goals6m: 0,
+                shots9m: 0,
+                goals9m: 0,
+                shots7m: 0,
+                goals7m: 0,
+                shotsWithOpp: 0,
+                goalsWithOpp: 0,
+                shotsNoOpp: 0,
+                goalsNoOpp: 0,
+                shotsCollective: 0,
+                goalsCollective: 0,
+                shotsIndividual: 0,
+                goalsIndividual: 0,
+                shotsCounter: 0,
+                goalsCounter: 0,
+                shotsStatic: 0,
+                goalsStatic: 0,
+                turnovers: 0,
+                yellowCards: 0,
+                twoMinutes: 0,
+                redCards: 0,
+                blueCards: 0,
+                commonFouls: 0,
+                goalsConceded: 0,
             };
+
+            playerEvs.forEach(e => {
+                if (e.category === 'Shot') {
+                    // Zone-based stats
+                    if (e.zone?.startsWith('6m')) {
+                        stats.shots6m++;
+                        if (e.action === 'Goal') stats.goals6m++;
+                    } else if (e.zone?.startsWith('9m')) {
+                        stats.shots9m++;
+                        if (e.action === 'Goal') stats.goals9m++;
+                    } else if (e.zone === '7m') {
+                        stats.shots7m++;
+                        if (e.action === 'Goal') stats.goals7m++;
+                    }
+
+                    // Context-based stats
+                    if (e.context?.hasOpposition) {
+                        stats.shotsWithOpp++;
+                        if (e.action === 'Goal') stats.goalsWithOpp++;
+                    } else if (e.context?.hasOpposition === false) {
+                        stats.shotsNoOpp++;
+                        if (e.action === 'Goal') stats.goalsNoOpp++;
+                    }
+
+                    if (e.context?.isCollective) {
+                        stats.shotsCollective++;
+                        if (e.action === 'Goal') stats.goalsCollective++;
+                    } else if (e.context?.isCollective === false) {
+                        stats.shotsIndividual++;
+                        if (e.action === 'Goal') stats.goalsIndividual++;
+                    }
+
+                    if (e.context?.isCounterAttack) {
+                        stats.shotsCounter++;
+                        if (e.action === 'Goal') stats.goalsCounter++;
+                    } else if (e.context?.isCounterAttack === false) {
+                        stats.shotsStatic++;
+                        if (e.action === 'Goal') stats.goalsStatic++;
+                    }
+                }
+
+                if (e.category === 'Turnover') {
+                    stats.turnovers++;
+                }
+
+                if (e.category === 'Sanction' || e.category === 'Foul') {
+                    if (e.action === 'Yellow') stats.yellowCards++;
+                    else if (e.action === '2min') stats.twoMinutes++;
+                    else if (e.action === 'Red') stats.redCards++;
+                    else if (e.action === 'Blue') stats.blueCards++;
+                    else stats.commonFouls++;
+                }
+            });
 
             // Add comparison if baseline data is available
             if (comparison?.playerAverages) {
@@ -212,6 +309,72 @@ export function useStatisticsCalculator(
 
             playerStats.set(playerId, stats);
         });
+
+        // ------------------------------------------------------------------
+        // Aggregation for Active Goalkeeper (Saves & Conceded)
+        // ------------------------------------------------------------------
+        // ------------------------------------------------------------------
+        // Aggregation for Active Goalkeeper (Saves & Conceded)
+        // ------------------------------------------------------------------
+        // We iterate specifically provided GK events (opponent shots) or fallback to main events
+        gkEventSource.forEach(e => {
+            if (!e.activeGoalkeeperId) return;
+            // Only care about Shots for GK stats (Saves/Goals)
+            if (e.category !== 'Shot') return;
+
+            const gkId = e.activeGoalkeeperId;
+
+            // Initialize GK stats if not present (might be present if they also played field)
+            if (!playerStats.has(gkId)) {
+                let gkName = 'Unknown GK';
+                let gkNumber = 0;
+
+                if (playerResolver) {
+                    const info = playerResolver(gkId);
+                    if (info) {
+                        gkName = info.name;
+                        gkNumber = info.number;
+                    }
+                }
+
+                playerStats.set(gkId, {
+                    playerId: gkId,
+                    playerName: gkName,
+                    playerNumber: gkNumber,
+                    shots: 0,
+                    goals: 0,
+                    saves: 0,
+                    misses: 0,
+                    posts: 0,
+                    efficiency: 0,
+                    shots6m: 0, goals6m: 0,
+                    shots9m: 0, goals9m: 0,
+                    shots7m: 0, goals7m: 0,
+                    shotsWithOpp: 0, goalsWithOpp: 0,
+                    shotsNoOpp: 0, goalsNoOpp: 0,
+                    shotsCollective: 0, goalsCollective: 0,
+                    shotsIndividual: 0, goalsIndividual: 0,
+                    shotsCounter: 0, goalsCounter: 0,
+                    shotsStatic: 0, goalsStatic: 0,
+                    turnovers: 0,
+                    yellowCards: 0, twoMinutes: 0, redCards: 0, blueCards: 0, commonFouls: 0,
+                    goalsConceded: 0,
+                });
+            }
+
+            const gkStats = playerStats.get(gkId)!;
+
+            if (e.action === 'Save') {
+                gkStats.saves++;
+            } else if (e.action === 'Goal') {
+                gkStats.goalsConceded++;
+            }
+
+            // Recalculate efficiency for GK: Saves / (Saves + GoalsConceded)
+            const shotsOnTarget = gkStats.saves + gkStats.goalsConceded;
+            gkStats.efficiency = shotsOnTarget > 0 ? (gkStats.saves / shotsOnTarget) * 100 : 0;
+        });
+
 
         // Calculate turnovers and total plays
         const turnovers = events.filter(e => e.category === 'Turnover');
@@ -231,6 +394,15 @@ export function useStatisticsCalculator(
         const missesPercentage = totalPlays > 0 ? (misses.length / totalPlays) * 100 : 0;
         const goalsPercentage = totalPlays > 0 ? (totalGoals / totalPlays) * 100 : 0;
 
+        // Calculate total goals conceded (sum of all GK stats)
+        // Careful not to double count if we have multiple GKs. 
+        // Actually, we can just filter the gkEventSource for Goals if we want total team conceded.
+        // OR sum from playerStats.
+        let totalGoalsConceded = 0;
+        playerStats.forEach(stat => {
+            totalGoalsConceded += stat.goalsConceded;
+        });
+
         return {
             totalShots,
             totalGoals,
@@ -245,10 +417,11 @@ export function useStatisticsCalculator(
             turnoversPercentage,
             missesPercentage,
             goalsPercentage,
+            goalsConceded: totalGoalsConceded,
             zoneStats,
             foulZoneStats,
             playerStats,
             goalTargetStats,
         };
-    }, [events, comparison, isGoalkeeper]);
+    }, [events, comparison, isGoalkeeper, foulEvents, playerResolver]);
 }

@@ -1,48 +1,15 @@
 import { Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import type { MatchEvent } from '../../types';
+import type { PlayerStatistics } from './types';
 
 interface PlayerStatisticsTableProps {
-  events: MatchEvent[];
+  stats: Map<string, PlayerStatistics>;
   onPlayerClick?: (playerId: string | null) => void;
   selectedPlayerId?: string | null;
   subtitle?: string;
-  getPlayerInfo?: (playerId: string) => { name: string; number: number };
 }
 
-interface PlayerStat {
-  id: string;
-  name: string;
-  number: number;
-  totalShots: number;
-  totalGoals: number;
-  shots6m: number;
-  goals6m: number;
-  shots9m: number;
-  goals9m: number;
-  shots7m: number;
-  goals7m: number;
-  shotsWithOpp: number;
-  goalsWithOpp: number;
-  shotsNoOpp: number;
-  goalsNoOpp: number;
-  shotsCollective: number;
-  goalsCollective: number;
-  shotsIndividual: number;
-  goalsIndividual: number;
-  shotsCounter: number;
-  goalsCounter: number;
-  shotsStatic: number;
-  goalsStatic: number;
-  turnovers: number;
-  yellowCards: number;
-  twoMinutes: number;
-  redCards: number;
-  blueCards: number;
-  commonFouls: number;
-}
-
-type SortKey = keyof PlayerStat | 'foulsRec' | 'eff6m' | 'eff9m' | 'eff7m';
+type SortKey = keyof PlayerStatistics | 'foulsRec' | 'eff6m' | 'eff9m' | 'eff7m';
 
 interface SortConfig {
   key: SortKey;
@@ -50,125 +17,16 @@ interface SortConfig {
 }
 
 export function PlayerStatisticsTable({
-  events,
+  stats,
   onPlayerClick,
   selectedPlayerId,
   subtitle = '(Overall)',
-  getPlayerInfo
 }: PlayerStatisticsTableProps) {
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'totalGoals', direction: 'desc' });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'goals', direction: 'desc' });
 
   const playerStats = useMemo(() => {
-    const statsMap = new Map<string, PlayerStat>();
-
-    events.forEach(e => {
-      if (!e.playerId) return;
-
-      if (!statsMap.has(e.playerId)) {
-        // Get player info (use provided function or fallback to event data)
-        const playerInfo = getPlayerInfo
-          ? getPlayerInfo(e.playerId)
-          : { name: e.playerName || 'Unknown', number: e.playerNumber || 0 };
-
-        statsMap.set(e.playerId, {
-          id: e.playerId,
-          name: playerInfo.name,
-          number: playerInfo.number,
-          totalShots: 0,
-          totalGoals: 0,
-          shots6m: 0,
-          goals6m: 0,
-          shots9m: 0,
-          goals9m: 0,
-          shots7m: 0,
-          goals7m: 0,
-          shotsWithOpp: 0,
-          goalsWithOpp: 0,
-          shotsNoOpp: 0,
-          goalsNoOpp: 0,
-          shotsCollective: 0,
-          goalsCollective: 0,
-          shotsIndividual: 0,
-          goalsIndividual: 0,
-          shotsCounter: 0,
-          goalsCounter: 0,
-          shotsStatic: 0,
-          goalsStatic: 0,
-          turnovers: 0,
-          yellowCards: 0,
-          twoMinutes: 0,
-          redCards: 0,
-          blueCards: 0,
-          commonFouls: 0,
-        });
-      }
-
-      const stat = statsMap.get(e.playerId)!;
-
-      // Count shots and goals
-      if (e.category === 'Shot') {
-        stat.totalShots++;
-        if (e.action === 'Goal') stat.totalGoals++;
-
-        // Zone-based stats
-        if (e.zone?.startsWith('6m')) {
-          stat.shots6m++;
-          if (e.action === 'Goal') stat.goals6m++;
-        } else if (e.zone?.startsWith('9m')) {
-          stat.shots9m++;
-          if (e.action === 'Goal') stat.goals9m++;
-        } else if (e.zone === '7m') {
-          stat.shots7m++;
-          if (e.action === 'Goal') stat.goals7m++;
-        }
-
-        // Context-based stats
-        if (e.context?.hasOpposition) {
-          stat.shotsWithOpp++;
-          if (e.action === 'Goal') stat.goalsWithOpp++;
-        } else if (e.context?.hasOpposition === false) {
-          stat.shotsNoOpp++;
-          if (e.action === 'Goal') stat.goalsNoOpp++;
-        }
-
-        if (e.context?.isCollective) {
-          stat.shotsCollective++;
-          if (e.action === 'Goal') stat.goalsCollective++;
-        } else if (e.context?.isCollective === false) {
-          stat.shotsIndividual++;
-          if (e.action === 'Goal') stat.goalsIndividual++;
-        }
-
-        if (e.context?.isCounterAttack) {
-          stat.shotsCounter++;
-          if (e.action === 'Goal') stat.goalsCounter++;
-        } else if (e.context?.isCounterAttack === false) {
-          stat.shotsStatic++;
-          if (e.action === 'Goal') stat.goalsStatic++;
-        }
-      }
-
-      // Count turnovers
-      if (e.category === 'Turnover') {
-        stat.turnovers++;
-      }
-
-      // Count sanctions and fouls
-      if (e.category === 'Sanction' || e.category === 'Foul') {
-        if (e.action === 'Yellow') stat.yellowCards++;
-        else if (e.action === '2min') stat.twoMinutes++;
-        else if (e.action === 'Red') stat.redCards++;
-        else if (e.action === 'Blue') stat.blueCards++;
-        // Assuming any other action in 'Foul' category or specific 'Foul' action counts as common foul
-        // Adjust condition based on exact data shape if needed. 
-        // Typically 'Foul' category has action 'Foul' or 'Offensive Foul' etc.
-        // If it's NOT a sanction action, we count it as common foul.
-        else stat.commonFouls++;
-      }
-    });
-
-    return Array.from(statsMap.values());
-  }, [events]);
+    return Array.from(stats.values());
+  }, [stats]);
 
   const sortedPlayerStats = useMemo(() => {
     const sorted = [...playerStats];
@@ -177,9 +35,9 @@ export function PlayerStatisticsTable({
       let bValue: number | string = 0;
 
       switch (sortConfig.key) {
-        case 'name':
-          aValue = a.name;
-          bValue = b.name;
+        case 'playerName':
+          aValue = a.playerName || '';
+          bValue = b.playerName || '';
           break;
         case 'foulsRec':
           aValue = a.twoMinutes + a.yellowCards + a.redCards + a.blueCards + a.commonFouls;
@@ -198,8 +56,8 @@ export function PlayerStatisticsTable({
           bValue = b.shots7m > 0 ? b.goals7m / b.shots7m : -1;
           break;
         default:
-          aValue = a[sortConfig.key as keyof PlayerStat] as number;
-          bValue = b[sortConfig.key as keyof PlayerStat] as number;
+          aValue = (a[sortConfig.key as keyof PlayerStatistics] as number) || 0;
+          bValue = (b[sortConfig.key as keyof PlayerStatistics] as number) || 0;
       }
 
       if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -212,12 +70,16 @@ export function PlayerStatisticsTable({
   const totals = useMemo(() => {
     if (playerStats.length === 0) return null;
 
-    const initialTotal: PlayerStat = {
-      id: 'total',
-      name: 'Total',
-      number: 0,
-      totalShots: 0,
-      totalGoals: 0,
+    const initialTotal: PlayerStatistics = {
+      playerId: 'total',
+      playerName: 'Total',
+      playerNumber: 0,
+      shots: 0,
+      goals: 0,
+      saves: 0,
+      misses: 0,
+      posts: 0,
+      efficiency: 0,
       shots6m: 0,
       goals6m: 0,
       shots9m: 0,
@@ -242,11 +104,14 @@ export function PlayerStatisticsTable({
       redCards: 0,
       blueCards: 0,
       commonFouls: 0,
+      goalsConceded: 0,
     };
 
     return playerStats.reduce((acc, curr) => {
-      acc.totalShots += curr.totalShots;
-      acc.totalGoals += curr.totalGoals;
+      acc.shots += curr.shots;
+      acc.goals += curr.goals;
+      acc.saves += curr.saves;
+      acc.goalsConceded += curr.goalsConceded;
       acc.shots6m += curr.shots6m;
       acc.goals6m += curr.goals6m;
       acc.shots9m += curr.shots9m;
@@ -275,11 +140,7 @@ export function PlayerStatisticsTable({
     }, initialTotal);
   }, [playerStats]);
 
-  const handlePlayerClick = (playerId: string) => {
-    if (onPlayerClick) {
-      onPlayerClick(selectedPlayerId === playerId ? null : playerId);
-    }
-  };
+  // handlePlayerClick logic moved inline to tr onClick
 
   const handleSort = (key: SortKey) => {
     setSortConfig(current => ({
@@ -300,40 +161,50 @@ export function PlayerStatisticsTable({
     );
   };
 
-  const renderRow = (stat: PlayerStat, isTotalRow: boolean = false) => {
+  const renderRow = (stat: PlayerStatistics, isTotalRow: boolean = false) => {
     const efficiency6m = stat.shots6m > 0 ? Math.round((stat.goals6m / stat.shots6m) * 100) : 0;
     const efficiency9m = stat.shots9m > 0 ? Math.round((stat.goals9m / stat.shots9m) * 100) : 0;
     const efficiency7m = stat.shots7m > 0 ? Math.round((stat.goals7m / stat.shots7m) * 100) : 0;
-    const isSelected = selectedPlayerId === stat.id && !isTotalRow;
     const totalFouls = stat.twoMinutes + stat.yellowCards + stat.redCards + stat.blueCards + stat.commonFouls;
 
     return (
       <tr
-        key={stat.id}
-        onClick={() => !isTotalRow && handlePlayerClick(stat.id)}
-        className={`${isTotalRow
-          ? 'bg-gray-100 font-bold border-b-2 border-gray-300'
-          : `cursor-pointer ${isSelected
-            ? 'bg-green-50 hover:bg-green-100 font-semibold'
-            : 'hover:bg-gray-50'
-          }`
-          }`}
+        key={stat.playerId}
+        onClick={() => !isTotalRow && onPlayerClick?.(stat.playerId === selectedPlayerId ? null : stat.playerId)}
+        className={`
+          border-b border-gray-100 last:border-0 transition-colors
+          /* Total row gets distinct styling: bold, gray background, bottom border */
+          ${isTotalRow ? 'bg-gray-100 font-bold border-b-2 border-gray-300' : 'hover:bg-gray-50 cursor-pointer'}
+          /* Selected player highlighting (only for actual players, not total row) */
+          ${!isTotalRow && stat.playerId === selectedPlayerId ? 'bg-blue-50 hover:bg-blue-100' : ''}
+        `}
       >
-        {/* Player name and number */}
-        <td className="py-3 pl-3">
-          <div className="flex items-center gap-2">
-            {!isTotalRow && (
-              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold">
-                {stat.number}
+        <td className="py-3 px-3">
+          {isTotalRow ? (
+            <span className="font-bold text-gray-900 uppercase tracking-wider pl-2">Total</span>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className={`
+                w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                ${stat.playerId === selectedPlayerId ? 'bg-blue-200 text-blue-800' : 'bg-gray-100 text-gray-600'}
+              `}>
+                {stat.playerNumber}
               </div>
-            )}
-            <span className={isSelected ? 'text-green-700' : ''}>{stat.name}</span>
-          </div>
+              <span className="font-medium text-gray-900 truncate max-w-[120px]" title={stat.playerName}>
+                {(() => {
+                  if (!stat.playerName) return 'Unknown';
+                  const parts = stat.playerName.split(' ');
+                  if (parts.length < 2) return stat.playerName;
+                  return `${parts[0]} ${parts[1].charAt(0)}.`;
+                })()}
+              </span>
+            </div>
+          )}
         </td>
 
         {/* Total */}
         <td className="py-3 text-center font-mono">
-          <div className="font-bold">{stat.totalGoals}/{stat.totalShots}</div>
+          <div className="font-bold">{stat.goals}/{stat.shots}</div>
         </td>
 
         {/* 6m */}
@@ -487,8 +358,8 @@ export function PlayerStatisticsTable({
         <table className="w-full text-left text-xs">
           <thead>
             <tr className="border-b-2 border-gray-300 text-gray-600 text-xs uppercase">
-              {renderSortableHeader('Player', 'name', 'left', 'pl-3')}
-              {renderSortableHeader('Total', 'totalGoals')}
+              {renderSortableHeader('Player', 'playerName', 'left', 'pl-3')}
+              {renderSortableHeader('Total', 'goals')}
               {renderSortableHeader('6m Goals', 'goals6m', 'center', 'bg-blue-50 px-2')}
               {renderSortableHeader('6m Eff%', 'eff6m', 'center', 'bg-blue-50 px-2')}
               {renderSortableHeader('9m Goals', 'goals9m', 'center', 'bg-indigo-50 px-2')}
@@ -506,7 +377,11 @@ export function PlayerStatisticsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {totals && renderRow(totals, true)}
+            {/* 
+              Only show Total row if there is more than one player.
+              In single-player view, the "Total" row is identical to the player's row, making it redundant.
+            */}
+            {totals && playerStats.length > 1 && renderRow(totals, true)}
             {sortedPlayerStats.map(stat => renderRow(stat, false))}
             {sortedPlayerStats.length === 0 && (
               <tr>

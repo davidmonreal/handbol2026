@@ -168,7 +168,9 @@ const Statistics = () => {
         subtitle={playerId ? `#${data?.number} • All Time Stats` : (teamId ? `${data?.club?.name} • ${data?.category} • All Matches` : undefined)}
         matchData={matchId ? data : undefined}
         teamData={teamId ? data : undefined}
+        playerData={playerId ? data : undefined}
         teamId={selectedTeamId}
+        selectedPlayerId={playerId}
         onTeamChange={setSelectedTeamId}
         onBack={handleBack}
         showComparison={!!matchId}
