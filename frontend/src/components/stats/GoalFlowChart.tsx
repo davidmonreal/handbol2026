@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Download } from 'lucide-react';
 import type { MatchEvent } from '../../types';
 
 interface GoalFlowChartProps {
@@ -9,6 +9,7 @@ interface GoalFlowChartProps {
     secondHalfMarkSeconds?: number | null;
     teamName: string;
     opponentName: string;
+    onDownloadCsv?: () => void;
 }
 
 type Point = { x: number; y: number };
@@ -40,6 +41,7 @@ export function GoalFlowChart({
     secondHalfMarkSeconds,
     teamName,
     opponentName,
+    onDownloadCsv,
 }: GoalFlowChartProps) {
     const {
         teamSeries,
@@ -290,27 +292,24 @@ export function GoalFlowChart({
                 <button
                     type="button"
                     onClick={() => setShowFouls(v => !v)}
-                    className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors ${
-                        showFouls ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-gray-500 border-gray-200'
-                    }`}
+                    className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors ${showFouls ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-gray-500 border-gray-200'
+                        }`}
                 >
                     {showFouls ? 'Hide fouls' : 'Show fouls'}
                 </button>
                 <button
                     type="button"
                     onClick={() => setShowTurnovers(v => !v)}
-                    className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors ${
-                        showTurnovers ? 'bg-slate-50 text-slate-600 border-slate-200' : 'bg-white text-gray-500 border-gray-200'
-                    }`}
+                    className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors ${showTurnovers ? 'bg-slate-50 text-slate-600 border-slate-200' : 'bg-white text-gray-500 border-gray-200'
+                        }`}
                 >
                     {showTurnovers ? 'Hide turnovers' : 'Show turnovers'}
                 </button>
                 <button
                     type="button"
                     onClick={() => setShowSaves(v => !v)}
-                    className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors ${
-                        showSaves ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-white text-gray-500 border-gray-200'
-                    }`}
+                    className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors ${showSaves ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-white text-gray-500 border-gray-200'
+                        }`}
                 >
                     {showSaves ? 'Hide saves' : 'Show saves'}
                 </button>
@@ -504,6 +503,18 @@ export function GoalFlowChart({
                     })}
                 </svg>
             </div>
+
+            {onDownloadCsv && (
+                <div className="flex justify-end pt-2 border-t border-gray-100">
+                    <button
+                        onClick={onDownloadCsv}
+                        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-gray-200 hover:border-indigo-200"
+                    >
+                        <Download className="w-4 h-4" />
+                        Download CSV
+                    </button>
+                </div>
+            )}
 
         </div>
     );

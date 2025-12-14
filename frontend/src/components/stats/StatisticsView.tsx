@@ -9,6 +9,7 @@ import { usePlayerBaselines } from './hooks/usePlayerBaselines';
 import { GoalFlowChart } from './GoalFlowChart';
 import { usePlayWindow } from './hooks/usePlayWindow';
 import { useStatisticsCalculator } from './hooks/useStatisticsCalculator';
+import { downloadTeamEventsCSV } from '../../utils/csvExport';
 
 const HALF_DURATION_SECONDS = 30 * 60;
 
@@ -345,6 +346,11 @@ export function StatisticsView({
             secondHalfMarkSeconds={HALF_DURATION_SECONDS}
             teamName={selectedTeamName}
             opponentName={opponentTeamName}
+            onDownloadCsv={() => downloadTeamEventsCSV(
+              [...filteredEvents, ...filteredOpponentEvents],
+              selectedTeamId,
+              selectedTeamName
+            )}
           />
         </div>
       )}
