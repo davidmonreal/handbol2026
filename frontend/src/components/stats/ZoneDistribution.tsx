@@ -36,7 +36,9 @@ export function ZoneDistribution({
     activeStats,
     (mode === 'goals' || mode === 'flow')
       ? (stats) => stats.shots
-      : (stats) => stats.efficiency ?? 0
+      : (mode === 'fouls'
+        ? (stats) => stats.goals
+        : (stats) => stats.efficiency ?? 0)
   );
 
   const renderZoneButton = (zone: ZoneType | '7m') => {
@@ -105,14 +107,24 @@ export function ZoneDistribution({
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-gray-800">
           {(() => {
-            switch (mode) {
-              case 'defense': return 'Defense (Own court zones)';
-              case 'fouls': return 'Fouls Received';
-              case 'flow': return 'Flow (Goals / Plays)';
-              default: return title || (isGoalkeeper
-                ? 'Saves Distribution (Court Zones)'
-                : 'Goal Distribution (Rival court zones)');
-            }
+            const fullTitle = (() => {
+              switch (mode) {
+                case 'defense': return 'Defense (Own court zones)';
+                case 'fouls': return 'Fouls Received (Fouls / Plays)';
+                case 'flow': return 'Flow (Goals / Plays)';
+                default: return title || (isGoalkeeper
+                  ? 'Saves Distribution (Court Zones)'
+                  : 'Goal Distribution (Rival court zones)');
+              }
+            })();
+
+            const parts = fullTitle.split(' (');
+            return (
+              <>
+                {parts[0]}
+                {parts[1] && <span className="font-normal text-gray-500"> ({parts[1]}</span>}
+              </>
+            );
           })()}
         </h3>
 

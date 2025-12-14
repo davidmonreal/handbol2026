@@ -49,11 +49,14 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 }
 
+import { PageTitleUpdater } from './components/common/PageTitleUpdater';
+
 function App() {
   return (
     <ErrorBoundary>
       <MatchProvider>
         <Router>
+          <PageTitleUpdater />
           <Routes>
             <Route path="/" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />

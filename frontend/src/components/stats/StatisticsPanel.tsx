@@ -144,7 +144,7 @@ export function StatisticsPanel({
           isGoalkeeper={data.isGoalkeeper}
         />
         <ZoneDistribution
-          title="Shot Distribution"
+          title="Shot Distribution (Goals / Shots)"
           isGoalkeeper={data.isGoalkeeper}
           zoneStats={stats.zoneStats}
           foulZoneStats={data.context === 'player' ? undefined : stats.foulZoneStats}
