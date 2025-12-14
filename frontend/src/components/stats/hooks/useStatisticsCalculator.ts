@@ -33,6 +33,7 @@ export function useStatisticsCalculator(
 
         const foulShots = foulEventSource.filter(e => e.category === 'Shot');
         const fouls = foulEventSource.filter(e => e.category === 'Sanction');
+        const turnovers = events.filter(e => e.category === 'Turnover');
         const goals = shots.filter(e => e.action === 'Goal');
         const saves = shots.filter(e => e.action === 'Save');
         const misses = shots.filter(e => e.action === 'Miss');
@@ -57,17 +58,24 @@ export function useStatisticsCalculator(
         // Calculate zone statistics
         const zoneStats = new Map<ZoneType | '7m', ZoneStatistics>();
         const foulZoneStats = new Map<ZoneType | '7m', ZoneStatistics>();
+        const foulReceivedZoneStats = new Map<ZoneType | '7m', ZoneStatistics>();
+        const turnoverZoneStats = new Map<ZoneType | '7m', ZoneStatistics>();
+        const dangerZoneStats = new Map<ZoneType | '7m', ZoneStatistics>();
 
         // Initialize all zones with zero values
         [...ZONE_CONFIG.sixMeter, ...ZONE_CONFIG.nineMeter, ZONE_CONFIG.penalty].forEach(({ zone }) => {
             zoneStats.set(zone, { shots: 0, goals: 0, efficiency: 0 });
             foulZoneStats.set(zone, { shots: 0, goals: 0, efficiency: 0 }); // shots = plays, goals = fouls
+            foulReceivedZoneStats.set(zone, { shots: 0, goals: 0, efficiency: 0 }); // shots = (fouls + shots), goals = fouls
+            turnoverZoneStats.set(zone, { shots: 0, goals: 0, efficiency: 0 }); // shots = total plays, goals = turnovers
+            dangerZoneStats.set(zone, { shots: 0, goals: 0, efficiency: 0 }); // shots = total plays, goals = goals
         });
 
         // Count shots/goals and plays/fouls per zone
         shots.forEach(shot => {
             if (!shot.zone) return;
 
+            // Shot Distribution
             const shotStats = zoneStats.get(shot.zone);
             if (shotStats) {
                 shotStats.shots++;
@@ -75,9 +83,28 @@ export function useStatisticsCalculator(
                     shotStats.goals++;
                 }
             }
+
+            // Foul/Turnover/Danger Distribution (Denominator contribution)
+            const foulReceivedStats = foulReceivedZoneStats.get(shot.zone);
+            if (foulReceivedStats) {
+                foulReceivedStats.shots++; // Add shot to denominator (Shots + Fouls)
+            }
+
+            const turnoverStats = turnoverZoneStats.get(shot.zone);
+            if (turnoverStats) {
+                turnoverStats.shots++; // Add shot to denominator (Total Plays)
+            }
+
+            const dangerStats = dangerZoneStats.get(shot.zone);
+            if (dangerStats) {
+                dangerStats.shots++; // Add shot to denominator (Total Plays)
+                if (shot.action === 'Goal') {
+                    dangerStats.goals++; // Add goal to numerator
+                }
+            }
         });
 
-        // For foul view: plays = shots + fouls of the selected source (team or opponent)
+        // For foul view (defense): plays = shots + fouls of the selected source (team or opponent)
         foulShots.forEach(shot => {
             if (!shot.zone) return;
 
@@ -90,12 +117,57 @@ export function useStatisticsCalculator(
         fouls.forEach(foul => {
             if (!foul.zone) return;
 
+            // Defense Distribution (Fouls committed by us = Fouls received by opponent)
             const foulStats = foulZoneStats.get(foul.zone);
             if (foulStats) {
                 foulStats.shots++; // plays
                 foulStats.goals++; // fouls count (reuse goals field)
             }
         });
+
+        // Play Distribution (Offensive Flow) - Fouls Received (stored in own events)
+        const ownFouls = events.filter(e => e.category === 'Sanction' || e.category === 'Foul');
+        ownFouls.forEach(foul => {
+            if (!foul.zone) return;
+
+            // Foul Received View: Fouls / (Fouls + Shots)
+            const foulReceivedStats = foulReceivedZoneStats.get(foul.zone);
+            if (foulReceivedStats) {
+                foulReceivedStats.shots++; // Add foul to denominator
+                foulReceivedStats.goals++; // Add foul to numerator
+            }
+
+            // Turnover View: Turnovers / Total Plays
+            // A foul is also a play
+            const turnoverStats = turnoverZoneStats.get(foul.zone);
+            if (turnoverStats) {
+                turnoverStats.shots++; // Add foul to denominator (Total Plays)
+            }
+
+            // Danger View: Goals / Total Plays
+            // A foul is a play but not a goal
+            const dangerStats = dangerZoneStats.get(foul.zone);
+            if (dangerStats) {
+                dangerStats.shots++; // Add foul to denominator (Total Plays)
+            }
+        });
+
+        // Turnovers for Turnover and Danger View
+        turnovers.forEach(turnover => {
+            if (!turnover.zone) return;
+
+            const turnoverStats = turnoverZoneStats.get(turnover.zone);
+            if (turnoverStats) {
+                turnoverStats.shots++; // Add turnover to denominator (Total Plays)
+                turnoverStats.goals++; // Add turnover to numerator
+            }
+
+            const dangerStats = dangerZoneStats.get(turnover.zone);
+            if (dangerStats) {
+                dangerStats.shots++; // Add turnover to denominator (Total Plays)
+            }
+        });
+
 
         // Calculate efficiency for each zone
         zoneStats.forEach((stats) => {
@@ -137,6 +209,18 @@ export function useStatisticsCalculator(
 
         foulZoneStats.forEach((stats) => {
             stats.efficiency = stats.shots > 0 ? (stats.goals / stats.shots) * 100 : 0; // % fouls over plays in zone
+        });
+
+        foulReceivedZoneStats.forEach((stats) => {
+            stats.efficiency = stats.shots > 0 ? (stats.goals / stats.shots) * 100 : 0; // % fouls over (fouls+shots)
+        });
+
+        turnoverZoneStats.forEach((stats) => {
+            stats.efficiency = stats.shots > 0 ? (stats.goals / stats.shots) * 100 : 0; // % turnovers over total plays
+        });
+
+        dangerZoneStats.forEach((stats) => {
+            stats.efficiency = stats.shots > 0 ? (stats.goals / stats.shots) * 100 : 0; // % goals over total plays
         });
 
         // Calculate goal target statistics (1-9)
@@ -377,14 +461,18 @@ export function useStatisticsCalculator(
 
 
         // Calculate turnovers and total plays
-        const turnovers = events.filter(e => e.category === 'Turnover');
+        // turnovers declared above
         const totalTurnovers = turnovers.length;
 
         // Calculate fouls from events (to match PlayerStatisticsTable and Offensive Plays)
         // Include both 'Sanction' and 'Foul' categories
         // NOTE: We only track OFFENSIVE plays. If an attack ends in a "Foul", it means
         // the team SUFFERED a foul (was fouled by the opponent), not that they committed one.
-        const ownFouls = events.filter(e => e.category === 'Sanction' || e.category === 'Foul');
+        // Calculate fouls from events (to match PlayerStatisticsTable and Offensive Plays)
+        // Include both 'Sanction' and 'Foul' categories
+        // NOTE: We only track OFFENSIVE plays. If an attack ends in a "Foul", it means
+        // the team SUFFERED a foul (was fouled by the opponent), not that they committed one.
+        // ownFouls declared above
         const totalFouls = ownFouls.length;
 
         // Total Plays = Shots + Turnovers + Fouls
@@ -420,6 +508,9 @@ export function useStatisticsCalculator(
             goalsConceded: totalGoalsConceded,
             zoneStats,
             foulZoneStats,
+            foulReceivedZoneStats,
+            turnoverZoneStats,
+            dangerZoneStats,
             playerStats,
             goalTargetStats,
         };

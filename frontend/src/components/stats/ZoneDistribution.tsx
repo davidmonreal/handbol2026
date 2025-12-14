@@ -11,6 +11,9 @@ import { calculateZoneColors, getHeatmapColorClasses } from './utils/heatmapUtil
 export function ZoneDistribution({
   zoneStats,
   foulZoneStats,
+  foulReceivedZoneStats,
+  turnoverZoneStats,
+  dangerZoneStats,
   disableFoulToggle,
   onZoneClick,
   selectedZone,
@@ -18,14 +21,23 @@ export function ZoneDistribution({
   isGoalkeeper = false,
   title
 }: ZoneDistributionProps) {
-  const [mode, setMode] = useState<'goals' | 'fouls'>('goals');
+  const [mode, setMode] = useState<'flow' | 'goals' | 'defense' | 'fouls'>('flow');
 
-  const activeStats = mode === 'fouls' && foulZoneStats ? foulZoneStats : zoneStats;
+  const activeStats = (() => {
+    switch (mode) {
+      case 'defense': return foulZoneStats || zoneStats;
+      case 'fouls': return foulReceivedZoneStats || zoneStats;
+      case 'flow': return dangerZoneStats || zoneStats;
+      default: return zoneStats;
+    }
+  })();
 
   // Combine all stats to calculate relative colors across the whole court
   const zoneColors = calculateZoneColors(
     activeStats,
-    mode === 'fouls' ? (stats) => stats.efficiency ?? 0 : (stats) => stats.shots
+    (mode === 'goals' || mode === 'flow')
+      ? (stats) => stats.shots
+      : (stats) => stats.efficiency ?? 0
   );
 
   const renderZoneButton = (zone: ZoneType | '7m') => {
@@ -49,9 +61,10 @@ export function ZoneDistribution({
     // Calculate value to display
     // For GK: Saves = Shots - Goals (since shots includes both)
     // For Player: Goals
+    // In Flow mode, numerator = goals, denominator = total plays
     const value = isGoalkeeper ? (stats.shots - stats.goals) : stats.goals;
-    const fouls = stats.goals;
-    const plays = stats.shots;
+    const numerator = stats.goals;
+    const denominator = stats.shots;
 
     return (
       <button
@@ -60,22 +73,24 @@ export function ZoneDistribution({
         disabled={!onZoneClick}
         className={`p-2 rounded-lg border-2 flex flex-col items-center justify-center min-h-[80px] w-full transition-colors ${colorClasses} ${borderClass} ${baseClass}`}
       >
-        {mode === 'fouls' ? (
-          <>
-            <span className="text-xl font-bold">
-              {fouls}/{plays}
-            </span>
-            <span className="text-xs opacity-75">
-              {plays > 0 ? `${stats.efficiency.toFixed(0)}% fouls` : '-'}
-            </span>
-          </>
-        ) : (
+        {mode === 'goals' ? (
           <>
             <span className="text-xl font-bold">
               {value}/{stats.shots}
             </span>
             <span className="text-xs opacity-75">
               {stats.shots > 0 ? `${stats.efficiency.toFixed(0)}%` : '-'}
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="text-xl font-bold">
+              {numerator}/{denominator}
+            </span>
+            <span className="text-xs opacity-75">
+              {denominator > 0
+                ? `${stats.efficiency.toFixed(0)}% ${mode === 'flow' ? 'danger' : (mode === 'fouls' ? 'fouls' : 'fouls')}`
+                : '-'}
             </span>
           </>
         )}
@@ -90,52 +105,102 @@ export function ZoneDistribution({
     <div className={`bg-white rounded-xl shadow-lg p-6 ${className}`}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-gray-800">
-          {mode === 'fouls'
-            ? 'Foul Distribution (Own court zones)'
-            : title || (isGoalkeeper
-              ? 'Saves Distribution (Court Zones)'
-              : 'Goal Distribution (Rival court zones)')}
+          {(() => {
+            switch (mode) {
+              case 'defense': return 'Defense (Own court zones)';
+              case 'fouls': return 'Fouls Received';
+              case 'flow': return 'Flow (Goals / Plays)';
+              default: return title || (isGoalkeeper
+                ? 'Saves Distribution (Court Zones)'
+                : 'Goal Distribution (Rival court zones)');
+            }
+          })()}
         </h3>
-        {foulZoneStats && (
+
+        {/* View Toggles */}
+        <div className="flex bg-gray-100 p-1 rounded-lg">
+          {dangerZoneStats && (
+            <button
+              onClick={() => setMode('flow')}
+              className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${mode === 'flow'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              Flow
+            </button>
+          )}
+
           <button
-            onClick={() => setMode(mode === 'goals' ? 'fouls' : 'goals')}
-            disabled={disableFoulToggle}
-            className={`px-3 py-1 text-sm font-medium rounded-lg border border-gray-300 transition-colors ${disableFoulToggle
-              ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
-              : 'text-gray-700 hover:bg-gray-100'
+            onClick={() => setMode('goals')}
+            className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${mode === 'goals'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
               }`}
           >
-            {mode === 'fouls' ? 'View Goals' : 'View Fouls'}
+            Shots
           </button>
-        )}
+
+          {foulReceivedZoneStats && (
+            <button
+              onClick={() => setMode('fouls')}
+              className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${mode === 'fouls'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              Fouls
+            </button>
+          )}
+
+          {foulZoneStats && (
+            <button
+              onClick={() => setMode('defense')}
+              disabled={disableFoulToggle}
+              className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${disableFoulToggle
+                ? 'text-gray-300 cursor-not-allowed'
+                : mode === 'defense'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              Defense
+            </button>
+          )}
+        </div>
       </div>
       <div className="space-y-3">
-        {/* 6m Line */}
-        <div>
-          <div className="grid grid-cols-5 gap-2">
-            {ZONE_CONFIG.sixMeter.map(({ zone }) => renderZoneButton(zone))}
-          </div>
+        {/* Row 1: 6M Line */}
+        <div className="grid grid-cols-5 gap-2">
+          {ZONE_CONFIG.sixMeter.map(({ zone }) => renderZoneButton(zone))}
         </div>
 
-        {/* 9m Line */}
-        <div>
-          <div className="grid grid-cols-3 gap-2 max-w-md mx-auto">
-            {ZONE_CONFIG.nineMeter.map(({ zone }) => renderZoneButton(zone))}
-          </div>
+        {/* Row 2: 9M Line */}
+        <div className="grid grid-cols-3 gap-2 px-8">
+          {ZONE_CONFIG.nineMeter.map(({ zone }) => renderZoneButton(zone))}
         </div>
 
-        {/* 7m Penalty */}
-        <div>
-          <div className="max-w-xs mx-auto">
-            {renderZoneButton('7m')}
+        {/* Row 3: Penalty */}
+        <div className="flex justify-center">
+          <div className="w-1/3">
+            {renderZoneButton(ZONE_CONFIG.penalty.zone)}
           </div>
         </div>
       </div>
-      <p className="text-xs text-gray-500 mt-2 text-center">
-        {mode === 'fouls'
-          ? 'Viewing fouls by own court zones'
-          : (isGoalkeeper ? 'Viewing saves/shots from zone' : 'Viewing goals/shots from rival court zones (shooter perspective)')}
-      </p>
+
+      {/* Legend / Info */}
+      <div className="mt-4 flex items-center justify-center text-xs text-gray-400">
+        <div className="text-center">
+          {(() => {
+            switch (mode) {
+              case 'defense': return 'Viewing defensive fouls / total attacks against us in zone';
+              case 'fouls': return 'Viewing fouls received / (fouls + shots) in zone';
+              case 'flow': return 'Viewing goals / total offensive plays in zone';
+              default: return isGoalkeeper ? 'Viewing saves/shots from zone' : 'Viewing goals/shots from rival court zones (shooter perspective)';
+            }
+          })()}
+        </div>
+      </div>
     </div>
   );
 }

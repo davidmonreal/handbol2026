@@ -52,7 +52,14 @@ export interface CalculatedStats {
     /** Map of zone -> { shots, goals, efficiency } */
     zoneStats: Map<ZoneType | '7m', ZoneStatistics>;
     /** Map of zone -> fouls (stored in shots) for sanction heatmap */
+    /** Map of zone -> fouls (stored in shots) for sanction heatmap */
     foulZoneStats: Map<ZoneType | '7m', ZoneStatistics>;
+    /** Map of zone -> fouls received & (fouls + shots) for Foul Efficiency heatmap */
+    foulReceivedZoneStats: Map<ZoneType | '7m', ZoneStatistics>;
+    /** Map of zone -> turnovers & total plays for Turnover heatmap */
+    turnoverZoneStats: Map<ZoneType | '7m', ZoneStatistics>;
+    /** Map of zone -> goals & total plays for Danger heatmap */
+    dangerZoneStats: Map<ZoneType | '7m', ZoneStatistics>;
 
     /** Map of playerId -> player statistics */
     playerStats: Map<string, PlayerStatistics>;
@@ -151,6 +158,10 @@ export interface GoalHeatmapProps {
 export interface ZoneDistributionProps {
     zoneStats: Map<ZoneType | '7m', ZoneStatistics>;
     foulZoneStats?: Map<ZoneType | '7m', ZoneStatistics>;
+    /** Renamed from playZoneStats */
+    foulReceivedZoneStats?: Map<ZoneType | '7m', ZoneStatistics>;
+    turnoverZoneStats?: Map<ZoneType | '7m', ZoneStatistics>;
+    dangerZoneStats?: Map<ZoneType | '7m', ZoneStatistics>;
     disableFoulToggle?: boolean;
     onZoneClick?: (zone: ZoneType | '7m' | null) => void;
     selectedZone?: ZoneType | '7m' | null;

@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom'; // Fix toBeInTheDocument type error
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { StatisticsView } from './StatisticsView';
@@ -259,6 +260,7 @@ describe('StatisticsView', () => {
         id: 'a1',
         timestamp: 1,
         teamId: 'teamA',
+        playerId: 'p1', // Fix: Added required playerId
         category: 'Shot',
         action: 'Goal',
         zone: '6m-CB',
@@ -270,6 +272,7 @@ describe('StatisticsView', () => {
         id: 'b1',
         timestamp: 2,
         teamId: 'teamB',
+        playerId: 'p2', // Fix: Added required playerId
         matchId: 'm1',
         category: 'Shot',
         action: 'Goal',
@@ -279,6 +282,7 @@ describe('StatisticsView', () => {
         id: 'b2',
         timestamp: 3,
         teamId: 'teamB',
+        playerId: 'p2', // Fix: Added required playerId
         matchId: 'm1',
         category: 'Sanction',
         action: 'Foul',
@@ -294,8 +298,12 @@ describe('StatisticsView', () => {
       />
     );
 
-    // Toggle button should be present because foulEvents are provided in team context
-    expect(screen.getByText('View Fouls')).toBeInTheDocument();
+    // Toggle button should be present because foulEvents provide defensive stats
+    expect(screen.getByText('Defense')).toBeInTheDocument();
+
+    // Check for Fouls and Flow buttons which should be present by default as they come from main events
+    expect(screen.getByRole('button', { name: 'Fouls' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Flow' })).toBeInTheDocument();
   });
 
   it('hides foul toggle for player context even if foulEvents exist', () => {
@@ -307,6 +315,10 @@ describe('StatisticsView', () => {
       />
     );
 
-    expect(screen.queryByText('View Fouls')).not.toBeInTheDocument();
+    expect(screen.queryByText('Defense')).not.toBeInTheDocument();
+
+    // Fouls and Flow should still be present for players as they are offensive stats
+    expect(screen.getByRole('button', { name: 'Fouls' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Flow' })).toBeInTheDocument();
   });
 });

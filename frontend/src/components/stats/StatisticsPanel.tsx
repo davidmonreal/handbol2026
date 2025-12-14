@@ -62,27 +62,47 @@ export function StatisticsPanel({
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-3 md:grid-cols-5 md:gap-4">
-        {data.context === 'player' ? (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {data.isGoalkeeper ? (
           <>
             <StatCard
-              label={data.isGoalkeeper ? "Goals Conceded" : "Goals"}
-              value={filteredStats.totalGoals}
-              color={data.isGoalkeeper ? "red" : "green"}
+              label="Saves vs. regular shots"
+              value={(() => {
+                const penaltyStats = filteredStats.zoneStats.get('7m');
+                const penaltySaves = penaltyStats ? (penaltyStats.shots - penaltyStats.goals) : 0;
+                const penaltyConceded = penaltyStats ? penaltyStats.goals : 0;
+
+                const totalSaves = filteredStats.totalSaves;
+                const totalConceded = filteredStats.goalsConceded;
+
+                const regularSaves = totalSaves - penaltySaves;
+                const regularConceded = totalConceded - penaltyConceded;
+                const regularShots = regularSaves + regularConceded;
+
+                const efficiency = regularShots > 0 ? (regularSaves / regularShots) * 100 : 0;
+
+                return `${regularSaves}/${regularShots} (${efficiency.toFixed(0)}%)`;
+              })()}
+              color="blue"
+              className="w-full"
             />
-            <StatCard label="Shots" value={filteredStats.totalShots} color="blue" />
             <StatCard
-              label={data.isGoalkeeper ? "Save %" : "Efficiency"}
-              value={`${filteredStats.efficiency.toFixed(1)}%`}
-              color={data.isGoalkeeper ? "green" : "purple"}
+              label="Saves vs. penalty shots"
+              value={(() => {
+                const penaltyStats = filteredStats.zoneStats.get('7m');
+                const penaltySaves = penaltyStats ? (penaltyStats.shots - penaltyStats.goals) : 0;
+                const penaltyConceded = penaltyStats ? penaltyStats.goals : 0;
+                const penaltyShots = penaltySaves + penaltyConceded;
+                const efficiency = penaltyStats ? penaltyStats.efficiency : 0;
+
+                return `${penaltySaves}/${penaltyShots} (${efficiency.toFixed(0)}%)`;
+              })()}
+              color="purple"
+              className="w-full"
             />
-            <StatCard label="Saves" value={filteredStats.totalSaves} color="yellow" />
-            <StatCard label="Misses" value={filteredStats.totalMisses} color="orange" />
-            <StatCard label="Posts" value={filteredStats.totalPosts} color="gray" />
           </>
         ) : (
-          <>
-
+          <div className="col-span-1 md:col-span-2 grid grid-cols-3 gap-3 md:grid-cols-5 md:gap-4">
             <StatCard
               label="Goals vs shots"
               value={`${filteredStats.totalGoals}/${filteredStats.totalShots} (${filteredStats.efficiency.toFixed(0)}%)`}
@@ -113,7 +133,7 @@ export function StatisticsPanel({
               color="gray"
               className="min-w-fit"
             />
-          </>
+          </div>
         )}
       </div>
 
@@ -128,6 +148,9 @@ export function StatisticsPanel({
           isGoalkeeper={data.isGoalkeeper}
           zoneStats={stats.zoneStats}
           foulZoneStats={data.context === 'player' ? undefined : stats.foulZoneStats}
+          foulReceivedZoneStats={stats.foulReceivedZoneStats}
+          turnoverZoneStats={stats.turnoverZoneStats}
+          dangerZoneStats={stats.dangerZoneStats}
           disableFoulToggle={disableFoulToggle}
           onZoneClick={handleZoneClick}
           selectedZone={selectedZone}

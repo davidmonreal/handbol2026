@@ -35,6 +35,7 @@ export class GameEventService {
     hasOpposition?: boolean;
     isCounterAttack?: boolean;
     videoTimestamp?: number;
+    activeGoalkeeperId?: string;
   }): Promise<GameEvent> {
     // Fetch match to check status
     const match = await this.matchRepository.findById(data.matchId);
@@ -82,6 +83,7 @@ export class GameEventService {
       sanctionType: string;
       hasOpposition: boolean;
       isCounterAttack: boolean;
+      activeGoalkeeperId: string;
     }>,
   ): Promise<GameEvent> {
     return this.repository.update(id, data);
