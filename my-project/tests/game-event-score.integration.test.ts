@@ -52,7 +52,7 @@ describe('Integration: game events mutate match score atomically', () => {
     if (seasonId) {
       await prisma.season.delete({ where: { id: seasonId } }).catch(() => null);
     }
-    await cleanupTestData();
+    await cleanupTestData({ includeScorePatterns: true });
   });
 
   const createMatch = async () => {
@@ -87,47 +87,51 @@ describe('Integration: game events mutate match score atomically', () => {
     return { match, homeTeam, awayTeam };
   };
 
-  it('updates match score when goal events are created and deleted', { timeout: 15000 }, async () => {
-    const { match, homeTeam, awayTeam } = await createMatch();
+  it(
+    'updates match score when goal events are created and deleted',
+    { timeout: 15000 },
+    async () => {
+      const { match, homeTeam, awayTeam } = await createMatch();
 
-    const initial = await matchRepository.findById(match.id);
-    expect(initial?.homeScore).toBe(0);
-    expect(initial?.awayScore).toBe(0);
+      const initial = await matchRepository.findById(match.id);
+      expect(initial?.homeScore).toBe(0);
+      expect(initial?.awayScore).toBe(0);
 
-    const homeGoal = await gameEventService.create({
-      matchId: match.id,
-      timestamp: 10,
-      teamId: homeTeam.id,
-      type: 'Shot',
-      subtype: 'Goal',
-      position: 'LW',
-      distance: '6M',
-    });
+      const homeGoal = await gameEventService.create({
+        matchId: match.id,
+        timestamp: 10,
+        teamId: homeTeam.id,
+        type: 'Shot',
+        subtype: 'Goal',
+        position: 'LW',
+        distance: '6M',
+      });
 
-    const afterHomeGoal = await matchRepository.findById(match.id);
-    expect(afterHomeGoal?.homeScore).toBe(1);
-    expect(afterHomeGoal?.awayScore).toBe(0);
+      const afterHomeGoal = await matchRepository.findById(match.id);
+      expect(afterHomeGoal?.homeScore).toBe(1);
+      expect(afterHomeGoal?.awayScore).toBe(0);
 
-    await gameEventService.create({
-      matchId: match.id,
-      timestamp: 20,
-      teamId: awayTeam.id,
-      type: 'Shot',
-      subtype: 'Goal',
-      position: 'RW',
-      distance: '9M',
-    });
+      await gameEventService.create({
+        matchId: match.id,
+        timestamp: 20,
+        teamId: awayTeam.id,
+        type: 'Shot',
+        subtype: 'Goal',
+        position: 'RW',
+        distance: '9M',
+      });
 
-    const afterAwayGoal = await matchRepository.findById(match.id);
-    expect(afterAwayGoal?.homeScore).toBe(1);
-    expect(afterAwayGoal?.awayScore).toBe(1);
+      const afterAwayGoal = await matchRepository.findById(match.id);
+      expect(afterAwayGoal?.homeScore).toBe(1);
+      expect(afterAwayGoal?.awayScore).toBe(1);
 
-    await gameEventService.delete(homeGoal.id);
+      await gameEventService.delete(homeGoal.id);
 
-    const afterDelete = await matchRepository.findById(match.id);
-    expect(afterDelete?.homeScore).toBe(0);
-    expect(afterDelete?.awayScore).toBe(1);
-  });
+      const afterDelete = await matchRepository.findById(match.id);
+      expect(afterDelete?.homeScore).toBe(0);
+      expect(afterDelete?.awayScore).toBe(1);
+    },
+  );
 
   it('deleting a match removes its game events', async () => {
     const { match, homeTeam } = await createMatch();

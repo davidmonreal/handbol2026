@@ -1,20 +1,42 @@
 import 'dotenv/config';
 import prisma from '../../src/lib/prisma';
 
-const patterns = {
-  club: ['Test', 'Club-', 'Integration', 'Timer', 'ScoreClub'],
-  team: ['Home-', 'Away-', 'Team-', 'Integration', 'Test', 'Timer', 'ScoreHome', 'ScoreAway'],
-  season: ['Season-', 'Integration', 'Test', 'Timer', 'ScoreSeason'],
+const basePatterns = {
+  club: ['Test', 'Club-', 'Integration', 'Timer'],
+  team: ['Home-', 'Away-', 'Team-', 'Integration', 'Test', 'Timer'],
+  season: ['Season-', 'Integration', 'Test', 'Timer'],
   player: ['Test', 'Integration', 'Player-'],
+};
+
+const scorePatterns = {
+  club: ['ScoreClub'],
+  team: ['ScoreHome', 'ScoreAway'],
+  season: ['ScoreSeason'],
+} as const;
+
+type CleanupOptions = {
+  includeScorePatterns?: boolean;
 };
 
 const buildStartsWith = (values: string[]) =>
   values.map((value) => ({ name: { startsWith: value, mode: 'insensitive' as const } }));
 
-export async function cleanupTestData() {
+export async function cleanupTestData(options: CleanupOptions = {}) {
+  const { includeScorePatterns = false } = options;
+
+  const clubPatterns = includeScorePatterns
+    ? [...basePatterns.club, ...scorePatterns.club]
+    : basePatterns.club;
+  const teamPatterns = includeScorePatterns
+    ? [...basePatterns.team, ...scorePatterns.team]
+    : basePatterns.team;
+  const seasonPatterns = includeScorePatterns
+    ? [...basePatterns.season, ...scorePatterns.season]
+    : basePatterns.season;
+
   // Collect clubs and seasons created by tests (prefix-based)
   const clubsToDelete = await prisma.club.findMany({
-    where: { OR: buildStartsWith(patterns.club) },
+    where: { OR: buildStartsWith(clubPatterns) },
     select: { id: true },
   });
   const clubIds = clubsToDelete.map((c) => c.id);
@@ -22,7 +44,7 @@ export async function cleanupTestData() {
   const seasonsToDelete = await prisma.season.findMany({
     where: {
       OR: [
-        ...buildStartsWith(patterns.season),
+        ...buildStartsWith(seasonPatterns),
         { name: { contains: 'test', mode: 'insensitive' as const } },
         { name: { contains: 'integration', mode: 'insensitive' as const } },
       ],
@@ -35,7 +57,7 @@ export async function cleanupTestData() {
   const teamsToDelete = await prisma.team.findMany({
     where: {
       OR: [
-        ...buildStartsWith(patterns.team),
+        ...buildStartsWith(teamPatterns),
         clubIds.length ? { clubId: { in: clubIds } } : undefined,
         seasonIds.length ? { seasonId: { in: seasonIds } } : undefined,
       ].filter(Boolean) as Array<Record<string, unknown>>,
@@ -47,7 +69,7 @@ export async function cleanupTestData() {
   // Collect players created by tests
   const playersToDelete = await prisma.player.findMany({
     where: {
-      OR: buildStartsWith(patterns.player),
+      OR: buildStartsWith(basePatterns.player),
     },
     select: { id: true },
   });
