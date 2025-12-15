@@ -2,9 +2,9 @@ import 'dotenv/config';
 import prisma from '../../src/lib/prisma';
 
 const patterns = {
-  club: ['Test', 'Club-', 'Integration'],
-  team: ['Home-', 'Away-', 'Team-', 'Integration', 'Test'],
-  season: ['Season-', 'Integration', 'Test'],
+  club: ['Test', 'Club-', 'Integration', 'Timer'],
+  team: ['Home-', 'Away-', 'Team-', 'Integration', 'Test', 'Timer'],
+  season: ['Season-', 'Integration', 'Test', 'Timer'],
   player: ['Test', 'Integration', 'Player-'],
 };
 

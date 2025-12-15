@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import prisma from '../src/lib/prisma';
 import { MatchRepository } from '../src/repositories/match-repository';
 import { MatchService } from '../src/services/match-service';
@@ -13,6 +13,17 @@ describe('Integration: Match Timer Persistence', () => {
   const createdMatches: string[] = [];
   const createdTeams: string[] = [];
   const timestampSuffix = Date.now();
+
+  const cleanupEntities = async () => {
+    if (createdMatches.length) {
+      await prisma.match.deleteMany({ where: { id: { in: createdMatches } } });
+      createdMatches.length = 0;
+    }
+    if (createdTeams.length) {
+      await prisma.team.deleteMany({ where: { id: { in: createdTeams } } });
+      createdTeams.length = 0;
+    }
+  };
 
   beforeAll(async () => {
     const season = await prisma.season.create({
@@ -33,13 +44,12 @@ describe('Integration: Match Timer Persistence', () => {
     clubId = club.id;
   });
 
+  afterEach(async () => {
+    await cleanupEntities();
+  });
+
   afterAll(async () => {
-    if (createdMatches.length) {
-      await prisma.match.deleteMany({ where: { id: { in: createdMatches } } });
-    }
-    if (createdTeams.length) {
-      await prisma.team.deleteMany({ where: { id: { in: createdTeams } } });
-    }
+    await cleanupEntities();
     if (clubId) {
       await prisma.club.delete({ where: { id: clubId } }).catch(() => null);
     }
