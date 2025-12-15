@@ -166,7 +166,7 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
 
             // Refresh items (reset to page 0)
             setPage(0);
-            fetchItems(false);
+            fetchItems(false, 0);
             handleCancel();
         } catch (err) {
             console.error(`Error saving ${config.entityName}:`, err);
@@ -196,7 +196,7 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
             }
             // Refresh items
             setPage(0);
-            fetchItems(false);
+            fetchItems(false, 0);
         } catch (err) {
             console.error(`Error deleting ${config.entityName}:`, err);
             setError(err instanceof Error ? err.message : `Failed to delete ${config.entityName}. Please try again.`);
@@ -499,12 +499,14 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                                     {!config.hideDefaultActions && (
                                         <>
                                             <button
+                                                aria-label={`Edit ${config.entityName}`}
                                                 onClick={() => handleEdit(item)}
                                                 className="text-indigo-600 hover:text-indigo-900 mr-4"
                                             >
                                                 <Edit2 size={18} />
                                             </button>
                                             <button
+                                                aria-label={`Delete ${config.entityName}`}
                                                 onClick={() => handleDeleteClick(item.id)}
                                                 className="text-red-600 hover:text-red-900"
                                             >

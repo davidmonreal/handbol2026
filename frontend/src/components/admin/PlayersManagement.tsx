@@ -61,7 +61,7 @@ export const PlayersManagement = () => {
                 render: (player) => `#${player.number}`,
             },
             {
-                key: 'teams',
+                key: 'clubDisplay',
                 label: 'Club',
                 render: (player) => {
                     if (!player.teams || player.teams.length === 0) {
@@ -80,7 +80,7 @@ export const PlayersManagement = () => {
                 },
             },
             {
-                key: 'teams',
+                key: 'categoryDisplay',
                 label: 'Category',
                 render: (player) => {
                     if (!player.teams || player.teams.length === 0) {
@@ -99,7 +99,7 @@ export const PlayersManagement = () => {
                 },
             },
             {
-                key: 'teams',
+                key: 'teamDisplay',
                 label: 'Team',
                 render: (player) => {
                     if (!player.teams || player.teams.length === 0) {
@@ -168,4 +168,3 @@ export const PlayersManagement = () => {
 
     return <CrudManager<Player> key={selectedClubId} config={playersConfig} />;
 };
-

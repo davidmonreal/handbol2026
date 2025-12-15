@@ -41,12 +41,16 @@ describe('CrudManager', () => {
 
     it('renders the component title', async () => {
         render(<CrudManager config={testConfig} />);
-        expect(screen.getByText('Test Items Management')).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByText('Test Items Management')).toBeInTheDocument();
+        });
     });
 
     it('fetches items on mount', async () => {
         render(<CrudManager config={testConfig} />);
-        expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/api/test'));
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/api/test'));
+        });
     });
 
     it('opens the form when "New" button is clicked', async () => {
@@ -105,5 +109,53 @@ describe('CrudManager', () => {
 
         expect(screen.queryByText('Apple')).not.toBeInTheDocument();
         expect(screen.getByText('Banana')).toBeInTheDocument();
+    });
+
+    it('deletes an item and refreshes the list from the server', async () => {
+        const initialItems = [
+            { id: '1', name: 'Item 1', value: 100 },
+            { id: '2', name: 'Item 2', value: 200 },
+        ];
+
+        mockFetch
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => initialItems,
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({}),
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => [{ id: '2', name: 'Item 2', value: 200 }],
+            })
+            .mockResolvedValue({
+                ok: true,
+                json: async () => [],
+            });
+
+        render(<CrudManager config={testConfig} />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Item 1')).toBeInTheDocument();
+        });
+
+        const deleteButton = screen.getAllByRole('button', { name: 'Delete Test Item' })[0];
+        fireEvent.click(deleteButton);
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Delete' }));
+
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenCalledWith(
+                expect.stringContaining('/api/test/1'),
+                expect.objectContaining({ method: 'DELETE' }),
+            );
+        });
+
+        await waitFor(() => {
+            expect(screen.queryByText('Item 1')).not.toBeInTheDocument();
+        });
+        expect(screen.getByText('Item 2')).toBeInTheDocument();
     });
 });
