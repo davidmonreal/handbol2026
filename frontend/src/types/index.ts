@@ -178,4 +178,5 @@ export interface CrudConfig<T> {
         direction: 'asc' | 'desc';
     };
     hideDefaultActions?: boolean; // Hide built-in edit/delete buttons
+    sortItems?: (items: T[]) => T[];
 }

@@ -1,8 +1,20 @@
 
 import { useState, useEffect, useRef } from 'react';
+import type { ComponentType } from 'react';
 import {
-    User, Users, ArrowUp, ArrowLeftRight,
-    Target, Wind, Ban, Hand, Goal as GoalIcon
+    User,
+    Users,
+    ArrowUp,
+    ArrowLeftRight,
+    Target,
+    Wind,
+    Ban,
+    Hand,
+    Goal as GoalIcon,
+    Shuffle,
+    UserX,
+    Footprints,
+    Square
 } from 'lucide-react';
 import type { MatchEvent, ZoneType, SanctionType, TurnoverType } from '../../../types';
 import { ZoneSelector } from '../shared/ZoneSelector';
@@ -122,12 +134,12 @@ export const EventForm = ({
         { value: 'Block', label: 'Block', icon: Ban },
     ];
 
-    const turnoverTypes: { value: TurnoverType; label: string }[] = [
-        { value: 'Pass', label: 'Bad Pass' },
-        { value: 'Catch', label: 'Dropped Ball' },
-        { value: 'Offensive Foul', label: 'Offensive Foul' },
-        { value: 'Steps', label: 'Steps' },
-        { value: 'Area', label: 'Area' },
+    const turnoverTypes: { value: TurnoverType; label: string; icon: ComponentType<{ size?: number }> }[] = [
+        { value: 'Pass', label: 'Bad Pass', icon: Shuffle },
+        { value: 'Catch', label: 'Dropped Ball', icon: Hand },
+        { value: 'Offensive Foul', label: 'Offensive Foul', icon: UserX },
+        { value: 'Steps', label: 'Steps', icon: Footprints },
+        { value: 'Area', label: 'Area', icon: Square },
     ];
 
     const sanctionTypes: { value: SanctionType; label: string; color: string }[] = [
@@ -352,17 +364,7 @@ export const EventForm = ({
             </div>
 
             <div className={isPlayerSelected ? `space-y-6 ${lockClass}` : `space-y-6 opacity-50 pointer-events-none ${lockClass}`}>
-                {/* 4. Zone Selection */}
-                <div className={lockClass}>
-                    <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Select Zone</div>
-                    <ZoneSelector
-                        selectedZone={selectedZone}
-                        onZoneSelect={setSelectedZone}
-                        variant="minimal"
-                    />
-                </div>
-
-                {/* 5. Action Selection */}
+                {/* 4. Action Selection */}
                 <div className={lockClass}>
                     <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                         {selectedCategory === 'Shot' ? 'Result' : selectedCategory === 'Turnover' ? 'Type' : 'Severity'}
@@ -390,57 +392,48 @@ export const EventForm = ({
                     )}
 
                     {selectedCategory === 'Turnover' && (
-                        <div className="grid grid-cols-3 gap-2">
-                            {turnoverTypes.map(type => (
-                                <button
-                                    key={type.value}
-                                    onClick={() => setSelectedAction(type.value)}
-                                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${selectedAction === type.value
-                                        ? 'bg-indigo-500 text-white shadow-sm'
-                                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                                        }`}
-                                >
-                                    {type.label}
-                                </button>
-                            ))}
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                            {turnoverTypes.map(type => {
+                                const Icon = type.icon;
+                                return (
+                                    <button
+                                        key={type.value}
+                                        onClick={() => setSelectedAction(type.value)}
+                                        className={`px-2 py-2.5 rounded-lg text-sm font-semibold transition-all flex flex-col items-center justify-center gap-1.5 ${selectedAction === type.value
+                                            ? 'bg-indigo-500 text-white shadow-lg ring-2 ring-indigo-200'
+                                            : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-indigo-300'
+                                            }`}
+                                    >
+                                        <Icon size={20} />
+                                        <span className="text-xs text-center">{type.label}</span>
+                                    </button>
+                                );
+                            })}
                         </div>
                     )}
 
                     {selectedCategory === 'Sanction' && (
-                        <div className="space-y-2">
-                            <div className="grid grid-cols-2 gap-2">
-                                {sanctionTypes.filter(s => s.value === 'Foul' || s.value === '2min').map(sanction => (
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                            {sanctionTypes.map(sanction => {
+                                const isActive = selectedAction === sanction.value;
+                                return (
                                     <button
                                         key={sanction.value}
                                         onClick={() => setSelectedAction(sanction.value)}
-                                        className={`px-3 py-2 rounded-lg text-sm font-medium text-white transition-all ${selectedAction === sanction.value
-                                            ? `${sanction.color} shadow-lg ring-2 ring-offset-2 ring-indigo-500`
-                                            : `${sanction.color} opacity-60 hover:opacity-100`
+                                        className={`px-3 py-3 rounded-lg text-sm font-semibold transition-all text-white ${sanction.color} ${isActive
+                                            ? 'shadow-lg ring-2 ring-indigo-200'
+                                            : 'opacity-70 hover:opacity-100'
                                             }`}
                                     >
                                         {sanction.label}
                                     </button>
-                                ))}
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                                {sanctionTypes.filter(s => s.value === 'Yellow' || s.value === 'Red' || s.value === 'Blue Card').map(sanction => (
-                                    <button
-                                        key={sanction.value}
-                                        onClick={() => setSelectedAction(sanction.value)}
-                                        className={`px-3 py-2 rounded-lg text-sm font-medium text-white transition-all ${selectedAction === sanction.value
-                                            ? `${sanction.color} shadow-lg ring-2 ring-offset-2 ring-indigo-500`
-                                            : `${sanction.color} opacity-60 hover:opacity-100`
-                                            }`}
-                                    >
-                                        {sanction.label}
-                                    </button>
-                                ))}
-                            </div>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
 
-                {/* 6. Target Selection (Only for Goal/Save) */}
+                {/* 5. Goal Target (Only for Goal/Save) */}
                 {(selectedCategory === 'Shot' && (selectedAction === 'Goal' || selectedAction === 'Save')) && (
                     <div className="animate-fade-in bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                         <h4 className="text-sm font-bold text-gray-500 mb-3 text-center">
@@ -468,8 +461,18 @@ export const EventForm = ({
                     </div>
                 )}
 
-                {/* 7. Context Toggles (Only for Shot) */}
-                {selectedCategory === 'Shot' && (
+                {/* 6. Zone Selection */}
+                <div className={lockClass}>
+                    <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Select Zone</div>
+                    <ZoneSelector
+                        selectedZone={selectedZone}
+                        onZoneSelect={setSelectedZone}
+                        variant="minimal"
+                    />
+                </div>
+
+                {/* 7. Context Toggles (Shots & Fouls) */}
+                {(selectedCategory === 'Shot' || selectedCategory === 'Sanction') && (
                     <div>
                         <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Context</div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -498,7 +501,7 @@ export const EventForm = ({
 
             {/* Action Buttons */}
             <div className={`flex items-center justify-between gap-3 pt-3 border-t border-gray-300 flex-wrap ${locked ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                     {event && (
                         <button
                             onClick={handleDelete}
@@ -511,6 +514,19 @@ export const EventForm = ({
                             </svg>
                             Delete
                         </button>
+                    )}
+                    {saveMessage && (
+                        <div
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-100 text-green-800 text-sm font-semibold border border-green-200"
+                            role="status"
+                            aria-live="polite"
+                            data-testid="save-message"
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            {saveMessage}
+                        </div>
                     )}
                 </div>
 
@@ -534,30 +550,6 @@ export const EventForm = ({
                     </button>
                 </div>
             </div>
-
-            {saveMessage && (
-                <div
-                    className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold shadow-lg border border-green-700"
-                    role="status"
-                    aria-live="polite"
-                    data-testid="save-message"
-                >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    {saveMessage}
-                    <button
-                        onClick={() => {
-                            if (saveMessageTimeoutRef.current) clearTimeout(saveMessageTimeoutRef.current);
-                            setSaveMessage(null);
-                        }}
-                        className="ml-2 text-white/80 hover:text-white focus:outline-none"
-                        aria-label="Close save confirmation"
-                    >
-                        ×
-                    </button>
-                </div>
-            )}
 
             <ConfirmationModal
                 isOpen={showDeleteConfirmation}

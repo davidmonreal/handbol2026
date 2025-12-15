@@ -7,6 +7,21 @@ import type { Team, Club, Season, CrudConfig } from '../../types';
 
 const CATEGORIES = ['BENJAMI', 'ALEVI', 'INFANTIL', 'CADET', 'JUVENIL', 'SENIOR'];
 
+export const sortTeamsByOwnership = (teams: Team[]) => {
+    return [...teams].sort((a, b) => {
+        const aMine = Boolean(a.isMyTeam);
+        const bMine = Boolean(b.isMyTeam);
+        if (aMine !== bMine) {
+            return aMine ? -1 : 1;
+        }
+        const clubCompare = (a.club?.name || '').localeCompare(b.club?.name || '');
+        if (clubCompare !== 0) {
+            return clubCompare;
+        }
+        return a.name.localeCompare(b.name);
+    });
+};
+
 export const TeamsManagement = () => {
     const navigate = useNavigate();
     const [clubs, setClubs] = useState<Club[]>([]);
@@ -43,6 +58,7 @@ export const TeamsManagement = () => {
         apiEndpoint: '/api/teams',
         defaultSort: { key: 'name', direction: 'asc' },
 
+        sortItems: sortTeamsByOwnership,
         columns: [
             {
                 key: 'club',

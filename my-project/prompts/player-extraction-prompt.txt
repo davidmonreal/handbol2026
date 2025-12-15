@@ -9,7 +9,7 @@ Extract all player information from this image and return ONLY a valid JSON arra
 ]
 
 **Field rules:**
-- name: First name + first surname ONLY. Be careful with compound names (e.g., "Josep Maria Rodríguez" -> "Josep Maria Rodríguez", "Juan Antonio Garcia" -> "Juan Antonio Garcia"). If player has multiple surnames (e.g. "Perez Garcia"), use only the first one. If not visible, use "Unknown Player"
+- name: First name + first surname ONLY. Be careful with compound names (e.g., "Josep Maria Rodríguez Pons" -> "Josep Maria Rodríguez", "Juan Antonio Garcia Nieto" -> "Juan Antonio Garcia"). If player has multiple surnames (e.g. "Perez Garcia"), use only the first one. If not visible, use "Unknown Player"
 - number: Jersey/dorsal number as integer. If not visible, use 0
 
 **Important:**

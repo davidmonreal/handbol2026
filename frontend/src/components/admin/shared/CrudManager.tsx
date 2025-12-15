@@ -284,25 +284,29 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
             const value = item[field];
             return value?.toString().toLowerCase().includes(searchLower);
         });
-    }).sort((a, b) => {
-        if (!config.defaultSort) return 0;
-
-        const { key, direction } = config.defaultSort;
-        const valA = a[key];
-        const valB = b[key];
-
-        if (typeof valA === 'string' && typeof valB === 'string') {
-            return direction === 'asc'
-                ? valA.localeCompare(valB)
-                : valB.localeCompare(valA);
-        }
-
-        if (typeof valA === 'number' && typeof valB === 'number') {
-            return direction === 'asc' ? valA - valB : valB - valA;
-        }
-
-        return 0;
     });
+
+    const sortedItems = config.sortItems
+        ? config.sortItems([...filteredItems])
+        : config.defaultSort
+            ? [...filteredItems].sort((a, b) => {
+                const { key, direction } = config.defaultSort!;
+                const valA = a[key];
+                const valB = b[key];
+
+                if (typeof valA === 'string' && typeof valB === 'string') {
+                    return direction === 'asc'
+                        ? valA.localeCompare(valB)
+                        : valB.localeCompare(valA);
+                }
+
+                if (typeof valA === 'number' && typeof valB === 'number') {
+                    return direction === 'asc' ? valA - valB : valB - valA;
+                }
+
+                return 0;
+            })
+            : filteredItems;
 
     const renderFormField = (field: FormFieldConfig) => {
         const value = formData[field.name] ?? '';
@@ -478,7 +482,7 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {filteredItems.map((item) => (
+                        {sortedItems.map((item) => (
                             <tr key={item.id} className="hover:bg-gray-50">
                                 {config.columns.map(col => (
                                     <td key={col.key.toString()} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -519,13 +523,13 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                         ))}
                     </tbody>
                 </table>
-                {filteredItems.length === 0 && (
+                {sortedItems.length === 0 && (
                     <div className="text-center py-12 text-gray-500">
                         No {config.entityNamePlural.toLowerCase()} found. Create your first {config.entityName.toLowerCase()}!
                     </div>
                 )}
 
-                {config.pagination && filteredItems.length > 0 && items.length < totalItems && (
+                {config.pagination && sortedItems.length > 0 && items.length < totalItems && (
                     <div className="p-4 border-t border-gray-100 flex justify-center bg-gray-50">
                         <button
                             onClick={handleLoadMore}

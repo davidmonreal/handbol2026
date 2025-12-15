@@ -158,4 +158,29 @@ describe('CrudManager', () => {
         });
         expect(screen.getByText('Item 2')).toBeInTheDocument();
     });
+
+    it('accepts a custom sortItems function', async () => {
+        const mockItems = [
+            { id: '1', name: 'Item 1', value: 100 },
+            { id: '2', name: 'Item 2', value: 200 },
+        ];
+
+        mockFetch.mockResolvedValue({
+            ok: true,
+            json: async () => mockItems,
+        });
+
+        const configWithSort: CrudConfig<TestItem> = {
+            ...testConfig,
+            sortItems: items => [...items].sort((a, b) => b.value - a.value),
+        };
+
+        render(<CrudManager config={configWithSort} />);
+
+        await waitFor(() => {
+            const rows = screen.getAllByRole('row').slice(1); // skip header
+            expect(rows[0]).toHaveTextContent('Item 2');
+            expect(rows[1]).toHaveTextContent('Item 1');
+        });
+    });
 });

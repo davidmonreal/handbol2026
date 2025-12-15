@@ -129,8 +129,9 @@ export const ExtractedPlayersList = ({
                             player={player}
                             onDelete={() => onRemovePlayer(index)}
                             onEdit={(updatedPlayer) => onUpdatePlayer(index, updatedPlayer)}
-                            duplicate={isResolved ? undefined : duplicate}
+                            duplicate={duplicate}
                             duplicateAction={action}
+                            resolvedDuplicate={isResolved}
                             onReviewDuplicate={() => onReviewDuplicate(index)}
                             onUndoDuplicateAction={() => onUndoDuplicateAction(index)}
                         />

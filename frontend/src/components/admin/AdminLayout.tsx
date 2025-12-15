@@ -1,4 +1,4 @@
-import { Home, Users, Calendar, Trophy, FileText, LayoutDashboard } from 'lucide-react';
+import { Home, Users, User, Calendar, Trophy, FileText, LayoutDashboard } from 'lucide-react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
 
 export const AdminLayout = () => {
@@ -8,7 +8,7 @@ export const AdminLayout = () => {
     { path: '/clubs', label: 'Clubs', icon: Trophy },
     { path: '/seasons', label: 'Seasons', icon: Calendar },
     { path: '/teams', label: 'Teams', icon: Users },
-    { path: '/players', label: 'Players', icon: Users },
+    { path: '/players', label: 'Players', icon: User },
 
   ];
 

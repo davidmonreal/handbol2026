@@ -13,6 +13,7 @@ interface PlayerCardProps {
     duplicateAction?: 'merge' | 'skip' | 'keep';
     onReviewDuplicate: () => void;
     onUndoDuplicateAction?: () => void;
+    resolvedDuplicate?: boolean;
 }
 
 export const PlayerCard = ({
@@ -22,8 +23,17 @@ export const PlayerCard = ({
     duplicate,
     duplicateAction,
     onReviewDuplicate,
-    onUndoDuplicateAction
+    onUndoDuplicateAction,
+    resolvedDuplicate = false,
 }: PlayerCardProps) => {
+    const handleEdit = () => {
+        if (duplicate && duplicate.hasDuplicates) {
+            onReviewDuplicate();
+        } else {
+            onEdit(player);
+        }
+    };
+
     return (
         <div className={`bg-white border rounded-lg p-3 flex items-center justify-between shadow-sm ${duplicateAction === 'skip' ? 'opacity-60 bg-gray-50' : ''}`}>
             <div className="flex items-center gap-4 flex-1">
@@ -43,7 +53,7 @@ export const PlayerCard = ({
                 {/* Duplicate Status / Review Button */}
                 {duplicate && duplicate.hasDuplicates && (
                     <div className="mr-2">
-                        {!duplicateAction ? (
+                        {!duplicateAction && !resolvedDuplicate ? (
                             <button
                                 onClick={onReviewDuplicate}
                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-md hover:bg-amber-100 transition-colors text-sm font-medium shadow-sm"
@@ -69,16 +79,20 @@ export const PlayerCard = ({
                                     <button onClick={onUndoDuplicateAction} className="text-xs text-gray-400 hover:text-gray-600 underline">Undo</button>
                                 )}
                             </div>
+                        ) : resolvedDuplicate ? (
+                            <span className="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded border border-green-200">
+                                Merge Ready
+                            </span>
                         ) : null}
                     </div>
                 )}
 
-                {/* Edit button - only show if no duplicate */}
-                {!(duplicate && duplicate.hasDuplicates) && (
+                {/* Edit or Review button */}
+                {(!duplicate || !duplicate.hasDuplicates || resolvedDuplicate) && (
                     <button
-                        onClick={() => onEdit(player)}
+                        onClick={handleEdit}
                         className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                        title="Edit player"
+                        title={duplicate && duplicate.hasDuplicates ? 'Review merge' : 'Edit player'}
                     >
                         <Edit2 className="w-4 h-4" />
                     </button>
