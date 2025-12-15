@@ -235,7 +235,7 @@ export const MatchFormPage = () => {
                     value={selectedHomeTeamId}
                     options={teams.map(t => ({
                         value: t.id,
-                        label: `${t.category ? t.category + ' ' : ''}${t.name}${t.club ? ' (' + t.club.name + ')' : ''}`
+                        label: [t.club?.name, t.category, t.name].filter(Boolean).join(' ') || t.name,
                     }))}
                     onChange={setSelectedHomeTeamId}
                     placeholder="Select home team..."
@@ -247,7 +247,7 @@ export const MatchFormPage = () => {
                     value={selectedAwayTeamId}
                     options={teams.map(t => ({
                         value: t.id,
-                        label: `${t.category ? t.category + ' ' : ''}${t.name}${t.club ? ' (' + t.club.name + ')' : ''}`
+                        label: [t.club?.name, t.category, t.name].filter(Boolean).join(' ') || t.name,
                     }))}
                     onChange={setSelectedAwayTeamId}
                     placeholder="Select away team..."
