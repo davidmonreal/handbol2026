@@ -7,7 +7,7 @@ interface Option {
 }
 
 interface SearchableSelectWithCreateProps {
-    label: string;
+    label?: string;
     value: string | null;
     options: Option[];
     onChange: (value: string) => void;
@@ -15,6 +15,8 @@ interface SearchableSelectWithCreateProps {
     placeholder?: string;
     disabled?: boolean;
     className?: string;
+    showSearchInput?: boolean;
+    allowCustomOption?: boolean;
 }
 
 export const SearchableSelectWithCreate = ({
@@ -26,6 +28,8 @@ export const SearchableSelectWithCreate = ({
     placeholder = 'Select...',
     disabled = false,
     className = '',
+    showSearchInput = true,
+    allowCustomOption = true,
 }: SearchableSelectWithCreateProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -71,9 +75,11 @@ export const SearchableSelectWithCreate = ({
 
     return (
         <div className={`relative ${className}`} ref={containerRef}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-                {label}
-            </label>
+            {label && (
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {label}
+                </label>
+            )}
 
             {/* Trigger Button */}
             <button
@@ -97,27 +103,29 @@ export const SearchableSelectWithCreate = ({
             {isOpen && (
                 <div className="absolute z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
                     {/* Search Input */}
-                    <div className="sticky top-0 z-10 bg-white px-2 py-2 border-b border-gray-100">
-                        <div className="relative">
-                            <Search size={14} className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                            <input
-                                ref={inputRef}
-                                type="text"
-                                className="w-full pl-8 pr-8 py-1 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-indigo-500"
-                                placeholder="Search..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                            {searchTerm && (
-                                <button
-                                    onClick={() => setSearchTerm('')}
-                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                >
-                                    <X size={14} />
-                                </button>
-                            )}
+                    {showSearchInput && (
+                        <div className="sticky top-0 z-10 bg-white px-2 py-2 border-b border-gray-100">
+                            <div className="relative">
+                                <Search size={14} className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                <input
+                                    ref={inputRef}
+                                    type="text"
+                                    className="w-full pl-8 pr-8 py-1 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-indigo-500"
+                                    placeholder="Search..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                                {searchTerm && (
+                                    <button
+                                        onClick={() => setSearchTerm('')}
+                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Options List */}
                     <div className="max-h-48 overflow-y-auto">
@@ -142,7 +150,7 @@ export const SearchableSelectWithCreate = ({
                     </div>
 
                     {/* Create Option */}
-                    {searchTerm && onCreate && !filteredOptions.some(opt => opt.label.toLowerCase() === searchTerm.toLowerCase()) && (
+                    {showSearchInput && allowCustomOption && searchTerm && onCreate && !filteredOptions.some(opt => opt.label.toLowerCase() === searchTerm.toLowerCase()) && (
                         <div
                             onClick={handleCreate}
                             className="cursor-pointer select-none relative py-2 pl-3 pr-9 text-indigo-600 hover:bg-indigo-50 border-t border-gray-100 flex items-center gap-2"

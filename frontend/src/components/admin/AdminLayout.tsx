@@ -1,15 +1,19 @@
 import { Home, Users, User, Calendar, Trophy, FileText, LayoutDashboard } from 'lucide-react';
-import { NavLink, Outlet, Link } from 'react-router-dom';
+import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
+import { useTranslation } from '../../context/LanguageContext';
+import { LanguageSelector } from '../common/LanguageSelector';
 
 export const AdminLayout = () => {
+  const { t } = useTranslation();
+  const location = useLocation();
+  const showSidebarLanguage = location.pathname === '/';
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/matches', label: 'Matches', icon: FileText },
-    { path: '/clubs', label: 'Clubs', icon: Trophy },
-    { path: '/seasons', label: 'Seasons', icon: Calendar },
-    { path: '/teams', label: 'Teams', icon: Users },
-    { path: '/players', label: 'Players', icon: User },
-
+    { path: '/', labelKey: 'nav.dashboard', icon: LayoutDashboard },
+    { path: '/matches', labelKey: 'nav.matches', icon: FileText },
+    { path: '/clubs', labelKey: 'nav.clubs', icon: Trophy },
+    { path: '/seasons', labelKey: 'nav.seasons', icon: Calendar },
+    { path: '/teams', labelKey: 'nav.teams', icon: Users },
+    { path: '/players', labelKey: 'nav.players', icon: User },
   ];
 
   return (
@@ -24,7 +28,7 @@ export const AdminLayout = () => {
                 <span className="font-bold text-xl">Handbol 2026</span>
               </Link>
             </div>
-            <div className="flex items-center space-x-4" />
+            <div className="flex items-center justify-end" />
           </div>
         </div>
       </nav>
@@ -47,10 +51,15 @@ export const AdminLayout = () => {
                   }
                 >
                   <Icon size={20} />
-                  {item.label}
+                  {t(item.labelKey)}
                 </NavLink>
               );
             })}
+            {showSidebarLanguage && (
+              <div className="pt-4 mt-4 border-t border-gray-200">
+                <LanguageSelector className="w-full" label={t('language.label')} />
+              </div>
+            )}
           </nav>
         </aside>
 
