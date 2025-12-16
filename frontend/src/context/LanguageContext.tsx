@@ -3,10 +3,12 @@ import type { ReactNode } from 'react';
 import { availableLanguages, fallbackLanguage, getTranslation } from '../i18n/translations';
 import type { LanguageCode } from '../i18n/translations';
 
+type TranslationParams = Record<string, string | number>;
+
 interface LanguageContextValue {
   language: LanguageCode;
   setLanguage: (lang: LanguageCode) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: TranslationParams) => string;
 }
 
 const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
@@ -36,7 +38,10 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem(STORAGE_KEY, next);
   };
 
-  const translator = useMemo(() => (key: string) => getTranslation(language, key), [language]);
+  const translator = useMemo(
+    () => (key: string, params?: TranslationParams) => getTranslation(language, key, params),
+    [language],
+  );
 
   const value = useMemo(
     () => ({
@@ -62,6 +67,16 @@ export const useTranslation = () => {
   const context = useContext(LanguageContext);
   if (!context) {
     throw new Error('useTranslation must be used within LanguageProvider');
+  }
+  return { t: context.t, language: context.language };
+};
+
+export const useSafeTranslation = () => {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    const fallbackTranslator = (key: string, params?: TranslationParams) =>
+      getTranslation(fallbackLanguage, key, params);
+    return { t: fallbackTranslator, language: fallbackLanguage };
   }
   return { t: context.t, language: context.language };
 };
