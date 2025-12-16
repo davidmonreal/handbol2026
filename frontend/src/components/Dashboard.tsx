@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, ChevronRight, Calendar } from 'lucide-react';
 import { API_BASE_URL } from '../config/api';
+import { useSafeTranslation } from '../context/LanguageContext';
 import { LoadingGrid, ErrorMessage } from './common';
 import { MatchCard } from './match/MatchCard';
 import type { DashboardMatch } from './match/MatchCard';
@@ -12,10 +13,11 @@ type Match = DashboardMatch;
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { t } = useSafeTranslation();
   const [pendingMatches, setPendingMatches] = useState<Match[]>([]);
   const [pastMatches, setPastMatches] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [errorKey, setErrorKey] = useState<string | null>(null);
   const myPendingMatches = pendingMatches.filter(
     match => match.homeTeam?.isMyTeam || match.awayTeam?.isMyTeam,
   );
@@ -26,7 +28,7 @@ const Dashboard = () => {
 
   const fetchMatches = async () => {
     try {
-      setError(null);
+      setErrorKey(null);
       setIsLoading(true);
       const response = await fetch(`${API_BASE_URL}/api/matches`);
       if (response.ok) {
@@ -36,11 +38,11 @@ const Dashboard = () => {
         setPendingMatches(pending);
         setPastMatches(past);
       } else {
-        setError('Failed to load matches');
+        setErrorKey('dashboard.errorLoadMatches');
       }
     } catch (error) {
       console.error('Error fetching matches:', error);
-      setError('Failed to connect to the server. Please check your connection.');
+      setErrorKey('dashboard.errorConnection');
     } finally {
       setIsLoading(false);
     }
@@ -51,15 +53,15 @@ const Dashboard = () => {
       <div className="p-6 max-w-7xl mx-auto space-y-8">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-500">Loading your matches...</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
+            <p className="text-gray-500">{t('dashboard.loadingMessage')}</p>
           </div>
         </div>
         <div>
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center">
               <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-              Upcoming Matches
+              {t('dashboard.loadingSectionTitle')}
             </h2>
           </div>
           <LoadingGrid items={3} />
@@ -73,22 +75,22 @@ const Dashboard = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500">Welcome back, Coach</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
+          <p className="text-gray-500">{t('dashboard.welcome')}</p>
         </div>
         <button
           onClick={() => navigate('/matches')}
           className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
         >
           <Plus size={18} className="mr-2" />
-          New Match
+          {t('dashboard.newMatch')}
         </button>
       </div>
 
       {/* Error Message */}
-      {error && (
+      {errorKey && (
         <ErrorMessage
-          message={error}
+          message={t(errorKey)}
           onRetry={fetchMatches}
         />
       )}
@@ -97,7 +99,7 @@ const Dashboard = () => {
       <section className="space-y-3">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 bg-emerald-500 rounded-full" />
-          <h2 className="text-lg font-semibold text-gray-900">Upcoming for your teams</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('dashboard.upcomingMyTeams')}</h2>
         </div>
         {myPendingMatches.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 xl:gap-10">
@@ -107,7 +109,7 @@ const Dashboard = () => {
           </div>
         ) : (
           <div className="text-sm text-gray-500 bg-gray-50 border border-dashed border-gray-200 rounded-xl p-4">
-            No upcoming matches for your teams.
+            {t('dashboard.noUpcomingMyTeams')}
           </div>
         )}
       </section>
@@ -117,13 +119,13 @@ const Dashboard = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center">
             <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-            Upcoming Matches
+            {t('dashboard.upcomingAll')}
           </h2>
           <button
             onClick={() => navigate('/matches')}
             className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center"
           >
-            View All <ChevronRight size={16} />
+            {t('dashboard.viewAll')} <ChevronRight size={16} />
           </button>
         </div>
 
@@ -136,13 +138,13 @@ const Dashboard = () => {
         ) : (
           <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
             <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-            <h3 className="text-sm font-medium text-gray-900">No upcoming matches</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by scheduling a new match.</p>
+            <h3 className="text-sm font-medium text-gray-900">{t('dashboard.noUpcoming')}</h3>
+            <p className="mt-1 text-sm text-gray-500">{t('dashboard.noUpcomingDescription')}</p>
             <button
               onClick={() => navigate('/matches')}
               className="mt-4 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200"
             >
-              Schedule Match
+              {t('dashboard.scheduleMatch')}
             </button>
           </div>
         )}
@@ -153,7 +155,7 @@ const Dashboard = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center">
             <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
-            Recent History
+            {t('dashboard.recentHistory')}
           </h2>
         </div>
 
@@ -165,7 +167,7 @@ const Dashboard = () => {
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500 text-sm">
-            No past matches found.
+            {t('dashboard.noPastMatches')}
           </div>
         )}
       </section>
