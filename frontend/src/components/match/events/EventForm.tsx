@@ -334,21 +334,29 @@ export const EventForm = ({
                                 nameParts.length >= 2
                                     ? `${nameParts[0]} ${nameParts[1]}`
                                     : player.name;
+                            const isSelected = selectedPlayerId === player.id;
+                            const isGoalkeeper = player.isGoalkeeper;
+                            // Goalkeepers stand out with the same orange styling used in the opponent GK pills
+                            const buttonClass = isSelected
+                                ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+                                : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-300 hover:bg-indigo-50';
 
                             return (
                                 <button
                                     key={player.id}
                                     onClick={() => handlePlayerSelect(player.id)}
-                                    className={`flex items-center gap-2 p-2 rounded-lg border transition-all ${selectedPlayerId === player.id
-                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
-                                        : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-300 hover:bg-indigo-50'
-                                        }`}
+                                    className={`flex items-center gap-2 p-2 rounded-lg border transition-all ${buttonClass}`}
                                 >
-                                    <span className={`flex items-center justify-center w-6 h-6 rounded text-sm font-bold ${selectedPlayerId === player.id ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-900'
-                                        }`}>
+                                    <span className={`flex items-center justify-center w-6 h-6 rounded text-sm font-bold ${
+                                        isSelected
+                                            ? 'bg-white/20 text-white'
+                                            : isGoalkeeper
+                                                ? 'bg-orange-100 text-orange-800'
+                                                : 'bg-gray-100 text-gray-900'
+                                    }`}>
                                         {player.number}
                                     </span>
-                                    <span className={`text-xs font-semibold truncate ${selectedPlayerId === player.id ? 'text-indigo-50' : 'text-gray-600'}`}>
+                                    <span className={`text-xs font-semibold truncate ${isSelected ? 'text-indigo-50' : 'text-gray-600'}`}>
                                         {displayName}
                                     </span>
                                 </button>

@@ -226,7 +226,7 @@ export const translations: Record<LanguageCode, TranslationMap> = {
     'eventForm.sanction.red': 'Roja',
     'eventForm.sanction.blue': 'Azul',
     'eventForm.goalTargetTitle': 'Escoger zona portería',
-    'eventForm.saveLocationTitle': 'Seleccionar zona parada',
+    'eventForm.saveLocationTitle': 'Selecciona zona parada',
     'eventForm.selectZone': 'Seleccionar zona',
     'eventForm.contextLabel': 'Contexto',
     'eventForm.context.individual': 'Individual',
