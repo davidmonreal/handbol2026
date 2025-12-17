@@ -80,6 +80,11 @@ export class TeamRepository {
   }
 
   async delete(id: string): Promise<Team> {
+    await prisma.match.deleteMany({
+      where: {
+        OR: [{ homeTeamId: id }, { awayTeamId: id }],
+      },
+    });
     return prisma.team.delete({
       where: { id },
     });
