@@ -8,7 +8,6 @@ import { Scoreboard } from './match/Scoreboard';
 import { EventList } from './match/events/EventList';
 import { EventForm } from './match/events/EventForm';
 
-const HALF_DURATION_SECONDS = 30 * 60;
 
 const MatchTracker = () => {
   const { matchId } = useParams<{ matchId: string }>();
