@@ -79,7 +79,7 @@ export const EventForm = ({
     const [selectedAction, setSelectedAction] = useState<string | null>(event?.action || null);
     const [selectedZone, setSelectedZone] = useState<ZoneType | null>(event?.zone || null);
     const [selectedTarget, setSelectedTarget] = useState<number | undefined>(event?.goalTarget);
-    const [isCollective, setIsCollective] = useState(event?.isCollective || false);
+    const [isCollective, setIsCollective] = useState(event?.isCollective ?? true);
     const [hasOpposition, setHasOpposition] = useState(event?.hasOpposition || false);
     const [isCounterAttack, setIsCounterAttack] = useState(event?.isCounterAttack || false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -228,6 +228,8 @@ export const EventForm = ({
         setSaveMessage(t('eventForm.successMessage'));
         if (saveMessageTimeoutRef.current) clearTimeout(saveMessageTimeoutRef.current);
 
+        // After saving a new play we reset to the most common configuration (Shot + Collective + Free + Static)
+        setSelectedCategory('Shot');
         setIsCollective(true);
         setHasOpposition(false);
         setIsCounterAttack(false);
@@ -454,7 +456,8 @@ export const EventForm = ({
                 </div>
 
                 {/* 5. Goal Target (Only for Goal/Save) */}
-                {(selectedCategory === 'Shot' && (selectedAction === 'Goal' || selectedAction === 'Save')) && (
+                {/* Shot flow always shows the goal until the user explicitly selects an outcome that doesn't need it */}
+                {(selectedCategory === 'Shot' && !['Miss', 'Post', 'Block'].includes(selectedAction || '')) && (
                     <div className="animate-fade-in bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                         <h4 className="text-sm font-bold text-gray-500 mb-3 text-center">
                             {selectedAction === 'Goal'
