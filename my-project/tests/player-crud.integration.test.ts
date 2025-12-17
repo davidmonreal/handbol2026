@@ -6,7 +6,8 @@ import app from '../src/app';
 const prisma = new PrismaClient();
 const createdPlayerIds: string[] = [];
 
-const uniqueName = (label: string) => `${label}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+const uniqueName = (label: string) =>
+  `Test-${label}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
 afterAll(async () => {
   if (createdPlayerIds.length > 0) {

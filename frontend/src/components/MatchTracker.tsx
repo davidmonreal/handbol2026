@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMatch } from '../context/MatchContext';
+import { useSafeTranslation } from '../context/LanguageContext';
 import type { MatchEvent } from '../types';
 import { API_BASE_URL } from '../config/api';
 import { Scoreboard } from './match/Scoreboard';
@@ -13,6 +14,7 @@ const MATCH_DURATION_SECONDS = HALF_DURATION_SECONDS * 2;
 const MatchTracker = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
+  const { t } = useSafeTranslation();
 
   // Use Context
   const {
@@ -226,7 +228,7 @@ const MatchTracker = () => {
 
 
   if (!homeTeam || !visitorTeam || !matchLoaded) {
-    return <div className="p-8 text-center">Loading match data...</div>;
+    return <div className="p-8 text-center">{t('matchTracker.loading')}</div>;
   }
 
   return (
@@ -242,7 +244,7 @@ const MatchTracker = () => {
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              Back to Dashboard
+              {t('matchTracker.backToDashboard')}
             </button>
             <h1 className="text-lg font-semibold text-gray-900">
               {homeTeam.name} vs {visitorTeam.name}
@@ -254,7 +256,7 @@ const MatchTracker = () => {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
-              Statistics
+              {t('matchTracker.statistics')}
             </button>
           </div>
         </div>
@@ -296,15 +298,17 @@ const MatchTracker = () => {
                 <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                   {editingEvent ? (
                     <>
-                      <span className="text-indigo-600">Edit Event</span>
+                      <span className="text-indigo-600">{t('matchTracker.editEvent')}</span>
                     </>
                   ) : (
                     <>
                       <span className="text-green-600">
-                        New Event{activeTeam ? ` for ${activeTeam.name}` : ''}
+                        {activeTeam
+                          ? t('matchTracker.newEventFor', { team: activeTeam.name })
+                          : t('matchTracker.newEvent')}
                       </span>
                       <span className="text-sm font-normal text-gray-500 ml-2">
-                        (Click an event below to edit)
+                        {t('matchTracker.clickHint')}
                       </span>
                     </>
                   )}
@@ -320,7 +324,7 @@ const MatchTracker = () => {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={activeTeamLocked ? 'M12 11c1.657 0 3-1.343 3-3V5a3 3 0 10-6 0v3c0 1.657 1.343 3 3 3z M5 11h14v8a2 2 0 01-2 2H7a2 2 0 01-2-2v-8z' : 'M12 11c1.657 0 3-1.343 3-3V5a3 3 0 10-6 0v3c0 1.657 1.343 3 3 3z M5 11h14v8a2 2 0 01-2 2H7a2 2 0 01-2-2v-8z'} />
                     </svg>
-                    {activeTeamLocked ? 'Unlock events' : 'Lock events'}
+                    {activeTeamLocked ? t('matchTracker.unlockEvents') : t('matchTracker.lockEvents')}
                   </button>
                 )}
               </div>
@@ -329,7 +333,7 @@ const MatchTracker = () => {
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.657 0 3-1.343 3-3V5a3 3 0 10-6 0v3c0 1.657 1.343 3 3 3z M5 11h14v8a2 2 0 01-2 2H7a2 2 0 01-2-2v-8z" />
                   </svg>
-                  <span>Events management locked. Unlock to add or edit events.</span>
+                  <span>{t('matchTracker.lockedBanner')}</span>
                 </div>
               )}
 
@@ -347,7 +351,7 @@ const MatchTracker = () => {
             </div>
           ) : (
             <div className="bg-gray-50 rounded-xl p-8 text-center text-gray-500 border-2 border-dashed mb-8">
-              Select a team above to start tracking
+              {t('matchTracker.selectTeamPrompt')}
             </div>
           )}
         </div>

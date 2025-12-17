@@ -1,6 +1,7 @@
 import { Plus, Minus, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useMatch } from '../../context/MatchContext';
+import { useSafeTranslation } from '../../context/LanguageContext';
 
 interface MatchTeam {
   id: string;
@@ -41,6 +42,7 @@ export const Scoreboard = ({
   onFinishMatch,
   isFinished = false
 }: ScoreboardProps) => {
+  const { t } = useSafeTranslation();
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -83,10 +85,10 @@ export const Scoreboard = ({
             {scoreMode === 'manual' && (
               <div className="text-[11px] font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md flex items-center gap-2">
                 <Lock size={12} />
-                <span>Score locked</span>
+                <span>{t('scoreboard.scoreLocked')}</span>
                 {matchId && (
                   <Link to={`/matches/${matchId}/edit`} className="text-xs text-indigo-600 hover:underline ml-1">
-                    Edit
+                    {t('scoreboard.editLink')}
                   </Link>
                 )}
               </div>
@@ -103,9 +105,18 @@ export const Scoreboard = ({
                   ? 'bg-green-50 text-green-700 cursor-default'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
-                title={realTimeFirstHalfStart ? `Started at ${new Date(realTimeFirstHalfStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Start 1st Half'}
+                title={
+                  realTimeFirstHalfStart
+                    ? t('scoreboard.halfStartedAt', {
+                        time: new Date(realTimeFirstHalfStart).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        }),
+                      })
+                    : t('scoreboard.startFirstHalfTooltip')
+                }
               >
-                {realTimeFirstHalfStart ? '1H Started' : 'Start 1H'}
+                {realTimeFirstHalfStart ? t('scoreboard.firstHalfStarted') : t('scoreboard.startFirstHalf')}
               </button>
               <button
                 onClick={() => setRealTimeCalibration(2, Date.now())}
@@ -116,9 +127,18 @@ export const Scoreboard = ({
                     ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
-                title={realTimeSecondHalfStart ? `Started at ${new Date(realTimeSecondHalfStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Start 2nd Half'}
+                title={
+                  realTimeSecondHalfStart
+                    ? t('scoreboard.halfStartedAt', {
+                        time: new Date(realTimeSecondHalfStart).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        }),
+                      })
+                    : t('scoreboard.startSecondHalfTooltip')
+                }
               >
-                {realTimeSecondHalfStart ? '2H Started' : 'Start 2H'}
+                {realTimeSecondHalfStart ? t('scoreboard.secondHalfStarted') : t('scoreboard.startSecondHalf')}
               </button>
             </div>
           )}
@@ -133,7 +153,7 @@ export const Scoreboard = ({
                   : 'bg-red-100 text-red-700 hover:bg-red-200'
               }`}
             >
-              {isFinished ? 'Match finished' : 'Finish match'}
+              {isFinished ? t('scoreboard.matchFinished') : t('scoreboard.finishMatch')}
             </button>
           )}
         </div>

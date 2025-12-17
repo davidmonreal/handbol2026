@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import type { ComponentType } from 'react';
 import {
     User,
@@ -20,6 +20,7 @@ import type { MatchEvent, ZoneType, SanctionType, TurnoverType } from '../../../
 import { ZoneSelector } from '../shared/ZoneSelector';
 import { SplitToggle } from '../shared/SplitToggle';
 import { ConfirmationModal } from '../../common';
+import { useSafeTranslation } from '../../../context/LanguageContext';
 
 // Define interfaces locally to match MatchContext structure
 interface Player {
@@ -61,6 +62,7 @@ export const EventForm = ({
     onDelete,
     locked = false
 }: EventFormProps) => {
+    const { t } = useSafeTranslation();
     const [saveMessage, setSaveMessage] = useState<string | null>(null);
     const saveMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -126,29 +128,38 @@ export const EventForm = ({
     }, []);
 
     // Constants
-    const shotResults = [
-        { value: 'Goal', label: 'Goal', icon: Target },
-        { value: 'Save', label: 'Save', icon: Hand },
-        { value: 'Miss', label: 'Miss', icon: Wind },
-        { value: 'Post', label: 'Post', icon: GoalIcon },
-        { value: 'Block', label: 'Block', icon: Ban },
-    ];
+    const shotResults = useMemo(
+        () => [
+            { value: 'Goal', label: t('eventForm.result.goal'), icon: Target },
+            { value: 'Save', label: t('eventForm.result.save'), icon: Hand },
+            { value: 'Miss', label: t('eventForm.result.miss'), icon: Wind },
+            { value: 'Post', label: t('eventForm.result.post'), icon: GoalIcon },
+            { value: 'Block', label: t('eventForm.result.block'), icon: Ban },
+        ],
+        [t],
+    );
 
-    const turnoverTypes: { value: TurnoverType; label: string; icon: ComponentType<{ size?: number }> }[] = [
-        { value: 'Pass', label: 'Bad Pass', icon: Shuffle },
-        { value: 'Catch', label: 'Dropped Ball', icon: Hand },
-        { value: 'Offensive Foul', label: 'Offensive Foul', icon: UserX },
-        { value: 'Steps', label: 'Steps', icon: Footprints },
-        { value: 'Area', label: 'Area', icon: Square },
-    ];
+    const turnoverTypes: { value: TurnoverType; label: string; icon: ComponentType<{ size?: number }> }[] = useMemo(
+        () => [
+            { value: 'Pass', label: t('eventForm.turnover.badPass'), icon: Shuffle },
+            { value: 'Catch', label: t('eventForm.turnover.droppedBall'), icon: Hand },
+            { value: 'Offensive Foul', label: t('eventForm.turnover.offensiveFoul'), icon: UserX },
+            { value: 'Steps', label: t('eventForm.turnover.steps'), icon: Footprints },
+            { value: 'Area', label: t('eventForm.turnover.area'), icon: Square },
+        ],
+        [t],
+    );
 
-    const sanctionTypes: { value: SanctionType; label: string; color: string }[] = [
-        { value: 'Foul', label: 'Common Foul', color: 'bg-gray-600' },
-        { value: '2min', label: '2 min', color: 'bg-blue-600' },
-        { value: 'Yellow', label: 'Yellow', color: 'bg-yellow-500' },
-        { value: 'Red', label: 'Red', color: 'bg-red-600' },
-        { value: 'Blue Card', label: 'Blue', color: 'bg-blue-800' },
-    ];
+    const sanctionTypes: { value: SanctionType; label: string; color: string }[] = useMemo(
+        () => [
+            { value: 'Foul', label: t('eventForm.sanction.commonFoul'), color: 'bg-gray-600' },
+            { value: '2min', label: t('eventForm.sanction.twoMinutes'), color: 'bg-blue-600' },
+            { value: 'Yellow', label: t('eventForm.sanction.yellow'), color: 'bg-yellow-500' },
+            { value: 'Red', label: t('eventForm.sanction.red'), color: 'bg-red-600' },
+            { value: 'Blue Card', label: t('eventForm.sanction.blue'), color: 'bg-blue-800' },
+        ],
+        [t],
+    );
 
     // Handlers
     const handleCategoryChange = (category: string) => {
@@ -214,7 +225,7 @@ export const EventForm = ({
         }
 
         onSave(updatedEvent, selectedOpponentGkId);
-        setSaveMessage('Jugada introduïda');
+        setSaveMessage(t('eventForm.successMessage'));
         if (saveMessageTimeoutRef.current) clearTimeout(saveMessageTimeoutRef.current);
 
         setIsCollective(true);
@@ -273,10 +284,10 @@ export const EventForm = ({
 
                 {/* 1. Opponent GK (Badges) */}
                 <div className="relative">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Opponent GK</div>
-                        {!selectedOpponentGkId && <span className="text-xs text-orange-600 font-medium animate-pulse">Select GK</span>}
-                    </div>
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('eventForm.opponentGk')}</div>
+                            {!selectedOpponentGkId && <span className="text-xs text-orange-600 font-medium animate-pulse">{t('eventForm.selectGk')}</span>}
+                        </div>
 
                     {opponentGoalkeepers.length > 0 ? (
                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
@@ -307,19 +318,20 @@ export const EventForm = ({
                             })}
                         </div>
                     ) : (
-                        <div className="text-sm text-gray-400 italic">No GKs found</div>
+                        <div className="text-sm text-gray-400 italic">{t('eventForm.noGoalkeepers')}</div>
                     )}
                 </div>
 
                 {/* 2. Players Grid */}
                 <div className="relative">
-                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Select Player</div>
+                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('eventForm.selectPlayer')}</div>
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                         {sortedPlayers.map(player => {
                             const nameParts = player.name.split(' ');
-                            const shortName = nameParts.length > 1
-                                ? `${nameParts[0]} ${nameParts[1][0]}.`
-                                : player.name;
+                            const displayName =
+                                nameParts.length >= 2
+                                    ? `${nameParts[0]} ${nameParts[1]}`
+                                    : player.name;
 
                             return (
                                 <button
@@ -335,7 +347,7 @@ export const EventForm = ({
                                         {player.number}
                                     </span>
                                     <span className={`text-xs font-semibold truncate ${selectedPlayerId === player.id ? 'text-indigo-50' : 'text-gray-600'}`}>
-                                        {shortName}
+                                        {displayName}
                                     </span>
                                 </button>
                             );
@@ -346,9 +358,13 @@ export const EventForm = ({
 
             {/* 3. Category Selection */}
             <div className={lockClass} ref={categoryRef}>
-                <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Category</div>
+                <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('eventForm.category')}</div>
                 <div className="grid grid-cols-3 gap-2">
-                    {[{ value: 'Shot', label: 'Shot' }, { value: 'Sanction', label: 'Foul' }, { value: 'Turnover', label: 'Turnover' }].map(cat => (
+                    {[
+                        { value: 'Shot', label: t('eventForm.categoryShot') },
+                        { value: 'Sanction', label: t('eventForm.categoryFoul') },
+                        { value: 'Turnover', label: t('eventForm.categoryTurnover') },
+                    ].map(cat => (
                         <button
                             key={cat.value}
                             onClick={() => handleCategoryChange(cat.value)}
@@ -367,7 +383,11 @@ export const EventForm = ({
                 {/* 4. Action Selection */}
                 <div className={lockClass}>
                     <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                        {selectedCategory === 'Shot' ? 'Result' : selectedCategory === 'Turnover' ? 'Type' : 'Severity'}
+                        {selectedCategory === 'Shot'
+                            ? t('eventForm.resultLabel')
+                            : selectedCategory === 'Turnover'
+                                ? t('eventForm.typeLabel')
+                                : t('eventForm.severityLabel')}
                     </div>
 
                     {selectedCategory === 'Shot' && (
@@ -437,7 +457,9 @@ export const EventForm = ({
                 {(selectedCategory === 'Shot' && (selectedAction === 'Goal' || selectedAction === 'Save')) && (
                     <div className="animate-fade-in bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                         <h4 className="text-sm font-bold text-gray-500 mb-3 text-center">
-                            {selectedAction === 'Goal' ? 'Select Goal Target' : 'Select Save Location'}
+                            {selectedAction === 'Goal'
+                                ? t('eventForm.goalTargetTitle')
+                                : t('eventForm.saveLocationTitle')}
                         </h4>
                         <div className="max-w-[220px] mx-auto bg-white rounded-xl p-2 border border-gray-200 shadow-sm">
                             <div className="grid grid-cols-3 gap-2">
@@ -463,7 +485,7 @@ export const EventForm = ({
 
                 {/* 6. Zone Selection */}
                 <div className={lockClass}>
-                    <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Select Zone</div>
+                    <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('eventForm.selectZone')}</div>
                     <ZoneSelector
                         selectedZone={selectedZone}
                         onZoneSelect={setSelectedZone}
@@ -474,25 +496,25 @@ export const EventForm = ({
                 {/* 7. Context Toggles (Shots & Fouls) */}
                 {(selectedCategory === 'Shot' || selectedCategory === 'Sanction') && (
                     <div>
-                        <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Context</div>
+                        <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{t('eventForm.contextLabel')}</div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <SplitToggle
                                 value={isCollective}
                                 onChange={setIsCollective}
-                                leftOption={{ label: 'Individual', icon: User }}
-                                rightOption={{ label: 'Collective', icon: Users }}
+                                leftOption={{ label: t('eventForm.context.individual'), icon: User }}
+                                rightOption={{ label: t('eventForm.context.collective'), icon: Users }}
                             />
                             <SplitToggle
                                 value={hasOpposition}
                                 onChange={setHasOpposition}
-                                leftOption={{ label: 'Free', icon: User }}
-                                rightOption={{ label: 'Opposition', icon: [User, Users] }}
+                                leftOption={{ label: t('eventForm.context.free'), icon: User }}
+                                rightOption={{ label: t('eventForm.context.opposition'), icon: [User, Users] }}
                             />
                             <SplitToggle
                                 value={isCounterAttack}
                                 onChange={setIsCounterAttack}
-                                leftOption={{ label: 'Static', icon: ArrowLeftRight }}
-                                rightOption={{ label: 'Counter', icon: ArrowUp }}
+                                leftOption={{ label: t('eventForm.context.static'), icon: ArrowLeftRight }}
+                                rightOption={{ label: t('eventForm.context.counter'), icon: ArrowUp }}
                             />
                         </div>
                     </div>
@@ -512,7 +534,7 @@ export const EventForm = ({
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
-                            Delete
+                            {t('eventForm.deleteButton')}
                         </button>
                     )}
                     {saveMessage && (
@@ -536,7 +558,7 @@ export const EventForm = ({
                         disabled={locked}
                         className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors disabled:text-gray-400 disabled:border-gray-200 disabled:hover:bg-white"
                     >
-                        Cancel
+                        {t('eventForm.cancelButton')}
                     </button>
                     <button
                         onClick={handleSave}
@@ -546,17 +568,17 @@ export const EventForm = ({
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
-                        {event ? 'Save Changes' : 'Add Event'}
+                        {event ? t('eventForm.saveChanges') : t('eventForm.addEvent')}
                     </button>
                 </div>
             </div>
 
             <ConfirmationModal
                 isOpen={showDeleteConfirmation}
-                title="Delete Event"
-                message="Are you sure you want to delete this event? This action cannot be undone."
-                confirmLabel="Delete"
-                cancelLabel="Cancel"
+                title={t('eventForm.deleteTitle')}
+                message={t('eventForm.deleteMessage')}
+                confirmLabel={t('eventForm.deleteButton')}
+                cancelLabel={t('eventForm.cancelButton')}
                 variant="danger"
                 onConfirm={confirmDelete}
                 onCancel={() => setShowDeleteConfirmation(false)}

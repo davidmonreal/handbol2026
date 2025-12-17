@@ -4,7 +4,8 @@ import app from '../src/app';
 import { PrismaClient, Club, Season, Team } from '@prisma/client';
 
 const prisma = new PrismaClient();
-const uniqueName = (label: string) => `${label}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+const uniqueName = (label: string) =>
+  `Test-${label}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
 const created = {
   clubs: new Set<string>(),

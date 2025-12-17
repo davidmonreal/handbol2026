@@ -2,10 +2,21 @@ import 'dotenv/config';
 import prisma from '../../src/lib/prisma';
 
 const basePatterns = {
-  club: ['Test', 'Club-', 'Integration', 'Timer'],
-  team: ['Home-', 'Away-', 'Team-', 'Integration', 'Test', 'Timer'],
-  season: ['Season-', 'Integration', 'Test', 'Timer'],
-  player: ['Test', 'Integration', 'Player-'],
+  club: ['Test', 'Club-', 'Integration', 'Timer', 'Match', 'FL Club'],
+  team: [
+    'Home-',
+    'Away-',
+    'Team-',
+    'Integration',
+    'Test',
+    'Timer',
+    'MatchHomeTeam',
+    'MatchAwayTeam',
+    'FL Home',
+    'FL Away',
+  ],
+  season: ['Season-', 'Integration', 'Test', 'Timer', 'MatchSeason', 'FL Season'],
+  player: ['Test', 'Integration', 'Player-', 'FL Player'],
 };
 
 const scorePatterns = {
