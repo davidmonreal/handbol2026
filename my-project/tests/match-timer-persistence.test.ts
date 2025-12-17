@@ -126,4 +126,25 @@ describe('Integration: Match Timer Persistence', () => {
     expect(updatedMatch?.realTimeFirstHalfStart).toBe(firstHalfStart);
     expect(updatedMatch?.realTimeSecondHalfStart).toBe(secondHalfStart);
   });
+
+  it('persists realTime half end timestamps when updated', async () => {
+    const { match } = await createMatch();
+    const firstHalfStart = Date.now() - 3600000;
+    const firstHalfEnd = firstHalfStart + 35 * 60 * 1000;
+    const secondHalfStart = firstHalfEnd + 15 * 60 * 1000;
+    const secondHalfEnd = secondHalfStart + 40 * 60 * 1000;
+
+    await matchService.update(match.id, {
+      realTimeFirstHalfStart: firstHalfStart,
+      realTimeFirstHalfEnd: firstHalfEnd,
+      realTimeSecondHalfStart: secondHalfStart,
+      realTimeSecondHalfEnd: secondHalfEnd,
+      homeEventsLocked: false,
+      awayEventsLocked: false,
+    });
+
+    const updatedMatch = await matchService.findById(match.id);
+    expect(updatedMatch?.realTimeFirstHalfEnd).toBe(firstHalfEnd);
+    expect(updatedMatch?.realTimeSecondHalfEnd).toBe(secondHalfEnd);
+  });
 });

@@ -208,6 +208,10 @@ export interface StatisticsViewProps {
         awayTeam: { id: string; name: string; club?: { name: string }; category?: string; players: any[] };
         homeTeamId: string;
         awayTeamId: string;
+        realTimeFirstHalfStart?: number | null;
+        realTimeSecondHalfStart?: number | null;
+        realTimeFirstHalfEnd?: number | null;
+        realTimeSecondHalfEnd?: number | null;
     };
     teamData?: { players: any[] };
     onTeamChange?: (teamId: string) => void;

@@ -662,10 +662,14 @@ describe('MatchContext', () => {
         });
     });
 
-    it('should store real time calibration and reset clock for each half', async () => {
+    it('should store real time calibration boundaries and update the clock accordingly', async () => {
         const { result } = renderHook(() => useMatch(), { wrapper });
         const firstHalfStart = Date.now();
-        const secondHalfStart = firstHalfStart + 1000;
+        const firstHalfEnd = firstHalfStart + 60000;
+        const secondHalfStart = firstHalfStart + 90000;
+        const secondHalfEnd = secondHalfStart + 60000;
+        const firstHalfDuration = Math.floor((firstHalfEnd - firstHalfStart) / 1000);
+        const secondHalfDuration = Math.floor((secondHalfEnd - secondHalfStart) / 1000);
 
         act(() => {
             result.current.setRealTimeCalibration(1, firstHalfStart);
@@ -675,10 +679,24 @@ describe('MatchContext', () => {
         expect(result.current.time).toBe(0);
 
         act(() => {
+            result.current.setRealTimeCalibration(1, firstHalfEnd, 'end');
+        });
+
+        expect(result.current.realTimeFirstHalfEnd).toBe(firstHalfEnd);
+        expect(result.current.time).toBe(firstHalfDuration);
+
+        act(() => {
             result.current.setRealTimeCalibration(2, secondHalfStart);
         });
 
         expect(result.current.realTimeSecondHalfStart).toBe(secondHalfStart);
-        expect(result.current.time).toBe(30 * 60);
+        expect(result.current.time).toBe(firstHalfDuration);
+
+        act(() => {
+            result.current.setRealTimeCalibration(2, secondHalfEnd, 'end');
+        });
+
+        expect(result.current.realTimeSecondHalfEnd).toBe(secondHalfEnd);
+        expect(result.current.time).toBe(firstHalfDuration + secondHalfDuration);
     });
 });

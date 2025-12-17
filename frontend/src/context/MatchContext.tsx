@@ -14,6 +14,8 @@ interface MatchMeta {
   awayEventsLocked?: boolean;
   realTimeFirstHalfStart?: number | null;
   realTimeSecondHalfStart?: number | null;
+  realTimeFirstHalfEnd?: number | null;
+  realTimeSecondHalfEnd?: number | null;
 }
 
 interface Player {
@@ -65,7 +67,9 @@ interface MatchContextType {
   setSelectedOpponentGoalkeeper: React.Dispatch<React.SetStateAction<Player | null>>;
   realTimeFirstHalfStart: number | null;
   realTimeSecondHalfStart: number | null;
-  setRealTimeCalibration: (half: 1 | 2, timestamp: number) => void;
+  realTimeFirstHalfEnd: number | null;
+  realTimeSecondHalfEnd: number | null;
+  setRealTimeCalibration: (half: 1 | 2, timestamp: number, boundary?: 'start' | 'end') => Promise<void>;
 }
 
 const MatchContext = createContext<MatchContextType | undefined>(undefined);
@@ -272,14 +276,44 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
 
   const [realTimeFirstHalfStart, setRealTimeFirstHalfStart] = useState<number | null>(null);
   const [realTimeSecondHalfStart, setRealTimeSecondHalfStart] = useState<number | null>(null);
+  const [realTimeFirstHalfEnd, setRealTimeFirstHalfEnd] = useState<number | null>(null);
+  const [realTimeSecondHalfEnd, setRealTimeSecondHalfEnd] = useState<number | null>(null);
 
-  const setRealTimeCalibration = async (half: 1 | 2, timestamp: number) => {
+  const setRealTimeCalibration = async (half: 1 | 2, timestamp: number, boundary: 'start' | 'end' = 'start') => {
     if (half === 1) {
-      setRealTimeFirstHalfStart(timestamp);
-      setTime(0); // Reset timer to the start of the match
+      if (boundary === 'start') {
+        setRealTimeFirstHalfStart(timestamp);
+        setRealTimeFirstHalfEnd(null);
+        setRealTimeSecondHalfStart(null);
+        setRealTimeSecondHalfEnd(null);
+        setTime(0); // Reset timer to the start of the match
+      } else {
+        setRealTimeFirstHalfEnd(timestamp);
+        if (realTimeFirstHalfStart) {
+          setTime(Math.max(0, Math.floor((timestamp - realTimeFirstHalfStart) / 1000)));
+        }
+      }
     } else {
-      setRealTimeSecondHalfStart(timestamp);
-      setTime(HALF_DURATION_SECONDS); // Jump clock to start of 2nd half
+      if (boundary === 'start') {
+        setRealTimeSecondHalfStart(timestamp);
+        if (realTimeFirstHalfStart) {
+          const firstPhaseDuration = realTimeFirstHalfEnd
+            ? Math.max(0, Math.floor((realTimeFirstHalfEnd - realTimeFirstHalfStart) / 1000))
+            : Math.max(0, Math.floor((timestamp - realTimeFirstHalfStart) / 1000));
+          setTime(firstPhaseDuration);
+        } else {
+          setTime(HALF_DURATION_SECONDS);
+        }
+      } else {
+        setRealTimeSecondHalfEnd(timestamp);
+        if (realTimeSecondHalfStart && realTimeFirstHalfStart) {
+          const firstPhaseDuration = realTimeFirstHalfEnd
+            ? Math.max(0, Math.floor((realTimeFirstHalfEnd - realTimeFirstHalfStart) / 1000))
+            : Math.max(0, Math.floor((realTimeSecondHalfStart - realTimeFirstHalfStart) / 1000));
+          const elapsedSecond = Math.max(0, Math.floor((timestamp - realTimeSecondHalfStart) / 1000));
+          setTime(firstPhaseDuration + elapsedSecond);
+        }
+      }
     }
 
     // Persist to backend if possible (could update the Match entity)
@@ -288,7 +322,15 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
         await fetch(`${API_BASE_URL}/api/matches/${matchId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(half === 1 ? { realTimeFirstHalfStart: timestamp } : { realTimeSecondHalfStart: timestamp })
+          body: JSON.stringify(
+            half === 1
+              ? boundary === 'start'
+                ? { realTimeFirstHalfStart: timestamp }
+                : { realTimeFirstHalfEnd: timestamp }
+              : boundary === 'start'
+                ? { realTimeSecondHalfStart: timestamp }
+                : { realTimeSecondHalfEnd: timestamp }
+          )
         });
       } catch (error) {
         console.error('Failed to save calibration', error);
@@ -324,6 +366,8 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
             awayEventsLocked: data.awayEventsLocked,
             realTimeFirstHalfStart: data.realTimeFirstHalfStart,
             realTimeSecondHalfStart: data.realTimeSecondHalfStart,
+            realTimeFirstHalfEnd: data.realTimeFirstHalfEnd,
+            realTimeSecondHalfEnd: data.realTimeSecondHalfEnd,
             // if backend exposes status in the future we can add it here
           };
         }
@@ -353,6 +397,12 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     }
     if (effectiveMeta?.realTimeSecondHalfStart !== undefined) {
       setRealTimeSecondHalfStart(effectiveMeta.realTimeSecondHalfStart);
+    }
+    if (effectiveMeta?.realTimeFirstHalfEnd !== undefined) {
+      setRealTimeFirstHalfEnd(effectiveMeta.realTimeFirstHalfEnd);
+    }
+    if (effectiveMeta?.realTimeSecondHalfEnd !== undefined) {
+      setRealTimeSecondHalfEnd(effectiveMeta.realTimeSecondHalfEnd);
     }
 
     // Load existing events from backend
@@ -512,6 +562,8 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
       selectedOpponentGoalkeeper, setSelectedOpponentGoalkeeper,
       realTimeFirstHalfStart,
       realTimeSecondHalfStart,
+      realTimeFirstHalfEnd,
+      realTimeSecondHalfEnd,
       setRealTimeCalibration,
       toggleTeamLock,
       isTeamLocked

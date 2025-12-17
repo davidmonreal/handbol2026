@@ -71,8 +71,6 @@ const extractVideoId = (url: string): string | null => {
     return null;
 };
 
-const HALF_DURATION_SECONDS = 30 * 60; // 30 minutes default
-
 // LocalStorage key for video position data
 const getCalibrationKey = (matchId: string) => `video-position-${matchId}`;
 
@@ -247,14 +245,12 @@ export const VideoSyncProvider = ({ children, matchId }: VideoSyncProviderProps)
     const getMatchTimeFromVideo = useCallback((videoTime: number): number => {
         if (state.firstHalfStart === null) return 0;
 
-        // If second half has started and we're past it
         if (state.secondHalfStart !== null && videoTime >= state.secondHalfStart) {
-            return HALF_DURATION_SECONDS + (videoTime - state.secondHalfStart);
+            const firstHalfDuration = Math.max(0, state.secondHalfStart - state.firstHalfStart);
+            return firstHalfDuration + Math.max(0, videoTime - state.secondHalfStart);
         }
 
-        // First half
-        const matchTime = videoTime - state.firstHalfStart;
-        return Math.max(0, matchTime);
+        return Math.max(0, videoTime - state.firstHalfStart);
     }, [state.firstHalfStart, state.secondHalfStart]);
 
     /**
@@ -265,12 +261,13 @@ export const VideoSyncProvider = ({ children, matchId }: VideoSyncProviderProps)
     const getVideoTimeFromMatch = useCallback((matchTime: number): number | null => {
         if (state.firstHalfStart === null) return null;
 
-        // Second half (matchTime >= 30 minutes)
-        if (matchTime >= HALF_DURATION_SECONDS && state.secondHalfStart !== null) {
-            return state.secondHalfStart + (matchTime - HALF_DURATION_SECONDS);
+        if (state.secondHalfStart !== null) {
+            const firstHalfDuration = Math.max(0, state.secondHalfStart - state.firstHalfStart);
+            if (matchTime >= firstHalfDuration) {
+                return state.secondHalfStart + (matchTime - firstHalfDuration);
+            }
         }
 
-        // First half
         return state.firstHalfStart + matchTime;
     }, [state.firstHalfStart, state.secondHalfStart]);
 

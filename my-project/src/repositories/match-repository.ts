@@ -61,6 +61,8 @@ export class MatchRepository {
       secondHalfVideoStart: number | null;
       realTimeFirstHalfStart: number | null;
       realTimeSecondHalfStart: number | null;
+      realTimeFirstHalfEnd: number | null;
+      realTimeSecondHalfEnd: number | null;
     }>,
   ): Promise<Match> {
     return prisma.match.update({

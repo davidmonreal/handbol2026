@@ -72,6 +72,8 @@ export interface Match {
     status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
     realTimeFirstHalfStart?: number;
     realTimeSecondHalfStart?: number;
+    realTimeFirstHalfEnd?: number;
+    realTimeSecondHalfEnd?: number;
 }
 
 export interface MatchEvent {

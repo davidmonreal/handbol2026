@@ -1,6 +1,7 @@
 import { Edit2, Play } from 'lucide-react';
 import type { MatchEvent } from '../../../types';
 import { useMatch } from '../../../context/MatchContext';
+import { useSafeTranslation } from '../../../context/LanguageContext';
 
 interface EventItemProps {
     event: MatchEvent;
@@ -19,10 +20,33 @@ export const EventItem = ({
     getVideoTimeFromMatch,
     secondHalfStart = null,
 }: EventItemProps) => {
-    const { homeTeam, visitorTeam } = useMatch();
+    const {
+        homeTeam,
+        visitorTeam,
+        realTimeFirstHalfStart,
+        realTimeFirstHalfEnd,
+        realTimeSecondHalfStart,
+    } = useMatch();
+    const { t } = useSafeTranslation();
     const HALF_DURATION_SECONDS = 30 * 60;
 
-    const formatTimeWithHalf = (seconds: number, halfLabel: '1H' | '2H') => {
+    const secondHalfBoundarySeconds = (() => {
+        if (realTimeFirstHalfStart && realTimeSecondHalfStart) {
+            return Math.max(
+                0,
+                Math.floor((realTimeSecondHalfStart - realTimeFirstHalfStart) / 1000)
+            );
+        }
+        if (realTimeFirstHalfStart && realTimeFirstHalfEnd) {
+            return Math.max(
+                0,
+                Math.floor((realTimeFirstHalfEnd - realTimeFirstHalfStart) / 1000)
+            );
+        }
+        return HALF_DURATION_SECONDS;
+    })();
+
+    const formatTimeWithHalf = (seconds: number, halfLabel: string) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')} (${halfLabel})`;
@@ -52,13 +76,16 @@ export const EventItem = ({
     };
 
     const calculatedVideoTime = getCalculatedVideoTime();
-    const isSecondHalfEvent = (() => {
+    const videoSecondHalf = () => {
         if (secondHalfStart !== null && calculatedVideoTime !== null) {
             return calculatedVideoTime >= secondHalfStart;
         }
-        // Fallback: use match timestamp only if we don't have video info
-        return event.timestamp >= HALF_DURATION_SECONDS;
-    })();
+        return false;
+    };
+    const isSecondHalfEvent = videoSecondHalf() || event.timestamp >= secondHalfBoundarySeconds;
+    const displaySeconds = isSecondHalfEvent
+        ? Math.max(0, event.timestamp - secondHalfBoundarySeconds)
+        : event.timestamp;
 
     // Seek 3 seconds before the event so user can see the play develop
     const VIDEO_SEEK_OFFSET_SECONDS = 3;
@@ -147,7 +174,10 @@ export const EventItem = ({
                 <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2 text-sm">
                         <span className="font-mono text-gray-500 font-medium">
-                            {formatTimeWithHalf(event.timestamp, isSecondHalfEvent ? '2H' : '1H')}
+                            {formatTimeWithHalf(
+                                displaySeconds,
+                                isSecondHalfEvent ? t('matchEvent.halfSecond') : t('matchEvent.halfFirst')
+                            )}
                         </span>
                         <span className="font-medium text-gray-700 group-hover:text-indigo-600 transition-colors">
                             #{player?.number || '?'} {player?.name || 'Unknown'}

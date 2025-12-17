@@ -124,6 +124,16 @@ export function StatisticsView({
   const selectedTeamName = selectedTeamData ? formatTeamDisplay(selectedTeamData) : 'Your team';
   const opponentTeamName = opponentTeamData ? formatTeamDisplay(opponentTeamData) : 'Rival';
 
+  const secondHalfBoundarySeconds = useMemo(() => {
+    if (matchData?.realTimeFirstHalfStart && matchData?.realTimeFirstHalfEnd) {
+      return Math.max(0, Math.floor((matchData.realTimeFirstHalfEnd - matchData.realTimeFirstHalfStart) / 1000));
+    }
+    if (matchData?.realTimeFirstHalfStart && matchData?.realTimeSecondHalfStart) {
+      return Math.max(0, Math.floor((matchData.realTimeSecondHalfStart - matchData.realTimeFirstHalfStart) / 1000));
+    }
+    return HALF_DURATION_SECONDS;
+  }, [matchData?.realTimeFirstHalfEnd, matchData?.realTimeFirstHalfStart, matchData?.realTimeSecondHalfStart]);
+
   // Apply all filters for both own team (selected) and opponent (for fouls)
   const baseFoulEvents: MatchEvent[] = foulEvents || [];
 
@@ -343,7 +353,7 @@ export function StatisticsView({
             events={[...filteredEvents, ...filteredOpponentEvents]}
             selectedTeamId={selectedTeamId}
             opponentTeamId={opponentTeamId}
-            secondHalfMarkSeconds={HALF_DURATION_SECONDS}
+            secondHalfMarkSeconds={secondHalfBoundarySeconds}
             teamName={selectedTeamName}
             opponentName={opponentTeamName}
             onDownloadCsv={() => downloadTeamEventsCSV(

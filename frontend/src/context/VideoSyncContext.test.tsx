@@ -258,9 +258,8 @@ describe('VideoSyncContext', () => {
                 result.current.setSecondHalfStart(2000); // Second half starts at video second 2000
             });
 
-            // Video at 2060 seconds = 30 min (first half) + 60 seconds = 1860 seconds
-            const HALF_DURATION = 30 * 60; // 30 minutes
-            expect(result.current.getMatchTimeFromVideo(2060)).toBe(HALF_DURATION + 60);
+            const expectedFirstHalfDuration = 2000 - 100;
+            expect(result.current.getMatchTimeFromVideo(2060)).toBe(expectedFirstHalfDuration + 60);
         });
 
         it('should not return negative match time', async () => {

@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { Plus, Minus, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useMatch } from '../../context/MatchContext';
 import { useSafeTranslation } from '../../context/LanguageContext';
+
+const HALF_DURATION_SECONDS = 30 * 60;
 
 interface MatchTeam {
   id: string;
@@ -22,7 +25,6 @@ interface ScoreboardProps {
   onVisitorScoreChange: (score: number) => void;
   onTeamSelect: (teamId: string) => void;
   showCalibration?: boolean; // Show calibration buttons (for MatchTracker only)
-  showFinishButton?: boolean;
   onFinishMatch?: () => void;
   isFinished?: boolean;
 }
@@ -38,7 +40,6 @@ export const Scoreboard = ({
   onVisitorScoreChange,
   onTeamSelect,
   showCalibration = true,
-  showFinishButton = false,
   onFinishMatch,
   isFinished = false
 }: ScoreboardProps) => {
@@ -50,7 +51,72 @@ export const Scoreboard = ({
   };
 
   // Get calibration and match id from context
-  const { realTimeFirstHalfStart, realTimeSecondHalfStart, setRealTimeCalibration, scoreMode, matchId } = useMatch();
+  const {
+    realTimeFirstHalfStart,
+    realTimeSecondHalfStart,
+    realTimeFirstHalfEnd,
+    realTimeSecondHalfEnd,
+    setRealTimeCalibration,
+    scoreMode,
+    matchId
+  } = useMatch();
+  const [calibrationLoading, setCalibrationLoading] = useState<'first' | 'second' | null>(null);
+
+  const firstHalfDuration = realTimeFirstHalfStart && realTimeFirstHalfEnd
+    ? Math.max(0, Math.floor((realTimeFirstHalfEnd - realTimeFirstHalfStart) / 1000))
+    : null;
+  const secondHalfDuration = realTimeSecondHalfStart && realTimeSecondHalfEnd
+    ? Math.max(0, Math.floor((realTimeSecondHalfEnd - realTimeSecondHalfStart) / 1000))
+    : null;
+  const secondHalfEndClock = secondHalfDuration !== null
+    ? (firstHalfDuration ?? HALF_DURATION_SECONDS) + secondHalfDuration
+    : null;
+
+  const firstHalfButtonLabel = !realTimeFirstHalfStart
+    ? t('scoreboard.startFirstHalf')
+    : !realTimeFirstHalfEnd
+      ? t('scoreboard.finishFirstHalf')
+      : t('scoreboard.firstHalfFinished');
+  const secondHalfButtonLabel = !realTimeSecondHalfStart
+    ? t('scoreboard.startSecondHalf')
+    : !realTimeSecondHalfEnd
+      ? t('scoreboard.finishSecondHalf')
+      : t('scoreboard.secondHalfFinished');
+
+  const firstHalfButtonDisabled = isFinished || !!realTimeFirstHalfEnd || calibrationLoading !== null;
+  const secondHalfLocked = !realTimeSecondHalfStart && !realTimeFirstHalfEnd;
+  const secondHalfButtonDisabled = isFinished || (!!realTimeSecondHalfEnd) || (secondHalfLocked && !realTimeSecondHalfStart) || calibrationLoading !== null;
+
+  const handleFirstHalfAction = async () => {
+    if (isFinished) return;
+    setCalibrationLoading('first');
+    try {
+      if (!realTimeFirstHalfStart) {
+        await setRealTimeCalibration(1, Date.now());
+      } else if (!realTimeFirstHalfEnd) {
+        await setRealTimeCalibration(1, Date.now(), 'end');
+      }
+    } finally {
+      setCalibrationLoading(null);
+    }
+  };
+
+  const handleSecondHalfAction = async () => {
+    if (isFinished || secondHalfLocked) return;
+    setCalibrationLoading('second');
+    try {
+      if (!realTimeSecondHalfStart) {
+        await setRealTimeCalibration(2, Date.now());
+      } else if (!realTimeSecondHalfEnd) {
+        await setRealTimeCalibration(2, Date.now(), 'end');
+        if (onFinishMatch) {
+          await onFinishMatch();
+        }
+      }
+    } finally {
+      setCalibrationLoading(null);
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-2 md:p-3 mb-4">
@@ -97,64 +163,72 @@ export const Scoreboard = ({
 
           {/* Calibration Buttons - Only show in MatchTracker (not VideoMatchTracker) */}
           {showCalibration && (
-            <div className="flex gap-2 text-xs">
-              <button
-                onClick={() => setRealTimeCalibration(1, Date.now())}
-                disabled={!!realTimeFirstHalfStart}
-                className={`px-3 py-1 rounded-md font-medium transition-colors ${realTimeFirstHalfStart
-                  ? 'bg-green-50 text-green-700 cursor-default'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                title={
-                  realTimeFirstHalfStart
-                    ? t('scoreboard.halfStartedAt', {
-                        time: new Date(realTimeFirstHalfStart).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        }),
-                      })
-                    : t('scoreboard.startFirstHalfTooltip')
-                }
-              >
-                {realTimeFirstHalfStart ? t('scoreboard.firstHalfStarted') : t('scoreboard.startFirstHalf')}
-              </button>
-              <button
-                onClick={() => setRealTimeCalibration(2, Date.now())}
-                disabled={!realTimeFirstHalfStart || !!realTimeSecondHalfStart}
-                className={`px-3 py-1 rounded-md font-medium transition-colors ${realTimeSecondHalfStart
-                  ? 'bg-green-50 text-green-700 cursor-default'
-                  : !realTimeFirstHalfStart
-                    ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                title={
-                  realTimeSecondHalfStart
-                    ? t('scoreboard.halfStartedAt', {
-                        time: new Date(realTimeSecondHalfStart).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        }),
-                      })
-                    : t('scoreboard.startSecondHalfTooltip')
-                }
-              >
-                {realTimeSecondHalfStart ? t('scoreboard.secondHalfStarted') : t('scoreboard.startSecondHalf')}
-              </button>
+            <div className="flex flex-col gap-2 text-xs w-full">
+              <div className="flex gap-2">
+                <button
+                  onClick={handleFirstHalfAction}
+                  disabled={firstHalfButtonDisabled}
+                  className={`flex-1 px-3 py-1 rounded-md font-medium transition-colors ${realTimeFirstHalfEnd
+                    ? 'bg-green-50 text-green-700 cursor-default'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300'
+                    }`}
+                  title={
+                    !realTimeFirstHalfStart
+                      ? t('scoreboard.startFirstHalfTooltip')
+                      : !realTimeFirstHalfEnd
+                        ? t('scoreboard.halfStartedAt', {
+                          time: new Date(realTimeFirstHalfStart).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }),
+                        })
+                        : firstHalfDuration !== null
+                          ? t('scoreboard.halfFinishedAtClock', { clock: formatTime(firstHalfDuration) })
+                          : undefined
+                  }
+                >
+                  {firstHalfButtonLabel}
+                </button>
+                <button
+                  onClick={handleSecondHalfAction}
+                  disabled={secondHalfButtonDisabled}
+                  className={`flex-1 px-3 py-1 rounded-md font-medium transition-colors ${realTimeSecondHalfEnd
+                    ? 'bg-green-50 text-green-700 cursor-default'
+                    : secondHalfLocked
+                      ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300'
+                    }`}
+                  title={
+                    !realTimeSecondHalfStart
+                      ? secondHalfLocked
+                        ? t('scoreboard.waitFirstHalfEnd')
+                        : t('scoreboard.startSecondHalfTooltip')
+                      : !realTimeSecondHalfEnd
+                        ? t('scoreboard.halfStartedAt', {
+                          time: new Date(realTimeSecondHalfStart).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }),
+                        })
+                        : secondHalfEndClock !== null
+                          ? t('scoreboard.halfFinishedAtClock', { clock: formatTime(secondHalfEndClock) })
+                          : undefined
+                  }
+                >
+                  {secondHalfButtonLabel}
+                </button>
+              </div>
+              {firstHalfDuration !== null && (
+                <div className="text-[11px] text-green-700 font-medium text-center">
+                  {t('scoreboard.halfFinishedAtClock', { clock: formatTime(firstHalfDuration) })}
+                </div>
+              )}
+              {secondHalfEndClock !== null && (
+                <div className="text-[11px] text-green-700 font-medium text-center">
+                  {t('scoreboard.halfFinishedAtClock', { clock: formatTime(secondHalfEndClock) })}
+                </div>
+              )}
             </div>
-          )}
-
-          {showFinishButton && (
-            <button
-              onClick={onFinishMatch}
-              disabled={isFinished}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
-                isFinished
-                  ? 'bg-green-50 text-green-700 cursor-default'
-                  : 'bg-red-100 text-red-700 hover:bg-red-200'
-              }`}
-            >
-              {isFinished ? t('scoreboard.matchFinished') : t('scoreboard.finishMatch')}
-            </button>
           )}
         </div>
 

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { TrendingUp, Download } from 'lucide-react';
 import type { MatchEvent } from '../../types';
+import { useSafeTranslation } from '../../context/LanguageContext';
 
 interface GoalFlowChartProps {
     events: MatchEvent[];
@@ -12,7 +13,7 @@ interface GoalFlowChartProps {
     onDownloadCsv?: () => void;
 }
 
-type Point = { x: number; y: number };
+type SeriesPoint = { position: number; value: number };
 
 const HALF_DURATION_SECONDS = 30 * 60;
 const VIEWBOX_WIDTH = 1000;
@@ -22,8 +23,13 @@ const PADDING_RIGHT = 20;
 const PADDING_TOP = 24;
 const PADDING_BOTTOM = 50;
 const CLUSTER_WINDOW_SECONDS = 120;
+const HALF_BOUNDARY_POSITION = 0.5;
+const HALF_GAP = 0.04;
+const FIRST_SEGMENT: [number, number] = [0, HALF_BOUNDARY_POSITION - HALF_GAP / 2];
+const SECOND_SEGMENT: [number, number] = [HALF_BOUNDARY_POSITION + HALF_GAP / 2, 1];
+const FOUL_RADIUS_MULTIPLIER = 2;
 
-function buildSmoothPath(points: Point[]): string {
+function buildSmoothPath(points: { x: number; y: number }[]): string {
     if (points.length === 0) return '';
     if (points.length === 1) {
         const { x, y } = points[0];
@@ -34,6 +40,14 @@ function buildSmoothPath(points: Point[]): string {
     return commands.join(' ');
 }
 
+const buildProgressMap = (values: number[]) => {
+    const unique = Array.from(new Set(values)).sort((a, b) => a - b);
+    const denom = unique.length + 1;
+    const map = new Map<number, number>();
+    unique.forEach((value, idx) => map.set(value, (idx + 1) / denom));
+    return { map, hasEntries: unique.length > 0 };
+};
+
 export function GoalFlowChart({
     events,
     selectedTeamId,
@@ -43,69 +57,64 @@ export function GoalFlowChart({
     opponentName,
     onDownloadCsv,
 }: GoalFlowChartProps) {
+    const { t } = useSafeTranslation();
     const {
         teamSeries,
         opponentSeries,
-        foulsByTime,
-        turnoversByTime,
-        savesByTime,
-        maxTime,
+        foulsByPosition,
+        turnoversByPosition,
+        savesByPosition,
         maxGoals,
-        secondHalfMark,
     } = useMemo(() => {
+        const halfSplit = secondHalfMarkSeconds ?? HALF_DURATION_SECONDS;
+
         const ownGoals = events
             .filter(e => e.teamId === selectedTeamId && e.category === 'Shot' && e.action === 'Goal')
-            .map(e => e.timestamp)
-            .sort((a, b) => a - b);
+            .map(e => e.timestamp);
 
         const oppGoals = events
             .filter(e => opponentTeamId && e.teamId === opponentTeamId && e.category === 'Shot' && e.action === 'Goal')
-            .map(e => e.timestamp)
-            .sort((a, b) => a - b);
+            .map(e => e.timestamp);
 
-        const foulsEvents = events.filter(e =>
-            e.teamId === selectedTeamId &&
-            e.category === 'Sanction'
+        const firstHalfTimes = events.filter(e => e.timestamp < halfSplit).map(e => e.timestamp);
+        const secondHalfTimes = events.filter(e => e.timestamp >= halfSplit).map(e => e.timestamp);
+
+        const firstHalfProgress = buildProgressMap(firstHalfTimes);
+        const secondHalfProgress = buildProgressMap(secondHalfTimes);
+
+        const mapToRange = (timestamp: number, progress: ReturnType<typeof buildProgressMap>, [start, end]: [number, number]) => {
+            if (!progress.hasEntries) return start;
+            const normalized = progress.map.get(timestamp) ?? 1;
+            return start + normalized * (end - start);
+        };
+
+        const toFirstHalfPosition = (timestamp: number) => mapToRange(timestamp, firstHalfProgress, FIRST_SEGMENT);
+        const toSecondHalfPosition = (timestamp: number) => mapToRange(timestamp, secondHalfProgress, SECOND_SEGMENT);
+        const toNormalizedPosition = (timestamp: number) => (
+            timestamp >= halfSplit ? toSecondHalfPosition(timestamp) : toFirstHalfPosition(timestamp)
         );
 
-        const turnoverEvents = events.filter(e =>
-            e.teamId === selectedTeamId &&
-            e.category === 'Turnover'
-        );
+        const buildSeries = (timestamps: number[]): SeriesPoint[] => {
+            const sorted = [...timestamps].sort((a, b) => a - b);
+            const series: SeriesPoint[] = [{ position: FIRST_SEGMENT[0], value: 0 }];
+            let value = 0;
 
-        const buildCumulative = (timestamps: number[]) => {
-            const points: { time: number; value: number }[] = [{ time: 0, value: 0 }];
-            let count = 0;
-            timestamps.forEach(t => {
-                count += 1;
-                points.push({ time: t, value: count });
+            sorted.filter(t => t < halfSplit).forEach(time => {
+                value += 1;
+                series.push({ position: toFirstHalfPosition(time), value });
             });
-            return points;
+
+            series.push({ position: HALF_BOUNDARY_POSITION, value });
+            series.push({ position: SECOND_SEGMENT[0], value });
+
+            sorted.filter(t => t >= halfSplit).forEach(time => {
+                value += 1;
+                series.push({ position: toSecondHalfPosition(time), value });
+            });
+
+            series.push({ position: 1, value });
+            return series;
         };
-
-        const teamPoints = buildCumulative(ownGoals);
-        const opponentPoints = buildCumulative(oppGoals);
-
-        const maxTimeFromEvents = Math.max(
-            teamPoints[teamPoints.length - 1]?.time || 0,
-            opponentPoints[opponentPoints.length - 1]?.time || 0,
-            ...foulsEvents.map(f => f.timestamp),
-            ...turnoverEvents.map(t => t.timestamp),
-            HALF_DURATION_SECONDS * 2 // ensure some breathing room for empty halves
-        );
-
-        const halfMark = secondHalfMarkSeconds ?? HALF_DURATION_SECONDS;
-        const maxTimeValue = Math.max(maxTimeFromEvents, halfMark);
-
-        const extendToEnd = (points: { time: number; value: number }[]) => {
-            if (points.length === 0) return points;
-            const last = points[points.length - 1];
-            if (last.time >= maxTimeValue) return points;
-            return [...points, { time: maxTimeValue, value: last.value }];
-        };
-
-        const paddedTeamPoints = extendToEnd(teamPoints);
-        const paddedOpponentPoints = extendToEnd(opponentPoints);
 
         const clusterCounts = (timestamps: number[]) => {
             if (timestamps.length === 0) return [];
@@ -130,28 +139,36 @@ export function GoalFlowChart({
             }
             clusters.push({ time: currentTimeSum / currentCount, count: currentCount });
 
-            return clusters;
+            return clusters.map(cluster => ({
+                position: toNormalizedPosition(cluster.time),
+                count: cluster.count,
+            }));
         };
 
+        const teamPoints = buildSeries(ownGoals);
+        const opponentPoints = buildSeries(oppGoals);
+
         const maxGoalValue = Math.max(
-            paddedTeamPoints[paddedTeamPoints.length - 1]?.value || 0,
-            paddedOpponentPoints[paddedOpponentPoints.length - 1]?.value || 0,
+            teamPoints[teamPoints.length - 1]?.value || 0,
+            opponentPoints[opponentPoints.length - 1]?.value || 0,
             1
         );
 
         return {
-            teamSeries: paddedTeamPoints,
-            opponentSeries: paddedOpponentPoints,
-            foulsByTime: clusterCounts(foulsEvents.map(f => f.timestamp)),
-            turnoversByTime: clusterCounts(turnoverEvents.map(t => t.timestamp)),
-            savesByTime: clusterCounts(
+            teamSeries: teamPoints,
+            opponentSeries: opponentPoints,
+            foulsByPosition: events
+                .filter(e => e.teamId === selectedTeamId && e.category === 'Sanction')
+                .map(e => ({
+                    position: toNormalizedPosition(e.timestamp)
+                })),
+            turnoversByPosition: clusterCounts(events.filter(e => e.teamId === selectedTeamId && e.category === 'Turnover').map(e => e.timestamp)),
+            savesByPosition: clusterCounts(
                 events
                     .filter(e => e.teamId === selectedTeamId && e.category === 'Shot' && e.action === 'Save')
-                    .map(s => s.timestamp)
+                    .map(e => e.timestamp)
             ),
-            maxTime: maxTimeValue,
             maxGoals: maxGoalValue,
-            secondHalfMark: halfMark,
         };
     }, [events, opponentTeamId, secondHalfMarkSeconds, selectedTeamId]);
 
@@ -162,19 +179,11 @@ export function GoalFlowChart({
     const [showTurnovers, setShowTurnovers] = useState(true);
     const [showSaves, setShowSaves] = useState(true);
 
-    const toX = (timeSeconds: number) => PADDING_LEFT + (timeSeconds / (maxTime || 1)) * width;
+    const toX = (position: number) => PADDING_LEFT + position * width;
     const toY = (goals: number) => PADDING_TOP + height - (goals / (maxGoals || 1)) * height;
 
-    const teamPath = buildSmoothPath(teamSeries.map(p => ({ x: toX(p.time), y: toY(p.value) })));
-    const opponentPath = buildSmoothPath(opponentSeries.map(p => ({ x: toX(p.time), y: toY(p.value) })));
-
-    const isClose = (a: number, b: number, threshold = 5) => Math.abs(a - b) <= threshold;
-    const formatXLabel = (seconds: number, isLastTick: boolean) => {
-        const half = secondHalfMark ?? HALF_DURATION_SECONDS;
-        if (isLastTick) return 'Final';
-        if (isClose(seconds, half, 30)) return 'Half time';
-        return `${Math.round(seconds / 60)}'`;
-    };
+    const teamPath = buildSmoothPath(teamSeries.map(p => ({ x: toX(p.position), y: toY(p.value) })));
+    const opponentPath = buildSmoothPath(opponentSeries.map(p => ({ x: toX(p.position), y: toY(p.value) })));
 
     const yTicks = useMemo(() => {
         const step = 5;
@@ -192,22 +201,18 @@ export function GoalFlowChart({
         return ticks;
     }, [maxGoals]);
 
-    const xTicks = useMemo(() => {
-        const step = 600; // 10 minutes
-        const ticksSet = new Set<number>();
-        for (let t = step; t < maxTime; t += step) {
-            ticksSet.add(t);
-        }
-        if (secondHalfMark) ticksSet.add(secondHalfMark);
-        ticksSet.add(maxTime);
-        return Array.from(ticksSet).sort((a, b) => a - b);
-    }, [maxTime, secondHalfMark]);
+    const xTicks = useMemo(() => ([
+        { position: (FIRST_SEGMENT[0] + FIRST_SEGMENT[1]) / 2, label: t('goalFlow.firstHalfLabel') },
+        { position: HALF_BOUNDARY_POSITION, label: t('goalFlow.halfTimeLabel') },
+        { position: (SECOND_SEGMENT[0] + SECOND_SEGMENT[1]) / 2, label: t('goalFlow.secondHalfLabel') },
+        { position: 1, label: t('goalFlow.finalLabel') },
+    ]), [t]);
 
-    const getValueAtTime = (series: { time: number; value: number }[], time: number) => {
+    const getValueAtPosition = (series: SeriesPoint[], position: number) => {
         if (series.length === 0) return 0;
         let lastValue = series[0].value;
         for (const point of series) {
-            if (point.time > time) break;
+            if (point.position > position) break;
             lastValue = point.value;
         }
         return lastValue;
@@ -217,10 +222,10 @@ export function GoalFlowChart({
     const clampY = (y: number) =>
         Math.min(VIEWBOX_HEIGHT - PADDING_BOTTOM - 10, Math.max(PADDING_TOP + 10, y));
 
-    const renderScoreLabels = (time: number) => {
-        const teamValue = getValueAtTime(teamSeries, time);
-        const opponentValue = getValueAtTime(opponentSeries, time);
-        const x = toX(time);
+    const renderScoreLabels = (position: number) => {
+        const teamValue = getValueAtPosition(teamSeries, position);
+        const opponentValue = getValueAtPosition(opponentSeries, position);
+        const x = toX(position);
         const teamY = toY(teamValue);
         const opponentY = toY(opponentValue);
 
@@ -262,7 +267,7 @@ export function GoalFlowChart({
                         </span>
                         <h3 className="text-lg font-semibold text-gray-800">Goal Flow & Errors</h3>
                     </div>
-                    <p className="text-sm text-gray-500">Cumulative goals per minute, fouls received and turnovers</p>
+                    <p className="text-sm text-gray-500">Cumulative goals per sequence, fouls received and turnovers</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-gray-600">
                     <span className="flex items-center gap-1">
@@ -317,7 +322,6 @@ export function GoalFlowChart({
 
             <div className="relative w-full" aria-label="Goal flow chart">
                 <svg viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`} className="w-full h-[28rem]">
-                    {/* Background grid */}
                     {yTicks.map((g) => {
                         const y = toY(g);
                         return (
@@ -333,20 +337,16 @@ export function GoalFlowChart({
                         );
                     })}
 
-                    {/* Second half marker */}
-                    {secondHalfMark && (
-                        <line
-                            x1={toX(secondHalfMark)}
-                            x2={toX(secondHalfMark)}
-                            y1={PADDING_TOP}
-                            y2={VIEWBOX_HEIGHT - PADDING_BOTTOM + 6}
-                            stroke="#cbd5e1"
-                            strokeDasharray="6 6"
-                            strokeWidth={2}
-                        />
-                    )}
+                    <line
+                        x1={toX(HALF_BOUNDARY_POSITION)}
+                        x2={toX(HALF_BOUNDARY_POSITION)}
+                        y1={PADDING_TOP}
+                        y2={VIEWBOX_HEIGHT - PADDING_BOTTOM + 6}
+                        stroke="#cbd5e1"
+                        strokeDasharray="6 6"
+                        strokeWidth={2}
+                    />
 
-                    {/* Opponent line */}
                     <path
                         d={opponentPath}
                         fill="none"
@@ -356,7 +356,6 @@ export function GoalFlowChart({
                         strokeLinecap="round"
                     />
 
-                    {/* Team line */}
                     <path
                         d={teamPath}
                         fill="none"
@@ -366,15 +365,14 @@ export function GoalFlowChart({
                         strokeLinecap="round"
                     />
 
-                    {/* Fouls and turnovers as proportional circles on the team line */}
-                    {foulsByTime.map(({ time, count }, idx) => {
-                        const value = getValueAtTime(teamSeries, time);
-                        const cx = toX(time);
+                    {foulsByPosition.map(({ position }, idx) => {
+                        const value = getValueAtPosition(teamSeries, position);
+                        const cx = toX(position);
                         const cy = toY(value);
-                        const r = scaleRadius(count);
+                        const r = scaleRadius(1) * FOUL_RADIUS_MULTIPLIER;
                         return showFouls ? (
-                            <g key={`foul-${idx}-${time}`}>
-                                <title>{`${count} foul${count > 1 ? 's' : ''}`}</title>
+                            <g key={`foul-${idx}-${position}`}>
+                                <title>Foul</title>
                                 <circle
                                     cx={cx}
                                     cy={cy}
@@ -383,26 +381,16 @@ export function GoalFlowChart({
                                     stroke="rgba(239,68,68,0.8)"
                                     strokeWidth={1.5}
                                 />
-                                <text
-                                    x={cx}
-                                    y={cy}
-                                    textAnchor="middle"
-                                    dominantBaseline="middle"
-                                    className="text-xs font-semibold"
-                                    fill="rgb(239,68,68)"
-                                >
-                                    {count}
-                                </text>
                             </g>
                         ) : null;
                     })}
-                    {turnoversByTime.map(({ time, count }, idx) => {
-                        const value = getValueAtTime(teamSeries, time);
-                        const cx = toX(time);
+                    {turnoversByPosition.map(({ position, count }, idx) => {
+                        const value = getValueAtPosition(teamSeries, position);
+                        const cx = toX(position);
                         const cy = toY(value);
                         const r = scaleRadius(count);
                         return showTurnovers ? (
-                            <g key={`turnover-${idx}-${time}`}>
+                            <g key={`turnover-${idx}-${position}`}>
                                 <title>{`${count} turnover${count > 1 ? 's' : ''}`}</title>
                                 <circle
                                     cx={cx}
@@ -425,13 +413,13 @@ export function GoalFlowChart({
                             </g>
                         ) : null;
                     })}
-                    {savesByTime.map(({ time, count }, idx) => {
-                        const value = getValueAtTime(teamSeries, time);
-                        const cx = toX(time);
+                    {savesByPosition.map(({ position, count }, idx) => {
+                        const value = getValueAtPosition(teamSeries, position);
+                        const cx = toX(position);
                         const cy = toY(value);
                         const r = scaleRadius(count);
                         return showSaves ? (
-                            <g key={`save-${idx}-${time}`}>
+                            <g key={`save-${idx}-${position}`}>
                                 <title>{`${count} save${count > 1 ? 's' : ''}`}</title>
                                 <circle
                                     cx={cx}
@@ -455,17 +443,14 @@ export function GoalFlowChart({
                         ) : null;
                     })}
 
-                    {/* Mid-game and final score labels */}
-                    {[secondHalfMark, maxTime].filter(Boolean).map((time, idx) => (
-                        <g key={`label-${idx}-${time}`}>{renderScoreLabels(time)}</g>
+                    {[HALF_BOUNDARY_POSITION, 1].map((pos, idx) => (
+                        <g key={`label-${idx}-${pos}`}>{renderScoreLabels(pos)}</g>
                     ))}
 
-                    {/* X-axis labels (10-minute ticks + final) */}
-                    {xTicks.map((seconds, idx) => {
-                        const x = toX(seconds);
-                        const isLastTick = idx === xTicks.length - 1;
+                    {xTicks.map(({ position, label }, idx) => {
+                        const x = toX(position);
                         return (
-                            <g key={`tick-${idx}-${seconds}`}>
+                            <g key={`tick-${idx}-${label}`}>
                                 <line
                                     x1={x}
                                     x2={x}
@@ -480,13 +465,12 @@ export function GoalFlowChart({
                                     textAnchor="middle"
                                     className="text-xs fill-gray-500"
                                 >
-                                    {formatXLabel(seconds, isLastTick)}
+                                    {label}
                                 </text>
                             </g>
                         );
                     })}
 
-                    {/* Y-axis labels */}
                     {yTicks.map((g) => {
                         const y = toY(g);
                         return (

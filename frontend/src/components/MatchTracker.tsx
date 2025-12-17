@@ -9,7 +9,6 @@ import { EventList } from './match/events/EventList';
 import { EventForm } from './match/events/EventForm';
 
 const HALF_DURATION_SECONDS = 30 * 60;
-const MATCH_DURATION_SECONDS = HALF_DURATION_SECONDS * 2;
 
 const MatchTracker = () => {
   const { matchId } = useParams<{ matchId: string }>();
@@ -32,7 +31,9 @@ const MatchTracker = () => {
     toggleTeamLock,
     isTeamLocked,
     realTimeFirstHalfStart,
-    realTimeSecondHalfStart
+    realTimeSecondHalfStart,
+    realTimeFirstHalfEnd,
+    realTimeSecondHalfEnd
   } = useMatch();
   const [matchLoaded, setMatchLoaded] = useState(false);
   const [timerStopped, setTimerStopped] = useState(false);
@@ -142,26 +143,48 @@ const MatchTracker = () => {
     setTimerStopped(false);
   }, [matchId]);
 
+  useEffect(() => {
+    if (realTimeSecondHalfEnd) {
+      setTimerStopped(true);
+    }
+  }, [realTimeSecondHalfEnd]);
+
   // Keep the visible clock in sync with real time when halves are calibrated
   useEffect(() => {
     if (!realTimeFirstHalfStart || timerStopped) return;
 
-    const computeTime = () => {
-      const now = Date.now();
+    const firstHalfDuration = realTimeFirstHalfEnd
+      ? Math.max(0, Math.floor((realTimeFirstHalfEnd - realTimeFirstHalfStart) / 1000))
+      : null;
 
+    // If we've finished the first half but haven't started the second, keep the last recorded time
+    if (realTimeFirstHalfEnd && !realTimeSecondHalfStart) {
+      setTime(firstHalfDuration ?? 0);
+      return;
+    }
+
+    // If the match is finished, stick to the final recorded value
+    if (realTimeSecondHalfEnd && realTimeSecondHalfStart) {
+      const firstPhase = firstHalfDuration ?? Math.max(0, Math.floor((realTimeSecondHalfStart - realTimeFirstHalfStart) / 1000));
+      const elapsedSecond = Math.max(0, Math.floor((realTimeSecondHalfEnd - realTimeSecondHalfStart) / 1000));
+      setTime(firstPhase + elapsedSecond);
+      return;
+    }
+
+    const computeTime = () => {
       if (realTimeSecondHalfStart) {
-        const elapsedSecond = Math.max(0, Math.floor((now - realTimeSecondHalfStart) / 1000));
-        return HALF_DURATION_SECONDS + elapsedSecond;
+        const firstPhase = firstHalfDuration ?? Math.max(0, Math.floor((realTimeSecondHalfStart - realTimeFirstHalfStart) / 1000));
+        const elapsedSecond = Math.max(0, Math.floor((Date.now() - realTimeSecondHalfStart) / 1000));
+        return firstPhase + elapsedSecond;
       }
 
-      const elapsedFirst = Math.max(0, Math.floor((now - realTimeFirstHalfStart) / 1000));
-      return Math.min(elapsedFirst, HALF_DURATION_SECONDS); // Clamp to 30:00 until 2nd half starts
+      return Math.max(0, Math.floor((Date.now() - realTimeFirstHalfStart) / 1000));
     };
 
     setTime(computeTime());
     const timer = setInterval(() => setTime(computeTime()), 1000);
     return () => clearInterval(timer);
-  }, [realTimeFirstHalfStart, realTimeSecondHalfStart, setTime, timerStopped]);
+  }, [realTimeFirstHalfStart, realTimeFirstHalfEnd, realTimeSecondHalfStart, realTimeSecondHalfEnd, setTime, timerStopped]);
 
   const activeTeam = getActiveTeam();
   const opponentTeam = getOpponentTeam();
@@ -273,8 +296,7 @@ const MatchTracker = () => {
           onHomeScoreChange={setHomeScore}
           onVisitorScoreChange={setVisitorScore}
           onTeamSelect={handleTeamSelect}
-          showFinishButton={!!realTimeSecondHalfStart || time >= MATCH_DURATION_SECONDS || timerStopped}
-          isFinished={timerStopped}
+          isFinished={timerStopped || !!realTimeSecondHalfEnd}
           onFinishMatch={async () => {
             try {
               await fetch(`${API_BASE_URL}/api/matches/${matchId}`, {
@@ -283,7 +305,6 @@ const MatchTracker = () => {
                 body: JSON.stringify({ isFinished: true })
               });
               setTimerStopped(true);
-              setTime(0);
             } catch (error) {
               console.error('Failed to finish match:', error);
             }
