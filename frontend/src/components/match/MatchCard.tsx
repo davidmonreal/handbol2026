@@ -8,7 +8,7 @@ interface Team {
   id: string;
   name: string;
   category?: string;
-  club: { name: string };
+  club?: { name: string };
   isMyTeam?: boolean;
 }
 

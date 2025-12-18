@@ -27,6 +27,7 @@ export interface TeamApiResponse {
     name: string;
     category?: string;
     club?: ClubApiResponse;
+    isMyTeam?: boolean;
     players: TeamPlayerApiResponse[];
 }
 
