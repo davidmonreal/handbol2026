@@ -136,13 +136,9 @@ const Dashboard = () => {
 
       <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-4">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase text-indigo-600">
-              <BarChart3 size={16} />
-              {t('dashboard.myTeamsStats.badge')}
-            </div>
-            <h2 className="text-lg font-semibold text-gray-900">{t('dashboard.myTeamsStats.title')}</h2>
-            <p className="text-sm text-gray-500">{t('dashboard.myTeamsStats.description')}</p>
+          <div className="flex items-center gap-2 text-sm font-semibold tracking-wide text-indigo-600">
+            <BarChart3 size={16} />
+            {t('dashboard.myTeamsStats.title')}
           </div>
         </div>
         {isMyTeamsLoading ? (

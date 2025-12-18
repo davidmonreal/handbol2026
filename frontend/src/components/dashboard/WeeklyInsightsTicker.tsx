@@ -43,16 +43,6 @@ export const WeeklyInsightsTicker = ({ insights, isLoading, isRefreshing, errorK
   const containerRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
 
-  const rangeLabel = useMemo(() => {
-    if (!insights) return '';
-    return formatRangeLabel(insights.range.start, insights.range.end, t);
-  }, [insights, t]);
-
-  const updatedLabel = useMemo(() => {
-    if (!insights) return '';
-    return t('dashboard.insights.lastGenerated', { time: formatDateTime(insights.generatedAt) });
-  }, [insights, t]);
-
   const hasError = Boolean(errorKey);
 
   useEffect(() => {
@@ -85,19 +75,48 @@ export const WeeklyInsightsTicker = ({ insights, isLoading, isRefreshing, errorK
   }, [tickerItems, containerWidth]);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4">
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm px-4 py-2">
       <style>{tickerKeyframes}</style>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-gray-900">{t('dashboard.insights.title')}</p>
-          {rangeLabel && <p className="text-xs text-gray-500">{rangeLabel}</p>}
-          {updatedLabel && <p className="text-xs text-gray-400">{updatedLabel}</p>}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 min-w-0 min-h-[32px] flex items-center">
+          {isLoading ? (
+            <div className="w-full animate-pulse h-3 bg-gray-100 rounded" />
+          ) : hasError ? (
+            <p className="text-sm text-red-600">{errorKey ? t(errorKey) : ''}</p>
+          ) : tickerItems.length > 0 ? (
+            <div className="relative w-full overflow-hidden h-7" ref={containerRef}>
+              <div
+                ref={trackRef}
+                className="flex items-center gap-12 whitespace-nowrap text-sm text-gray-800"
+                style={
+                  {
+                    animation:
+                      tickerItems.length > 0 && scrollDistance > 0
+                        ? `ticker-marquee ${animationDuration}s linear infinite`
+                        : 'none',
+                    paddingLeft: containerWidth ? `${containerWidth}px` : undefined,
+                    '--ticker-distance': scrollDistance > 0 ? `${scrollDistance}px` : undefined,
+                  } as CSSProperties
+                }
+              >
+                {[...tickerItems, ...tickerItems].map((item, idx) => (
+                  <span key={`${item.id}-${idx}`} className="flex items-center gap-3 pr-12">
+                    {item.icon && <span className="text-lg">{item.icon}</span>}
+                    <span className="font-semibold text-indigo-700">{item.label}</span>
+                    <span className="text-gray-800">{item.summary}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 w-full text-left">{t('dashboard.insights.empty')}</p>
+          )}
         </div>
         <button
           type="button"
           onClick={onRefresh}
           disabled={isRefreshing}
-          className={`inline-flex items-center px-3 py-2 text-xs font-semibold rounded-lg border transition-colors ${
+          className={`shrink-0 inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
             isRefreshing
               ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-wait'
               : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
@@ -105,40 +124,6 @@ export const WeeklyInsightsTicker = ({ insights, isLoading, isRefreshing, errorK
         >
           {isRefreshing ? t('dashboard.insights.recomputing') : t('dashboard.insights.recompute')}
         </button>
-      </div>
-      <div className="mt-3 min-h-[48px] flex items-center">
-        {isLoading ? (
-          <div className="w-full animate-pulse h-4 bg-gray-100 rounded" />
-        ) : hasError ? (
-          <p className="text-sm text-red-600">{errorKey ? t(errorKey) : ''}</p>
-        ) : tickerItems.length > 0 ? (
-          <div className="relative w-full overflow-hidden h-8" ref={containerRef}>
-            <div
-              ref={trackRef}
-              className="flex items-center gap-12 whitespace-nowrap text-sm text-gray-800"
-              style={
-                {
-                  animation:
-                    tickerItems.length > 0 && scrollDistance > 0
-                      ? `ticker-marquee ${animationDuration}s linear infinite`
-                      : 'none',
-                  paddingLeft: containerWidth ? `${containerWidth}px` : undefined,
-                  '--ticker-distance': scrollDistance > 0 ? `${scrollDistance}px` : undefined,
-                } as CSSProperties
-              }
-            >
-              {[...tickerItems, ...tickerItems].map((item, idx) => (
-                <span key={`${item.id}-${idx}`} className="flex items-center gap-3 pr-12">
-                  {item.icon && <span className="text-lg">{item.icon}</span>}
-                  <span className="font-semibold text-indigo-700">{item.label}</span>
-                  <span className="text-gray-800">{item.summary}</span>
-                </span>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <p className="text-sm text-gray-500 w-full text-left">{t('dashboard.insights.empty')}</p>
-        )}
       </div>
     </div>
   );
@@ -256,23 +241,5 @@ const createTeamItem = (
   }),
   icon,
 });
-
-const formatRangeLabel = (startISO: string, endISO: string, t: Translator) => {
-  const start = formatShortDate(startISO);
-  const endBoundary = new Date(endISO);
-  endBoundary.setDate(endBoundary.getDate() - 1);
-  const end = formatShortDate(endBoundary.toISOString());
-  return t('dashboard.insights.rangeLabel', { start, end });
-};
-
-const formatShortDate = (isoDate: string) => {
-  const date = new Date(isoDate);
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-};
-
-const formatDateTime = (isoDate: string) => {
-  const date = new Date(isoDate);
-  return date.toLocaleString();
-};
 
 export default WeeklyInsightsTicker;
