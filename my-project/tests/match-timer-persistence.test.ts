@@ -14,6 +14,33 @@ describe('Integration: Match Timer Persistence', () => {
   const createdTeams: string[] = [];
   const timestampSuffix = Date.now();
 
+  const ensureReferences = async () => {
+    const [clubExists, seasonExists] = await Promise.all([
+      clubId ? prisma.club.findUnique({ where: { id: clubId } }) : null,
+      seasonId ? prisma.season.findUnique({ where: { id: seasonId } }) : null,
+    ]);
+
+    if (!clubExists) {
+      const newClub = await prisma.club.create({
+        data: {
+          name: `TimerClub-${Date.now()}`,
+        },
+      });
+      clubId = newClub.id;
+    }
+
+    if (!seasonExists) {
+      const newSeason = await prisma.season.create({
+        data: {
+          name: `TimerSeason-${Date.now()}`,
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 1000 * 60 * 60 * 24),
+        },
+      });
+      seasonId = newSeason.id;
+    }
+  };
+
   const cleanupEntities = async () => {
     if (createdMatches.length) {
       await prisma.match.deleteMany({ where: { id: { in: createdMatches } } });
@@ -60,6 +87,7 @@ describe('Integration: Match Timer Persistence', () => {
   });
 
   const createMatch = async () => {
+    await ensureReferences();
     const now = Date.now();
     const homeTeam = await prisma.team.create({
       data: {

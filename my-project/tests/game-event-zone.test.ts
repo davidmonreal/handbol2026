@@ -6,16 +6,24 @@ describe('GameEvent Zone Derivation', () => {
   const repository = new GameEventRepository();
   let matchId: string;
   let teamId: string;
+  let homeTeamId: string;
+  let awayTeamId: string;
+  let clubId: string;
+  let seasonId: string;
 
   beforeAll(async () => {
     // Create test match and team
+    const suffix = Date.now();
+
     const season = await prisma.season.create({
-      data: { name: 'Test Season', startDate: new Date(), endDate: new Date() },
+      data: { name: `ZoneSeason-${suffix}`, startDate: new Date(), endDate: new Date() },
     });
+    seasonId = season.id;
 
     const club = await prisma.club.create({
-      data: { name: 'Test Club' },
+      data: { name: `ZoneClub-${suffix}` },
     });
+    clubId = club.id;
 
     const homeTeam = await prisma.team.create({
       data: {
@@ -24,6 +32,7 @@ describe('GameEvent Zone Derivation', () => {
         seasonId: season.id,
       },
     });
+    homeTeamId = homeTeam.id;
 
     const awayTeam = await prisma.team.create({
       data: {
@@ -32,12 +41,14 @@ describe('GameEvent Zone Derivation', () => {
         seasonId: season.id,
       },
     });
+    awayTeamId = awayTeam.id;
 
     const match = await prisma.match.create({
       data: {
         homeTeamId: homeTeam.id,
         awayTeamId: awayTeam.id,
         date: new Date(),
+        realTimeFirstHalfStart: Date.now(),
       },
     });
 
@@ -49,6 +60,9 @@ describe('GameEvent Zone Derivation', () => {
     // Cleanup
     await prisma.gameEvent.deleteMany({ where: { matchId } });
     await prisma.match.deleteMany({ where: { id: matchId } });
+    await prisma.team.deleteMany({ where: { id: { in: [homeTeamId, awayTeamId] } } });
+    await prisma.club.deleteMany({ where: { id: clubId } });
+    await prisma.season.deleteMany({ where: { id: seasonId } });
   });
 
   it('should derive zone as "7m" for 7M distance without position', async () => {

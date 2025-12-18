@@ -55,7 +55,34 @@ describe('Integration: game events mutate match score atomically', () => {
     await cleanupTestData({ includeScorePatterns: true });
   });
 
+  const ensureReferences = async () => {
+    const [clubExists, seasonExists] = await Promise.all([
+      prisma.club.findUnique({ where: { id: clubId } }),
+      prisma.season.findUnique({ where: { id: seasonId } }),
+    ]);
+
+    if (!clubExists) {
+      const club = await prisma.club.create({
+        data: {
+          name: `ScoreClub-${Date.now()}`,
+        },
+      });
+      clubId = club.id;
+    }
+    if (!seasonExists) {
+      const season = await prisma.season.create({
+        data: {
+          name: `ScoreSeason-${Date.now()}`,
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 1000 * 60 * 60 * 24),
+        },
+      });
+      seasonId = season.id;
+    }
+  };
+
   const createMatch = async () => {
+    await ensureReferences();
     const now = Date.now();
     const homeTeam = await prisma.team.create({
       data: {
@@ -84,7 +111,12 @@ describe('Integration: game events mutate match score atomically', () => {
 
     createdMatches.push(match.id);
 
-    return { match, homeTeam, awayTeam };
+    const calibratedMatch = await prisma.match.update({
+      where: { id: match.id },
+      data: { realTimeFirstHalfStart: Date.now() },
+    });
+
+    return { match: calibratedMatch, homeTeam, awayTeam };
   };
 
   it(

@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { Prisma } from '@prisma/client';
 import prisma from '../../src/lib/prisma';
 
 const basePatterns = {
@@ -87,15 +88,17 @@ export async function cleanupTestData(options: CleanupOptions = {}) {
   const playerIds = playersToDelete.map((p) => p.id);
 
   // Collect matches tied to temp teams
-  const matchesToDelete = await prisma.match.findMany({
-    where: {
-      OR: [
-        teamIds.length ? { homeTeamId: { in: teamIds } } : undefined,
-        teamIds.length ? { awayTeamId: { in: teamIds } } : undefined,
-      ].filter(Boolean) as Array<Record<string, unknown>>,
-    },
-    select: { id: true },
-  });
+  const matchConditions =
+    teamIds.length > 0 ? [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }] : [];
+
+  const matchesToDelete = matchConditions.length
+    ? await prisma.match.findMany({
+        where: {
+          OR: matchConditions,
+        },
+        select: { id: true },
+      })
+    : [];
   const matchIds = matchesToDelete.map((m) => m.id);
 
   const logCounts = () => {
@@ -107,32 +110,46 @@ export async function cleanupTestData(options: CleanupOptions = {}) {
   logCounts();
 
   // Delete in dependency-safe order
-  if (matchIds.length || teamIds.length || playerIds.length) {
+  const gameEventConditions: Array<Record<string, unknown>> = [];
+  if (matchIds.length) gameEventConditions.push({ matchId: { in: matchIds } });
+  if (teamIds.length) gameEventConditions.push({ teamId: { in: teamIds } });
+  if (playerIds.length) gameEventConditions.push({ playerId: { in: playerIds } });
+  if (gameEventConditions.length) {
     await prisma.gameEvent.deleteMany({
-      where: {
-        OR: [
-          matchIds.length ? { matchId: { in: matchIds } } : undefined,
-          teamIds.length ? { teamId: { in: teamIds } } : undefined,
-          playerIds.length ? { playerId: { in: playerIds } } : undefined,
-        ].filter(Boolean) as Array<Record<string, unknown>>,
-      },
+      where: { OR: gameEventConditions },
     });
   }
 
-  if (teamIds.length || playerIds.length) {
+  const playerTeamSeasonConditions: Array<Record<string, unknown>> = [];
+  if (teamIds.length) playerTeamSeasonConditions.push({ teamId: { in: teamIds } });
+  if (playerIds.length) playerTeamSeasonConditions.push({ playerId: { in: playerIds } });
+  if (playerTeamSeasonConditions.length) {
     await prisma.playerTeamSeason.deleteMany({
-      where: {
-        OR: [
-          teamIds.length ? { teamId: { in: teamIds } } : undefined,
-          playerIds.length ? { playerId: { in: playerIds } } : undefined,
-        ].filter(Boolean) as Array<Record<string, unknown>>,
-      },
+      where: { OR: playerTeamSeasonConditions },
     });
   }
 
-  if (matchIds.length) {
-    await prisma.match.deleteMany({ where: { id: { in: matchIds } } });
-  }
+  const deleteMatchesSafely = async () => {
+    if (!matchIds.length) return;
+
+    const attemptDelete = async () => {
+      await prisma.gameEvent.deleteMany({ where: { matchId: { in: matchIds } } });
+      await prisma.match.deleteMany({ where: { id: { in: matchIds } } });
+    };
+
+    try {
+      await attemptDelete();
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+        // Another test may have inserted events between deletions; re-run once after clearing again.
+        await attemptDelete();
+      } else {
+        throw error;
+      }
+    }
+  };
+
+  await deleteMatchesSafely();
 
   if (teamIds.length) {
     await prisma.team.deleteMany({ where: { id: { in: teamIds } } });

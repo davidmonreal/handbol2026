@@ -5,15 +5,61 @@ import app from '../src/app';
 
 const prisma = new PrismaClient();
 const createdPlayerIds: string[] = [];
+const createdTeamIds: string[] = [];
+const createdClubIds: string[] = [];
+const createdSeasonIds: string[] = [];
 
 const uniqueName = (label: string) =>
-  `Test-${label}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  `Pcrud-${label}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+const createTeamForCascadeCheck = async () => {
+  const season = await prisma.season.create({
+    data: {
+      name: uniqueName('Cascade Season'),
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 1000 * 60 * 60 * 24),
+    },
+  });
+  createdSeasonIds.push(season.id);
+
+  const club = await prisma.club.create({
+    data: {
+      name: uniqueName('Cascade Club'),
+    },
+  });
+  createdClubIds.push(club.id);
+
+  const team = await prisma.team.create({
+    data: {
+      name: uniqueName('Cascade Team'),
+      clubId: club.id,
+      seasonId: season.id,
+    },
+  });
+  createdTeamIds.push(team.id);
+
+  return team;
+};
 
 afterAll(async () => {
   if (createdPlayerIds.length > 0) {
     await prisma.player.deleteMany({
       where: { id: { in: createdPlayerIds } },
     });
+  }
+  if (createdTeamIds.length > 0) {
+    await prisma.playerTeamSeason.deleteMany({
+      where: { teamId: { in: createdTeamIds } },
+    });
+    await prisma.team.deleteMany({
+      where: { id: { in: createdTeamIds } },
+    });
+  }
+  if (createdClubIds.length > 0) {
+    await prisma.club.deleteMany({ where: { id: { in: createdClubIds } } });
+  }
+  if (createdSeasonIds.length > 0) {
+    await prisma.season.deleteMany({ where: { id: { in: createdSeasonIds } } });
   }
   await prisma.$disconnect();
 });
@@ -87,10 +133,8 @@ describe.sequential('Player CRUD integration', () => {
     const playerId = createRes.body.id;
     createdPlayerIds.push(playerId);
 
-    const team = await prisma.team.findFirst();
-    if (!team) {
-      throw new Error('No team found to test cascade delete');
-    }
+    const team = (await prisma.team.findFirst()) ?? (await createTeamForCascadeCheck());
+
     await prisma.playerTeamSeason.create({
       data: {
         playerId,

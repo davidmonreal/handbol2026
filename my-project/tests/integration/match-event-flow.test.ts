@@ -5,6 +5,58 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 const API_URL = 'http://localhost:3000';
 
+const createdPlayerIds: string[] = [];
+const createdTeamIds: string[] = [];
+const createdClubIds: string[] = [];
+const createdSeasonIds: string[] = [];
+
+const createTeamWithPlayer = async (label: string) => {
+  const now = Date.now();
+  const season = await prisma.season.create({
+    data: {
+      name: `MatchEventFlowSeason-${label}-${now}`,
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 1000 * 60 * 60 * 24),
+    },
+  });
+  createdSeasonIds.push(season.id);
+
+  const club = await prisma.club.create({
+    data: {
+      name: `MatchEventFlowClub-${label}-${now}`,
+    },
+  });
+  createdClubIds.push(club.id);
+
+  const team = await prisma.team.create({
+    data: {
+      name: `MatchEventFlowTeam-${label}-${now}`,
+      clubId: club.id,
+      seasonId: season.id,
+      isMyTeam: label === 'Home',
+    },
+  });
+  createdTeamIds.push(team.id);
+
+  const player = await prisma.player.create({
+    data: {
+      name: `MatchEventFlowPlayer-${label}-${now}`,
+      number: Math.floor(Math.random() * 80) + 1,
+    },
+  });
+  createdPlayerIds.push(player.id);
+
+  await prisma.playerTeamSeason.create({
+    data: {
+      playerId: player.id,
+      teamId: team.id,
+      role: `${label}-Test`,
+    },
+  });
+
+  return { team, playerId: player.id };
+};
+
 describe('Integration Tests: Match Event Flow', () => {
   let testMatchId: string;
   let testTeamId: string;
@@ -12,37 +64,25 @@ describe('Integration Tests: Match Event Flow', () => {
   let createdMatchId: string | null = null;
 
   beforeAll(async () => {
-    // Build an isolated match with teams that have players to avoid locks/collisions
-    const teamWithPlayers = await prisma.team.findFirst({
-      where: { players: { some: {} } },
-      include: { players: { include: { player: true } } },
-    });
-    const anotherTeam = await prisma.team.findFirst({
-      where: {
-        id: { not: teamWithPlayers?.id || undefined },
-        players: { some: {} },
-      },
-    });
-
-    if (!teamWithPlayers || !anotherTeam || !teamWithPlayers.players.length) {
-      throw new Error('No suitable teams with players found. Seed the DB first.');
-    }
+    const home = await createTeamWithPlayer('Home');
+    const away = await createTeamWithPlayer('Away');
 
     const match = await prisma.match.create({
       data: {
         date: new Date(),
-        homeTeamId: teamWithPlayers.id,
-        awayTeamId: anotherTeam.id,
+        homeTeamId: home.team.id,
+        awayTeamId: away.team.id,
         isFinished: false,
         homeEventsLocked: false,
         awayEventsLocked: false,
+        realTimeFirstHalfStart: Date.now(),
       },
     });
 
     createdMatchId = match.id;
     testMatchId = match.id;
-    testTeamId = teamWithPlayers.id;
-    testPlayerId = teamWithPlayers.players[0].player.id;
+    testTeamId = home.team.id;
+    testPlayerId = home.playerId;
   });
 
   afterAll(async () => {
@@ -50,6 +90,24 @@ describe('Integration Tests: Match Event Flow', () => {
       await prisma.gameEvent.deleteMany({ where: { matchId: createdMatchId } });
       await prisma.match.delete({ where: { id: createdMatchId } });
     }
+
+    if (createdTeamIds.length) {
+      await prisma.playerTeamSeason.deleteMany({ where: { teamId: { in: createdTeamIds } } });
+      await prisma.team.deleteMany({ where: { id: { in: createdTeamIds } } });
+    }
+
+    if (createdPlayerIds.length) {
+      await prisma.player.deleteMany({ where: { id: { in: createdPlayerIds } } });
+    }
+
+    if (createdClubIds.length) {
+      await prisma.club.deleteMany({ where: { id: { in: createdClubIds } } });
+    }
+
+    if (createdSeasonIds.length) {
+      await prisma.season.deleteMany({ where: { id: { in: createdSeasonIds } } });
+    }
+
     await prisma.$disconnect();
   });
 
@@ -171,12 +229,13 @@ describe('Integration Tests: Match Event Flow', () => {
   });
 
   it('should handle complete match workflow: create match -> add events -> retrieve events', async () => {
-    // 1. Create a new match
-    const teams = await prisma.team.findMany({ take: 2 });
+    // 1. Create a new match with dedicated teams/players
+    const workflowHome = await createTeamWithPlayer('WorkflowHome');
+    const workflowAway = await createTeamWithPlayer('WorkflowAway');
     const newMatch = {
       date: new Date(),
-      homeTeamId: teams[0].id,
-      awayTeamId: teams[1].id,
+      homeTeamId: workflowHome.team.id,
+      awayTeamId: workflowAway.team.id,
       isFinished: false,
     };
 
@@ -189,13 +248,18 @@ describe('Integration Tests: Match Event Flow', () => {
     expect(matchResponse.ok).toBe(true);
     const createdMatch = await matchResponse.json();
 
-    // 2. Add events to the match
-    const player = await prisma.player.findFirst();
+    const calibrationResponse = await fetch(`${API_URL}/api/matches/${createdMatch.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ realTimeFirstHalfStart: Date.now() }),
+    });
+    expect(calibrationResponse.ok).toBe(true);
+
     const event1 = {
       matchId: createdMatch.id,
       timestamp: 60,
-      playerId: player?.id,
-      teamId: teams[0].id,
+      playerId: workflowHome.playerId,
+      teamId: workflowHome.team.id,
       type: 'Shot',
       subtype: 'Goal',
       position: 'LW',

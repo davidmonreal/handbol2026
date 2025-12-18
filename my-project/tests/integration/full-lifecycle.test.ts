@@ -162,6 +162,12 @@ describe('Full Application Lifecycle Integration Test', () => {
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('id');
       matchId = res.body.id;
+
+      // Start the official clock right away so event creation is permitted.
+      const calibration = await request(app)
+        .patch(`/api/matches/${matchId}`)
+        .send({ realTimeFirstHalfStart: Date.now() });
+      expect(calibration.status).toBe(200);
     });
   });
 
