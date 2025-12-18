@@ -18,7 +18,7 @@ interface ComputeOptions {
   forceRefresh?: boolean;
 }
 
-const FALLBACK_CACHE_TTL_MINUTES = 15;
+const FALLBACK_CACHE_TTL_MINUTES = 24 * 60; // default 24h cache
 const parsedTtl = Number(process.env.WEEKLY_INSIGHTS_CACHE_TTL_MINUTES);
 const DEFAULT_CACHE_TTL_MS =
   Number.isFinite(parsedTtl) && parsedTtl >= 0
