@@ -19,7 +19,7 @@ export class InsightsController {
 
   async recomputeWeeklyInsights(req: Request, res: Response) {
     try {
-      const data = await this.service.computeWeeklyInsights();
+      const data = await this.service.computeWeeklyInsights(undefined, { forceRefresh: true });
       res.json(data);
     } catch (error) {
       console.error('Error recomputing weekly insights:', error);

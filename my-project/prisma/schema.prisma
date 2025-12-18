@@ -124,3 +124,13 @@ enum Handedness {
   LEFT
   RIGHT
 }
+
+model WeeklyInsightCache {
+  id          String   @id @default(uuid())
+  rangeStart  DateTime
+  rangeEnd    DateTime
+  generatedAt DateTime
+  payload     Json
+
+  @@unique([rangeStart, rangeEnd])
+}
