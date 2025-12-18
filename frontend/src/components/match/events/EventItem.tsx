@@ -28,8 +28,6 @@ export const EventItem = ({
         realTimeSecondHalfStart,
     } = useMatch();
     const { t } = useSafeTranslation();
-    const HALF_DURATION_SECONDS = 30 * 60;
-
     const secondHalfBoundarySeconds = (() => {
         if (realTimeFirstHalfStart && realTimeSecondHalfStart) {
             return Math.max(
@@ -43,7 +41,7 @@ export const EventItem = ({
                 Math.floor((realTimeFirstHalfEnd - realTimeFirstHalfStart) / 1000)
             );
         }
-        return HALF_DURATION_SECONDS;
+        return Number.POSITIVE_INFINITY;
     })();
 
     const formatClock = (seconds: number) => {
@@ -82,8 +80,9 @@ export const EventItem = ({
         }
         return false;
     };
-    const isSecondHalfEvent = videoSecondHalf() || event.timestamp >= secondHalfBoundarySeconds;
-    const displaySeconds = isSecondHalfEvent
+    const hasBoundary = Number.isFinite(secondHalfBoundarySeconds);
+    const isSecondHalfEvent = videoSecondHalf() || (hasBoundary && event.timestamp >= secondHalfBoundarySeconds);
+    const displaySeconds = isSecondHalfEvent && hasBoundary
         ? Math.max(0, event.timestamp - secondHalfBoundarySeconds)
         : event.timestamp;
 

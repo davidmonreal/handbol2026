@@ -11,8 +11,6 @@ import { usePlayWindow } from './hooks/usePlayWindow';
 import { useStatisticsCalculator } from './hooks/useStatisticsCalculator';
 import { downloadTeamEventsCSV } from '../../utils/csvExport';
 
-const HALF_DURATION_SECONDS = 30 * 60;
-
 export function StatisticsView({
   events,
   foulEvents,
@@ -125,13 +123,13 @@ export function StatisticsView({
   const opponentTeamName = opponentTeamData ? formatTeamDisplay(opponentTeamData) : 'Rival';
 
   const secondHalfBoundarySeconds = useMemo(() => {
-    if (matchData?.realTimeFirstHalfStart && matchData?.realTimeFirstHalfEnd) {
-      return Math.max(0, Math.floor((matchData.realTimeFirstHalfEnd - matchData.realTimeFirstHalfStart) / 1000));
-    }
     if (matchData?.realTimeFirstHalfStart && matchData?.realTimeSecondHalfStart) {
       return Math.max(0, Math.floor((matchData.realTimeSecondHalfStart - matchData.realTimeFirstHalfStart) / 1000));
     }
-    return HALF_DURATION_SECONDS;
+    if (matchData?.realTimeFirstHalfStart && matchData?.realTimeFirstHalfEnd) {
+      return Math.max(0, Math.floor((matchData.realTimeFirstHalfEnd - matchData.realTimeFirstHalfStart) / 1000));
+    }
+    return Number.POSITIVE_INFINITY;
   }, [matchData?.realTimeFirstHalfEnd, matchData?.realTimeFirstHalfStart, matchData?.realTimeSecondHalfStart]);
 
   // Apply all filters for both own team (selected) and opponent (for fouls)

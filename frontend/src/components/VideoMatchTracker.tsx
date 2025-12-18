@@ -101,6 +101,12 @@ const VideoMatchTrackerContent = () => {
                     isFinished: data.isFinished,
                     homeScore: data.homeScore,
                     awayScore: data.awayScore,
+                    homeEventsLocked: data.homeEventsLocked,
+                    awayEventsLocked: data.awayEventsLocked,
+                    realTimeFirstHalfStart: data.realTimeFirstHalfStart,
+                    realTimeSecondHalfStart: data.realTimeSecondHalfStart,
+                    realTimeFirstHalfEnd: data.realTimeFirstHalfEnd,
+                    realTimeSecondHalfEnd: data.realTimeSecondHalfEnd,
                 });
             } catch (error) {
                 console.error('Error loading match:', error);

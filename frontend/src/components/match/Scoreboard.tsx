@@ -5,8 +5,6 @@ import { useMatch } from '../../context/MatchContext';
 import { useSafeTranslation } from '../../context/LanguageContext';
 import { formatCategoryLabel } from '../../utils/categoryLabels';
 
-const HALF_DURATION_SECONDS = 30 * 60;
-
 interface MatchTeam {
   id: string;
   name: string;
@@ -70,7 +68,7 @@ export const Scoreboard = ({
     ? Math.max(0, Math.floor((realTimeSecondHalfEnd - realTimeSecondHalfStart) / 1000))
     : null;
   const secondHalfEndClock = secondHalfDuration !== null
-    ? (firstHalfDuration ?? HALF_DURATION_SECONDS) + secondHalfDuration
+    ? secondHalfDuration
     : null;
 
   const firstHalfButtonLabel = !realTimeFirstHalfStart
@@ -221,16 +219,6 @@ export const Scoreboard = ({
                   {secondHalfButtonLabel}
                 </button>
               </div>
-              {firstHalfDuration !== null && (
-                <div className="text-[11px] text-green-700 font-medium text-center">
-                  {t('scoreboard.halfFinishedAtClock', { clock: formatTime(firstHalfDuration) })}
-                </div>
-              )}
-              {secondHalfEndClock !== null && (
-                <div className="text-[11px] text-green-700 font-medium text-center">
-                  {t('scoreboard.halfFinishedAtClock', { clock: formatTime(secondHalfEndClock) })}
-                </div>
-              )}
             </div>
           )}
         </div>

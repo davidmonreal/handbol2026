@@ -43,7 +43,8 @@ export class GameEventController {
       const event = await this.gameEventService.create(req.body);
       res.status(201).json(event);
     } catch (error) {
-      res.status(500).json({ error: 'Failed to create game event' });
+      const message = error instanceof Error ? error.message : 'Failed to create game event';
+      res.status(400).json({ error: message });
     }
   };
 

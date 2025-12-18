@@ -52,6 +52,31 @@ export class GameEventService {
       throw new Error('Events are locked for this team');
     }
 
+    if (!match.realTimeFirstHalfStart) {
+      throw new Error('Match has not been started yet');
+    }
+
+    const firstHalfBoundarySeconds =
+      match.realTimeFirstHalfStart && match.realTimeSecondHalfStart
+        ? Math.max(
+            0,
+            Math.floor((match.realTimeSecondHalfStart - match.realTimeFirstHalfStart) / 1000),
+          )
+        : match.realTimeFirstHalfStart && match.realTimeFirstHalfEnd
+          ? Math.max(
+              0,
+              Math.floor((match.realTimeFirstHalfEnd - match.realTimeFirstHalfStart) / 1000),
+            )
+          : null;
+
+    if (
+      firstHalfBoundarySeconds !== null &&
+      data.timestamp > firstHalfBoundarySeconds &&
+      !match.realTimeSecondHalfStart
+    ) {
+      throw new Error('Second half has not started yet');
+    }
+
     // Only update match scores while the match is live
     const shouldUpdateScore = !match.isFinished;
 

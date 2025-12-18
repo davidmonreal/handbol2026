@@ -87,6 +87,8 @@ const MatchTracker = () => {
           awayEventsLocked: data.awayEventsLocked,
           realTimeFirstHalfStart: data.realTimeFirstHalfStart,
           realTimeSecondHalfStart: data.realTimeSecondHalfStart,
+          realTimeFirstHalfEnd: data.realTimeFirstHalfEnd,
+          realTimeSecondHalfEnd: data.realTimeSecondHalfEnd,
         });
         if (data.isFinished) {
           setTimerStopped(true);
@@ -248,6 +250,14 @@ const MatchTracker = () => {
     opponentGoalkeeperId: selectedOpponentGoalkeeper?.id
   }), [selectedOpponentGoalkeeper?.id]);
 
+  const missingFirstHalf = !realTimeFirstHalfStart;
+  const waitingForSecondHalf = Boolean(realTimeFirstHalfEnd && !realTimeSecondHalfStart);
+  const clockBlockKey = missingFirstHalf
+    ? 'matchTracker.lockedUntilFirstHalfStart'
+    : waitingForSecondHalf
+      ? 'matchTracker.lockedUntilSecondHalfStart'
+      : null;
+  const formLocked = activeTeamLocked || Boolean(clockBlockKey);
 
   if (!homeTeam || !visitorTeam || !matchLoaded) {
     return <div className="p-8 text-center">{t('matchTracker.loading')}</div>;
@@ -348,12 +358,12 @@ const MatchTracker = () => {
                   </button>
                 )}
               </div>
-              {activeTeamLocked && (
+              {(activeTeamLocked || clockBlockKey) && (
                 <div className="flex items-center gap-2 text-[11px] font-medium text-gray-600 bg-gray-100 px-3 py-2 rounded-md mb-3">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.657 0 3-1.343 3-3V5a3 3 0 10-6 0v3c0 1.657 1.343 3 3 3z M5 11h14v8a2 2 0 01-2 2H7a2 2 0 01-2-2v-8z" />
                   </svg>
-                  <span>{t('matchTracker.lockedBanner')}</span>
+                  <span>{t(clockBlockKey ?? 'matchTracker.lockedBanner')}</span>
                 </div>
               )}
 
@@ -366,7 +376,7 @@ const MatchTracker = () => {
                 onSave={handleSaveEvent}
                 onCancel={handleCancelEdit}
                 onDelete={(eventId) => deleteEvent(eventId, true)}
-                locked={activeTeamLocked}
+                locked={formLocked}
               />
             </div>
           ) : (

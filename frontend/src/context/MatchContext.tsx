@@ -73,8 +73,6 @@ interface MatchContextType {
 }
 
 const MatchContext = createContext<MatchContextType | undefined>(undefined);
-const HALF_DURATION_SECONDS = 30 * 60;
-
 export const MatchProvider = ({ children }: { children: ReactNode }) => {
   const [homeScore, setHomeScore] = useState(0);
   const [visitorScore, setVisitorScore] = useState(0);
@@ -90,8 +88,16 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
   const [selectedOpponentGoalkeeper, setSelectedOpponentGoalkeeper] = useState<Player | null>(null);
   const [homeEventsLocked, setHomeEventsLocked] = useState(false);
   const [awayEventsLocked, setAwayEventsLocked] = useState(false);
-
   const addEvent = async (event: MatchEvent) => {
+    if (!realTimeFirstHalfStart) {
+      console.warn('Cannot add events before starting the first half.');
+      return;
+    }
+    if (realTimeFirstHalfEnd && !realTimeSecondHalfStart) {
+      console.warn('Cannot add events until the second half is started.');
+      return;
+    }
+
     // Ensure timestamp defaults to current clock if caller didn't set it
     const timestamp = event.timestamp ?? time;
     const eventWithTimestamp = { ...event, timestamp };
@@ -302,7 +308,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
             : Math.max(0, Math.floor((timestamp - realTimeFirstHalfStart) / 1000));
           setTime(firstPhaseDuration);
         } else {
-          setTime(HALF_DURATION_SECONDS);
+          setTime(0);
         }
       } else {
         setRealTimeSecondHalfEnd(timestamp);

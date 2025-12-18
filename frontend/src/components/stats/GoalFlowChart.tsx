@@ -15,7 +15,6 @@ interface GoalFlowChartProps {
 
 type SeriesPoint = { position: number; value: number };
 
-const HALF_DURATION_SECONDS = 30 * 60;
 const VIEWBOX_WIDTH = 1000;
 const VIEWBOX_HEIGHT = 520;
 const PADDING_LEFT = 60;
@@ -66,7 +65,9 @@ export function GoalFlowChart({
         savesByPosition,
         maxGoals,
     } = useMemo(() => {
-        const halfSplit = secondHalfMarkSeconds ?? HALF_DURATION_SECONDS;
+        const halfSplit = typeof secondHalfMarkSeconds === 'number'
+            ? secondHalfMarkSeconds
+            : Number.POSITIVE_INFINITY;
 
         const ownGoals = events
             .filter(e => e.teamId === selectedTeamId && e.category === 'Shot' && e.action === 'Goal')
