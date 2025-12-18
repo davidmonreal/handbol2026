@@ -43,13 +43,13 @@ export const EventList = ({
     };
 
     return (
-        <div className="bg-white rounded-lg shadow">
-            <div className="px-4 py-3 border-b border-gray-200">
-                <h3 className="font-bold text-gray-700 uppercase text-xs tracking-wider">
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                <h3 className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
                     Recent Events ({recentEvents.length} of {filteredEvents.length})
                 </h3>
             </div>
-            <div className="divide-y divide-gray-100">
+            <div>
                 {recentEvents.length === 0 ? (
                     <div className="p-4 text-center text-gray-500 text-sm">
                         No events recorded yet

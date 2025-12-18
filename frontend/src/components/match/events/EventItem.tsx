@@ -46,10 +46,10 @@ export const EventItem = ({
         return HALF_DURATION_SECONDS;
     })();
 
-    const formatTimeWithHalf = (seconds: number, halfLabel: string) => {
+    const formatClock = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')} (${halfLabel})`;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
     const formatVideoTime = (seconds: number): string => {
@@ -107,29 +107,6 @@ export const EventItem = ({
     const team = getTeam();
     const player = team?.players?.find(p => p.id === event.playerId);
 
-    const getCategoryIcon = () => {
-        switch (event.category) {
-            case 'Shot': return '🎯';
-            case 'Turnover': return '❌';
-            case 'Sanction': return '⚠️';
-            default: return '•';
-        }
-    };
-
-    const getResultIcon = () => {
-        if (event.category === 'Shot') {
-            switch (event.action) {
-                case 'Goal': return '⚽';
-                case 'Save': return '🧤';
-                case 'Miss': return '💨';
-                case 'Post': return '🥅';
-                case 'Block': return '🚫';
-                default: return '';
-            }
-        }
-        return '';
-    };
-
     const formatZone = () => {
         if (!event.zone) return null;
 
@@ -152,14 +129,37 @@ export const EventItem = ({
         return tags;
     };
 
+    const goalZoneTag = (() => {
+        if (event.goalZoneTag) return event.goalZoneTag;
+        if (typeof event.goalTarget !== 'number') return '';
+        const mapping: Record<number, string> = {
+            1: 'TL',
+            2: 'TM',
+            3: 'TR',
+            4: 'ML',
+            5: 'MM',
+            6: 'MR',
+            7: 'BL',
+            8: 'BM',
+            9: 'BR',
+        };
+        return mapping[event.goalTarget] ?? '';
+    })();
+
+    const zoneLabel = formatZone();
+    const contextTags = formatContext();
+    const halfLabel = isSecondHalfEvent ? t('matchEvent.halfSecond') : t('matchEvent.halfFirst');
+
     // Show play button if we can calculate video time (from stored or from calibration)
     const canSeekToVideo = calculatedVideoTime !== null && isVideoLoaded && onSeekToVideo;
+    const chipBaseClass = 'inline-flex items-center rounded-lg border px-3 py-1 text-xs font-semibold';
+    const mutedChipClass = `${chipBaseClass} border-gray-100 bg-gray-50 text-gray-500`;
 
     return (
-        <div className="p-3 hover:bg-gray-50 transition-colors group">
+        <div className="border-b border-gray-100 last:border-b-0">
             <div
                 onClick={() => onEdit?.(event)}
-                className="w-full text-left cursor-pointer"
+                className="group flex items-center gap-3 px-4 py-3 text-left cursor-pointer overflow-x-auto whitespace-nowrap"
                 data-testid={`event-item-${event.id}`}
                 role="button"
                 tabIndex={0}
@@ -170,81 +170,63 @@ export const EventItem = ({
                     }
                 }}
             >
-                {/* First Line: Time, Player */}
-                <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2 text-sm">
-                        <span className="font-mono text-gray-500 font-medium">
-                            {formatTimeWithHalf(
-                                displaySeconds,
-                                isSecondHalfEvent ? t('matchEvent.halfSecond') : t('matchEvent.halfFirst')
-                            )}
-                        </span>
-                        <span className="font-medium text-gray-700 group-hover:text-indigo-600 transition-colors">
-                            #{player?.number || '?'} {player?.name || 'Unknown'}
-                        </span>
-                    </div>
-                    {/* Edit Icon + Video Seek */}
-                    <div className="flex items-center gap-2">
-                        {/* Video Seek Button - show when video is calibrated and loaded */}
-                        {canSeekToVideo && (
-                            <button
-                                type="button"
-                                onClick={handleSeekToVideo}
-                                className="p-1 rounded-full bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 transition-colors"
-                                title={`Go to video ${formatVideoTime(calculatedVideoTime)}`}
-                            >
-                                <Play size={12} fill="currentColor" />
-                            </button>
-                        )}
-                        <span className="opacity-0 group-hover:opacity-100 text-gray-400 transition-opacity">
-                            <Edit2 size={14} />
-                        </span>
-                    </div>
+                <div className="flex items-center gap-1 text-xs text-gray-500 font-mono shrink-0">
+                    <span className="text-sm font-semibold text-gray-700">{formatClock(displaySeconds)}</span>
+                    <span className="text-[11px] text-gray-400">{halfLabel}</span>
                 </div>
 
-                {/* Second Line: Category, Zone, Result, Context */}
-                <div className="mt-1 flex flex-wrap items-center gap-2">
-                    {/* Category Badge */}
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 font-medium text-xs shadow-sm group-hover:border-indigo-300 group-hover:text-indigo-600 transition-all">
-                        <span>{getCategoryIcon()}</span>
-                        <span>{event.category}</span>
+                <div className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1 text-sm font-semibold text-gray-700 shrink-0">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-gray-100 text-[13px] text-gray-900">
+                        {player?.number || '?'}
+                    </span>
+                    <span className="truncate max-w-[160px] md:max-w-[220px]">{player?.name || 'Unknown'}</span>
+                </div>
+
+                <div className="flex items-center gap-2 min-w-0 text-xs flex-1 overflow-x-auto">
+                    <span className={`${chipBaseClass} border-gray-200 bg-white text-gray-700`}>
+                        {event.category}
                     </span>
 
-                    {/* Zone Badge */}
-                    {formatZone() && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-600 text-xs shadow-sm group-hover:border-indigo-300 transition-all">
-                            <span>📍</span>
-                            <span>{formatZone()}</span>
+                    {zoneLabel && (
+                        <span className={`${chipBaseClass} border-gray-200 bg-white text-gray-600`}>{zoneLabel}</span>
+                    )}
+
+                    {event.action && (
+                        <span
+                            className={`${chipBaseClass} ${
+                                event.category === 'Shot'
+                                    ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                                    : 'border-purple-200 bg-purple-50 text-purple-700'
+                            }`}
+                        >
+                            <span>{event.action}</span>
+                            {event.category === 'Shot' && event.action === 'Goal' && goalZoneTag && (
+                                <span className="ml-1 text-[10px] uppercase text-indigo-400">{goalZoneTag}</span>
+                            )}
                         </span>
                     )}
 
-                    {/* Result Badge */}
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold text-xs shadow-sm group-hover:bg-indigo-100 transition-all">
-                        <span>{getResultIcon()}</span>
-                        <span>{event.action}</span>
-                        {event.goalTarget && event.category === 'Shot' && event.action === 'Goal' && (
-                            <span className="text-indigo-400 font-normal ml-1 text-[10px] uppercase">
-                                {event.goalZoneTag || (
-                                    event.goalTarget === 1 ? 'TL' :
-                                        event.goalTarget === 2 ? 'TM' :
-                                            event.goalTarget === 3 ? 'TR' :
-                                                event.goalTarget === 4 ? 'ML' :
-                                                    event.goalTarget === 5 ? 'MM' :
-                                                        event.goalTarget === 6 ? 'MR' :
-                                                            event.goalTarget === 7 ? 'BL' :
-                                                                event.goalTarget === 8 ? 'BM' :
-                                                                    event.goalTarget === 9 ? 'BR' : ''
-                                )}
-                            </span>
-                        )}
-                    </span>
-
-                    {/* Context Tags */}
-                    {formatContext().map(tag => (
-                        <span key={tag} className="inline-flex items-center px-2 py-1 rounded-md bg-gray-50 text-gray-500 text-xs border border-gray-100">
+                    {contextTags.map(tag => (
+                        <span key={tag} className={mutedChipClass}>
                             {tag}
                         </span>
                     ))}
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                    {canSeekToVideo && (
+                        <button
+                            type="button"
+                            onClick={handleSeekToVideo}
+                            className="p-1.5 rounded-full border border-gray-200 text-red-500 hover:text-red-600 hover:border-red-300 transition-colors"
+                            title={`Go to video ${formatVideoTime(calculatedVideoTime)}`}
+                        >
+                            <Play size={12} fill="currentColor" />
+                        </button>
+                    )}
+                    <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Edit2 size={14} />
+                    </span>
                 </div>
             </div>
         </div>
