@@ -135,6 +135,12 @@ export const translations: Record<LanguageCode, TranslationMap> = {
     'dashboard.insights.value.individualGoals': '{{count}} individual goals',
     'dashboard.insights.value.collectiveGoals': '{{count}} collective goals',
     'dashboard.insights.value.fouls': '{{count}} fouls',
+    'dashboard.myTeamsStats.badge': 'Analytics',
+    'dashboard.myTeamsStats.title': 'Your team statistics',
+    'dashboard.myTeamsStats.description': 'Jump straight to the analytics for the teams you marked as yours.',
+    'dashboard.myTeamsStats.cta': 'Open statistics',
+    'dashboard.myTeamsStats.empty': 'You have no teams marked as yours yet.',
+    'dashboard.myTeamsStats.error': 'We couldn\'t load your teams right now.',
   },
   ca: {
     'nav.dashboard': 'Dashboard',
@@ -260,6 +266,12 @@ export const translations: Record<LanguageCode, TranslationMap> = {
     'dashboard.insights.value.individualGoals': '{{count}} gols individuals',
     'dashboard.insights.value.collectiveGoals': '{{count}} gols col·lectius',
     'dashboard.insights.value.fouls': '{{count}} faltes',
+    'dashboard.myTeamsStats.badge': 'Estadístiques',
+    'dashboard.myTeamsStats.title': 'Estadístiques dels teus equips',
+    'dashboard.myTeamsStats.description': 'Accedeix ràpidament als informes dels equips que tens marcats com a teus.',
+    'dashboard.myTeamsStats.cta': 'Obrir estadístiques',
+    'dashboard.myTeamsStats.empty': 'Encara no tens cap equip marcat com a teu.',
+    'dashboard.myTeamsStats.error': 'No s\'han pogut carregar els teus equips.',
   },
   es: {
     'nav.dashboard': 'Dashboard',
@@ -385,6 +397,12 @@ export const translations: Record<LanguageCode, TranslationMap> = {
     'dashboard.insights.value.individualGoals': '{{count}} goles individuales',
     'dashboard.insights.value.collectiveGoals': '{{count}} goles colectivos',
     'dashboard.insights.value.fouls': '{{count}} faltas',
+    'dashboard.myTeamsStats.badge': 'Estadísticas',
+    'dashboard.myTeamsStats.title': 'Estadísticas de tus equipos',
+    'dashboard.myTeamsStats.description': 'Accede rápido a los informes de los equipos marcados como tuyos.',
+    'dashboard.myTeamsStats.cta': 'Abrir estadísticas',
+    'dashboard.myTeamsStats.empty': 'Aún no tienes equipos marcados como tuyos.',
+    'dashboard.myTeamsStats.error': 'No se pudieron cargar tus equipos.',
   },
 };
 

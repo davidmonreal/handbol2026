@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { useMatch } from '../context/MatchContext';
 import { useSafeTranslation } from '../context/LanguageContext';
 import type { MatchEvent } from '../types';
@@ -11,6 +11,7 @@ import { formatCategoryLabel } from '../utils/categoryLabels';
 const Statistics = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const matchId = searchParams.get('matchId');
   const playerId = searchParams.get('playerId');
   const teamId = searchParams.get('teamId');
@@ -135,7 +136,13 @@ const Statistics = () => {
   }, [matchId, playerId, teamId, data, selectedTeamId, activeTeamId]);
 
   // Handle back navigation
+  const fromPath = (location.state as { fromPath?: string } | null)?.fromPath;
+
   const handleBack = () => {
+    if (fromPath) {
+      navigate(fromPath);
+      return;
+    }
     if (matchId) {
       // If coming from MatchTracker (live), go back there. 
       // But we don't know if we came from MatchTracker or MatchesManagement.
