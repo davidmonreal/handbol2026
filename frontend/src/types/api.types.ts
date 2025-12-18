@@ -1,3 +1,5 @@
+import type { Team } from '../types';
+
 /**
  * API Response Types
  * Explicit types for backend API responses to replace 'any' usage
@@ -89,4 +91,11 @@ export interface WeeklyInsightsResponse {
         teamWithMostCollectiveGoals: WeeklyInsightsTeam | null;
         teamWithMostFouls: WeeklyInsightsTeam | null;
     };
+}
+
+export interface DashboardSnapshotResponse {
+    pendingMatches: MatchApiResponse[];
+    pastMatches: MatchApiResponse[];
+    myTeams: Team[];
+    weeklyInsights: WeeklyInsightsResponse;
 }

@@ -1,75 +1,59 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ChevronRight, Calendar } from 'lucide-react';
+import { Plus, ChevronRight, Calendar, BarChart3 } from 'lucide-react';
 import { API_BASE_URL } from '../config/api';
 import { useSafeTranslation } from '../context/LanguageContext';
 import { LoadingGrid, ErrorMessage } from './common';
 import { MatchCard } from './match/MatchCard';
-import type { DashboardMatch } from './match/MatchCard';
-import type { WeeklyInsightsResponse } from '../types/api.types';
+import type { WeeklyInsightsResponse, DashboardSnapshotResponse } from '../types/api.types';
 import { WeeklyInsightsTicker } from './dashboard/WeeklyInsightsTicker';
-
-type Match = DashboardMatch;
+import { formatCategoryLabel } from '../utils/categoryLabels';
 
 // ...
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { t } = useSafeTranslation();
-  const [pendingMatches, setPendingMatches] = useState<Match[]>([]);
-  const [pastMatches, setPastMatches] = useState<Match[]>([]);
+  const [dashboardData, setDashboardData] = useState<DashboardSnapshotResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorKey, setErrorKey] = useState<string | null>(null);
-  const [weeklyInsights, setWeeklyInsights] = useState<WeeklyInsightsResponse | null>(null);
-  const [isInsightsLoading, setIsInsightsLoading] = useState(true);
   const [isInsightsRefreshing, setIsInsightsRefreshing] = useState(false);
   const [insightsErrorKey, setInsightsErrorKey] = useState<string | null>(null);
+  const [teamsErrorKey, setTeamsErrorKey] = useState<string | null>(null);
+
+  const pendingMatches = dashboardData?.pendingMatches ?? [];
+  const pastMatches = dashboardData?.pastMatches ?? [];
+  const myTeams = dashboardData?.myTeams ?? [];
+  const weeklyInsights = dashboardData?.weeklyInsights ?? null;
   const myPendingMatches = pendingMatches.filter(
     match => match.homeTeam?.isMyTeam || match.awayTeam?.isMyTeam,
   );
+  const isInsightsLoading = isLoading && !weeklyInsights;
+  const isMyTeamsLoading = isLoading && !dashboardData;
 
   useEffect(() => {
-    fetchMatches();
-    loadInsights();
+    loadDashboard();
   }, []);
 
-  const fetchMatches = async () => {
+  const loadDashboard = async () => {
     try {
-      setErrorKey(null);
       setIsLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/matches`);
-      if (response.ok) {
-        const data = await response.json();
-        const pending = data.filter((m: Match) => !m.isFinished).sort((a: Match, b: Match) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        const past = data.filter((m: Match) => m.isFinished).sort((a: Match, b: Match) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setPendingMatches(pending);
-        setPastMatches(past);
-      } else {
-        setErrorKey('dashboard.errorLoadMatches');
+      setErrorKey(null);
+      const response = await fetch(`${API_BASE_URL}/api/dashboard`);
+      if (!response.ok) {
+        throw new Error('Failed to load dashboard');
       }
+      const payload = (await response.json()) as DashboardSnapshotResponse;
+      setDashboardData(payload);
+      setInsightsErrorKey(null);
+      setTeamsErrorKey(null);
     } catch (error) {
-      console.error('Error fetching matches:', error);
+      console.error('Error fetching dashboard snapshot:', error);
       setErrorKey('dashboard.errorConnection');
+      setInsightsErrorKey('dashboard.insights.errorLoad');
+      setTeamsErrorKey('dashboard.myTeamsStats.error');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const loadInsights = async () => {
-    try {
-      setInsightsErrorKey(null);
-      setIsInsightsLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/insights/weekly`);
-      if (!response.ok) {
-        throw new Error('Failed to load insights');
-      }
-      const data = (await response.json()) as WeeklyInsightsResponse;
-      setWeeklyInsights(data);
-    } catch (error) {
-      console.error('Error fetching weekly insights:', error);
-      setInsightsErrorKey('dashboard.insights.errorLoad');
-    } finally {
-      setIsInsightsLoading(false);
     }
   };
 
@@ -84,7 +68,17 @@ const Dashboard = () => {
         throw new Error('Failed to recompute insights');
       }
       const data = (await response.json()) as WeeklyInsightsResponse;
-      setWeeklyInsights(data);
+      setDashboardData(prev => {
+        if (prev) {
+          return { ...prev, weeklyInsights: data };
+        }
+        return {
+          pendingMatches: [],
+          pastMatches: [],
+          myTeams: [],
+          weeklyInsights: data,
+        };
+      });
     } catch (error) {
       console.error('Error recomputing weekly insights:', error);
       setInsightsErrorKey('dashboard.insights.errorRecompute');
@@ -140,11 +134,66 @@ const Dashboard = () => {
         onRefresh={recomputeInsights}
       />
 
+      <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-4">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase text-indigo-600">
+              <BarChart3 size={16} />
+              {t('dashboard.myTeamsStats.badge')}
+            </div>
+            <h2 className="text-lg font-semibold text-gray-900">{t('dashboard.myTeamsStats.title')}</h2>
+            <p className="text-sm text-gray-500">{t('dashboard.myTeamsStats.description')}</p>
+          </div>
+        </div>
+        {isMyTeamsLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {[...Array(3)].map((_, index) => (
+              <div
+                key={`skeleton-${index}`}
+                className="h-24 rounded-2xl bg-gray-100 animate-pulse"
+              />
+            ))}
+          </div>
+        ) : teamsErrorKey ? (
+          <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl p-4">
+            {t(teamsErrorKey)}
+          </div>
+        ) : myTeams.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {myTeams.map(team => {
+              const meta = [team.club?.name, formatCategoryLabel(team.category, t)]
+                .filter(Boolean)
+                .join(' • ');
+              return (
+                <button
+                  key={team.id}
+                  onClick={() => navigate(`/statistics?teamId=${team.id}`, { state: { fromPath: '/' } })}
+                  className="group flex flex-col items-start gap-3 rounded-2xl border border-gray-200 px-4 py-3 text-left transition hover:border-indigo-300 hover:shadow-sm"
+                >
+                  {meta && <span className="text-xs text-gray-500">{meta}</span>}
+                  <div className="flex w-full items-center justify-between">
+                    <span className="text-base font-semibold text-gray-900">{team.name}</span>
+                    <span className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 group-hover:text-indigo-700">
+                      {t('dashboard.myTeamsStats.cta')}
+                      <ChevronRight size={16} />
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-sm text-gray-500 bg-gray-50 border border-dashed border-gray-200 rounded-xl p-4">
+            {t('dashboard.myTeamsStats.empty')}
+          </div>
+        )}
+      </section>
+
       {/* Error Message */}
       {errorKey && (
         <ErrorMessage
           message={t(errorKey)}
-          onRetry={fetchMatches}
+          onRetry={loadDashboard}
         />
       )}
 
