@@ -70,6 +70,6 @@ describe('LanguageContext', () => {
     });
 
     expect(result.current.safe.language).toBe('es');
-    expect(result.current.safe.t('dashboard.newMatch')).toBe('Nuevo partido');
+    expect(result.current.safe.t('dashboard.newMatch')).toBe('Crear nuevo partido');
   });
 });
