@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Calendar, Clock, MapPin, Play, Volleyball, Edit2 } from 'lucide-react';
+import { useSafeTranslation } from '../../context/LanguageContext';
+import { formatCategoryLabel } from '../../utils/categoryLabels';
 
 interface Team {
   id: string;
@@ -26,8 +28,11 @@ export interface DashboardMatch {
 
 export const MatchCard = ({ match, isPending }: { match: DashboardMatch; isPending: boolean }) => {
   const navigate = useNavigate();
+  const { t } = useSafeTranslation();
   const isViewOnly = match.homeEventsLocked && match.awayEventsLocked;
   const primaryActionLabel = isViewOnly ? 'View plays' : 'Add plays';
+  const homeCategoryLabel = formatCategoryLabel(match.homeTeam?.category, t);
+  const awayCategoryLabel = formatCategoryLabel(match.awayTeam?.category, t);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-3 pt-4 pb-2 hover:shadow-md transition-shadow min-w-[280px] w-full">
@@ -43,7 +48,7 @@ export const MatchCard = ({ match, isPending }: { match: DashboardMatch; isPendi
           <div className="flex items-center justify-between">
             <div className="flex-1 text-right min-w-0">
               <div className="font-semibold text-gray-900 truncate">
-                {match.homeTeam?.category && `${match.homeTeam.category} `}{match.homeTeam?.name || 'Unknown Team'}
+                {homeCategoryLabel && `${homeCategoryLabel} `}{match.homeTeam?.name || 'Unknown Team'}
               </div>
               <div className="text-xs text-gray-500 truncate">{match.homeTeam?.club?.name || 'Unknown Club'}</div>
             </div>
@@ -60,7 +65,7 @@ export const MatchCard = ({ match, isPending }: { match: DashboardMatch; isPendi
 
             <div className="flex-1 text-left min-w-0">
               <div className="font-semibold text-gray-900 truncate">
-                {match.awayTeam?.category && `${match.awayTeam.category} `}{match.awayTeam?.name || 'Unknown Team'}
+                {awayCategoryLabel && `${awayCategoryLabel} `}{match.awayTeam?.name || 'Unknown Team'}
               </div>
               <div className="text-xs text-gray-500 truncate">{match.awayTeam?.club?.name || 'Unknown Club'}</div>
             </div>

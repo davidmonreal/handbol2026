@@ -3,6 +3,7 @@ import { Plus, Minus, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useMatch } from '../../context/MatchContext';
 import { useSafeTranslation } from '../../context/LanguageContext';
+import { formatCategoryLabel } from '../../utils/categoryLabels';
 
 const HALF_DURATION_SECONDS = 30 * 60;
 
@@ -86,6 +87,8 @@ export const Scoreboard = ({
   const firstHalfButtonDisabled = isFinished || !!realTimeFirstHalfEnd || calibrationLoading !== null;
   const secondHalfLocked = !realTimeSecondHalfStart && !realTimeFirstHalfEnd;
   const secondHalfButtonDisabled = isFinished || (!!realTimeSecondHalfEnd) || (secondHalfLocked && !realTimeSecondHalfStart) || calibrationLoading !== null;
+  const homeCategoryLabel = formatCategoryLabel(homeTeam.category, t);
+  const visitorCategoryLabel = formatCategoryLabel(visitorTeam.category, t);
 
   const handleFirstHalfAction = async () => {
     if (isFinished) return;
@@ -129,7 +132,7 @@ export const Scoreboard = ({
         >
           <div className="mb-1">
             <h2 className="text-sm md:text-lg font-bold text-gray-800 leading-tight">
-              {homeTeam.category && `${homeTeam.category} `}{homeTeam.name}
+              {homeCategoryLabel && `${homeCategoryLabel} `}{homeTeam.name}
             </h2>
             {homeTeam.club?.name && (
               <div className="text-xs text-gray-500">{homeTeam.club.name}</div>
@@ -240,7 +243,7 @@ export const Scoreboard = ({
         >
           <div className="mb-1">
             <h2 className="text-sm md:text-lg font-bold text-gray-800 leading-tight">
-              {visitorTeam.category && `${visitorTeam.category} `}{visitorTeam.name}
+              {visitorCategoryLabel && `${visitorCategoryLabel} `}{visitorTeam.name}
             </h2>
             {visitorTeam.club?.name && (
               <div className="text-xs text-gray-500">{visitorTeam.club.name}</div>

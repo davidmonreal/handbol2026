@@ -8,6 +8,7 @@ import teamRouter from './routes/teams';
 import matchRouter from './routes/matches';
 import gameEventRouter from './routes/game-events';
 import importRouter from './routes/import.routes';
+import insightsRouter from './routes/insights';
 
 import cors from 'cors';
 
@@ -39,7 +40,7 @@ app.use(
       return callback(new Error(msg), false);
     },
     credentials: true,
-  })
+  }),
 );
 
 // Debug middleware to log origin
@@ -63,6 +64,7 @@ app.use('/api/players', playerRouter);
 app.use('/api/teams', teamRouter);
 app.use('/api/matches', matchRouter);
 app.use('/api/game-events', gameEventRouter);
+app.use('/api/insights', insightsRouter);
 
 // Global error handler for body-parser errors (e.g. payload too large)
 app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {

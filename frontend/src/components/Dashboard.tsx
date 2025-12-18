@@ -6,6 +6,8 @@ import { useSafeTranslation } from '../context/LanguageContext';
 import { LoadingGrid, ErrorMessage } from './common';
 import { MatchCard } from './match/MatchCard';
 import type { DashboardMatch } from './match/MatchCard';
+import type { WeeklyInsightsResponse } from '../types/api.types';
+import { WeeklyInsightsTicker } from './dashboard/WeeklyInsightsTicker';
 
 type Match = DashboardMatch;
 
@@ -18,12 +20,17 @@ const Dashboard = () => {
   const [pastMatches, setPastMatches] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [weeklyInsights, setWeeklyInsights] = useState<WeeklyInsightsResponse | null>(null);
+  const [isInsightsLoading, setIsInsightsLoading] = useState(true);
+  const [isInsightsRefreshing, setIsInsightsRefreshing] = useState(false);
+  const [insightsErrorKey, setInsightsErrorKey] = useState<string | null>(null);
   const myPendingMatches = pendingMatches.filter(
     match => match.homeTeam?.isMyTeam || match.awayTeam?.isMyTeam,
   );
 
   useEffect(() => {
     fetchMatches();
+    loadInsights();
   }, []);
 
   const fetchMatches = async () => {
@@ -45,6 +52,44 @@ const Dashboard = () => {
       setErrorKey('dashboard.errorConnection');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadInsights = async () => {
+    try {
+      setInsightsErrorKey(null);
+      setIsInsightsLoading(true);
+      const response = await fetch(`${API_BASE_URL}/api/insights/weekly`);
+      if (!response.ok) {
+        throw new Error('Failed to load insights');
+      }
+      const data = (await response.json()) as WeeklyInsightsResponse;
+      setWeeklyInsights(data);
+    } catch (error) {
+      console.error('Error fetching weekly insights:', error);
+      setInsightsErrorKey('dashboard.insights.errorLoad');
+    } finally {
+      setIsInsightsLoading(false);
+    }
+  };
+
+  const recomputeInsights = async () => {
+    try {
+      setInsightsErrorKey(null);
+      setIsInsightsRefreshing(true);
+      const response = await fetch(`${API_BASE_URL}/api/insights/weekly/recompute`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to recompute insights');
+      }
+      const data = (await response.json()) as WeeklyInsightsResponse;
+      setWeeklyInsights(data);
+    } catch (error) {
+      console.error('Error recomputing weekly insights:', error);
+      setInsightsErrorKey('dashboard.insights.errorRecompute');
+    } finally {
+      setIsInsightsRefreshing(false);
     }
   };
 
@@ -86,6 +131,14 @@ const Dashboard = () => {
           {t('dashboard.newMatch')}
         </button>
       </div>
+
+      <WeeklyInsightsTicker
+        insights={weeklyInsights}
+        isLoading={isInsightsLoading}
+        isRefreshing={isInsightsRefreshing}
+        errorKey={insightsErrorKey}
+        onRefresh={recomputeInsights}
+      />
 
       {/* Error Message */}
       {errorKey && (

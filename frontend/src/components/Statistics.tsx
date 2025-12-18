@@ -1,11 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useMatch } from '../context/MatchContext';
+import { useSafeTranslation } from '../context/LanguageContext';
 import type { MatchEvent } from '../types';
 import { transformBackendEvents } from '../utils/eventTransformers';
 import { StatisticsView } from './stats';
 import { API_BASE_URL } from '../config/api';
-
+import { formatCategoryLabel } from '../utils/categoryLabels';
 
 const Statistics = () => {
   const [searchParams] = useSearchParams();
@@ -16,6 +17,7 @@ const Statistics = () => {
   const urlActiveTeamId = searchParams.get('activeTeamId');
 
   const { events, activeTeamId } = useMatch();
+  const { t } = useSafeTranslation();
 
   // State
   const [data, setData] = useState<any>(null);
@@ -108,7 +110,8 @@ const Statistics = () => {
       const currentTeam = selectedTeamId === data.homeTeamId ? data.homeTeam : data.awayTeam;
       const parts = [];
       if (currentTeam?.club?.name) parts.push(currentTeam.club.name);
-      if (currentTeam?.category) parts.push(currentTeam.category);
+      const categoryLabel = formatCategoryLabel(currentTeam?.category, t);
+      if (categoryLabel) parts.push(categoryLabel);
       if (currentTeam?.name) parts.push(currentTeam.name);
       const displayName = parts.join(' ');
       return `Match Statistics: ${displayName || 'Team'}`;
@@ -158,6 +161,10 @@ const Statistics = () => {
     return <div className="p-8 text-center text-gray-500">Please select a team in the Match tab first or navigate from a match.</div>;
   }
 
+  const teamSubtitle = teamId && data
+    ? [data?.club?.name, formatCategoryLabel(data?.category, t), 'All Matches'].filter(Boolean).join(' • ')
+    : undefined;
+
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto">
       <StatisticsView
@@ -165,7 +172,7 @@ const Statistics = () => {
         foulEvents={foulStatsEvents}
         context={context}
         title={title}
-        subtitle={playerId ? `#${data?.number} • All Time Stats` : (teamId ? `${data?.club?.name} • ${data?.category} • All Matches` : undefined)}
+        subtitle={playerId ? `#${data?.number} • All Time Stats` : teamSubtitle}
         matchData={matchId ? data : undefined}
         teamData={teamId ? data : undefined}
         playerData={playerId ? data : undefined}

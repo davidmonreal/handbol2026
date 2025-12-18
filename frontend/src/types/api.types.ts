@@ -59,3 +59,34 @@ export interface GameEventApiResponse {
     activeGoalkeeperId?: string;
     player?: PlayerApiResponse;
 }
+
+export interface WeeklyInsightsPlayer {
+    playerId: string;
+    playerName: string;
+    teamId: string;
+    teamName: string;
+    teamCategory: string;
+    clubName: string;
+    goals: number;
+}
+
+export interface WeeklyInsightsTeam {
+    teamId: string;
+    teamName: string;
+    teamCategory: string;
+    clubName: string;
+    count: number;
+}
+
+export interface WeeklyInsightsResponse {
+    range: { start: string; end: string };
+    generatedAt: string;
+    metrics: {
+        totalEvents: number;
+        topScorerOverall: WeeklyInsightsPlayer | null;
+        topScorersByCategory: WeeklyInsightsPlayer[];
+        topIndividualScorer: WeeklyInsightsPlayer | null;
+        teamWithMostCollectiveGoals: WeeklyInsightsTeam | null;
+        teamWithMostFouls: WeeklyInsightsTeam | null;
+    };
+}
