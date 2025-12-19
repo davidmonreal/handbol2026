@@ -129,7 +129,7 @@ export function StatisticsView({
     if (matchData?.realTimeFirstHalfStart && matchData?.realTimeFirstHalfEnd) {
       return Math.max(0, Math.floor((matchData.realTimeFirstHalfEnd - matchData.realTimeFirstHalfStart) / 1000));
     }
-    if (matchData?.firstHalfVideoStart !== null && matchData?.secondHalfVideoStart !== null) {
+    if (matchData && matchData.firstHalfVideoStart != null && matchData.secondHalfVideoStart != null) {
       return Math.max(0, matchData.secondHalfVideoStart - matchData.firstHalfVideoStart);
     }
     return null;
