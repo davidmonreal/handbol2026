@@ -129,8 +129,17 @@ export function StatisticsView({
     if (matchData?.realTimeFirstHalfStart && matchData?.realTimeFirstHalfEnd) {
       return Math.max(0, Math.floor((matchData.realTimeFirstHalfEnd - matchData.realTimeFirstHalfStart) / 1000));
     }
-    return Number.POSITIVE_INFINITY;
-  }, [matchData?.realTimeFirstHalfEnd, matchData?.realTimeFirstHalfStart, matchData?.realTimeSecondHalfStart]);
+    if (matchData?.firstHalfVideoStart !== null && matchData?.secondHalfVideoStart !== null) {
+      return Math.max(0, matchData.secondHalfVideoStart - matchData.firstHalfVideoStart);
+    }
+    return null;
+  }, [
+    matchData?.realTimeFirstHalfEnd,
+    matchData?.realTimeFirstHalfStart,
+    matchData?.realTimeSecondHalfStart,
+    matchData?.firstHalfVideoStart,
+    matchData?.secondHalfVideoStart,
+  ]);
 
   // Apply all filters for both own team (selected) and opponent (for fouls)
   const baseFoulEvents: MatchEvent[] = foulEvents || [];

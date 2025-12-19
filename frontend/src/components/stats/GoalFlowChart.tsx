@@ -17,10 +17,10 @@ type SeriesPoint = { position: number; value: number };
 
 const VIEWBOX_WIDTH = 1000;
 const VIEWBOX_HEIGHT = 520;
-const PADDING_LEFT = 60;
-const PADDING_RIGHT = 20;
-const PADDING_TOP = 24;
-const PADDING_BOTTOM = 50;
+const PADDING_LEFT = 44;
+const PADDING_RIGHT = 10;
+const PADDING_TOP = 16;
+const PADDING_BOTTOM = 44;
 const CLUSTER_WINDOW_SECONDS = 120;
 const HALF_BOUNDARY_POSITION = 0.5;
 const HALF_GAP = 0.04;
