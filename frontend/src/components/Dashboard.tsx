@@ -87,21 +87,26 @@ const Dashboard = () => {
       return;
     }
 
-    let timeoutId: ReturnType<typeof window.setTimeout> | undefined;
+    const win = globalThis as typeof globalThis & {
+      requestIdleCallback?: (callback: () => void) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     let idleId: number | undefined;
 
-    if ('requestIdleCallback' in window) {
-      idleId = window.requestIdleCallback(() => setShowInsightsTicker(true));
+    if (typeof win.requestIdleCallback === 'function') {
+      idleId = win.requestIdleCallback(() => setShowInsightsTicker(true));
     } else {
-      timeoutId = window.setTimeout(() => setShowInsightsTicker(true), 200);
+      timeoutId = setTimeout(() => setShowInsightsTicker(true), 200);
     }
 
     return () => {
-      if (idleId !== undefined) {
-        window.cancelIdleCallback(idleId);
+      if (idleId !== undefined && typeof win.cancelIdleCallback === 'function') {
+        win.cancelIdleCallback(idleId);
       }
       if (timeoutId !== undefined) {
-        window.clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
       }
     };
   }, [isLoading]);
