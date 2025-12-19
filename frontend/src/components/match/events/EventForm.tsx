@@ -166,6 +166,10 @@ export const EventForm = ({
         setSelectedCategory(category);
         setSelectedAction(null);
         setSelectedTarget(undefined);
+        if (category === 'Sanction') {
+            // Fouls always happen with opposition.
+            setHasOpposition(true);
+        }
     };
 
     useEffect(() => {
