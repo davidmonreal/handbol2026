@@ -212,6 +212,8 @@ export interface StatisticsViewProps {
         realTimeSecondHalfStart?: number | null;
         realTimeFirstHalfEnd?: number | null;
         realTimeSecondHalfEnd?: number | null;
+        firstHalfVideoStart?: number | null;
+        secondHalfVideoStart?: number | null;
     };
     teamData?: { players: any[] };
     onTeamChange?: (teamId: string) => void;
