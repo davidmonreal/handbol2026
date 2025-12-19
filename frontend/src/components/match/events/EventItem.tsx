@@ -201,10 +201,12 @@ export const EventItem = ({
                             className={`${chipBaseClass} ${
                                 event.category === 'Shot'
                                     ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
-                                    : 'border-purple-200 bg-purple-50 text-purple-700'
+                                    : event.category === 'Turnover'
+                                        ? 'border-rose-200 bg-rose-50 text-rose-700'
+                                        : 'border-purple-200 bg-purple-50 text-purple-700'
                             }`}
                         >
-                            <span>{event.action}</span>
+                            <span aria-label={`${event.category}-${event.action}`}>{event.action}</span>
                             {event.category === 'Shot' && event.action === 'Goal' && goalZoneTag && (
                                 <span className="ml-1 text-[10px] uppercase text-indigo-400">{goalZoneTag}</span>
                             )}

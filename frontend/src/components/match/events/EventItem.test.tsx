@@ -53,21 +53,24 @@ describe('EventItem', () => {
             render(<EventItem {...defaultProps} />);
 
             // 305 seconds = 05:05
-            expect(screen.getByText('05:05 (1H)')).toBeInTheDocument();
+            expect(screen.getByText('05:05')).toBeInTheDocument();
+            expect(screen.getByText('1H')).toBeInTheDocument();
         });
 
         it('should format single digit seconds with leading zero', () => {
             const event = { ...baseEvent, timestamp: 61 }; // 1:01
             render(<EventItem {...defaultProps} event={event} />);
 
-            expect(screen.getByText('01:01 (1H)')).toBeInTheDocument();
+            expect(screen.getByText('01:01')).toBeInTheDocument();
+            expect(screen.getByText('1H')).toBeInTheDocument();
         });
 
         it('should handle zero timestamp', () => {
             const event = { ...baseEvent, timestamp: 0 };
             render(<EventItem {...defaultProps} event={event} />);
 
-            expect(screen.getByText('00:00 (1H)')).toBeInTheDocument();
+            expect(screen.getByText('00:00')).toBeInTheDocument();
+            expect(screen.getByText('1H')).toBeInTheDocument();
         });
     });
 
@@ -75,23 +78,24 @@ describe('EventItem', () => {
         it('should display player number and name', () => {
             render(<EventItem {...defaultProps} />);
 
-            expect(screen.getByText('#7 John Doe')).toBeInTheDocument();
+            expect(screen.getByText('7')).toBeInTheDocument();
+            expect(screen.getByText('John Doe')).toBeInTheDocument();
         });
 
         it('should show Unknown for missing player', () => {
             const event = { ...baseEvent, playerId: 'non-existent' };
             render(<EventItem {...defaultProps} event={event} />);
 
-            expect(screen.getByText(/#\? Unknown/)).toBeInTheDocument();
+            expect(screen.getByText('?')).toBeInTheDocument();
+            expect(screen.getByText('Unknown')).toBeInTheDocument();
         });
     });
 
     describe('Event Category', () => {
-        it('should display Shot category with icon', () => {
+        it('should display Shot category with label', () => {
             render(<EventItem {...defaultProps} />);
 
             expect(screen.getByText('Shot')).toBeInTheDocument();
-            expect(screen.getByText('🎯')).toBeInTheDocument();
         });
 
         it('should display Turnover category', () => {
@@ -99,7 +103,6 @@ describe('EventItem', () => {
             render(<EventItem {...defaultProps} event={event} />);
 
             expect(screen.getByText('Turnover')).toBeInTheDocument();
-            expect(screen.getByText('❌')).toBeInTheDocument();
         });
 
         it('should display Sanction category', () => {
@@ -107,24 +110,21 @@ describe('EventItem', () => {
             render(<EventItem {...defaultProps} event={event} />);
 
             expect(screen.getByText('Sanction')).toBeInTheDocument();
-            expect(screen.getByText('⚠️')).toBeInTheDocument();
         });
     });
 
     describe('Shot Results', () => {
-        it('should show Goal with soccer ball icon', () => {
+        it('should show Goal with label and zone tag', () => {
             render(<EventItem {...defaultProps} />);
 
             expect(screen.getByText('Goal')).toBeInTheDocument();
-            expect(screen.getByText('⚽')).toBeInTheDocument();
         });
 
-        it('should show Save with glove icon', () => {
+        it('should show Save with label', () => {
             const event = { ...baseEvent, action: 'Save' };
             render(<EventItem {...defaultProps} event={event} />);
 
             expect(screen.getByText('Save')).toBeInTheDocument();
-            expect(screen.getByText('🧤')).toBeInTheDocument();
         });
 
         it('should show goal zone tag when present', () => {

@@ -16,11 +16,12 @@ import {
     Footprints,
     Square
 } from 'lucide-react';
-import type { MatchEvent, ZoneType, SanctionType, TurnoverType } from '../../../types';
+import type { MatchEvent, ZoneType, TurnoverType } from '../../../types';
 import { ZoneSelector } from '../shared/ZoneSelector';
 import { SplitToggle } from '../shared/SplitToggle';
 import { ConfirmationModal } from '../../common';
 import { useSafeTranslation } from '../../../context/LanguageContext';
+import { buildEventFromForm } from './eventFormBuilder';
 
 // Define interfaces locally to match MatchContext structure
 interface Player {
@@ -187,57 +188,19 @@ export const EventForm = ({
         if (locked) return;
         if (!selectedPlayerId) return;
 
-        // Parse zone
-        let position: string | undefined;
-        let distance: string | undefined;
-
-        if (selectedZone) {
-            if (selectedZone === '7m') {
-                distance = '7M';
-                position = undefined;
-            } else {
-                const parts = selectedZone.split('-');
-                if (parts.length === 2) {
-                    distance = parts[0] === '6m' ? '6M' : '9M';
-                    position = parts[1];
-                }
-            }
-        }
-
-        const baseEvent = event || {} as MatchEvent;
-        const updatedEvent: MatchEvent = {
-            ...baseEvent,
-            id: baseEvent.id || crypto.randomUUID(),
+        // Movem la lògica de mapping a un helper pur per poder-la testar i mantenir la UI neta.
+        const updatedEvent: MatchEvent = buildEventFromForm({
             teamId: team.id,
-            playerId: selectedPlayerId,
-            category: selectedCategory,
-            action: selectedAction || '',
-            zone: selectedZone || undefined,
-            position,
-            distance,
+            selectedPlayerId,
+            selectedCategory,
+            selectedAction,
+            selectedZone,
+            selectedTarget,
             isCollective,
             hasOpposition,
             isCounterAttack,
-        };
-
-        // Add goal target
-        if (selectedTarget && (selectedAction === 'Goal' || selectedAction === 'Save')) {
-            updatedEvent.goalTarget = selectedTarget;
-            const targetToZoneMap: Record<number, string> = {
-                1: 'TL', 2: 'TM', 3: 'TR',
-                4: 'ML', 5: 'MM', 6: 'MR',
-                7: 'BL', 8: 'BM', 9: 'BR'
-            };
-            updatedEvent.goalZoneTag = targetToZoneMap[selectedTarget];
-        } else {
-            updatedEvent.goalTarget = undefined;
-            updatedEvent.goalZoneTag = undefined;
-        }
-
-        // Add sanction type
-        if (selectedCategory === 'Sanction') {
-            updatedEvent.sanctionType = selectedAction as SanctionType;
-        }
+            opponentGoalkeeperId: selectedOpponentGkId || undefined,
+        }, { baseEvent: event || null });
 
         onSave(updatedEvent, selectedOpponentGkId);
         setSaveMessage(t('eventForm.successMessage'));

@@ -2,6 +2,19 @@ import { useMemo, useState } from 'react';
 import { TrendingUp, Download } from 'lucide-react';
 import type { MatchEvent } from '../../types';
 import { useSafeTranslation } from '../../context/LanguageContext';
+import {
+    buildGoalFlowData,
+    HALF_BOUNDARY_POSITION,
+    FIRST_SEGMENT,
+    SECOND_SEGMENT,
+    VIEWBOX_HEIGHT,
+    VIEWBOX_WIDTH,
+    PADDING_BOTTOM,
+    PADDING_LEFT,
+    PADDING_RIGHT,
+    PADDING_TOP,
+} from './goalFlowData';
+import type { SeriesPoint } from './goalFlowData';
 
 interface GoalFlowChartProps {
     events: MatchEvent[];
@@ -13,19 +26,6 @@ interface GoalFlowChartProps {
     onDownloadCsv?: () => void;
 }
 
-type SeriesPoint = { position: number; value: number };
-
-const VIEWBOX_WIDTH = 1300;
-const VIEWBOX_HEIGHT = 520;
-const PADDING_LEFT = 5;
-const PADDING_RIGHT = 5;
-const PADDING_TOP = 40;
-const PADDING_BOTTOM = 44;
-const CLUSTER_WINDOW_SECONDS = 120;
-const HALF_BOUNDARY_POSITION = 0.5;
-const HALF_GAP = 0.04;
-const FIRST_SEGMENT: [number, number] = [0, HALF_BOUNDARY_POSITION - HALF_GAP / 2];
-const SECOND_SEGMENT: [number, number] = [HALF_BOUNDARY_POSITION + HALF_GAP / 2, 1];
 const FOUL_RADIUS_MULTIPLIER = 2;
 
 function buildSmoothPath(points: { x: number; y: number }[]): string {
@@ -57,6 +57,8 @@ export function GoalFlowChart({
     onDownloadCsv,
 }: GoalFlowChartProps) {
     const { t } = useSafeTranslation();
+    // Extracting data shaping into a pure helper keeps the chart render focused on SVG/UX,
+    // and lets us lock behavior with unit tests before changing visuals.
     const {
         teamSeries,
         opponentSeries,
@@ -64,114 +66,10 @@ export function GoalFlowChart({
         turnoversByPosition,
         savesByPosition,
         maxGoals,
-    } = useMemo(() => {
-        const halfSplit = typeof secondHalfMarkSeconds === 'number'
-            ? secondHalfMarkSeconds
-            : Number.POSITIVE_INFINITY;
-
-        const ownGoals = events
-            .filter(e => e.teamId === selectedTeamId && e.category === 'Shot' && e.action === 'Goal')
-            .map(e => e.timestamp);
-
-        const oppGoals = events
-            .filter(e => opponentTeamId && e.teamId === opponentTeamId && e.category === 'Shot' && e.action === 'Goal')
-            .map(e => e.timestamp);
-
-        const firstHalfTimes = events.filter(e => e.timestamp < halfSplit).map(e => e.timestamp);
-        const secondHalfTimes = events.filter(e => e.timestamp >= halfSplit).map(e => e.timestamp);
-
-        const firstHalfProgress = buildProgressMap(firstHalfTimes);
-        const secondHalfProgress = buildProgressMap(secondHalfTimes);
-
-        const mapToRange = (timestamp: number, progress: ReturnType<typeof buildProgressMap>, [start, end]: [number, number]) => {
-            if (!progress.hasEntries) return start;
-            const normalized = progress.map.get(timestamp) ?? 1;
-            return start + normalized * (end - start);
-        };
-
-        const toFirstHalfPosition = (timestamp: number) => mapToRange(timestamp, firstHalfProgress, FIRST_SEGMENT);
-        const toSecondHalfPosition = (timestamp: number) => mapToRange(timestamp, secondHalfProgress, SECOND_SEGMENT);
-        const toNormalizedPosition = (timestamp: number) => (
-            timestamp >= halfSplit ? toSecondHalfPosition(timestamp) : toFirstHalfPosition(timestamp)
-        );
-
-        const buildSeries = (timestamps: number[]): SeriesPoint[] => {
-            const sorted = [...timestamps].sort((a, b) => a - b);
-            const series: SeriesPoint[] = [{ position: FIRST_SEGMENT[0], value: 0 }];
-            let value = 0;
-
-            sorted.filter(t => t < halfSplit).forEach(time => {
-                value += 1;
-                series.push({ position: toFirstHalfPosition(time), value });
-            });
-
-            series.push({ position: HALF_BOUNDARY_POSITION, value });
-            series.push({ position: SECOND_SEGMENT[0], value });
-
-            sorted.filter(t => t >= halfSplit).forEach(time => {
-                value += 1;
-                series.push({ position: toSecondHalfPosition(time), value });
-            });
-
-            series.push({ position: 1, value });
-            return series;
-        };
-
-        const clusterCounts = (timestamps: number[]) => {
-            if (timestamps.length === 0) return [];
-            const sorted = [...timestamps].sort((a, b) => a - b);
-            const clusters: { time: number; count: number }[] = [];
-
-            let currentTimeSum = sorted[0];
-            let currentCount = 1;
-            let lastTime = sorted[0];
-
-            for (let i = 1; i < sorted.length; i++) {
-                const t = sorted[i];
-                if (t - lastTime < CLUSTER_WINDOW_SECONDS) {
-                    currentTimeSum += t;
-                    currentCount += 1;
-                } else {
-                    clusters.push({ time: currentTimeSum / currentCount, count: currentCount });
-                    currentTimeSum = t;
-                    currentCount = 1;
-                }
-                lastTime = t;
-            }
-            clusters.push({ time: currentTimeSum / currentCount, count: currentCount });
-
-            return clusters.map(cluster => ({
-                position: toNormalizedPosition(cluster.time),
-                count: cluster.count,
-            }));
-        };
-
-        const teamPoints = buildSeries(ownGoals);
-        const opponentPoints = buildSeries(oppGoals);
-
-        const maxGoalValue = Math.max(
-            teamPoints[teamPoints.length - 1]?.value || 0,
-            opponentPoints[opponentPoints.length - 1]?.value || 0,
-            1
-        );
-
-        return {
-            teamSeries: teamPoints,
-            opponentSeries: opponentPoints,
-            foulsByPosition: events
-                .filter(e => e.teamId === selectedTeamId && e.category === 'Sanction')
-                .map(e => ({
-                    position: toNormalizedPosition(e.timestamp)
-                })),
-            turnoversByPosition: clusterCounts(events.filter(e => e.teamId === selectedTeamId && e.category === 'Turnover').map(e => e.timestamp)),
-            savesByPosition: clusterCounts(
-                events
-                    .filter(e => e.teamId === selectedTeamId && e.category === 'Shot' && e.action === 'Save')
-                    .map(e => e.timestamp)
-            ),
-            maxGoals: maxGoalValue,
-        };
-    }, [events, opponentTeamId, secondHalfMarkSeconds, selectedTeamId]);
+    } = useMemo(
+        () => buildGoalFlowData(events, selectedTeamId, opponentTeamId, secondHalfMarkSeconds),
+        [events, opponentTeamId, secondHalfMarkSeconds, selectedTeamId]
+    );
 
     const width = VIEWBOX_WIDTH - PADDING_LEFT - PADDING_RIGHT;
     const height = VIEWBOX_HEIGHT - PADDING_TOP - PADDING_BOTTOM;

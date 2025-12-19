@@ -414,12 +414,19 @@ describe('MatchContext', () => {
                     'match-1',
                     { id: 'team1', name: 'Team 1', color: 'red', players: [] },
                     { id: 'team2', name: 'Team 2', color: 'blue', players: [] }
-                );
+                , false, { firstHalfVideoStart: 1 });
+            });
+            await waitFor(() => {
+                expect(result.current.firstHalfVideoStart).toBe(1);
             });
 
             mockFetch.mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({ id: 'new-event' })
+            });
+
+            act(() => {
+                result.current.setVideoCalibration(1, 1);
             });
 
             await act(async () => {
@@ -497,7 +504,10 @@ describe('MatchContext', () => {
                     'match-1',
                     { id: 'team1', name: 'Team 1', color: 'red', players: [] },
                     { id: 'team2', name: 'Team 2', color: 'blue', players: [] }
-                );
+                , false, { firstHalfVideoStart: 1 });
+            });
+            await waitFor(() => {
+                expect(result.current.firstHalfVideoStart).toBe(1);
             });
 
             act(() => {
@@ -507,6 +517,10 @@ describe('MatchContext', () => {
             mockFetch.mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({ id: 'new-event' })
+            });
+
+            act(() => {
+                result.current.setVideoCalibration(1, 1);
             });
 
             await act(async () => {

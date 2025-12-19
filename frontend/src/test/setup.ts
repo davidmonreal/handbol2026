@@ -7,3 +7,8 @@ globalThis.fetch = vi.fn() as any;
 if (typeof window !== 'undefined') {
     window.fetch = globalThis.fetch;
 }
+
+// jsdom no implementa scrollIntoView; el mockegem per evitar excepcions en tests.
+if (typeof window !== 'undefined' && !window.HTMLElement.prototype.scrollIntoView) {
+    window.HTMLElement.prototype.scrollIntoView = vi.fn();
+}
