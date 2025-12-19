@@ -81,6 +81,28 @@ export interface WeeklyInsightsTeam {
     count: number;
 }
 
+export interface WeeklyInsightsGoalkeeper {
+    playerId: string;
+    playerName: string;
+    teamId: string;
+    teamName: string;
+    teamCategory: string;
+    clubName: string;
+    saves: number;
+    shotsFaced: number;
+    savePercentage: number;
+}
+
+export interface WeeklyInsightsTeamPercentage {
+    teamId: string;
+    teamName: string;
+    teamCategory: string;
+    clubName: string;
+    percentage: number;
+    successes: number;
+    attempts: number;
+}
+
 export interface WeeklyInsightsResponse {
     range: { start: string; end: string };
     generatedAt: string;
@@ -91,6 +113,9 @@ export interface WeeklyInsightsResponse {
         topIndividualScorer: WeeklyInsightsPlayer | null;
         teamWithMostCollectiveGoals: WeeklyInsightsTeam | null;
         teamWithMostFouls: WeeklyInsightsTeam | null;
+        bestGoalkeeper: WeeklyInsightsGoalkeeper | null;
+        mostEfficientTeam: WeeklyInsightsTeamPercentage | null;
+        mostAttackingTeam: WeeklyInsightsTeamPercentage | null;
     };
 }
 

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InsightsService } from '../src/services/insights-service';
 import prisma from '../src/lib/prisma';
 import { buildWeeklyTickerMetrics } from '../src/services/weekly-ticker-metrics';
+import type { WeeklyTickerMetrics } from '../src/services/weekly-ticker-metrics';
 
 vi.mock('../src/lib/prisma', () => ({
   default: {
@@ -28,12 +29,25 @@ describe('InsightsService caching', () => {
 
   const ttlMs = 5 * 60 * 1000;
 
+  const metricsPayload = (overrides: Partial<WeeklyTickerMetrics> = {}): WeeklyTickerMetrics => ({
+    totalEvents: 0,
+    topScorerOverall: null,
+    topScorersByCategory: [],
+    topIndividualScorer: null,
+    teamWithMostCollectiveGoals: null,
+    teamWithMostFouls: null,
+    bestGoalkeeper: null,
+    mostEfficientTeam: null,
+    mostAttackingTeam: null,
+    ...overrides,
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('returns cached data when entry is fresh', async () => {
-    const cachedMetrics = { totalGoals: 42 } as any;
+    const cachedMetrics = metricsPayload({ totalEvents: 42 });
     vi.mocked(prisma.weeklyInsightCache.findUnique).mockResolvedValue({
       id: 'cache',
       rangeStart: testRange.start,
@@ -53,7 +67,7 @@ describe('InsightsService caching', () => {
   it('computes and stores data when cache is missing', async () => {
     vi.mocked(prisma.weeklyInsightCache.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.gameEvent.findMany).mockResolvedValue([] as any);
-    vi.mocked(buildWeeklyTickerMetrics).mockReturnValue({ totalGoals: 0 } as any);
+    vi.mocked(buildWeeklyTickerMetrics).mockReturnValue(metricsPayload());
 
     const service = new InsightsService(ttlMs);
     const result = await service.computeWeeklyInsights(testRange);
@@ -69,7 +83,7 @@ describe('InsightsService caching', () => {
         },
       }),
     );
-    expect(result.metrics).toEqual({ totalGoals: 0 });
+    expect(result.metrics).toEqual(metricsPayload());
   });
 
   it('forces recompute when requested even if cache exists', async () => {
@@ -78,15 +92,33 @@ describe('InsightsService caching', () => {
       rangeStart: testRange.start,
       rangeEnd: testRange.end,
       generatedAt: new Date(),
-      payload: { cached: true },
+      payload: metricsPayload({ totalEvents: 1 }),
     } as any);
     vi.mocked(prisma.gameEvent.findMany).mockResolvedValue([] as any);
-    vi.mocked(buildWeeklyTickerMetrics).mockReturnValue({ totalGoals: 99 } as any);
+    vi.mocked(buildWeeklyTickerMetrics).mockReturnValue(metricsPayload({ totalEvents: 99 }));
 
     const service = new InsightsService(ttlMs);
     const result = await service.computeWeeklyInsights(testRange, { forceRefresh: true });
 
     expect(prisma.gameEvent.findMany).toHaveBeenCalled();
-    expect(result.metrics).toEqual({ totalGoals: 99 });
+    expect(result.metrics).toEqual(metricsPayload({ totalEvents: 99 }));
+  });
+
+  it('treats cached payloads missing the latest metrics as stale', async () => {
+    vi.mocked(prisma.weeklyInsightCache.findUnique).mockResolvedValue({
+      id: 'cache',
+      rangeStart: testRange.start,
+      rangeEnd: testRange.end,
+      generatedAt: new Date(),
+      payload: { totalEvents: 2 },
+    } as any);
+    vi.mocked(prisma.gameEvent.findMany).mockResolvedValue([] as any);
+    vi.mocked(buildWeeklyTickerMetrics).mockReturnValue(metricsPayload());
+
+    const service = new InsightsService(ttlMs);
+    const result = await service.computeWeeklyInsights(testRange);
+
+    expect(prisma.gameEvent.findMany).toHaveBeenCalled();
+    expect(result.metrics).toEqual(metricsPayload());
   });
 });

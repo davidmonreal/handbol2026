@@ -50,6 +50,30 @@ const buildGoalEvent = (
     match,
     playerId: 'player-default',
     player: { id: 'player-default', name: 'Player Default' },
+    activeGoalkeeperId: null,
+    activeGoalkeeper: null,
+    ...overrides,
+  }) as EventWithRelations;
+
+const buildShotEvent = (
+  match: EventWithRelations['match'],
+  overrides: Partial<EventWithRelations>,
+): EventWithRelations =>
+  ({
+    id: 'shot-event',
+    matchId: match.id,
+    timestamp: 0,
+    teamId: match.homeTeamId,
+    type: 'Shot',
+    subtype: 'Miss',
+    isCollective: false,
+    hasOpposition: true,
+    isCounterAttack: false,
+    match,
+    playerId: 'player-default',
+    player: { id: 'player-default', name: 'Player Default' },
+    activeGoalkeeperId: null,
+    activeGoalkeeper: null,
     ...overrides,
   }) as EventWithRelations;
 
@@ -65,6 +89,8 @@ const buildFoulEvent = (
     type: 'Sanction',
     sanctionType: 'Foul',
     match,
+    activeGoalkeeperId: null,
+    activeGoalkeeper: null,
     ...overrides,
   }) as EventWithRelations;
 
@@ -73,6 +99,8 @@ describe('WeeklyTickerMetrics', () => {
     const match = createMatch();
     const homeTeamId = match.homeTeamId;
     const awayTeamId = match.awayTeamId;
+    const homeGoalkeeper = { id: 'gk-home', name: 'Home Keeper' };
+    const awayGoalkeeper = { id: 'gk-away', name: 'Away Keeper' };
 
     const events: EventWithRelations[] = [
       buildGoalEvent(match, {
@@ -81,6 +109,8 @@ describe('WeeklyTickerMetrics', () => {
         playerId: 'player-home',
         player: { id: 'player-home', name: 'Alice' },
         isCollective: false,
+        activeGoalkeeperId: awayGoalkeeper.id,
+        activeGoalkeeper: awayGoalkeeper,
       }),
       buildGoalEvent(match, {
         id: 'goal-2',
@@ -88,6 +118,8 @@ describe('WeeklyTickerMetrics', () => {
         playerId: 'player-home',
         player: { id: 'player-home', name: 'Alice' },
         isCollective: true,
+        activeGoalkeeperId: awayGoalkeeper.id,
+        activeGoalkeeper: awayGoalkeeper,
       }),
       buildGoalEvent(match, {
         id: 'goal-3',
@@ -109,6 +141,27 @@ describe('WeeklyTickerMetrics', () => {
         playerId: 'player-away',
         player: { id: 'player-away', name: 'Bob' },
         isCollective: false,
+      }),
+      buildShotEvent(match, {
+        id: 'home-saved-shot',
+        teamId: homeTeamId,
+        subtype: 'Save',
+        activeGoalkeeperId: awayGoalkeeper.id,
+        activeGoalkeeper: awayGoalkeeper,
+      }),
+      buildShotEvent(match, {
+        id: 'away-save-1',
+        teamId: awayTeamId,
+        subtype: 'Save',
+        activeGoalkeeperId: homeGoalkeeper.id,
+        activeGoalkeeper: homeGoalkeeper,
+      }),
+      buildShotEvent(match, {
+        id: 'away-save-2',
+        teamId: awayTeamId,
+        subtype: 'Save',
+        activeGoalkeeperId: homeGoalkeeper.id,
+        activeGoalkeeper: homeGoalkeeper,
       }),
       buildFoulEvent(match, { id: 'foul-1', teamId: homeTeamId }),
       buildFoulEvent(match, { id: 'foul-2', teamId: homeTeamId }),
@@ -137,6 +190,20 @@ describe('WeeklyTickerMetrics', () => {
     expect(metrics.teamWithMostFouls).toMatchObject({
       teamId: awayTeamId,
       count: 2,
+    });
+    expect(metrics.bestGoalkeeper).toMatchObject({
+      playerId: homeGoalkeeper.id,
+      savePercentage: 100,
+      saves: 2,
+      shotsFaced: 2,
+    });
+    expect(metrics.mostEfficientTeam).toMatchObject({
+      teamId: homeTeamId,
+      percentage: 75,
+    });
+    expect(metrics.mostAttackingTeam).toMatchObject({
+      teamId: homeTeamId,
+      percentage: 50,
     });
   });
 
@@ -170,5 +237,14 @@ describe('WeeklyTickerMetrics', () => {
       count: 1,
     });
     expect(metrics.teamWithMostFouls).toBeNull();
+    expect(metrics.bestGoalkeeper).toBeNull();
+    expect(metrics.mostEfficientTeam).toMatchObject({
+      teamId: match.homeTeamId,
+      percentage: 100,
+    });
+    expect(metrics.mostAttackingTeam).toMatchObject({
+      teamId: match.homeTeamId,
+      percentage: 100,
+    });
   });
 });

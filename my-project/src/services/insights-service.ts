@@ -65,6 +65,7 @@ export class InsightsService {
       },
       include: {
         player: true,
+        activeGoalkeeper: true,
         match: {
           include: {
             homeTeam: {
@@ -119,13 +120,18 @@ export class InsightsService {
       return null;
     }
 
+    const payload = entry.payload as unknown;
+    if (!isPayloadUpToDate(payload)) {
+      return null;
+    }
+
     return {
       range: {
         start: entry.rangeStart.toISOString(),
         end: entry.rangeEnd.toISOString(),
       },
       generatedAt: entry.generatedAt.toISOString(),
-      metrics: entry.payload as unknown as WeeklyTickerMetrics,
+      metrics: payload,
     };
   }
 
@@ -160,4 +166,23 @@ export class InsightsService {
     result.setDate(result.getDate() - diff);
     return result;
   }
+}
+
+const REQUIRED_METRIC_KEYS: (keyof WeeklyTickerMetrics)[] = [
+  'totalEvents',
+  'topScorerOverall',
+  'topScorersByCategory',
+  'topIndividualScorer',
+  'teamWithMostCollectiveGoals',
+  'teamWithMostFouls',
+  'bestGoalkeeper',
+  'mostEfficientTeam',
+  'mostAttackingTeam',
+];
+
+function isPayloadUpToDate(payload: unknown): payload is WeeklyTickerMetrics {
+  if (!payload || typeof payload !== 'object') {
+    return false;
+  }
+  return REQUIRED_METRIC_KEYS.every((key) => key in (payload as Record<string, unknown>));
 }

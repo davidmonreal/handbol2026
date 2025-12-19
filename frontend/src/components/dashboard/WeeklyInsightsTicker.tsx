@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useSafeTranslation } from '../../context/LanguageContext';
-import type { WeeklyInsightsResponse, WeeklyInsightsPlayer, WeeklyInsightsTeam } from '../../types/api.types';
+import type {
+  WeeklyInsightsGoalkeeper,
+  WeeklyInsightsPlayer,
+  WeeklyInsightsResponse,
+  WeeklyInsightsTeam,
+  WeeklyInsightsTeamPercentage,
+} from '../../types/api.types';
 import { formatCategoryLabel } from '../../utils/categoryLabels';
 
 type Translator = (key: string, params?: Record<string, string | number>) => string;
@@ -33,6 +39,11 @@ const tickerKeyframes = `
     transform: translateX(calc(-1 * var(--ticker-distance, 0px)));
   }
 }`;
+
+const formatPercentageValue = (value: number) => {
+  if (!Number.isFinite(value)) return '0';
+  return Number.isInteger(value) ? value.toString() : value.toFixed(1);
+};
 
 export const WeeklyInsightsTicker = ({ insights, isLoading, isRefreshing, errorKey, onRefresh }: WeeklyInsightsTickerProps) => {
   const { t } = useSafeTranslation();
@@ -200,13 +211,58 @@ const buildTickerItems = (insights: WeeklyInsightsResponse | null, t: Translator
     );
   }
 
+  if (metrics.bestGoalkeeper) {
+    items.push(
+      createPlayerItem(
+        'goalkeeper',
+        t('dashboard.insights.metric.bestGoalkeeper'),
+        metrics.bestGoalkeeper,
+        t('dashboard.insights.value.savePercentage', {
+          percentage: formatPercentageValue(metrics.bestGoalkeeper.savePercentage),
+        }),
+        t,
+        '🧤',
+      ),
+    );
+  }
+
+  if (metrics.mostEfficientTeam) {
+    items.push(
+      createTeamItem(
+        'efficient',
+        t('dashboard.insights.metric.mostEfficientTeam'),
+        metrics.mostEfficientTeam,
+        t('dashboard.insights.value.goalPerShot', {
+          percentage: formatPercentageValue(metrics.mostEfficientTeam.percentage),
+        }),
+        t,
+        '🎯',
+      ),
+    );
+  }
+
+  if (metrics.mostAttackingTeam) {
+    items.push(
+      createTeamItem(
+        'attacking',
+        t('dashboard.insights.metric.mostAttackingTeam'),
+        metrics.mostAttackingTeam,
+        t('dashboard.insights.value.goalPerPlay', {
+          percentage: formatPercentageValue(metrics.mostAttackingTeam.percentage),
+        }),
+        t,
+        '⚔️',
+      ),
+    );
+  }
+
   return items;
 };
 
 const createPlayerItem = (
   id: string,
   label: string,
-  player: WeeklyInsightsPlayer,
+  player: WeeklyInsightsPlayer | WeeklyInsightsGoalkeeper,
   valueLabel: string,
   t: Translator,
   icon?: string,
@@ -226,7 +282,7 @@ const createPlayerItem = (
 const createTeamItem = (
   id: string,
   label: string,
-  team: WeeklyInsightsTeam,
+  team: WeeklyInsightsTeam | WeeklyInsightsTeamPercentage,
   valueLabel: string,
   t: Translator,
   icon?: string,

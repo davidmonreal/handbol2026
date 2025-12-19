@@ -2,6 +2,7 @@ import type { Club, GameEvent, Match, Player, Team } from '@prisma/client';
 
 export type EventWithRelations = GameEvent & {
   player: Player | null;
+  activeGoalkeeper: Player | null;
   match: Match & {
     homeTeam: Team & { club?: Club | null };
     awayTeam: Team & { club?: Club | null };
@@ -25,6 +26,20 @@ export interface TeamCountInsight extends TeamSummary {
   count: number;
 }
 
+export interface GoalkeeperInsight extends TeamSummary {
+  playerId: string;
+  playerName: string;
+  saves: number;
+  shotsFaced: number;
+  savePercentage: number;
+}
+
+export interface TeamPercentageInsight extends TeamSummary {
+  percentage: number;
+  successes: number;
+  attempts: number;
+}
+
 export interface WeeklyTickerMetrics {
   totalEvents: number;
   topScorerOverall: PlayerGoalInsight | null;
@@ -32,6 +47,9 @@ export interface WeeklyTickerMetrics {
   topIndividualScorer: PlayerGoalInsight | null;
   teamWithMostCollectiveGoals: TeamCountInsight | null;
   teamWithMostFouls: TeamCountInsight | null;
+  bestGoalkeeper: GoalkeeperInsight | null;
+  mostEfficientTeam: TeamPercentageInsight | null;
+  mostAttackingTeam: TeamPercentageInsight | null;
 }
 
 export class WeeklyTickerMetricsCalculator {
@@ -40,10 +58,32 @@ export class WeeklyTickerMetricsCalculator {
   private readonly categoryPlayers = new Map<string, Map<string, PlayerGoalInsight>>();
   private readonly teamCollectiveGoals = new Map<string, TeamCountInsight>();
   private readonly teamFoulCounts = new Map<string, TeamCountInsight>();
+  private readonly goalkeeperStats = new Map<string, GoalkeeperInsight>();
+  private readonly teamShotEfficiency = new Map<string, TeamPercentageInsight>();
+  private readonly teamPlayEffectiveness = new Map<string, TeamPercentageInsight>();
   private totalEvents = 0;
 
   consume(event: EventWithRelations) {
     this.totalEvents += 1;
+
+    if (event.teamId) {
+      const teamActivity = this.resolveTeam(event.teamId, event.match);
+      if (teamActivity) {
+        const activityEntry = this.upsertPercentageEntry(this.teamPlayEffectiveness, teamActivity);
+        activityEntry.attempts += 1;
+        if (event.type === 'Shot' && event.subtype === 'Goal') {
+          activityEntry.successes += 1;
+        }
+        activityEntry.percentage = this.computePercentage(
+          activityEntry.successes,
+          activityEntry.attempts,
+        );
+      }
+    }
+
+    if (event.type === 'Shot') {
+      this.processShotStats(event);
+    }
 
     if (event.type === 'Shot' && event.subtype === 'Goal') {
       this.processGoalEvent(event);
@@ -62,7 +102,39 @@ export class WeeklyTickerMetricsCalculator {
       topIndividualScorer: this.pickTopPlayer(this.playerIndividualGoals),
       teamWithMostCollectiveGoals: this.pickTopTeam(this.teamCollectiveGoals),
       teamWithMostFouls: this.pickTopTeam(this.teamFoulCounts),
+      bestGoalkeeper: this.pickBestGoalkeeper(),
+      mostEfficientTeam: this.pickTopPercentageTeam(this.teamShotEfficiency),
+      mostAttackingTeam: this.pickTopPercentageTeam(this.teamPlayEffectiveness),
     };
+  }
+
+  private processShotStats(event: EventWithRelations) {
+    if (event.teamId) {
+      const shootingTeam = this.resolveTeam(event.teamId, event.match);
+      if (shootingTeam) {
+        const entry = this.upsertPercentageEntry(this.teamShotEfficiency, shootingTeam);
+        entry.attempts += 1;
+        if (event.subtype === 'Goal') {
+          entry.successes += 1;
+        }
+        entry.percentage = this.computePercentage(entry.successes, entry.attempts);
+      }
+    }
+
+    if (event.activeGoalkeeperId && event.teamId) {
+      const defendingTeam = this.resolveOpponentTeam(event.teamId, event.match);
+      if (defendingTeam) {
+        const entry = this.upsertGoalkeeperEntry(event, defendingTeam);
+        const isTrackedOutcome = event.subtype === 'Save' || event.subtype === 'Goal';
+        if (isTrackedOutcome) {
+          entry.shotsFaced += 1;
+          if (event.subtype === 'Save') {
+            entry.saves += 1;
+          }
+          entry.savePercentage = this.computePercentage(entry.saves, entry.shotsFaced);
+        }
+      }
+    }
   }
 
   private processGoalEvent(event: EventWithRelations) {
@@ -207,6 +279,33 @@ export class WeeklyTickerMetricsCalculator {
     return Array.from(storage.values()).sort((a, b) => b.count - a.count)[0];
   }
 
+  private pickBestGoalkeeper(): GoalkeeperInsight | null {
+    const candidates = Array.from(this.goalkeeperStats.values()).filter(
+      (entry) => entry.shotsFaced > 0,
+    );
+    if (!candidates.length) {
+      return null;
+    }
+    return candidates.sort((a, b) => {
+      if (b.savePercentage === a.savePercentage) {
+        return b.shotsFaced - a.shotsFaced;
+      }
+      return b.savePercentage - a.savePercentage;
+    })[0];
+  }
+
+  private pickTopPercentageTeam(
+    storage: Map<string, TeamPercentageInsight>,
+  ): TeamPercentageInsight | null {
+    const candidates = Array.from(storage.values()).filter(
+      (entry) => entry.attempts > 0 && entry.successes > 0,
+    );
+    if (!candidates.length) {
+      return null;
+    }
+    return candidates.sort((a, b) => b.percentage - a.percentage)[0];
+  }
+
   private buildCategoryLeaders(): PlayerGoalInsight[] {
     const leaders: PlayerGoalInsight[] = [];
     this.categoryPlayers.forEach((playerMap, category) => {
@@ -216,6 +315,59 @@ export class WeeklyTickerMetricsCalculator {
       }
     });
     return leaders.sort((a, b) => a.teamCategory.localeCompare(b.teamCategory));
+  }
+
+  private upsertGoalkeeperEntry(
+    event: EventWithRelations,
+    teamInfo: TeamSummary,
+  ): GoalkeeperInsight {
+    const goalkeeperId = event.activeGoalkeeperId as string;
+    const existing = this.goalkeeperStats.get(goalkeeperId);
+    if (existing) {
+      existing.playerName = event.activeGoalkeeper?.name ?? existing.playerName;
+      return existing;
+    }
+    const entry: GoalkeeperInsight = {
+      playerId: goalkeeperId,
+      playerName: event.activeGoalkeeper?.name ?? 'Unknown goalkeeper',
+      teamId: teamInfo.teamId,
+      teamName: teamInfo.teamName,
+      teamCategory: teamInfo.teamCategory,
+      clubName: teamInfo.clubName,
+      saves: 0,
+      shotsFaced: 0,
+      savePercentage: 0,
+    };
+    this.goalkeeperStats.set(goalkeeperId, entry);
+    return entry;
+  }
+
+  private upsertPercentageEntry(
+    storage: Map<string, TeamPercentageInsight>,
+    teamInfo: TeamSummary,
+  ): TeamPercentageInsight {
+    const existing = storage.get(teamInfo.teamId);
+    if (existing) {
+      return existing;
+    }
+    const entry: TeamPercentageInsight = {
+      teamId: teamInfo.teamId,
+      teamName: teamInfo.teamName,
+      teamCategory: teamInfo.teamCategory,
+      clubName: teamInfo.clubName,
+      percentage: 0,
+      successes: 0,
+      attempts: 0,
+    };
+    storage.set(teamInfo.teamId, entry);
+    return entry;
+  }
+
+  private computePercentage(successes: number, attempts: number): number {
+    if (!attempts) {
+      return 0;
+    }
+    return Math.round(((successes / attempts) * 100 + Number.EPSILON) * 10) / 10;
   }
 }
 
