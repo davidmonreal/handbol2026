@@ -47,6 +47,7 @@ export class GameEventRepository {
   async create(data: {
     matchId: string;
     timestamp: number;
+    videoTimestamp?: number;
     playerId?: string;
     teamId: string;
     type: string;
@@ -83,6 +84,7 @@ export class GameEventRepository {
     id: string,
     data: Partial<{
       timestamp: number;
+      videoTimestamp: number;
       playerId: string;
       type: string;
       subtype: string;

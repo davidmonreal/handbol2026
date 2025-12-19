@@ -135,6 +135,8 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
           body: JSON.stringify({
             matchId,
             timestamp: eventWithTimestamp.timestamp,
+            // Persist the video timestamp so we can seek back after refresh.
+            videoTimestamp: eventWithTimestamp.videoTimestamp,
             playerId: eventWithTimestamp.playerId,
             teamId: eventWithTimestamp.teamId,
             type: eventWithTimestamp.category,

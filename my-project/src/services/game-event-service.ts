@@ -52,10 +52,15 @@ export class GameEventService {
       throw new Error('Events are locked for this team');
     }
 
-    if (!match.realTimeFirstHalfStart) {
+    const hasLiveStart = !!match.realTimeFirstHalfStart;
+    const hasVideoStart =
+      match.firstHalfVideoStart !== null && match.firstHalfVideoStart !== undefined;
+    if (!hasLiveStart && !hasVideoStart) {
+      // Live matches require a kickoff timestamp; video matches rely on calibration.
       throw new Error('Match has not been started yet');
     }
 
+    // Live matches use real time (ms); video matches use calibrated video seconds.
     const firstHalfBoundarySeconds =
       match.realTimeFirstHalfStart && match.realTimeSecondHalfStart
         ? Math.max(
@@ -67,13 +72,19 @@ export class GameEventService {
               0,
               Math.floor((match.realTimeFirstHalfEnd - match.realTimeFirstHalfStart) / 1000),
             )
-          : null;
+          : hasVideoStart &&
+              match.secondHalfVideoStart !== null &&
+              match.secondHalfVideoStart !== undefined
+            ? Math.max(0, match.secondHalfVideoStart - (match.firstHalfVideoStart ?? 0))
+            : null;
 
     if (
       firstHalfBoundarySeconds !== null &&
       data.timestamp > firstHalfBoundarySeconds &&
-      !match.realTimeSecondHalfStart
+      !match.realTimeSecondHalfStart &&
+      (match.secondHalfVideoStart === null || match.secondHalfVideoStart === undefined)
     ) {
+      // For video matches, secondHalfVideoStart is the equivalent of "second half started".
       throw new Error('Second half has not started yet');
     }
 
