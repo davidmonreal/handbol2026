@@ -1,11 +1,14 @@
 export const TEAM_CATEGORIES = [
-    'SENIOR',
-    'JUVENIL',
-    'CADET',
-    'INFANTIL',
-    'ALEVI',
-    'BENJAMI',
-    'PREBENJAMI'
+    'Senior M',
+    'Senior F',
+    'Juvenil M',
+    'Juvenil F',
+    'Cadet M',
+    'Cadet F',
+    'Infantil M',
+    'Infantil F',
+    'Aleví M',
+    'Aleví F'
 ];
 
 export interface ParsedTeam {
@@ -13,12 +16,20 @@ export interface ParsedTeam {
     category: string;
 }
 
+const LEGACY_CATEGORY_MAP: Record<string, string> = {
+    SENIOR: 'Senior M',
+    JUVENIL: 'Juvenil M',
+    CADET: 'Cadet M',
+    INFANTIL: 'Infantil M',
+    ALEVI: 'Aleví M',
+    'ALEVÍ': 'Aleví M'
+};
+
 export const parseTeamName = (inputName: string): ParsedTeam => {
     let cleanName = inputName.trim();
-    let detectedCategory = 'SENIOR';
+    let detectedCategory = TEAM_CATEGORIES[0];
 
-    // Sort categories by length descending to match "PREBENJAMI" before "BENJAMI" if needed, 
-    // though startWith handles it, longer matches are safer.
+    // Sort categories by length descending for safer prefix matches.
     const sortedCategories = [...TEAM_CATEGORIES].sort((a, b) => b.length - a.length);
 
     for (const cat of sortedCategories) {
@@ -29,8 +40,18 @@ export const parseTeamName = (inputName: string): ParsedTeam => {
             cleanName = cleanName.substring(cat.length).trim();
 
             // If the name is now empty or just special chars, maybe we shouldn't have stripped it?
-            // But usually "Juvenil A" -> cat: JUVENIL, name: "A"
+            // But usually "Juvenil M A" -> cat: Juvenil M, name: "A"
             break;
+        }
+    }
+
+    if (detectedCategory === TEAM_CATEGORIES[0]) {
+        for (const legacy of Object.keys(LEGACY_CATEGORY_MAP)) {
+            if (cleanName.toLowerCase().startsWith(legacy.toLowerCase())) {
+                detectedCategory = LEGACY_CATEGORY_MAP[legacy];
+                cleanName = cleanName.substring(legacy.length).trim();
+                break;
+            }
         }
     }
 

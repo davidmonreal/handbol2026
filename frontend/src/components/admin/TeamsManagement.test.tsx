@@ -10,8 +10,8 @@ describe('TeamsManagement', () => {
 
   it('filters teams by search term', () => {
     const teams = [
-      { id: '1', name: 'Team A', category: 'SENIOR', club: { id: 'club-a', name: 'Club A' }, season: { id: 'season-1', name: '2024' }, players: [], isMyTeam: false, color: '#fff' },
-      { id: '2', name: 'Team B', category: 'CADET', club: { id: 'club-b', name: 'Club B' }, season: { id: 'season-1', name: '2024' }, players: [], isMyTeam: false, color: '#fff' }
+      { id: '1', name: 'Team A', category: 'Senior M', club: { id: 'club-a', name: 'Club A' }, season: { id: 'season-1', name: '2024' }, players: [], isMyTeam: false, color: '#fff' },
+      { id: '2', name: 'Team B', category: 'Cadet M', club: { id: 'club-b', name: 'Club B' }, season: { id: 'season-1', name: '2024' }, players: [], isMyTeam: false, color: '#fff' }
     ];
     
     const searchTerm = 'Team A';
@@ -30,8 +30,8 @@ describe('TeamsManagement', () => {
 
   it('filters teams by category', () => {
     const teams = [
-      { id: '1', name: 'Team A', category: 'SENIOR', club: { id: 'club-a', name: 'Club A' }, season: { id: 'season-1', name: '2024' }, players: [], isMyTeam: false, color: '#fff' },
-      { id: '2', name: 'Team B', category: 'CADET', club: { id: 'club-b', name: 'Club B' }, season: { id: 'season-1', name: '2024' }, players: [], isMyTeam: false, color: '#fff' }
+      { id: '1', name: 'Team A', category: 'Senior M', club: { id: 'club-a', name: 'Club A' }, season: { id: 'season-1', name: '2024' }, players: [], isMyTeam: false, color: '#fff' },
+      { id: '2', name: 'Team B', category: 'Cadet M', club: { id: 'club-b', name: 'Club B' }, season: { id: 'season-1', name: '2024' }, players: [], isMyTeam: false, color: '#fff' }
     ];
     
     const searchTerm = 'cadet';
@@ -45,14 +45,14 @@ describe('TeamsManagement', () => {
     });
     
     expect(filtered).toHaveLength(1);
-    expect(filtered[0].category).toBe('CADET');
+    expect(filtered[0].category).toBe('Cadet M');
   });
 
   it('sorts personal teams before the rest', () => {
     const teams: Team[] = [
-      { id: '1', name: 'B Squad', club: { id: 'c1', name: 'Beta' }, season: { id: 's1', name: '2024' }, category: 'SENIOR', players: [], isMyTeam: false, color: '#fff' },
-      { id: '2', name: 'A Squad', club: { id: 'c2', name: 'Alpha' }, season: { id: 's1', name: '2024' }, category: 'SENIOR', players: [], isMyTeam: true, color: '#fff' },
-      { id: '3', name: 'C Squad', club: { id: 'c3', name: 'Gamma' }, season: { id: 's1', name: '2024' }, category: 'SENIOR', players: [], isMyTeam: false, color: '#fff' },
+      { id: '1', name: 'B Squad', club: { id: 'c1', name: 'Beta' }, season: { id: 's1', name: '2024' }, category: 'Senior M', players: [], isMyTeam: false, color: '#fff' },
+      { id: '2', name: 'A Squad', club: { id: 'c2', name: 'Alpha' }, season: { id: 's1', name: '2024' }, category: 'Senior M', players: [], isMyTeam: true, color: '#fff' },
+      { id: '3', name: 'C Squad', club: { id: 'c3', name: 'Gamma' }, season: { id: 's1', name: '2024' }, category: 'Senior M', players: [], isMyTeam: false, color: '#fff' },
     ];
 
     const sorted = sortTeamsByOwnership(teams);

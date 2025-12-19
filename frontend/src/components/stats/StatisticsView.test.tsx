@@ -135,14 +135,14 @@ describe('StatisticsView', () => {
       homeTeam: {
         id: 'team1',
         name: 'Groc',
-        category: 'CADET',
+        category: 'Cadet M',
         club: { name: 'AB Investiments Joventut Mataró' },
         players: []
       },
       awayTeam: {
         id: 'team2',
         name: 'A',
-        category: 'CADET',
+        category: 'Cadet M',
         club: { name: 'La Roca' },
         players: []
       },
@@ -159,7 +159,7 @@ describe('StatisticsView', () => {
         />
       );
 
-      expect(screen.getByText('Switch to La Roca CADET A')).toBeInTheDocument();
+      expect(screen.getByText('Switch to La Roca Cadet M A')).toBeInTheDocument();
     });
 
     it('should display full team info in Switch button', () => {
@@ -171,7 +171,7 @@ describe('StatisticsView', () => {
         />
       );
 
-      expect(screen.getByText('Switch to La Roca CADET A')).toBeInTheDocument();
+      expect(screen.getByText('Switch to La Roca Cadet M A')).toBeInTheDocument();
     });
 
     it('should handle team without club', () => {
@@ -191,7 +191,7 @@ describe('StatisticsView', () => {
         />
       );
 
-      expect(screen.getByText('Switch to La Roca CADET A')).toBeInTheDocument();
+      expect(screen.getByText('Switch to La Roca Cadet M A')).toBeInTheDocument();
     });
 
     it('should handle team without category', () => {
@@ -211,7 +211,7 @@ describe('StatisticsView', () => {
         />
       );
 
-      expect(screen.getByText('Switch to La Roca CADET A')).toBeInTheDocument();
+      expect(screen.getByText('Switch to La Roca Cadet M A')).toBeInTheDocument();
     });
 
     it('should handle team with only name', () => {
@@ -232,7 +232,7 @@ describe('StatisticsView', () => {
         />
       );
 
-      expect(screen.getByText('Switch to La Roca CADET A')).toBeInTheDocument();
+      expect(screen.getByText('Switch to La Roca Cadet M A')).toBeInTheDocument();
     });
 
     it('should update team display when switching teams', () => {
@@ -244,13 +244,13 @@ describe('StatisticsView', () => {
         />
       );
 
-      expect(screen.getByText('Switch to La Roca CADET A')).toBeInTheDocument();
+      expect(screen.getByText('Switch to La Roca Cadet M A')).toBeInTheDocument();
 
       // Click switch button
-      const switchButton = screen.getByText('Switch to La Roca CADET A');
+      const switchButton = screen.getByText('Switch to La Roca Cadet M A');
       fireEvent.click(switchButton);
 
-      expect(screen.getByText('Switch to AB Investiments Joventut Mataró CADET Groc')).toBeInTheDocument();
+      expect(screen.getByText('Switch to AB Investiments Joventut Mataró Cadet M Groc')).toBeInTheDocument();
     });
   });
 

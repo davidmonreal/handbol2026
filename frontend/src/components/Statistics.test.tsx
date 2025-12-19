@@ -28,14 +28,14 @@ const mockMatchData = {
     homeTeam: {
         id: 'team-home',
         name: 'Home Team',
-        category: 'CADET',
+        category: 'Cadet M',
         club: { name: 'Club A' },
         players: []
     },
     awayTeam: {
         id: 'team-away',
         name: 'Away Team',
-        category: 'JUVENIL',
+        category: 'Juvenil M',
         club: { name: 'Club B' },
         players: []
     }
@@ -123,7 +123,7 @@ describe('Statistics', () => {
             const mockTeamData = {
                 id: 'team-1',
                 name: 'Test Team',
-                category: 'CADET',
+                category: 'Cadet M',
                 club: { name: 'Test Club' },
                 players: []
             };

@@ -37,7 +37,7 @@ describe('TeamService', () => {
       {
         id: '1',
         name: 'Cadet A',
-        category: 'CADET',
+        category: 'Cadet M',
         isMyTeam: false,
         clubId: 'c1',
         seasonId: 's1',
@@ -54,7 +54,7 @@ describe('TeamService', () => {
   it('create validates season exists when seasonId provided', async () => {
     const data = {
       name: 'New Team',
-      category: 'SENIOR',
+      category: 'Senior M',
       clubId: 'c1',
       seasonId: 's1',
       isMyTeam: true,
@@ -72,7 +72,7 @@ describe('TeamService', () => {
   });
 
   it('create throws error if season not found when seasonId provided', async () => {
-    const newTeamData = { name: 'Test', category: 'SENIOR', clubId: 'c1', seasonId: 'invalid' };
+    const newTeamData = { name: 'Test', category: 'Senior M', clubId: 'c1', seasonId: 'invalid' };
     vi.mocked(prisma.season.findUnique).mockResolvedValue(null);
 
     await expect(service.create(newTeamData)).rejects.toThrow('Season not found');

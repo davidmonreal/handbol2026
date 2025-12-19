@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, Search } from 'lucide-react';
 import { API_BASE_URL } from '../../../config/api';
 import { RemoveIconButton, EditIconButton, AddIconButton } from '../../common';
+import { TEAM_CATEGORIES } from '../../../utils/teamUtils';
 import type { Team, Player } from '../../../types';
 
 export const TeamPlayersPage = () => {
@@ -193,7 +194,7 @@ export const TeamPlayersPage = () => {
                             state: {
                                 from: `/teams/${id}/players`,
                                 preselectClubId: team.club?.id || null,
-                                preselectCategory: team.category || 'SENIOR',
+                                preselectCategory: team.category || TEAM_CATEGORIES[0],
                                 preselectTeamId: team.id
                             }
                         })}

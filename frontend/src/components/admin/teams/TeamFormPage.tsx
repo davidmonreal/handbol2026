@@ -23,7 +23,7 @@ export const TeamFormPage = () => {
 
     // Form State
     const [name, setName] = useState('');
-    const [category, setCategory] = useState('SENIOR');
+    const [category, setCategory] = useState(TEAM_CATEGORIES[0]);
     const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
     const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
     const [isMyTeam, setIsMyTeam] = useState(false);
@@ -64,7 +64,7 @@ export const TeamFormPage = () => {
                     const team: Team = await teamRes.json();
 
                     setName(team.name);
-                    setCategory(team.category || 'SENIOR');
+                    setCategory(team.category || TEAM_CATEGORIES[0]);
                     setSelectedClubId(team.club?.id || null);
                     setSelectedSeasonId(team.season?.id || null);
                     setIsMyTeam(team.isMyTeam || false);

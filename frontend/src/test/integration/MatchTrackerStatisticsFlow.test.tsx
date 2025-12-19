@@ -17,7 +17,7 @@ const mockMatchData = {
     homeTeam: {
         id: 'team-home',
         name: 'Groc',
-        category: 'CADET',
+        category: 'Cadet M',
         club: { name: 'AB Investiments Joventut Mataró' },
         players: [
             { player: { id: 'p1', name: 'Player 1', number: 10, isGoalkeeper: false }, role: 'CB' },
@@ -27,7 +27,7 @@ const mockMatchData = {
     awayTeam: {
         id: 'team-away',
         name: 'A',
-        category: 'CADET',
+        category: 'Cadet M',
         club: { name: 'La Roca' },
         players: [
             { player: { id: 'p3', name: 'Player 3', number: 15, isGoalkeeper: false }, role: 'LW' },
@@ -85,8 +85,8 @@ describe('Match Tracker - Statistics Integration Flow', () => {
                 expect(screen.getByText('Groc vs A')).toBeInTheDocument();
             });
 
-            // Select team "CADET Groc" (home team)
-            const homeTeamSection = screen.getByText(/CADET Groc/);
+            // Select team "Cadet M Groc" (home team)
+            const homeTeamSection = screen.getByText(/Cadet M Groc/);
             fireEvent.click(homeTeamSection.closest('div')!);
 
             // Mock data for Statistics page
@@ -98,9 +98,9 @@ describe('Match Tracker - Statistics Integration Flow', () => {
             const statsButton = screen.getByText('Statistics');
             fireEvent.click(statsButton);
 
-            // Statistics should show "CADET Groc" team by default
+            // Statistics should show "Cadet M Groc" team by default
             await waitFor(() => {
-                expect(screen.getByText(/AB Investiments Joventut Mataró CADET Groc/)).toBeInTheDocument();
+                expect(screen.getByText(/AB Investiments Joventut Mataró Cadet M Groc/)).toBeInTheDocument();
             });
         });
     });
@@ -119,10 +119,10 @@ describe('Match Tracker - Statistics Integration Flow', () => {
             await waitFor(() => {
                 // "Viewing:" label should show full team info
                 expect(screen.getByText('Viewing:')).toBeInTheDocument();
-                expect(screen.getByText(/AB Investiments Joventut Mataró CADET Groc/)).toBeInTheDocument();
+                expect(screen.getByText(/AB Investiments Joventut Mataró Cadet M Groc/)).toBeInTheDocument();
 
                 // "Switch to" button should show full team info
-                expect(screen.getByText(/Switch to La Roca CADET A/)).toBeInTheDocument();
+                expect(screen.getByText(/Switch to La Roca Cadet M A/)).toBeInTheDocument();
             });
         });
     });
@@ -143,8 +143,8 @@ describe('Match Tracker - Statistics Integration Flow', () => {
                 expect(screen.getByText('Groc vs A')).toBeInTheDocument();
             });
 
-            // Step 1: Select team "CADET Groc"
-            const homeTeamSection = screen.getByText(/CADET Groc/);
+            // Step 1: Select team "Cadet M Groc"
+            const homeTeamSection = screen.getByText(/Cadet M Groc/);
             fireEvent.click(homeTeamSection.closest('div')!);
 
             await waitFor(() => {
@@ -211,8 +211,8 @@ describe('Match Tracker - Statistics Integration Flow', () => {
                 expect(screen.getByText('Groc vs A')).toBeInTheDocument();
             });
 
-            // Select team "CADET Groc" (home team)
-            const homeTeamSection = screen.getByText(/CADET Groc/);
+            // Select team "Cadet M Groc" (home team)
+            const homeTeamSection = screen.getByText(/Cadet M Groc/);
             fireEvent.click(homeTeamSection.closest('div')!);
 
             await waitFor(() => {
@@ -229,15 +229,15 @@ describe('Match Tracker - Statistics Integration Flow', () => {
 
             await waitFor(() => {
                 expect(screen.getByText('Viewing:')).toBeInTheDocument();
-                expect(screen.getByText(/AB Investiments Joventut Mataró CADET Groc/)).toBeInTheDocument();
+                expect(screen.getByText(/AB Investiments Joventut Mataró Cadet M Groc/)).toBeInTheDocument();
             });
 
             // Switch to away team in Statistics
-            const switchButton = screen.getByText(/Switch to La Roca CADET A/);
+            const switchButton = screen.getByText(/Switch to La Roca Cadet M A/);
             fireEvent.click(switchButton);
 
             await waitFor(() => {
-                expect(screen.getByText(/La Roca CADET A/)).toBeInTheDocument();
+                expect(screen.getByText(/La Roca Cadet M A/)).toBeInTheDocument();
             });
 
             // Navigate back to Tracker
@@ -283,7 +283,7 @@ describe('Match Tracker - Statistics Integration Flow', () => {
 
             // Should default to home team
             await waitFor(() => {
-                expect(screen.getByText(/AB Investiments Joventut Mataró CADET Groc/)).toBeInTheDocument();
+                expect(screen.getByText(/AB Investiments Joventut Mataró Cadet M Groc/)).toBeInTheDocument();
             });
         });
 

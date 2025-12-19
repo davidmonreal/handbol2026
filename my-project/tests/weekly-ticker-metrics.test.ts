@@ -6,13 +6,13 @@ const createMatch = () => {
   const homeTeam = {
     id: 'team-home',
     name: 'Home Team',
-    category: 'Senior',
+    category: 'Senior M',
     club: { id: 'club-home', name: 'Home Club' },
   };
   const awayTeam = {
     id: 'team-away',
     name: 'Away Team',
-    category: 'Juvenil',
+    category: 'Juvenil M',
     club: { id: 'club-away', name: 'Away Club' },
   };
 

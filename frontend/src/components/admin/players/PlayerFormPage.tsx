@@ -5,6 +5,7 @@ import { usePlayerForm } from '../../../hooks/usePlayerForm';
 import { PlayerBasicInfo } from './PlayerBasicInfo';
 import { PlayerAttributes } from './PlayerAttributes';
 import { PlayerTeamManager } from './PlayerTeamManager';
+import { TEAM_CATEGORIES } from '../../../utils/teamUtils';
 
 export const PlayerFormPage = () => {
     const { id } = useParams();
@@ -31,7 +32,9 @@ export const PlayerFormPage = () => {
 
     // State for Team Selection (Managed here to pass to save)
     const [selectedClubId, setSelectedClubId] = useState<string | null>(navigationState.preselectClubId ?? null);
-    const [selectedCategory, setSelectedCategory] = useState<string>(navigationState.preselectCategory ?? 'SENIOR');
+    const [selectedCategory, setSelectedCategory] = useState<string>(
+        navigationState.preselectCategory ?? TEAM_CATEGORIES[0]
+    );
     const [selectedTeamId, setSelectedTeamId] = useState<string | null>(navigationState.preselectTeamId ?? null);
 
     // Fetch team players when selection changes to check for number collisions

@@ -34,7 +34,7 @@ describe('TeamRepository', () => {
       {
         id: '1',
         name: 'Cadet A',
-        category: 'CADET',
+        category: 'Cadet M',
         isMyTeam: true,
         clubId: 'c1',
         seasonId: 's1',
@@ -64,7 +64,7 @@ describe('TeamRepository', () => {
     const mockTeam = {
       id: '1',
       name: 'Cadet A',
-      category: 'CADET',
+      category: 'Cadet M',
       isMyTeam: true,
       clubId: 'c1',
       seasonId: 's1',
@@ -90,7 +90,7 @@ describe('TeamRepository', () => {
   it('create creates a new team', async () => {
     const newTeamData = {
       name: 'Cadet A',
-      category: 'CADET',
+      category: 'Cadet M',
       clubId: 'c1',
       seasonId: 's1',
       isMyTeam: true,

@@ -45,7 +45,7 @@ const createTeam = async (label: string, clubId: string, seasonId: string) => {
   const team = await prisma.team.create({
     data: {
       name: uniqueName(label),
-      category: 'CADET',
+      category: 'Cadet M',
       clubId,
       seasonId,
       isMyTeam: false,
@@ -124,7 +124,7 @@ describe.sequential('Team CRUD integration', () => {
   it('creates, reads, updates, and deletes teams', async () => {
     const payload = {
       name: uniqueName('CRUD-Team'),
-      category: 'CADET',
+      category: 'Cadet M',
       clubId: supportingClub.id,
       seasonId: supportingSeason.id,
       isMyTeam: false,

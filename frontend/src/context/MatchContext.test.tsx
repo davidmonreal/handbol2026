@@ -16,7 +16,7 @@ const mockMatchData = {
     homeTeam: {
         id: 'team-home',
         name: 'Home Team',
-        category: 'CADET',
+        category: 'Cadet M',
         club: { name: 'Club A' },
         players: [
             { player: { id: 'p1', name: 'Player 1', number: 10, isGoalkeeper: false }, role: 'CB' }
@@ -25,7 +25,7 @@ const mockMatchData = {
     awayTeam: {
         id: 'team-away',
         name: 'Away Team',
-        category: 'JUVENIL',
+        category: 'Juvenil M',
         club: { name: 'Club B' },
         players: [
             { player: { id: 'p2', name: 'Player 2', number: 12, isGoalkeeper: true }, role: 'GK' }

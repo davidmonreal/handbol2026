@@ -60,14 +60,14 @@ describe('Zombie Code Verification - Used Utilities Still Work', () => {
 
     describe('teamUtils', () => {
         it('TEAM_CATEGORIES should contain expected categories', () => {
-            expect(TEAM_CATEGORIES).toContain('SENIOR');
-            expect(TEAM_CATEGORIES).toContain('JUVENIL');
-            expect(TEAM_CATEGORIES).toContain('CADET');
+            expect(TEAM_CATEGORIES).toContain('Senior M');
+            expect(TEAM_CATEGORIES).toContain('Juvenil M');
+            expect(TEAM_CATEGORIES).toContain('Cadet M');
         });
 
         it('parseTeamName should detect category from team name', () => {
             const result = parseTeamName('Juvenil A');
-            expect(result.category).toBe('JUVENIL');
+            expect(result.category).toBe('Juvenil M');
         });
     });
 });

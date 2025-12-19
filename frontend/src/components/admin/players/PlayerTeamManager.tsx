@@ -58,7 +58,7 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
     // Derived State
     const filteredTeams = teams.filter(t =>
         t.club?.id === selectedClubId &&
-        (t.category || 'SENIOR') === selectedCategory
+        (t.category || TEAM_CATEGORIES[0]) === selectedCategory
     );
 
     // Handlers
@@ -106,7 +106,7 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                                     <span className="text-sm">
                                         <span className="font-semibold text-indigo-900">{pt.team.club?.name}</span>
                                         {' '}
-                                        <span className="text-indigo-700">{toTitleCase(pt.team.category || 'Senior')}</span>
+                                        <span className="text-indigo-700">{toTitleCase(pt.team.category || TEAM_CATEGORIES[0])}</span>
                                         {' '}
                                         <span className="text-indigo-600">{pt.team.name}</span>
                                     </span>
@@ -143,7 +143,7 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                     value={selectedCategory}
                     options={Array.from(new Set([
                         ...TEAM_CATEGORIES,
-                        ...teams.map(t => t.category || 'SENIOR')
+                        ...teams.map(t => t.category || TEAM_CATEGORIES[0])
                     ])).map(cat => ({
                         value: cat,
                         label: toTitleCase(cat)

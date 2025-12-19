@@ -17,7 +17,7 @@ interface CreateTeamModalProps {
 export const CreateTeamModal = ({ isOpen, onClose, onSubmit, initialTeamName, applyTitleCase = true }: CreateTeamModalProps) => {
     const [clubName, setClubName] = useState('');
     const [teamName, setTeamName] = useState('');
-    const [category, setCategory] = useState('');
+    const [category, setCategory] = useState(TEAM_CATEGORIES[0]);
     const [seasonId, setSeasonId] = useState('');
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -74,7 +74,7 @@ export const CreateTeamModal = ({ isOpen, onClose, onSubmit, initialTeamName, ap
             // Reset Form
             setTeamName(initialTeamName);
             setClubName('');
-            setCategory('');
+            setCategory(TEAM_CATEGORIES[0]);
             setError(null);
         }
     }, [isOpen, initialTeamName]);
@@ -171,7 +171,7 @@ export const CreateTeamModal = ({ isOpen, onClose, onSubmit, initialTeamName, ap
                                 value={category}
                                 options={Array.from(new Set([
                                     ...TEAM_CATEGORIES,
-                                    ...teams.map(t => t.category || 'SENIOR')
+                                    ...teams.map(t => t.category || TEAM_CATEGORIES[0])
                                 ])).map(cat => ({
                                     value: cat,
                                     label: toTitleCase(cat)

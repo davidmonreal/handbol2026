@@ -26,7 +26,7 @@ export const TeamCreationModal: React.FC<TeamCreationModalProps> = ({
     onCreateTeam
 }) => {
     const [selectedClubId, setSelectedClubId] = useState<string | null>(initialClubId);
-    const [category, setCategory] = useState(initialCategory || 'SENIOR');
+    const [category, setCategory] = useState(initialCategory || TEAM_CATEGORIES[0]);
     const [seasonId, setSeasonId] = useState<string>('');
     const [name, setName] = useState('');
 

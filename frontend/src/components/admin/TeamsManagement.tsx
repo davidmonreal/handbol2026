@@ -4,8 +4,7 @@ import { Users, BarChart3, Star } from 'lucide-react';
 import { CrudManager } from './shared/CrudManager';
 import { API_BASE_URL } from '../../config/api';
 import type { Team, Club, Season, CrudConfig } from '../../types';
-
-const CATEGORIES = ['BENJAMI', 'ALEVI', 'INFANTIL', 'CADET', 'JUVENIL', 'SENIOR'];
+import { TEAM_CATEGORIES } from '../../utils/teamUtils';
 
 export const sortTeamsByOwnership = (teams: Team[]) => {
     return [...teams].sort((a, b) => {
@@ -70,7 +69,7 @@ export const TeamsManagement = () => {
                 label: 'Category',
                 render: (team) => (
                     <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                        {team.category || 'SENIOR'}
+                        {team.category || TEAM_CATEGORIES[0]}
                     </span>
                 ),
             },
@@ -113,7 +112,7 @@ export const TeamsManagement = () => {
                 label: 'Category',
                 type: 'select',
                 required: true,
-                options: CATEGORIES.map(cat => ({ value: cat, label: cat })),
+                options: TEAM_CATEGORIES.map(cat => ({ value: cat, label: cat })),
             },
             {
                 name: 'clubId',

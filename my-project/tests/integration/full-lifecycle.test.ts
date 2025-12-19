@@ -91,7 +91,7 @@ describe('Full Application Lifecycle Integration Test', () => {
         .post('/api/teams')
         .send({
           name: `Test FL Home ${runId}`,
-          category: 'SENIOR',
+          category: 'Senior M',
           isMyTeam: true,
           clubId,
           seasonId,
@@ -107,7 +107,7 @@ describe('Full Application Lifecycle Integration Test', () => {
         .post('/api/teams')
         .send({
           name: `Test FL Away ${runId}`,
-          category: 'SENIOR',
+          category: 'Senior M',
           isMyTeam: false,
           clubId,
           seasonId,

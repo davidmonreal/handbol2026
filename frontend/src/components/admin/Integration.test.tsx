@@ -16,7 +16,7 @@ const mockSeasons = [
 ];
 
 const mockTeams = [
-    { id: 't1', name: 'Team A', category: 'SENIOR', club: { id: '1', name: 'Club A' }, season: { id: 's1', name: '2024-2025' } }
+    { id: 't1', name: 'Team A', category: 'Senior M', club: { id: '1', name: 'Club A' }, season: { id: 's1', name: '2024-2025' } }
 ];
 
 describe('Integration Flow: Club -> Team -> Player', () => {
