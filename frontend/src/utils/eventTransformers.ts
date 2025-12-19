@@ -37,18 +37,18 @@ export const positionDistanceToZone = (position: string | null, distance: string
     return `${distancePrefix}-${position.toUpperCase()}` as ZoneType;
 };
 
-interface BackendEvent {
+export interface BackendEvent {
     id: string;
     timestamp: number;
-    matchId: string;
-    playerId: string;
+    matchId?: string;
+    playerId?: string | null;
     player?: {
         name: string;
         number: number;
     };
     teamId: string;
     type: string;
-    subtype?: string;
+    subtype?: string | null;
     sanctionType?: string;
     position?: string;
     distance?: string;
@@ -66,7 +66,7 @@ interface BackendEvent {
 export const transformBackendEvent = (e: BackendEvent): MatchEvent => ({
     id: e.id,
     timestamp: e.timestamp,
-    playerId: e.playerId,
+    playerId: e.playerId ?? null,
     playerName: e.player?.name,
     playerNumber: e.player?.number,
     teamId: e.teamId,
