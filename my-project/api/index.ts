@@ -34,9 +34,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     if (appLoadError) {
       console.error('❌ App not available due to load error');
       return res.status(500).json({
-        error: 'Failed to initialize application',
-        message: appLoadError.message,
-        details: 'Check function logs for full stack trace',
+        error: 'Internal server error',
         timestamp: new Date().toISOString(),
       });
     }
@@ -45,8 +43,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     if (!app) {
       console.error('❌ App is null but no load error was captured');
       return res.status(500).json({
-        error: 'Application not initialized',
-        message: 'App is still loading or failed to load',
+        error: 'Internal server error',
         timestamp: new Date().toISOString(),
       });
     }
@@ -63,7 +60,6 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
     return res.status(500).json({
       error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error',
       timestamp: new Date().toISOString(),
     });
   }
