@@ -87,7 +87,7 @@ const Dashboard = () => {
       return;
     }
 
-    let timeoutId: number | undefined;
+    let timeoutId: ReturnType<typeof window.setTimeout> | undefined;
     let idleId: number | undefined;
 
     if ('requestIdleCallback' in window) {
