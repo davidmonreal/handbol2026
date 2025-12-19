@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useVideoSync } from '../../context/VideoSyncContext';
+import { useMatch } from '../../context/MatchContext';
 
 export const VideoCalibration = () => {
     const {
@@ -11,6 +12,7 @@ export const VideoCalibration = () => {
         setSecondHalfStart,
         getMatchTimeFromVideo,
     } = useVideoSync();
+    const { setVideoCalibration } = useMatch();
 
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -95,7 +97,10 @@ export const VideoCalibration = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {/* First Half Start */}
                 <button
-                    onClick={() => setFirstHalfStart(currentVideoTime)}
+                    onClick={() => {
+                        setFirstHalfStart(currentVideoTime);
+                        setVideoCalibration(1, currentVideoTime);
+                    }}
                     className={`flex items-center justify-between p-3 rounded-lg border transition-all ${firstHalfStart !== null
                             ? 'bg-green-50 border-green-500 text-green-800'
                             : 'bg-gray-50 border-gray-200 hover:bg-gray-100 text-gray-700'
@@ -113,7 +118,10 @@ export const VideoCalibration = () => {
 
                 {/* Second Half Start */}
                 <button
-                    onClick={() => setSecondHalfStart(currentVideoTime)}
+                    onClick={() => {
+                        setSecondHalfStart(currentVideoTime);
+                        setVideoCalibration(2, currentVideoTime);
+                    }}
                     disabled={firstHalfStart === null}
                     className={`flex items-center justify-between p-3 rounded-lg border transition-all ${secondHalfStart !== null
                             ? 'bg-green-50 border-green-500 text-green-800'

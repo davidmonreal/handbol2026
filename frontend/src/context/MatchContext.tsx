@@ -12,6 +12,8 @@ interface MatchMeta {
   awayScore?: number;
   homeEventsLocked?: boolean;
   awayEventsLocked?: boolean;
+  firstHalfVideoStart?: number | null;
+  secondHalfVideoStart?: number | null;
   realTimeFirstHalfStart?: number | null;
   realTimeSecondHalfStart?: number | null;
   realTimeFirstHalfEnd?: number | null;
@@ -69,7 +71,10 @@ interface MatchContextType {
   realTimeSecondHalfStart: number | null;
   realTimeFirstHalfEnd: number | null;
   realTimeSecondHalfEnd: number | null;
+  firstHalfVideoStart: number | null;
+  secondHalfVideoStart: number | null;
   setRealTimeCalibration: (half: 1 | 2, timestamp: number, boundary?: 'start' | 'end') => Promise<void>;
+  setVideoCalibration: (half: 1 | 2, timestamp: number) => void;
 }
 
 const MatchContext = createContext<MatchContextType | undefined>(undefined);
@@ -89,7 +94,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
   const [homeEventsLocked, setHomeEventsLocked] = useState(false);
   const [awayEventsLocked, setAwayEventsLocked] = useState(false);
   const addEvent = async (event: MatchEvent) => {
-    if (!realTimeFirstHalfStart) {
+    if (!realTimeFirstHalfStart && !firstHalfVideoStart) {
       console.warn('Cannot add events before starting the first half.');
       return;
     }
@@ -284,6 +289,17 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
   const [realTimeSecondHalfStart, setRealTimeSecondHalfStart] = useState<number | null>(null);
   const [realTimeFirstHalfEnd, setRealTimeFirstHalfEnd] = useState<number | null>(null);
   const [realTimeSecondHalfEnd, setRealTimeSecondHalfEnd] = useState<number | null>(null);
+  const [firstHalfVideoStart, setFirstHalfVideoStart] = useState<number | null>(null);
+  const [secondHalfVideoStart, setSecondHalfVideoStart] = useState<number | null>(null);
+
+  const setVideoCalibration = useCallback((half: 1 | 2, timestamp: number) => {
+    if (half === 1) {
+      setFirstHalfVideoStart(timestamp);
+      setSecondHalfVideoStart(null);
+    } else {
+      setSecondHalfVideoStart(timestamp);
+    }
+  }, []);
 
   const setRealTimeCalibration = async (half: 1 | 2, timestamp: number, boundary: 'start' | 'end' = 'start') => {
     if (half === 1) {
@@ -364,12 +380,16 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
           const data = await res.json();
           setRealTimeFirstHalfStart(data.realTimeFirstHalfStart || null);
           setRealTimeSecondHalfStart(data.realTimeSecondHalfStart || null);
+          setFirstHalfVideoStart(data.firstHalfVideoStart ?? null);
+          setSecondHalfVideoStart(data.secondHalfVideoStart ?? null);
           fetchedMeta = {
             isFinished: data.isFinished,
             homeScore: data.homeScore,
             awayScore: data.awayScore,
             homeEventsLocked: data.homeEventsLocked,
             awayEventsLocked: data.awayEventsLocked,
+            firstHalfVideoStart: data.firstHalfVideoStart ?? null,
+            secondHalfVideoStart: data.secondHalfVideoStart ?? null,
             realTimeFirstHalfStart: data.realTimeFirstHalfStart,
             realTimeSecondHalfStart: data.realTimeSecondHalfStart,
             realTimeFirstHalfEnd: data.realTimeFirstHalfEnd,
@@ -409,6 +429,12 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     }
     if (effectiveMeta?.realTimeSecondHalfEnd !== undefined) {
       setRealTimeSecondHalfEnd(effectiveMeta.realTimeSecondHalfEnd);
+    }
+    if (effectiveMeta?.firstHalfVideoStart !== undefined) {
+      setFirstHalfVideoStart(effectiveMeta.firstHalfVideoStart);
+    }
+    if (effectiveMeta?.secondHalfVideoStart !== undefined) {
+      setSecondHalfVideoStart(effectiveMeta.secondHalfVideoStart);
     }
 
     // Load existing events from backend
@@ -570,7 +596,10 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
       realTimeSecondHalfStart,
       realTimeFirstHalfEnd,
       realTimeSecondHalfEnd,
+      firstHalfVideoStart,
+      secondHalfVideoStart,
       setRealTimeCalibration,
+      setVideoCalibration,
       toggleTeamLock,
       isTeamLocked
     }}>

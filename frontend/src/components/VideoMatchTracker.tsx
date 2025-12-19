@@ -103,6 +103,8 @@ const VideoMatchTrackerContent = () => {
                     awayScore: data.awayScore,
                     homeEventsLocked: data.homeEventsLocked,
                     awayEventsLocked: data.awayEventsLocked,
+                    firstHalfVideoStart: data.firstHalfVideoStart ?? null,
+                    secondHalfVideoStart: data.secondHalfVideoStart ?? null,
                     realTimeFirstHalfStart: data.realTimeFirstHalfStart,
                     realTimeSecondHalfStart: data.realTimeSecondHalfStart,
                     realTimeFirstHalfEnd: data.realTimeFirstHalfEnd,
