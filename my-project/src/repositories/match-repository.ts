@@ -7,8 +7,22 @@ export class MatchRepository {
     try {
       return await prisma.match.findMany({
         include: {
-          homeTeam: { include: { club: true } },
-          awayTeam: { include: { club: true } },
+          homeTeam: {
+            select: {
+              id: true,
+              name: true,
+              category: true,
+              club: { select: { name: true } },
+            },
+          },
+          awayTeam: {
+            select: {
+              id: true,
+              name: true,
+              category: true,
+              club: { select: { name: true } },
+            },
+          },
           // Events removed - scores are in homeScore/awayScore columns
         },
         orderBy: { date: 'desc' },

@@ -3,11 +3,56 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, ChevronRight, Calendar, BarChart3 } from 'lucide-react';
 import { API_BASE_URL } from '../config/api';
 import { useSafeTranslation } from '../context/LanguageContext';
-import { LoadingGrid, ErrorMessage } from './common';
+import { ErrorMessage } from './common';
 import { MatchCard } from './match/MatchCard';
 import type { WeeklyInsightsResponse, DashboardSnapshotResponse } from '../types/api.types';
 import { WeeklyInsightsTicker } from './dashboard/WeeklyInsightsTicker';
 import { formatCategoryLabel } from '../utils/categoryLabels';
+
+const MatchCardSkeleton = () => (
+  <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-3 pt-4 pb-2 min-w-[280px] w-full">
+    <div className="flex flex-col gap-5 animate-pulse">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center text-sm">
+          <div className="h-3 w-28 bg-gray-50 border border-gray-100 rounded" />
+          <div className="h-3 w-16 bg-gray-50 border border-gray-100 rounded ml-4" />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0 space-y-2 text-right">
+            <div className="h-4 w-24 bg-gray-50 border border-gray-100 rounded ml-auto" />
+            <div className="h-3 w-16 bg-gray-50 border border-gray-100 rounded ml-auto" />
+          </div>
+
+          <div className="px-4 flex items-center justify-center min-w-[100px]">
+            <div className="h-6 w-12 bg-gray-50 border border-gray-100 rounded" />
+          </div>
+
+          <div className="flex-1 min-w-0 space-y-2 text-left">
+            <div className="h-4 w-24 bg-gray-50 border border-gray-100 rounded" />
+            <div className="h-3 w-16 bg-gray-50 border border-gray-100 rounded" />
+          </div>
+        </div>
+
+        <div className="h-3 w-2/3 bg-gray-50 border border-gray-100 rounded" />
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-1.5">
+        <div className="h-8 flex-1 bg-gray-50 border border-gray-100 rounded-lg" />
+        <div className="h-8 w-12 bg-gray-50 border border-gray-100 rounded-lg" />
+        <div className="h-8 flex-1 bg-gray-50 border border-gray-100 rounded-lg" />
+      </div>
+    </div>
+  </div>
+);
+
+const MatchCardSkeletonGrid = ({ items = 3 }: { items?: number }) => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">
+    {Array.from({ length: items }).map((_, index) => (
+      <MatchCardSkeleton key={`match-skeleton-${index}`} />
+    ))}
+  </div>
+);
 
 // ...
 
@@ -20,6 +65,7 @@ const Dashboard = () => {
   const [isInsightsRefreshing, setIsInsightsRefreshing] = useState(false);
   const [insightsErrorKey, setInsightsErrorKey] = useState<string | null>(null);
   const [teamsErrorKey, setTeamsErrorKey] = useState<string | null>(null);
+  const [showInsightsTicker, setShowInsightsTicker] = useState(false);
 
   const pendingMatches = dashboardData?.pendingMatches ?? [];
   const pastMatches = dashboardData?.pastMatches ?? [];
@@ -34,6 +80,31 @@ const Dashboard = () => {
   useEffect(() => {
     loadDashboard();
   }, []);
+
+  useEffect(() => {
+    if (isLoading) {
+      setShowInsightsTicker(false);
+      return;
+    }
+
+    let timeoutId: number | undefined;
+    let idleId: number | undefined;
+
+    if ('requestIdleCallback' in window) {
+      idleId = window.requestIdleCallback(() => setShowInsightsTicker(true));
+    } else {
+      timeoutId = window.setTimeout(() => setShowInsightsTicker(true), 200);
+    }
+
+    return () => {
+      if (idleId !== undefined) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [isLoading]);
 
   const loadDashboard = async () => {
     try {
@@ -87,52 +158,47 @@ const Dashboard = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="p-6 max-w-7xl mx-auto space-y-8">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
-            <p className="text-gray-500">{t('dashboard.loadingMessage')}</p>
-          </div>
-        </div>
-        <div>
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-              <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-              {t('dashboard.loadingSectionTitle')}
-            </h2>
-          </div>
-          <LoadingGrid items={3} />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
-          <p className="text-gray-500">{t('dashboard.welcome')}</p>
+          <p className="text-gray-500">
+            {isLoading ? t('dashboard.loadingMessage') : t('dashboard.welcome')}
+          </p>
         </div>
-        <button
-          onClick={() => navigate('/matches')}
-          className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-        >
-          <Plus size={18} className="mr-2" />
-          {t('dashboard.newMatch')}
-        </button>
+        {isLoading ? (
+          <div className="h-10 w-36 rounded-lg bg-gray-100 animate-pulse" />
+        ) : (
+          <button
+            onClick={() => navigate('/matches')}
+            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+          >
+            <Plus size={18} className="mr-2" />
+            {t('dashboard.newMatch')}
+          </button>
+        )}
       </div>
 
-      <WeeklyInsightsTicker
-        insights={weeklyInsights}
-        isLoading={isInsightsLoading}
-        isRefreshing={isInsightsRefreshing}
-        errorKey={insightsErrorKey}
-        onRefresh={recomputeInsights}
-      />
+      {showInsightsTicker ? (
+        <WeeklyInsightsTicker
+          insights={weeklyInsights}
+          isLoading={isInsightsLoading}
+          isRefreshing={isInsightsRefreshing}
+          errorKey={insightsErrorKey}
+          onRefresh={recomputeInsights}
+        />
+      ) : (
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm px-4 py-2">
+          <div className="flex items-center gap-3 animate-pulse">
+            <div className="flex-1 min-w-0 min-h-[32px] flex items-center">
+              <div className="w-full h-3 bg-gray-50 rounded border border-gray-100" />
+            </div>
+            <div className="h-7 w-24 rounded-lg bg-gray-50 border border-gray-100" />
+          </div>
+        </div>
+      )}
 
       <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-4">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -199,7 +265,9 @@ const Dashboard = () => {
           <span className="w-2 h-2 bg-emerald-500 rounded-full" />
           <h2 className="text-lg font-semibold text-gray-900">{t('dashboard.upcomingMyTeams')}</h2>
         </div>
-        {myPendingMatches.length > 0 ? (
+        {isLoading ? (
+          <MatchCardSkeletonGrid items={3} />
+        ) : myPendingMatches.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 xl:gap-10">
             {myPendingMatches.slice(0, 3).map(match => (
               <MatchCard key={`next-${match.id}`} match={match} isPending={true} />
@@ -219,15 +287,21 @@ const Dashboard = () => {
             <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
             {t('dashboard.upcomingAll')}
           </h2>
-          <button
-            onClick={() => navigate('/matches')}
-            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center"
-          >
-            {t('dashboard.viewAll')} <ChevronRight size={16} />
-          </button>
+          {isLoading ? (
+            <div className="h-4 w-24 rounded bg-gray-100 animate-pulse" />
+          ) : (
+            <button
+              onClick={() => navigate('/matches')}
+              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center"
+            >
+              {t('dashboard.viewAll')} <ChevronRight size={16} />
+            </button>
+          )}
         </div>
 
-        {pendingMatches.length > 0 ? (
+        {isLoading ? (
+          <MatchCardSkeletonGrid items={3} />
+        ) : pendingMatches.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">
             {pendingMatches.map(match => (
               <MatchCard key={match.id} match={match} isPending={true} />
@@ -257,7 +331,9 @@ const Dashboard = () => {
           </h2>
         </div>
 
-        {pastMatches.length > 0 ? (
+        {isLoading ? (
+          <MatchCardSkeletonGrid items={3} />
+        ) : pastMatches.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">
             {pastMatches.map(match => (
               <MatchCard key={match.id} match={match} isPending={false} />

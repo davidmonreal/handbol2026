@@ -1,22 +1,44 @@
-import { Component } from 'react';
+import { Component, Suspense, lazy } from 'react';
 import type { ReactNode } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { MatchProvider } from './context/MatchContext';
-import { AdminLayout } from './components/admin/AdminLayout';
-import Dashboard from './components/Dashboard';
-import MatchTracker from './components/MatchTracker';
-import VideoMatchTracker from './components/VideoMatchTracker';
-import Statistics from './components/Statistics';
-import { MatchesManagement } from './components/admin/MatchesManagement';
-import { ClubsManagement } from './components/admin/ClubsManagement';
-import { SeasonsManagement } from './components/admin/SeasonsManagement';
-import { PlayersManagement } from './components/admin/PlayersManagement';
-import { ImportPlayers } from './components/admin/ImportPlayers';
-import { TeamsManagement } from './components/admin/TeamsManagement';
-import { PlayerFormPage } from './components/admin/players/PlayerFormPage';
-import { TeamFormPage } from './components/admin/teams/TeamFormPage';
-import { TeamPlayersPage } from './components/admin/teams/TeamPlayersPage';
-import { MatchFormPage } from './components/admin/matches/MatchFormPage';
+const AdminLayout = lazy(async () => ({
+  default: (await import('./components/admin/AdminLayout')).AdminLayout,
+}));
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const MatchTracker = lazy(() => import('./components/MatchTracker'));
+const VideoMatchTracker = lazy(() => import('./components/VideoMatchTracker'));
+const Statistics = lazy(() => import('./components/Statistics'));
+const MatchesManagement = lazy(async () => ({
+  default: (await import('./components/admin/MatchesManagement')).MatchesManagement,
+}));
+const ClubsManagement = lazy(async () => ({
+  default: (await import('./components/admin/ClubsManagement')).ClubsManagement,
+}));
+const SeasonsManagement = lazy(async () => ({
+  default: (await import('./components/admin/SeasonsManagement')).SeasonsManagement,
+}));
+const PlayersManagement = lazy(async () => ({
+  default: (await import('./components/admin/PlayersManagement')).PlayersManagement,
+}));
+const ImportPlayers = lazy(async () => ({
+  default: (await import('./components/admin/ImportPlayers')).ImportPlayers,
+}));
+const TeamsManagement = lazy(async () => ({
+  default: (await import('./components/admin/TeamsManagement')).TeamsManagement,
+}));
+const PlayerFormPage = lazy(async () => ({
+  default: (await import('./components/admin/players/PlayerFormPage')).PlayerFormPage,
+}));
+const TeamFormPage = lazy(async () => ({
+  default: (await import('./components/admin/teams/TeamFormPage')).TeamFormPage,
+}));
+const TeamPlayersPage = lazy(async () => ({
+  default: (await import('./components/admin/teams/TeamPlayersPage')).TeamPlayersPage,
+}));
+const MatchFormPage = lazy(async () => ({
+  default: (await import('./components/admin/matches/MatchFormPage')).MatchFormPage,
+}));
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -57,27 +79,29 @@ function App() {
       <MatchProvider>
         <Router>
           <PageTitleUpdater />
-          <Routes>
-            <Route path="/" element={<AdminLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="clubs" element={<ClubsManagement />} />
-              <Route path="seasons" element={<SeasonsManagement />} />
-              <Route path="players" element={<PlayersManagement />} />
-              <Route path="players/new" element={<PlayerFormPage />} />
-              <Route path="players/:id/edit" element={<PlayerFormPage />} />
-              <Route path="players/import" element={<ImportPlayers />} />
-              <Route path="teams" element={<TeamsManagement />} />
-              <Route path="teams/new" element={<TeamFormPage />} />
-              <Route path="teams/:id/edit" element={<TeamFormPage />} />
-              <Route path="teams/:id/players" element={<TeamPlayersPage />} />
-              <Route path="matches" element={<MatchesManagement />} />
-              <Route path="matches/new" element={<MatchFormPage />} />
-              <Route path="matches/:id/edit" element={<MatchFormPage />} />
-              <Route path="statistics" element={<Statistics />} />
-            </Route>
-            <Route path="/match-tracker/:matchId" element={<MatchTracker />} />
-            <Route path="/video-tracker/:matchId" element={<VideoMatchTracker />} />
-          </Routes>
+          <Suspense fallback={<div className="p-6 text-gray-500">Loading...</div>}>
+            <Routes>
+              <Route path="/" element={<AdminLayout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="clubs" element={<ClubsManagement />} />
+                <Route path="seasons" element={<SeasonsManagement />} />
+                <Route path="players" element={<PlayersManagement />} />
+                <Route path="players/new" element={<PlayerFormPage />} />
+                <Route path="players/:id/edit" element={<PlayerFormPage />} />
+                <Route path="players/import" element={<ImportPlayers />} />
+                <Route path="teams" element={<TeamsManagement />} />
+                <Route path="teams/new" element={<TeamFormPage />} />
+                <Route path="teams/:id/edit" element={<TeamFormPage />} />
+                <Route path="teams/:id/players" element={<TeamPlayersPage />} />
+                <Route path="matches" element={<MatchesManagement />} />
+                <Route path="matches/new" element={<MatchFormPage />} />
+                <Route path="matches/:id/edit" element={<MatchFormPage />} />
+                <Route path="statistics" element={<Statistics />} />
+              </Route>
+              <Route path="/match-tracker/:matchId" element={<MatchTracker />} />
+              <Route path="/video-tracker/:matchId" element={<VideoMatchTracker />} />
+            </Routes>
+          </Suspense>
         </Router>
       </MatchProvider>
     </ErrorBoundary>

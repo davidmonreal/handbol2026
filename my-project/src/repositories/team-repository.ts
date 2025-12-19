@@ -5,8 +5,8 @@ export class TeamRepository {
   async findAll(): Promise<Team[]> {
     return prisma.team.findMany({
       include: {
-        club: true,
-        season: true,
+        club: { select: { id: true, name: true } },
+        season: { select: { id: true, name: true } },
         players: {
           select: { id: true }, // Only fetch IDs for counting, not full player data
         },
