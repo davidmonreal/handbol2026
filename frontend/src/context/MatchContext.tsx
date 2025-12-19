@@ -12,8 +12,10 @@ interface MatchMeta {
   awayScore?: number;
   homeEventsLocked?: boolean;
   awayEventsLocked?: boolean;
+  // Video calibration markers (YouTube tracking).
   firstHalfVideoStart?: number | null;
   secondHalfVideoStart?: number | null;
+  // Live match markers (in-person tracking).
   realTimeFirstHalfStart?: number | null;
   realTimeSecondHalfStart?: number | null;
   realTimeFirstHalfEnd?: number | null;
@@ -74,6 +76,7 @@ interface MatchContextType {
   firstHalfVideoStart: number | null;
   secondHalfVideoStart: number | null;
   setRealTimeCalibration: (half: 1 | 2, timestamp: number, boundary?: 'start' | 'end') => Promise<void>;
+  // Keep video calibration in MatchContext so event gating matches live mode.
   setVideoCalibration: (half: 1 | 2, timestamp: number) => void;
 }
 
@@ -94,6 +97,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
   const [homeEventsLocked, setHomeEventsLocked] = useState(false);
   const [awayEventsLocked, setAwayEventsLocked] = useState(false);
   const addEvent = async (event: MatchEvent) => {
+    // Allow event creation after either live kickoff or video calibration.
     if (!realTimeFirstHalfStart && !firstHalfVideoStart) {
       console.warn('Cannot add events before starting the first half.');
       return;
@@ -292,6 +296,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
   const [firstHalfVideoStart, setFirstHalfVideoStart] = useState<number | null>(null);
   const [secondHalfVideoStart, setSecondHalfVideoStart] = useState<number | null>(null);
 
+  // Store video calibration so match-time gating stays consistent with live mode.
   const setVideoCalibration = useCallback((half: 1 | 2, timestamp: number) => {
     if (half === 1) {
       setFirstHalfVideoStart(timestamp);
@@ -301,6 +306,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // Live mode calibration uses wall-clock time to drive the match timer.
   const setRealTimeCalibration = async (half: 1 | 2, timestamp: number, boundary: 'start' | 'end' = 'start') => {
     if (half === 1) {
       if (boundary === 'start') {
@@ -369,7 +375,8 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
       setActiveTeamId(home.id);
     }
 
-    // We'll enrich matchMeta with data fetched from the backend if it wasn't provided
+    // We'll enrich matchMeta with data fetched from the backend if it wasn't provided.
+    // This keeps live (realTime*) and video (first/secondHalfVideoStart) aligned.
     let fetchedMeta: MatchMeta | undefined;
 
     // Avoid an extra round-trip if caller already provided matchMeta (e.g., fetched in the page)
