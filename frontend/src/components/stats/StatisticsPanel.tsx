@@ -62,38 +62,74 @@ export function StatisticsPanel({
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className={`grid grid-cols-1 gap-4 ${data.isGoalkeeper ? 'md:grid-cols-4' : 'md:grid-cols-2'}`}>
         {data.isGoalkeeper ? (
           <>
             <StatCard
               label="Saves vs. regular shots"
               value={(() => {
-                const penaltyStats = filteredStats.zoneStats.get('7m');
-                const penaltySaves = penaltyStats ? (penaltyStats.shots - penaltyStats.goals) : 0;
-                const penaltyConceded = penaltyStats ? penaltyStats.goals : 0;
+                let regularShots = 0;
+                let regularConceded = 0;
 
-                const totalSaves = filteredStats.totalSaves;
-                const totalConceded = filteredStats.goalsConceded;
+                filteredStats.zoneStats.forEach((stats, zone) => {
+                  if (zone === '7m') return;
+                  regularShots += stats.shots;
+                  regularConceded += stats.goals;
+                });
 
-                const regularSaves = totalSaves - penaltySaves;
-                const regularConceded = totalConceded - penaltyConceded;
-                const regularShots = regularSaves + regularConceded;
-
+                const regularSaves = regularShots - regularConceded;
                 const efficiency = regularShots > 0 ? (regularSaves / regularShots) * 100 : 0;
-
                 return `${regularSaves}/${regularShots} (${efficiency.toFixed(0)}%)`;
               })()}
               color="blue"
               className="w-full"
             />
             <StatCard
+              label="Saves vs. 6m shots"
+              value={(() => {
+                let shots = 0;
+                let conceded = 0;
+
+                filteredStats.zoneStats.forEach((stats, zone) => {
+                  if (!zone.startsWith('6m-')) return;
+                  shots += stats.shots;
+                  conceded += stats.goals;
+                });
+
+                const saves = shots - conceded;
+                const efficiency = shots > 0 ? (saves / shots) * 100 : 0;
+                return `${saves}/${shots} (${efficiency.toFixed(0)}%)`;
+              })()}
+              color="green"
+              className="w-full"
+            />
+            <StatCard
+              label="Saves vs. 9m shots"
+              value={(() => {
+                let shots = 0;
+                let conceded = 0;
+
+                filteredStats.zoneStats.forEach((stats, zone) => {
+                  if (!zone.startsWith('9m-')) return;
+                  shots += stats.shots;
+                  conceded += stats.goals;
+                });
+
+                const saves = shots - conceded;
+                const efficiency = shots > 0 ? (saves / shots) * 100 : 0;
+                return `${saves}/${shots} (${efficiency.toFixed(0)}%)`;
+              })()}
+              color="orange"
+              className="w-full"
+            />
+            <StatCard
               label="Saves vs. penalty shots"
               value={(() => {
                 const penaltyStats = filteredStats.zoneStats.get('7m');
-                const penaltySaves = penaltyStats ? (penaltyStats.shots - penaltyStats.goals) : 0;
+                const penaltyShots = penaltyStats ? penaltyStats.shots : 0;
                 const penaltyConceded = penaltyStats ? penaltyStats.goals : 0;
-                const penaltyShots = penaltySaves + penaltyConceded;
-                const efficiency = penaltyStats ? penaltyStats.efficiency : 0;
+                const penaltySaves = penaltyShots - penaltyConceded;
+                const efficiency = penaltyShots > 0 ? (penaltySaves / penaltyShots) * 100 : 0;
 
                 return `${penaltySaves}/${penaltyShots} (${efficiency.toFixed(0)}%)`;
               })()}
@@ -147,10 +183,10 @@ export function StatisticsPanel({
           title="Shot Distribution (Goals / Shots)"
           isGoalkeeper={data.isGoalkeeper}
           zoneStats={stats.zoneStats}
-          foulZoneStats={data.context === 'player' ? undefined : stats.foulZoneStats}
-          foulReceivedZoneStats={stats.foulReceivedZoneStats}
-          turnoverZoneStats={stats.turnoverZoneStats}
-          dangerZoneStats={stats.dangerZoneStats}
+          foulZoneStats={data.isGoalkeeper || data.context === 'player' ? undefined : stats.foulZoneStats}
+          foulReceivedZoneStats={data.isGoalkeeper ? undefined : stats.foulReceivedZoneStats}
+          turnoverZoneStats={data.isGoalkeeper ? undefined : stats.turnoverZoneStats}
+          dangerZoneStats={data.isGoalkeeper ? undefined : stats.dangerZoneStats}
           disableFoulToggle={disableFoulToggle}
           onZoneClick={handleZoneClick}
           selectedZone={selectedZone}

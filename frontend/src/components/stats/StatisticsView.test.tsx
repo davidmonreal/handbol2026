@@ -321,4 +321,72 @@ describe('StatisticsView', () => {
     expect(screen.getByRole('button', { name: 'Fouls' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Flow' })).toBeInTheDocument();
   });
+
+  it('shows goalkeeper efficiency pills and hides flow/fouls toggles for GK view', () => {
+    const gkEvents: MatchEvent[] = [
+      {
+        id: 'gk-1',
+        timestamp: 10,
+        teamId: 'team2',
+        playerId: 'shooter-1',
+        category: 'Shot',
+        action: 'Save',
+        zone: '6m-LB',
+        activeGoalkeeperId: 'gk1',
+      },
+      {
+        id: 'gk-2',
+        timestamp: 20,
+        teamId: 'team2',
+        playerId: 'shooter-2',
+        category: 'Shot',
+        action: 'Goal',
+        zone: '6m-CB',
+        activeGoalkeeperId: 'gk1',
+      },
+      {
+        id: 'gk-3',
+        timestamp: 30,
+        teamId: 'team2',
+        playerId: 'shooter-3',
+        category: 'Shot',
+        action: 'Save',
+        zone: '9m-RB',
+        activeGoalkeeperId: 'gk1',
+      },
+      {
+        id: 'gk-4',
+        timestamp: 40,
+        teamId: 'team2',
+        playerId: 'shooter-4',
+        category: 'Shot',
+        action: 'Goal',
+        zone: '7m',
+        activeGoalkeeperId: 'gk1',
+      },
+    ];
+
+    const teamData = {
+      players: [
+        { player: { id: 'gk1', name: 'Goalkeeper One', number: 1, isGoalkeeper: true } },
+      ],
+    };
+
+    render(
+      <StatisticsView
+        events={gkEvents}
+        context="player"
+        selectedPlayerId="gk1"
+        teamData={teamData}
+      />
+    );
+
+    expect(screen.getByText('Saves vs. regular shots')).toBeInTheDocument();
+    expect(screen.getByText('Saves vs. 6m shots')).toBeInTheDocument();
+    expect(screen.getByText('Saves vs. 9m shots')).toBeInTheDocument();
+    expect(screen.getByText('Saves vs. penalty shots')).toBeInTheDocument();
+
+    expect(screen.queryByRole('button', { name: 'Flow' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Fouls' })).not.toBeInTheDocument();
+  });
 });

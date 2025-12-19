@@ -354,7 +354,7 @@ export function StatisticsView({
       </div>
 
       {/* Goal flow chart - only for match context */}
-      {context === 'match' && selectedTeamId && opponentTeamId && (
+      {context === 'match' && !isGoalkeeperView && selectedTeamId && opponentTeamId && (
         <div className="hidden md:block">
           <GoalFlowChart
             events={[...filteredEvents, ...filteredOpponentEvents]}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ZONE_CONFIG, getZoneLabel } from '../../config/zones';
 import type { ZoneType } from '../../types';
 import type { ZoneDistributionProps } from './types';
@@ -20,7 +20,13 @@ export function ZoneDistribution({
   isGoalkeeper = false,
   title
 }: ZoneDistributionProps) {
-  const [mode, setMode] = useState<'flow' | 'goals' | 'defense' | 'fouls'>('flow');
+  const [mode, setMode] = useState<'flow' | 'goals' | 'defense' | 'fouls'>(isGoalkeeper ? 'goals' : 'flow');
+
+  useEffect(() => {
+    if (isGoalkeeper && mode !== 'goals') {
+      setMode('goals');
+    }
+  }, [isGoalkeeper, mode]);
 
   const activeStats = (() => {
     switch (mode) {
@@ -130,7 +136,7 @@ export function ZoneDistribution({
 
         {/* View Toggles */}
         <div className="flex bg-gray-100 p-1 rounded-lg">
-          {dangerZoneStats && (
+          {!isGoalkeeper && dangerZoneStats && (
             <button
               onClick={() => setMode('flow')}
               className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${mode === 'flow'
@@ -152,7 +158,7 @@ export function ZoneDistribution({
             Shots
           </button>
 
-          {foulReceivedZoneStats && (
+          {!isGoalkeeper && foulReceivedZoneStats && (
             <button
               onClick={() => setMode('fouls')}
               className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${mode === 'fouls'
@@ -164,7 +170,7 @@ export function ZoneDistribution({
             </button>
           )}
 
-          {foulZoneStats && (
+          {!isGoalkeeper && foulZoneStats && (
             <button
               onClick={() => setMode('defense')}
               disabled={disableFoulToggle}
