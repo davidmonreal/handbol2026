@@ -526,7 +526,15 @@ export const EventForm = ({
                     <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('eventForm.selectZone')}</div>
                     <ZoneSelector
                         selectedZone={selectedZone}
-                        onZoneSelect={setSelectedZone}
+                        onZoneSelect={(zone) => {
+                            setSelectedZone(zone);
+                            if (selectedCategory === 'Shot' && zone === '7m') {
+                                // Penalty shots are individual, free, and static by definition.
+                                setIsCollective(false);
+                                setHasOpposition(false);
+                                setIsCounterAttack(false);
+                            }
+                        }}
                         variant="minimal"
                     />
                 </div>
