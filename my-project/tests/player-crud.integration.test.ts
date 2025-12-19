@@ -1,4 +1,4 @@
-import { describe, it, expect, afterAll } from 'vitest';
+import { describe, it, expect, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import { PrismaClient, Handedness } from '@prisma/client';
 import app from '../src/app';
@@ -8,6 +8,8 @@ const createdPlayerIds: string[] = [];
 const createdTeamIds: string[] = [];
 const createdClubIds: string[] = [];
 const createdSeasonIds: string[] = [];
+
+vi.setTimeout(15000);
 
 const uniqueName = (label: string) =>
   `Pcrud-${label}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;

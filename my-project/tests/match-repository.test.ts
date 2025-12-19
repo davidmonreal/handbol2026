@@ -51,8 +51,22 @@ describe('MatchRepository', () => {
     // Events removed for performance - scores come from DB columns
     expect(prisma.match.findMany).toHaveBeenCalledWith({
       include: {
-        homeTeam: { include: { club: true } },
-        awayTeam: { include: { club: true } },
+        homeTeam: {
+          select: {
+            id: true,
+            name: true,
+            category: true,
+            club: { select: { name: true } },
+          },
+        },
+        awayTeam: {
+          select: {
+            id: true,
+            name: true,
+            category: true,
+            club: { select: { name: true } },
+          },
+        },
       },
       orderBy: { date: 'desc' },
     });

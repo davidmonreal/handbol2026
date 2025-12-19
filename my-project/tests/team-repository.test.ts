@@ -49,8 +49,8 @@ describe('TeamRepository', () => {
     // findAll returns teams with player count (optimized - only IDs for counting)
     expect(prisma.team.findMany).toHaveBeenCalledWith({
       include: {
-        club: true,
-        season: true,
+        club: { select: { id: true, name: true } },
+        season: { select: { id: true, name: true } },
         players: {
           select: { id: true },
         },
