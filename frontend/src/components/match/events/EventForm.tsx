@@ -439,7 +439,13 @@ export const EventForm = ({
                                 return (
                                     <button
                                         key={type.value}
-                                        onClick={() => setSelectedAction(type.value)}
+                                        onClick={() => {
+                                            setSelectedAction(type.value);
+                                            if (type.value === 'Pass') {
+                                                // Bad passes are always collective plays.
+                                                setIsCollective(true);
+                                            }
+                                        }}
                                         className={`px-2 py-2.5 rounded-lg text-sm font-semibold transition-all flex flex-col items-center justify-center gap-1.5 ${selectedAction === type.value
                                             ? 'bg-indigo-500 text-white shadow-lg ring-2 ring-indigo-200'
                                             : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-indigo-300'
@@ -460,7 +466,13 @@ export const EventForm = ({
                                 return (
                                     <button
                                         key={sanction.value}
-                                        onClick={() => setSelectedAction(sanction.value)}
+                                        onClick={() => {
+                                            setSelectedAction(sanction.value);
+                                            if (sanction.value === 'Foul') {
+                                                // Fouls always happen with opposition.
+                                                setHasOpposition(true);
+                                            }
+                                        }}
                                         className={`px-3 py-3 rounded-lg text-sm font-semibold transition-all text-white ${sanction.color} ${isActive
                                             ? 'shadow-lg ring-2 ring-indigo-200'
                                             : 'opacity-70 hover:opacity-100'
