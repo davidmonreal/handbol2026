@@ -55,6 +55,8 @@ export const Scoreboard = ({
     realTimeSecondHalfStart,
     realTimeFirstHalfEnd,
     realTimeSecondHalfEnd,
+    firstHalfVideoStart,
+    secondHalfVideoStart,
     setRealTimeCalibration,
     scoreMode,
     matchId
@@ -64,6 +66,21 @@ export const Scoreboard = ({
   const firstHalfDuration = realTimeFirstHalfStart && realTimeFirstHalfEnd
     ? Math.max(0, Math.floor((realTimeFirstHalfEnd - realTimeFirstHalfStart) / 1000))
     : null;
+  const liveFirstPhaseDuration = realTimeFirstHalfStart
+    ? realTimeFirstHalfEnd
+      ? Math.max(0, Math.floor((realTimeFirstHalfEnd - realTimeFirstHalfStart) / 1000))
+      : realTimeSecondHalfStart
+        ? Math.max(0, Math.floor((realTimeSecondHalfStart - realTimeFirstHalfStart) / 1000))
+        : null
+    : null;
+  const videoFirstPhaseDuration = firstHalfVideoStart !== null && secondHalfVideoStart !== null
+    ? Math.max(0, secondHalfVideoStart - firstHalfVideoStart)
+    : null;
+  const halfOffset = liveFirstPhaseDuration ?? videoFirstPhaseDuration;
+  const isSecondHalf = !!realTimeSecondHalfStart || secondHalfVideoStart !== null;
+  const displayTime = isSecondHalf && halfOffset !== null
+    ? Math.max(0, time - halfOffset)
+    : time;
   const secondHalfDuration = realTimeSecondHalfStart && realTimeSecondHalfEnd
     ? Math.max(0, Math.floor((realTimeSecondHalfEnd - realTimeSecondHalfStart) / 1000))
     : null;
@@ -148,7 +165,7 @@ export const Scoreboard = ({
         {/* Timer & Controls */}
         <div className="flex flex-col items-center px-2 md:px-4 space-y-3">
           <div className="flex flex-col items-center">
-            <div className="text-2xl md:text-4xl font-mono font-bold text-gray-900 mb-2">{formatTime(time)}</div>
+            <div className="text-2xl md:text-4xl font-mono font-bold text-gray-900 mb-2">{formatTime(displayTime)}</div>
             {scoreMode === 'manual' && (
               <div className="text-[11px] font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md flex items-center gap-2">
                 <Lock size={12} />

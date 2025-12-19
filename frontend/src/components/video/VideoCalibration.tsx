@@ -10,7 +10,6 @@ export const VideoCalibration = () => {
         isCalibrated,
         setFirstHalfStart,
         setSecondHalfStart,
-        getMatchTimeFromVideo,
     } = useVideoSync();
     const { setVideoCalibration } = useMatch();
 
@@ -27,32 +26,17 @@ export const VideoCalibration = () => {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const formatMatchTime = (seconds: number, isSecondHalf: boolean): string => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        const half = isSecondHalf ? '2H' : '1H';
-        return `${mins}:${secs.toString().padStart(2, '0')} (${half})`;
-    };
-
-    const currentMatchTime = isCalibrated ? getMatchTimeFromVideo(currentVideoTime) : 0;
-    const isSecondHalf = isCalibrated && secondHalfStart !== null && currentVideoTime >= secondHalfStart;
 
     // When calibrated, show only a compact bar unless expanded
     if (isCalibrated && !isExpanded) {
         return (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-4 py-2 flex items-center justify-between">
-                {/* Match Time Display */}
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                         <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span className="text-sm font-medium text-gray-600">Calibrated</span>
-                    </div>
-                    <div className="bg-indigo-100 rounded-lg px-3 py-1">
-                        <span className="font-mono text-lg text-indigo-900 font-bold">
-                            {formatMatchTime(currentMatchTime, isSecondHalf)}
-                        </span>
                     </div>
                 </div>
 
