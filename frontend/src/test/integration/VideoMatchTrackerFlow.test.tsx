@@ -169,6 +169,32 @@ describe('VideoMatchTracker Integration', () => {
             // Active team defaults to home, so form should be active
             expect(screen.getByText(/Select Player/i)).toBeInTheDocument();
         });
+
+        it('should persist events when video calibration exists', async () => {
+            renderVideoMatchTracker();
+
+            await waitFor(() => {
+                expect(screen.getByText('Home Team')).toBeInTheDocument();
+            });
+
+            const playerButton = screen.getByRole('button', { name: /Player 1/i });
+            fireEvent.click(playerButton);
+
+            const addButton = screen.getByRole('button', { name: /Add Event/i });
+            fireEvent.click(addButton);
+
+            await waitFor(() => {
+                const hasEventPost = mockFetch.mock.calls.some(([url, init]) =>
+                    typeof url === 'string' &&
+                    url.includes('/api/game-events') &&
+                    init &&
+                    typeof init === 'object' &&
+                    'method' in init &&
+                    (init as { method?: string }).method === 'POST'
+                );
+                expect(hasEventPost).toBe(true);
+            });
+        });
     });
 
     describe('Goalkeeper Persistence (Key Functionality)', () => {
