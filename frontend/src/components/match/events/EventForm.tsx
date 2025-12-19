@@ -16,7 +16,7 @@ import {
     Footprints,
     Square
 } from 'lucide-react';
-import type { MatchEvent, ZoneType, TurnoverType } from '../../../types';
+import type { MatchEvent, ZoneType, TurnoverType, SanctionType } from '../../../types';
 import { ZoneSelector } from '../shared/ZoneSelector';
 import { SplitToggle } from '../shared/SplitToggle';
 import { ConfirmationModal } from '../../common';

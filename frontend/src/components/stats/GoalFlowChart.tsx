@@ -27,7 +27,6 @@ interface GoalFlowChartProps {
 }
 
 const FOUL_RADIUS_MULTIPLIER = 2;
-
 function buildSmoothPath(points: { x: number; y: number }[]): string {
     if (points.length === 0) return '';
     if (points.length === 1) {
@@ -38,14 +37,6 @@ function buildSmoothPath(points: { x: number; y: number }[]): string {
     const commands = [`M ${first.x},${first.y}`, ...rest.map(p => `L ${p.x},${p.y}`)];
     return commands.join(' ');
 }
-
-const buildProgressMap = (values: number[]) => {
-    const unique = Array.from(new Set(values)).sort((a, b) => a - b);
-    const denom = unique.length + 1;
-    const map = new Map<number, number>();
-    unique.forEach((value, idx) => map.set(value, (idx + 1) / denom));
-    return { map, hasEntries: unique.length > 0 };
-};
 
 export function GoalFlowChart({
     events,
