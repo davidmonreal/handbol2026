@@ -26,6 +26,8 @@ export const EventItem = ({
         realTimeFirstHalfStart,
         realTimeFirstHalfEnd,
         realTimeSecondHalfStart,
+        firstHalfVideoStart,
+        secondHalfVideoStart,
     } = useMatch();
     const { t } = useSafeTranslation();
     const secondHalfBoundarySeconds = (() => {
@@ -41,7 +43,10 @@ export const EventItem = ({
                 Math.floor((realTimeFirstHalfEnd - realTimeFirstHalfStart) / 1000)
             );
         }
-        return Number.POSITIVE_INFINITY;
+        if (firstHalfVideoStart !== null && secondHalfVideoStart !== null) {
+            return Math.max(0, secondHalfVideoStart - firstHalfVideoStart);
+        }
+        return null;
     })();
 
     const formatClock = (seconds: number) => {
@@ -80,10 +85,11 @@ export const EventItem = ({
         }
         return false;
     };
-    const hasBoundary = Number.isFinite(secondHalfBoundarySeconds);
-    const isSecondHalfEvent = videoSecondHalf() || (hasBoundary && event.timestamp >= secondHalfBoundarySeconds);
+    const hasBoundary = secondHalfBoundarySeconds !== null;
+    const boundarySeconds = secondHalfBoundarySeconds ?? 0;
+    const isSecondHalfEvent = videoSecondHalf() || (hasBoundary && event.timestamp >= boundarySeconds);
     const displaySeconds = isSecondHalfEvent && hasBoundary
-        ? Math.max(0, event.timestamp - secondHalfBoundarySeconds)
+        ? Math.max(0, event.timestamp - boundarySeconds)
         : event.timestamp;
 
     // Seek 3 seconds before the event so user can see the play develop
