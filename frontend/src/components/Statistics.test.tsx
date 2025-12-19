@@ -7,11 +7,12 @@ import type { ReactNode } from 'react';
 
 // Mock StatisticsView component
 vi.mock('./stats/StatisticsView', () => ({
-    StatisticsView: ({ title, teamId, onBack }: any) => (
+    StatisticsView: ({ title, teamId, onBack, events }: any) => (
         <div>
             <div data-testid="statistics-view">Statistics View</div>
             <div data-testid="title">{title}</div>
             <div data-testid="team-id">{teamId}</div>
+            <div data-testid="events-count">{events?.length ?? 0}</div>
             {onBack && <button onClick={onBack}>Back</button>}
         </div>
     )
@@ -228,6 +229,50 @@ describe('Statistics', () => {
             });
 
             expect(screen.getByText(/Please select a team in the Match tab first/)).toBeInTheDocument();
+        });
+
+        it('should refresh match events and not show deleted plays after reload', async () => {
+            const backendEvent = {
+                id: 'event-1',
+                timestamp: 100,
+                matchId: 'match-1',
+                playerId: 'player-1',
+                teamId: 'team-home',
+                type: 'Shot',
+                subtype: 'Goal',
+                zone: '6m-CB',
+                player: { name: 'Player 1', number: 10 }
+            };
+
+            mockFetch
+                .mockResolvedValueOnce({ ok: true, json: async () => mockMatchData })
+                .mockResolvedValueOnce({ ok: true, json: async () => [backendEvent] });
+
+            const { unmount } = render(<Statistics />, {
+                wrapper: ({ children }) => (
+                    <TestWrapper initialUrl="/statistics?matchId=match-1">{children}</TestWrapper>
+                )
+            });
+
+            await waitFor(() => {
+                expect(screen.getByTestId('events-count').textContent).toBe('1');
+            });
+
+            unmount();
+
+            mockFetch
+                .mockResolvedValueOnce({ ok: true, json: async () => mockMatchData })
+                .mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+            render(<Statistics />, {
+                wrapper: ({ children }) => (
+                    <TestWrapper initialUrl="/statistics?matchId=match-1">{children}</TestWrapper>
+                )
+            });
+
+            await waitFor(() => {
+                expect(screen.getByTestId('events-count').textContent).toBe('0');
+            });
         });
     });
 

@@ -154,6 +154,22 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
 
         if (!response.ok) {
           console.error('Failed to save event to backend');
+        } else {
+          try {
+            const createdEvent = await response.json();
+            const createdId = createdEvent?.id;
+            if (createdId && createdId !== eventWithTimestamp.id) {
+              setEvents(prev =>
+                prev.map(existing =>
+                  existing.id === eventWithTimestamp.id
+                    ? { ...existing, id: createdId }
+                    : existing
+                )
+              );
+            }
+          } catch {
+            // Ignore JSON parse errors when backend returns no body.
+          }
         }
       } catch (error) {
         console.error('Error saving event:', error);
