@@ -86,9 +86,9 @@ export const WeeklyInsightsTicker = ({ insights, isLoading, isRefreshing, errorK
   }, [tickerItems, containerWidth]);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm px-4 py-2">
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm px-4 py-2 overflow-hidden">
       <style>{tickerKeyframes}</style>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="flex-1 min-w-0 min-h-[32px] flex items-center">
           {isLoading ? (
             <div className="w-full animate-pulse h-3 bg-gray-100 rounded" />
@@ -98,7 +98,7 @@ export const WeeklyInsightsTicker = ({ insights, isLoading, isRefreshing, errorK
             <div className="relative w-full overflow-hidden h-7" ref={containerRef}>
               <div
                 ref={trackRef}
-                className="flex items-center gap-12 whitespace-nowrap text-sm text-gray-800"
+                className="flex items-center gap-12 whitespace-nowrap text-sm text-gray-800 max-w-full"
                 style={
                   {
                     animation:

@@ -2,7 +2,6 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { PrismaClient } from '@prisma/client';
 import app from '../../src/app';
-import { cleanupTestData } from '../utils/cleanup-test-data';
 
 const prisma = new PrismaClient();
 
@@ -52,7 +51,6 @@ describe('Full Application Lifecycle Integration Test', () => {
 
   afterAll(async () => {
     await cleanup();
-    await cleanupTestData();
     await prisma.$disconnect();
   });
 

@@ -35,7 +35,7 @@ export const MatchCard = ({ match, isPending }: { match: DashboardMatch; isPendi
   const awayCategoryLabel = formatCategoryLabel(match.awayTeam?.category, t);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-3 pt-4 pb-2 hover:shadow-md transition-shadow min-w-[280px] w-full">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-3 pt-4 pb-2 hover:shadow-md transition-shadow w-full min-w-0">
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-3">
           <div className="flex items-center text-gray-500 text-sm">
@@ -54,12 +54,12 @@ export const MatchCard = ({ match, isPending }: { match: DashboardMatch; isPendi
             </div>
 
             {isPending && !match.homeScore && !match.awayScore ? (
-              <div className="px-4 text-gray-400 font-medium">VS</div>
+              <div className="px-2 sm:px-4 text-gray-400 font-medium">VS</div>
             ) : (
-              <div className="px-4 flex items-center justify-center gap-3 min-w-[100px]">
-                <span className="text-3xl font-bold text-gray-900">{match.homeScore ?? 0}</span>
-                <span className="text-gray-400 text-3xl font-light pb-1">:</span>
-                <span className="text-3xl font-bold text-gray-900">{match.awayScore ?? 0}</span>
+              <div className="px-2 sm:px-4 flex items-center justify-center gap-2 min-w-[72px] sm:min-w-[100px]">
+                <span className="text-2xl sm:text-3xl font-bold text-gray-900">{match.homeScore ?? 0}</span>
+                <span className="text-gray-400 text-2xl sm:text-3xl font-light pb-1">:</span>
+                <span className="text-2xl sm:text-3xl font-bold text-gray-900">{match.awayScore ?? 0}</span>
               </div>
             )}
 

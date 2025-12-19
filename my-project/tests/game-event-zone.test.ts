@@ -60,6 +60,9 @@ describe('GameEvent Zone Derivation', () => {
     // Cleanup
     await prisma.gameEvent.deleteMany({ where: { matchId } });
     await prisma.match.deleteMany({ where: { id: matchId } });
+    await prisma.match.deleteMany({
+      where: { OR: [{ homeTeamId }, { awayTeamId }] },
+    });
     await prisma.team.deleteMany({ where: { id: { in: [homeTeamId, awayTeamId] } } });
     await prisma.club.deleteMany({ where: { id: clubId } });
     await prisma.season.deleteMany({ where: { id: seasonId } });

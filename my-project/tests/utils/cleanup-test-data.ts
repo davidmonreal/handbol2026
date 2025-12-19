@@ -4,92 +4,48 @@ import prisma from '../../src/lib/prisma';
 
 const basePatterns = {
   club: [
-    'Test',
-    'Club-',
-    'Integration',
-    'Timer',
-    'Match',
-    'FL Club',
-    'Pcrud',
-    'CRUD',
-    'Score',
-    'Zone',
-    'MatchEventFlow',
-    'VideoEventFlow',
-    'Cascade',
+    'ScoreClub-',
+    'TimerClub-',
+    'ZoneClub-',
+    'MatchEventFlowClub-',
+    'VideoEventFlowClub-',
+    'Test FL Club ',
+    'Test-',
+    'Pcrud-',
   ],
   team: [
-    'Home-',
-    'Away-',
-    'Team-',
-    'Integration',
-    'Test',
-    'Timer',
-    'MatchHomeTeam',
-    'MatchAwayTeam',
-    'FL Home',
-    'FL Away',
-    'Pcrud',
-    'CRUD',
-    'Score',
+    'ScoreHome-',
+    'ScoreAway-',
+    'TimerHome-',
+    'TimerAway-',
     'Zone',
-    'MatchEventFlow',
-    'VideoEventFlow',
-    'Cascade',
+    'MatchEventFlowTeam-',
+    'VideoEventFlowTeam-',
+    'Test FL Home ',
+    'Test FL Away ',
+    'Test-',
+    'Pcrud-',
   ],
   season: [
-    'Season-',
-    'Integration',
-    'Test',
-    'Timer',
-    'MatchSeason',
-    'FL Season',
-    'Pcrud',
-    'CRUD',
-    'Score',
-    'Zone',
-    'MatchEventFlow',
-    'VideoEventFlow',
-    'Cascade',
+    'ScoreSeason-',
+    'TimerSeason-',
+    'ZoneSeason-',
+    'MatchEventFlowSeason-',
+    'VideoEventFlowSeason-',
+    'Test FL Season ',
+    'Test-',
+    'Pcrud-',
   ],
-  player: [
-    'Test',
-    'Integration',
-    'Player-',
-    'FL Player',
-    'Pcrud',
-    'CRUD',
-    'MatchEventFlow',
-    'VideoEventFlow',
-    'Cascade',
-  ],
-};
-
-const scorePatterns = {
-  club: ['ScoreClub'],
-  team: ['ScoreHome', 'ScoreAway'],
-  season: ['ScoreSeason'],
-} as const;
-
-type CleanupOptions = {
-  includeScorePatterns?: boolean;
+  player: ['MatchEventFlowPlayer-', 'VideoEventFlowPlayer-', 'Test FL Player ', 'Test-', 'Pcrud-'],
 };
 
 const buildStartsWith = (values: string[]) =>
   values.map((value) => ({ name: { startsWith: value, mode: 'insensitive' as const } }));
 
-export async function cleanupTestData(options: CleanupOptions = {}) {
-  const { includeScorePatterns = false } = options;
-
-  const clubPatterns = includeScorePatterns
-    ? [...basePatterns.club, ...scorePatterns.club]
-    : basePatterns.club;
-  const teamPatterns = includeScorePatterns
-    ? [...basePatterns.team, ...scorePatterns.team]
-    : basePatterns.team;
-  const seasonPatterns = includeScorePatterns
-    ? [...basePatterns.season, ...scorePatterns.season]
-    : basePatterns.season;
+export async function cleanupTestData(): Promise<void> {
+  const clubPatterns = basePatterns.club;
+  const teamPatterns = basePatterns.team;
+  const seasonPatterns = basePatterns.season;
 
   // Collect clubs and seasons created by tests (prefix-based)
   const clubsToDelete = await prisma.club.findMany({
@@ -100,11 +56,7 @@ export async function cleanupTestData(options: CleanupOptions = {}) {
 
   const seasonsToDelete = await prisma.season.findMany({
     where: {
-      OR: [
-        ...buildStartsWith(seasonPatterns),
-        { name: { contains: 'test', mode: 'insensitive' as const } },
-        { name: { contains: 'integration', mode: 'insensitive' as const } },
-      ],
+      OR: buildStartsWith(seasonPatterns),
     },
     select: { id: true },
   });
@@ -205,11 +157,31 @@ export async function cleanupTestData(options: CleanupOptions = {}) {
   }
 
   if (clubIds.length) {
-    await prisma.club.deleteMany({ where: { id: { in: clubIds } } });
+    const safeClubIds = await prisma.club.findMany({
+      where: {
+        id: { in: clubIds },
+        teams: { none: {} },
+      },
+      select: { id: true },
+    });
+    const safeIds = safeClubIds.map((c) => c.id);
+    if (safeIds.length) {
+      await prisma.club.deleteMany({ where: { id: { in: safeIds } } });
+    }
   }
 
   if (seasonIds.length) {
-    await prisma.season.deleteMany({ where: { id: { in: seasonIds } } });
+    const safeSeasonIds = await prisma.season.findMany({
+      where: {
+        id: { in: seasonIds },
+        teams: { none: {} },
+      },
+      select: { id: true },
+    });
+    const safeIds = safeSeasonIds.map((s) => s.id);
+    if (safeIds.length) {
+      await prisma.season.deleteMany({ where: { id: { in: safeIds } } });
+    }
   }
 
   console.log('✅ Cleanup completed');

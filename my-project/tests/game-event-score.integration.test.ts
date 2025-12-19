@@ -5,7 +5,6 @@ import { GameEventRepository } from '../src/repositories/game-event-repository';
 import { MatchRepository } from '../src/repositories/match-repository';
 import { GameEventService } from '../src/services/game-event-service';
 import { MatchService } from '../src/services/match-service';
-import { cleanupTestData } from './utils/cleanup-test-data';
 
 describe('Integration: game events mutate match score atomically', () => {
   const gameEventRepository = new GameEventRepository();
@@ -52,7 +51,6 @@ describe('Integration: game events mutate match score atomically', () => {
     if (seasonId) {
       await prisma.season.delete({ where: { id: seasonId } }).catch(() => null);
     }
-    await cleanupTestData({ includeScorePatterns: true });
   });
 
   const ensureReferences = async () => {

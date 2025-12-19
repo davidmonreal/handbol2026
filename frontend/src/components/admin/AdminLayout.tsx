@@ -17,7 +17,7 @@ export const AdminLayout = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 overflow-x-hidden">
       {/* Top Navigation */}
       <nav className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -33,7 +33,7 @@ export const AdminLayout = () => {
         </div>
       </nav>
 
-      <div className="flex">
+      <div className="flex overflow-x-hidden">
         {/* Sidebar */}
         <aside className="w-64 bg-white shadow-sm min-h-[calc(100vh-4rem)] hidden md:block">
           <nav className="p-4 space-y-2">
@@ -64,7 +64,7 @@ export const AdminLayout = () => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 min-w-0 max-w-full">
           <Outlet />
         </main>
       </div>

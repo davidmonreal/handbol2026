@@ -2,7 +2,6 @@ import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import prisma from '../src/lib/prisma';
 import { MatchRepository } from '../src/repositories/match-repository';
 import { MatchService } from '../src/services/match-service';
-import { cleanupTestData } from './utils/cleanup-test-data';
 
 describe('Integration: Match Timer Persistence', () => {
   const matchRepository = new MatchRepository();
@@ -83,7 +82,6 @@ describe('Integration: Match Timer Persistence', () => {
     if (seasonId) {
       await prisma.season.delete({ where: { id: seasonId } }).catch(() => null);
     }
-    await cleanupTestData();
   });
 
   const createMatch = async () => {

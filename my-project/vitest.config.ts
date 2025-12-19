@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/**/*.spec.ts', 'tests/**/*.test.ts'],
-    setupFiles: ['tests/utils/cleanup-test-hook.ts'],
+    globalSetup: ['tests/utils/global-cleanup.ts'],
     coverage: {
       reporter: ['text', 'html'],
     },
