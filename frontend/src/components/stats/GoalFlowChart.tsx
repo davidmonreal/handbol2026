@@ -15,11 +15,11 @@ interface GoalFlowChartProps {
 
 type SeriesPoint = { position: number; value: number };
 
-const VIEWBOX_WIDTH = 1000;
+const VIEWBOX_WIDTH = 1300;
 const VIEWBOX_HEIGHT = 520;
-const PADDING_LEFT = 22;
-const PADDING_RIGHT = 4;
-const PADDING_TOP = 16;
+const PADDING_LEFT = 1;
+const PADDING_RIGHT = 1;
+const PADDING_TOP = 26;
 const PADDING_BOTTOM = 44;
 const CLUSTER_WINDOW_SECONDS = 120;
 const HALF_BOUNDARY_POSITION = 0.5;
@@ -322,7 +322,11 @@ export function GoalFlowChart({
             </div>
 
             <div className="relative w-full" aria-label="Goal flow chart">
-                <svg viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`} className="w-full h-[28rem]">
+                <svg
+                    viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+                    preserveAspectRatio="xMidYMin meet"
+                    className="w-full h-[28rem]"
+                >
                     {yTicks.map((g) => {
                         const y = toY(g);
                         return (
@@ -477,9 +481,9 @@ export function GoalFlowChart({
                         return (
                             <text
                                 key={`y-${g}`}
-                                x={PADDING_LEFT - 10}
+                                x={PADDING_LEFT + 6}
                                 y={y + 4}
-                                textAnchor="end"
+                                textAnchor="start"
                                 className="text-xs fill-gray-500"
                             >
                                 {g}

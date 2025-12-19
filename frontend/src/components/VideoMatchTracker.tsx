@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMatch } from '../context/MatchContext';
 import { VideoSyncProvider, useVideoSync } from '../context/VideoSyncContext';
@@ -168,6 +168,9 @@ const VideoMatchTrackerContent = () => {
 
     const activeTeam = getActiveTeam();
     const opponentTeam = getOpponentTeam();
+    const eventFormInitialState = useMemo(() => ({
+        opponentGoalkeeperId: selectedOpponentGoalkeeper?.id
+    }), [selectedOpponentGoalkeeper?.id]);
 
     const handleSaveEvent = async (event: MatchEvent, opponentGkId?: string) => {
         // 1. Handle Goalkeeper Persistence/Update
@@ -299,9 +302,7 @@ const VideoMatchTrackerContent = () => {
                                 event={editingEvent}
                                 team={activeTeam}
                                 opponentTeam={opponentTeam || undefined}
-                                initialState={{
-                                    opponentGoalkeeperId: selectedOpponentGoalkeeper?.id
-                                }}
+                                initialState={eventFormInitialState}
                                 onSave={handleSaveEvent}
                                 onCancel={handleCancelEdit}
                                 onDelete={(eventId) => deleteEvent(eventId, true)}
