@@ -1,4 +1,4 @@
-import { describe, it, expect, afterAll, vi } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import request from 'supertest';
 import { PrismaClient, Handedness } from '@prisma/client';
 import app from '../src/app';
@@ -8,8 +8,6 @@ const createdPlayerIds: string[] = [];
 const createdTeamIds: string[] = [];
 const createdClubIds: string[] = [];
 const createdSeasonIds: string[] = [];
-
-vi.setTimeout(15000);
 
 const uniqueName = (label: string) =>
   `Pcrud-${label}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -83,7 +81,7 @@ describe.sequential('Player CRUD integration', () => {
     const getRes = await request(app).get(`/api/players/${createRes.body.id}`);
     expect(getRes.status).toBe(200);
     expect(getRes.body).toMatchObject(payload);
-  });
+  }, 15000);
 
   it('updates an existing player', async () => {
     const payload = {
@@ -103,7 +101,7 @@ describe.sequential('Player CRUD integration', () => {
     expect(updateRes.status).toBe(200);
     expect(updateRes.body.number).toBe(99);
     expect(updateRes.body.isGoalkeeper).toBe(true);
-  });
+  }, 15000);
 
   it('lists players with pagination metadata and search filtering', async () => {
     const marker = uniqueName('Searchable');
@@ -121,7 +119,7 @@ describe.sequential('Player CRUD integration', () => {
       (player: { id: string; name: string }) => player.id === createRes.body.id,
     );
     expect(found).toBe(true);
-  });
+  }, 15000);
 
   it('deletes players and cascades team assignments', async () => {
     const payload = {
@@ -159,5 +157,5 @@ describe.sequential('Player CRUD integration', () => {
       createdPlayerIds.findIndex((id) => id === playerId),
       1,
     );
-  });
+  }, 15000);
 });

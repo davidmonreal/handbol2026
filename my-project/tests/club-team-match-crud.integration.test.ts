@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import app from '../src/app';
 import { PrismaClient, Club, Season, Team } from '@prisma/client';
@@ -6,8 +6,6 @@ import { PrismaClient, Club, Season, Team } from '@prisma/client';
 const prisma = new PrismaClient();
 const uniqueName = (label: string) =>
   `Test-${label}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
-vi.setTimeout(15000);
 
 const created = {
   clubs: new Set<string>(),
@@ -111,7 +109,7 @@ describe.sequential('Club CRUD integration', () => {
 
     const fetchDeleted = await request(app).get(`/api/clubs/${clubId}`);
     expect(fetchDeleted.status).toBe(404);
-  });
+  }, 15000);
 });
 
 describe.sequential('Team CRUD integration', () => {
@@ -159,7 +157,7 @@ describe.sequential('Team CRUD integration', () => {
 
     const fetchDeleted = await request(app).get(`/api/teams/${teamId}`);
     expect(fetchDeleted.status).toBe(404);
-  });
+  }, 15000);
 });
 
 describe.sequential('Match CRUD integration', () => {
@@ -211,5 +209,5 @@ describe.sequential('Match CRUD integration', () => {
 
     const fetchDeleted = await request(app).get(`/api/matches/${matchId}`);
     expect(fetchDeleted.status).toBe(404);
-  });
+  }, 15000);
 });

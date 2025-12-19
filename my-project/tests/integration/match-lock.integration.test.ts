@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { PrismaClient } from '@prisma/client';
 import app from '../../src/app';
@@ -7,8 +7,6 @@ import app from '../../src/app';
 process.env.NODE_ENV = 'test'; // ensure the server in app.ts does not start listening
 
 const prisma = new PrismaClient();
-
-vi.setTimeout(15000);
 
 describe('Integration: match lock persistence', () => {
   let matchId: string;
@@ -90,5 +88,5 @@ describe('Integration: match lock persistence', () => {
     const matchRestored = await prisma.match.findUnique({ where: { id: matchId } });
     expect(matchRestored?.homeEventsLocked).toBe(originalHomeLocked);
     expect(matchRestored?.awayEventsLocked).toBe(originalAwayLocked);
-  });
+  }, 15000);
 });
