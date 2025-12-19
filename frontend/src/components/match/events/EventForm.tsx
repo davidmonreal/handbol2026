@@ -168,6 +168,17 @@ export const EventForm = ({
         setSelectedTarget(undefined);
     };
 
+    useEffect(() => {
+        if (selectedCategory === 'Sanction' && selectedAction === 'Foul' && !hasOpposition) {
+            // Fouls always happen with opposition.
+            setHasOpposition(true);
+        }
+        if (selectedCategory === 'Turnover' && selectedAction === 'Pass' && !isCollective) {
+            // Bad passes are always collective plays.
+            setIsCollective(true);
+        }
+    }, [selectedCategory, selectedAction, hasOpposition, isCollective]);
+
     const handleSave = () => {
         if (locked) return;
         if (!selectedPlayerId) return;
@@ -504,8 +515,8 @@ export const EventForm = ({
                     />
                 </div>
 
-                {/* 7. Context Toggles (Shots & Fouls) */}
-                {(selectedCategory === 'Shot' || selectedCategory === 'Sanction') && (
+                {/* 7. Context Toggles (Shots, Fouls, Turnovers) */}
+                {(selectedCategory === 'Shot' || selectedCategory === 'Sanction' || selectedCategory === 'Turnover') && (
                     <div>
                         <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{t('eventForm.contextLabel')}</div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
