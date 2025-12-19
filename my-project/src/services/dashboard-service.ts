@@ -1,29 +1,56 @@
-import type { Club, Match, Season, Team } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma';
 import type { WeeklyInsightsResponse } from './insights-service';
 import { InsightsService } from './insights-service';
 
-type MatchWithTeams = Match & {
-  homeTeam: Team & { club: Club | null };
-  awayTeam: Team & { club: Club | null };
-};
+// Select only fields needed by the dashboard cards to reduce payload and query cost.
+const MATCH_SELECT = {
+  id: true,
+  date: true,
+  isFinished: true,
+  homeScore: true,
+  awayScore: true,
+  videoUrl: true,
+  homeEventsLocked: true,
+  awayEventsLocked: true,
+  homeTeam: {
+    select: {
+      id: true,
+      name: true,
+      category: true,
+      isMyTeam: true,
+      club: { select: { name: true } },
+    },
+  },
+  awayTeam: {
+    select: {
+      id: true,
+      name: true,
+      category: true,
+      isMyTeam: true,
+      club: { select: { name: true } },
+    },
+  },
+} as const;
 
-type TeamWithRelations = Team & {
-  club: Club | null;
-  season: Season | null;
-};
+// Minimal shape for "my teams" panel to avoid loading unused relations.
+const TEAM_SELECT = {
+  id: true,
+  name: true,
+  category: true,
+  isMyTeam: true,
+  club: { select: { name: true } },
+} as const;
+
+type DashboardMatch = Prisma.MatchGetPayload<{ select: typeof MATCH_SELECT }>;
+type DashboardTeam = Prisma.TeamGetPayload<{ select: typeof TEAM_SELECT }>;
 
 export interface DashboardSnapshot {
-  pendingMatches: MatchWithTeams[];
-  pastMatches: MatchWithTeams[];
-  myTeams: TeamWithRelations[];
+  pendingMatches: DashboardMatch[];
+  pastMatches: DashboardMatch[];
+  myTeams: DashboardTeam[];
   weeklyInsights: WeeklyInsightsResponse;
 }
-
-const MATCH_INCLUDE = {
-  homeTeam: { include: { club: true } },
-  awayTeam: { include: { club: true } },
-} as const;
 
 const parseLimit = (value: string | undefined, fallback: number) => {
   const parsed = Number(value);
@@ -40,22 +67,19 @@ export class DashboardService {
     const [pendingMatches, pastMatches, myTeams, weeklyInsights] = await Promise.all([
       prisma.match.findMany({
         where: { isFinished: false },
-        include: MATCH_INCLUDE,
+        select: MATCH_SELECT,
         orderBy: { date: 'asc' },
         take: PENDING_LIMIT,
       }),
       prisma.match.findMany({
         where: { isFinished: true },
-        include: MATCH_INCLUDE,
+        select: MATCH_SELECT,
         orderBy: { date: 'desc' },
         take: RECENT_LIMIT,
       }),
       prisma.team.findMany({
         where: { isMyTeam: true },
-        include: {
-          club: true,
-          season: true,
-        },
+        select: TEAM_SELECT,
         orderBy: { name: 'asc' },
       }),
       this.insightsService.computeWeeklyInsights(),

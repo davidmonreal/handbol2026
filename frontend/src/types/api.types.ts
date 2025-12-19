@@ -1,5 +1,3 @@
-import type { Team } from '../types';
-
 /**
  * API Response Types
  * Explicit types for backend API responses to replace 'any' usage
@@ -22,15 +20,17 @@ export interface ClubApiResponse {
     name: string;
 }
 
+// Players are optional for summary endpoints (e.g. dashboard) to keep payload small.
 export interface TeamApiResponse {
     id: string;
     name: string;
     category?: string;
     club?: ClubApiResponse;
     isMyTeam?: boolean;
-    players: TeamPlayerApiResponse[];
+    players?: TeamPlayerApiResponse[];
 }
 
+// Dashboard responses use a reduced match payload; optional fields are present when needed.
 export interface MatchApiResponse {
     id: string;
     date: string;
@@ -38,6 +38,9 @@ export interface MatchApiResponse {
     awayScore: number;
     isFinished: boolean;
     videoUrl?: string;
+    homeEventsLocked?: boolean;
+    awayEventsLocked?: boolean;
+    location?: string;
     firstHalfVideoStart?: number;
     secondHalfVideoStart?: number;
     homeTeam: TeamApiResponse;
@@ -119,9 +122,10 @@ export interface WeeklyInsightsResponse {
     };
 }
 
+// Dashboard snapshot references lightweight team objects, not the full Team domain model.
 export interface DashboardSnapshotResponse {
     pendingMatches: MatchApiResponse[];
     pastMatches: MatchApiResponse[];
-    myTeams: Team[];
+    myTeams: TeamApiResponse[];
     weeklyInsights: WeeklyInsightsResponse;
 }
