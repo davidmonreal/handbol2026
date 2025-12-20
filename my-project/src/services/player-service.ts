@@ -1,14 +1,20 @@
 import { Player } from '@prisma/client';
 import { BaseService } from './base-service';
 import { PlayerRepository } from '../repositories/player-repository';
-import { createPlayerSchema, updatePlayerSchema, CreatePlayerInput, UpdatePlayerInput } from '../schemas/player';
-import { ZodError } from 'zod';
+import {
+  createPlayerSchema,
+  updatePlayerSchema,
+  CreatePlayerInput,
+  UpdatePlayerInput,
+} from '../schemas/player';
+import { ZodError, ZodIssue } from 'zod';
 
 const HAND_MESSAGE = 'Handedness must be LEFT or RIGHT';
 
-function mapPlayerIssue(issue: { path?: (string | number)[]; message?: string } | undefined) {
+function mapPlayerIssue(issue: ZodIssue | undefined) {
   // Normalize Zod issues to stable business-facing messages used by tests/clients
-  if (issue?.path?.[0] === 'handedness') return HAND_MESSAGE;
+  const pathHead = Array.isArray(issue?.path) ? issue?.path[0] : undefined;
+  if (pathHead === 'handedness') return HAND_MESSAGE;
   return issue?.message ?? 'Invalid player payload';
 }
 

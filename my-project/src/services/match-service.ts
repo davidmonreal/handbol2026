@@ -3,12 +3,18 @@ import { Match } from '@prisma/client';
 import { BaseService } from './base-service';
 import { MatchRepository } from '../repositories/match-repository';
 import prisma from '../lib/prisma';
-import { createMatchSchema, updateMatchSchema, CreateMatchInput, UpdateMatchInput } from '../schemas/match';
-import { ZodError } from 'zod';
+import {
+  createMatchSchema,
+  updateMatchSchema,
+  CreateMatchInput,
+  UpdateMatchInput,
+} from '../schemas/match';
+import { ZodError, ZodIssue } from 'zod';
 
-function mapMatchIssue(issue: { path?: (string | number)[]; message?: string } | undefined) {
+function mapMatchIssue(issue: ZodIssue | undefined) {
   // Normalize validation errors to predictable, user-facing wording
-  if (issue?.path?.[0] === 'date') return 'Invalid date format';
+  const pathHead = Array.isArray(issue?.path) ? issue?.path[0] : undefined;
+  if (pathHead === 'date') return 'Invalid date format';
   if (issue?.message) return issue.message;
   return 'Invalid match payload';
 }
@@ -59,10 +65,7 @@ export class MatchService extends BaseService<Match> {
     return super.create(validated);
   }
 
-  async update(
-    id: string,
-    data: UpdateMatchInput,
-  ): Promise<Match> {
+  async update(id: string, data: UpdateMatchInput): Promise<Match> {
     let updateData;
     try {
       updateData = updateMatchSchema.parse(data);

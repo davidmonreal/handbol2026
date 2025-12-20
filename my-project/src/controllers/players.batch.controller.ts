@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { PlayerService } from '../services/player-service';
 import { PlayerRepository } from '../repositories/player-repository';
 import prisma from '../lib/prisma';
-import { batchPlayersSchema, batchPlayersWithTeamSchema } from '../schemas/player-batch';
 
 const playerRepository = new PlayerRepository();
 const playerService = new PlayerService(playerRepository);

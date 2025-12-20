@@ -1,10 +1,6 @@
 import { z } from 'zod';
 
-const HANDEDNESS_MESSAGE = 'Handedness must be LEFT or RIGHT';
-
-const handednessSchema = z.enum(['LEFT', 'RIGHT'], {
-  errorMap: () => ({ message: HANDEDNESS_MESSAGE }),
-});
+const handednessSchema = z.enum(['LEFT', 'RIGHT']);
 
 const basePlayerSchema = z.object({
   name: z.string().min(1, 'Name is required'),

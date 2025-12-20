@@ -31,7 +31,7 @@ export class PlayerController extends BaseController<Player> {
     return !query.skip && !query.take && !query.search && !query.clubId;
   }
 
-  private extractErrorMessage(issue: { path?: (string | number)[]; message?: string } | undefined) {
+  private extractErrorMessage(issue: { path?: PropertyKey[]; message?: string } | undefined) {
     if (issue?.path?.[0] === 'handedness') return HANDEDNESS_MESSAGE;
     return issue?.message ?? 'Invalid player payload';
   }

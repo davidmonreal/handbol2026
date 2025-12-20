@@ -13,13 +13,12 @@ export function validateRequest(
   options: ValidateOptions = {},
 ) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const data = (req as Record<string, unknown>)[location];
+    const data = (req as unknown as Record<string, unknown>)[location];
 
     const result = schema.safeParse(data);
     if (!result.success) {
       const first = result.error?.issues?.[0];
-      const shouldUseFallback =
-        options.fallbackMessage && first && first.code === 'invalid_type';
+      const shouldUseFallback = options.fallbackMessage && first && first.code === 'invalid_type';
       const message =
         (shouldUseFallback ? options.fallbackMessage : first?.message) ??
         options.fallbackMessage ??
@@ -27,7 +26,7 @@ export function validateRequest(
       return res.status(400).json({ error: message });
     }
 
-    (req as Record<string, unknown>)[location] = result.data;
+    (req as unknown as Record<string, unknown>)[location] = result.data;
     return next();
   };
 }

@@ -1,13 +1,15 @@
 import { z } from 'zod';
 
-const dateSchema = z.preprocess((val) => {
-  if (val instanceof Date) return val;
-  if (typeof val === 'string' || typeof val === 'number') return new Date(val);
-  return val;
-}, z.date({ required_error: 'Date is required', invalid_type_error: 'Invalid date format' })).refine(
-  (date) => !isNaN(date.getTime()),
-  { message: 'Invalid date format' },
-);
+const dateSchema = z
+  .preprocess(
+    (val) => {
+      if (val instanceof Date) return val;
+      if (typeof val === 'string' || typeof val === 'number') return new Date(val);
+      return val;
+    },
+    z.date({ message: 'Invalid date format' }),
+  )
+  .refine((date) => !isNaN(date.getTime()), { message: 'Invalid date format' });
 
 export const createMatchSchema = z
   .object({
@@ -36,13 +38,16 @@ export const updateMatchSchema = z
     homeEventsLocked: z.coerce.boolean().optional(),
     awayEventsLocked: z.coerce.boolean().optional(),
   })
-  .refine((data) => {
-    if (!data.homeTeamId || !data.awayTeamId) return true;
-    return data.homeTeamId !== data.awayTeamId;
-  }, {
-    message: 'Home and Away teams must be different',
-    path: ['awayTeamId'],
-  });
+  .refine(
+    (data) => {
+      if (!data.homeTeamId || !data.awayTeamId) return true;
+      return data.homeTeamId !== data.awayTeamId;
+    },
+    {
+      message: 'Home and Away teams must be different',
+      path: ['awayTeamId'],
+    },
+  );
 
 export type CreateMatchInput = z.infer<typeof createMatchSchema>;
 export type UpdateMatchInput = z.infer<typeof updateMatchSchema>;

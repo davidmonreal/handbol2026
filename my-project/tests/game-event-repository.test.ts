@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GameEventRepository } from '../src/repositories/game-event-repository';
 import prisma from '../src/lib/prisma';
+import { GameEvent } from '@prisma/client';
 
 vi.mock('../src/lib/prisma', () => ({
   default: {
@@ -23,8 +24,8 @@ describe('GameEventRepository', () => {
   });
 
   it('findAll uses select on related entities', async () => {
-    const mockEvents = [{ id: 'e1' }];
-    vi.mocked(prisma.gameEvent.findMany).mockResolvedValue(mockEvents as any);
+    const mockEvents: GameEvent[] = [{ id: 'e1' } as GameEvent];
+    vi.mocked(prisma.gameEvent.findMany).mockResolvedValue(mockEvents);
 
     const result = await repository.findAll({ teamId: 't1', playerId: 'p1' });
 
@@ -39,10 +40,20 @@ describe('GameEventRepository', () => {
             id: true,
             date: true,
             homeTeam: {
-              select: { id: true, name: true, category: true, club: { select: { id: true, name: true } } },
+              select: {
+                id: true,
+                name: true,
+                category: true,
+                club: { select: { id: true, name: true } },
+              },
             },
             awayTeam: {
-              select: { id: true, name: true, category: true, club: { select: { id: true, name: true } } },
+              select: {
+                id: true,
+                name: true,
+                category: true,
+                club: { select: { id: true, name: true } },
+              },
             },
           },
         },
@@ -72,8 +83,8 @@ describe('GameEventRepository', () => {
   });
 
   it('findById selects minimal match and player', async () => {
-    const mockEvent = { id: 'e1' };
-    vi.mocked(prisma.gameEvent.findUnique).mockResolvedValue(mockEvent as any);
+    const mockEvent = { id: 'e1' } as GameEvent;
+    vi.mocked(prisma.gameEvent.findUnique).mockResolvedValue(mockEvent);
 
     const result = await repository.findById('e1');
 
