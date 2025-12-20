@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, Calendar, Edit2, Volleyball } from 'lucide-react';
+import { BarChart3, Calendar, Edit2, Volleyball, Youtube } from 'lucide-react';
 import { CrudManager } from './shared/CrudManager';
 import { API_BASE_URL } from '../../config/api';
 import type { Team, CrudConfig } from '../../types';
@@ -243,6 +243,12 @@ export const MatchesManagement = () => {
                 label: 'Video Tracker',
                 onClick: (match) => navigate(`/video-tracker/${match.id}`),
                 className: 'text-orange-600 hover:text-orange-900 mr-3',
+            },
+            {
+                icon: Youtube,
+                label: 'Add YouTube Link',
+                onClick: (match) => navigate(`/video-tracker/${match.id}`),
+                className: 'text-red-600 hover:text-red-900 mr-3',
             },
             {
                 icon: BarChart3,
