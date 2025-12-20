@@ -26,6 +26,8 @@ interface ScoreboardProps {
   showCalibration?: boolean; // Show calibration buttons (for MatchTracker only)
   onFinishMatch?: () => void;
   isFinished?: boolean;
+  // When both teams have events locked, hide half controls so we don't finish halves while
+  // neither side can add plays; leave them visible if at least one team remains unlocked.
   hideHalfControls?: boolean;
 }
 
@@ -185,8 +187,8 @@ export const Scoreboard = ({
           </div>
 
           {/* Calibration Buttons - Only show in MatchTracker (not VideoMatchTracker).
-              If the active team has events locked, hide these controls to avoid finishing halves
-              while that team is already closed for editing (other team can still operate normally). */}
+              We only hide them when both teams are locked: if one team is still open,
+              we keep the controls visible so the other side can continue tracking. */}
           {showCalibration && !hideHalfControls && (
             <div className="flex flex-col gap-2 text-xs w-full">
               <div className="flex gap-2">
