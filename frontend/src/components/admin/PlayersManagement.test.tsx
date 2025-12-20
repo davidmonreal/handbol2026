@@ -66,6 +66,13 @@ describe('PlayersManagement UI flows', () => {
         );
 
         await waitFor(() => expect(screen.getByText('Players Management')).toBeInTheDocument());
+
+        const searchInput = screen.getByPlaceholderText('Search players...');
+        fireEvent.change(searchInput, { target: { value: playerRow.name } });
+
+        await waitFor(() =>
+            expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/api/players?')),
+        );
         await waitFor(() => expect(screen.getByText(playerRow.name)).toBeInTheDocument());
 
         const deleteButton = screen.getByRole('button', { name: 'Delete Player' });

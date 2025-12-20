@@ -1,25 +1,19 @@
 
-import { useState, useMemo, useRef } from 'react';
+import { useRef } from 'react';
 import {
     User,
     Users,
     ArrowUp,
     ArrowLeftRight,
 } from 'lucide-react';
-import type { MatchEvent, ZoneType, TurnoverType, SanctionType } from '../../../types';
+import type { MatchEvent, TurnoverType, SanctionType } from '../../../types';
+import type { EventCategory } from './eventFormStateMachine';
 import { ZoneSelector } from '../shared/ZoneSelector';
 import { SplitToggle } from '../shared/SplitToggle';
 import { ConfirmationModal } from '../../common';
 import { useSafeTranslation } from '../../../context/LanguageContext';
-import { buildEventFromForm } from './eventFormBuilder';
-import {
-    buildShotResults,
-    buildTurnoverTypes,
-    buildSanctionTypes,
-    ShotResultSelector,
-    TurnoverSelector,
-    SanctionSelector,
-} from './ActionSelectors';
+import { ShotResultSelector, TurnoverSelector, SanctionSelector } from './ActionSelectors';
+import { useEventFormState } from './useEventFormState';
 
 // Define interfaces locally to match MatchContext structure
 interface Player {
@@ -67,107 +61,54 @@ export const EventForm = ({
 }: EventFormProps) => {
     const { t } = useSafeTranslation();
 
-    // State initialization
-    const [selectedPlayerId, setSelectedPlayerId] = useState<string>(
-        event?.playerId || initialState?.playerId || ''
-    );
-    // Opponent Goalkeeper State
-    const [selectedOpponentGkId, setSelectedOpponentGkId] = useState<string>(
-        initialState?.opponentGoalkeeperId || ''
-    );
+    const {
+        state,
+        shotResults,
+        turnoverTypes,
+        sanctionTypes,
+        isGoalTargetVisible,
+        dispatchers,
+    } = useEventFormState({
+        event,
+        teamId: team.id,
+        initialState,
+        locked,
+        onSave,
+        onSaved,
+        onSaveMessage,
+        onCancel,
+        onDelete,
+        t,
+    });
 
-    const [selectedCategory, setSelectedCategory] = useState<string>(event?.category || 'Shot');
-    const [selectedAction, setSelectedAction] = useState<string | null>(event?.action || null);
-    const [selectedZone, setSelectedZone] = useState<ZoneType | null>(event?.zone || null);
-    const [selectedTarget, setSelectedTarget] = useState<number | undefined>(event?.goalTarget);
-    const [isCollective, setIsCollective] = useState(event?.isCollective ?? true);
-    const [hasOpposition, setHasOpposition] = useState(event?.hasOpposition || false);
-    const [isCounterAttack, setIsCounterAttack] = useState(event?.isCounterAttack || false);
-    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+    const {
+        selectedPlayerId,
+        selectedOpponentGkId,
+        selectedCategory,
+        selectedAction,
+        selectedZone,
+        selectedTarget,
+        isCollective,
+        hasOpposition,
+        isCounterAttack,
+        showDeleteConfirmation,
+    } = state;
 
-    // Constants
-    const shotResults = useMemo(() => buildShotResults(t), [t]);
-    const turnoverTypes = useMemo(() => buildTurnoverTypes(t), [t]);
-    const sanctionTypes = useMemo(() => buildSanctionTypes(t), [t]);
-
-    // Handlers
-    const handleCategoryChange = (category: string) => {
-        setSelectedCategory(category);
-        setSelectedAction(category === 'Sanction' ? 'Foul' : null);
-        setSelectedTarget(undefined);
-        if (category === 'Sanction') {
-            // Fouls always happen with opposition.
-            setHasOpposition(true);
-        }
-    };
-
-    const handleHasOppositionChange = (value: boolean) => {
-        const mustHaveOpposition =
-            (selectedCategory === 'Sanction' && selectedAction === 'Foul') ||
-            (selectedCategory === 'Turnover' && selectedAction === 'Offensive Foul');
-        setHasOpposition(mustHaveOpposition ? true : value);
-    };
-
-    const handleIsCollectiveChange = (value: boolean) => {
-        const mustBeCollective = selectedCategory === 'Turnover' && selectedAction === 'Pass';
-        setIsCollective(mustBeCollective ? true : value);
-    };
-
-    const handleSave = async () => {
-        if (locked) return;
-        if (!selectedPlayerId) return;
-
-        // Movem la lògica de mapping a un helper pur per poder-la testar i mantenir la UI neta.
-        const updatedEvent: MatchEvent = buildEventFromForm({
-            teamId: team.id,
-            selectedPlayerId,
-            selectedCategory,
-            selectedAction,
-            selectedZone,
-            selectedTarget,
-            isCollective,
-            hasOpposition,
-            isCounterAttack,
-            opponentGoalkeeperId: selectedOpponentGkId || undefined,
-        }, { baseEvent: event || null });
-
-        try {
-            await Promise.resolve(onSave(updatedEvent, selectedOpponentGkId));
-            onSaveMessage?.(t('eventForm.successMessage'), 'success');
-            onSaved?.();
-        } catch (err) {
-            onSaveMessage?.(
-                err instanceof Error ? err.message : t('dashboard.errorLoadMatches'),
-                'error',
-            );
-        }
-
-        // After saving a new play we reset to the most common configuration (Shot + Collective + Free + Static)
-        setSelectedCategory('Shot');
-        setIsCollective(true);
-        setHasOpposition(false);
-        setIsCounterAttack(false);
-
-        if (!event) {
-            setSelectedAction(null);
-            setSelectedZone(null);
-            setSelectedTarget(undefined);
-            setSelectedPlayerId('');
-        }
-    };
-
-    const handleDelete = () => {
-        if (locked) return;
-        setShowDeleteConfirmation(true);
-    };
-
-    const confirmDelete = () => {
-        setShowDeleteConfirmation(false);
-        if (event && onDelete) {
-            onDelete(event.id);
-            onCancel();
-        }
-    };
+    const {
+        selectPlayer,
+        selectOpponentGk,
+        selectCategory,
+        selectAction,
+        selectZone,
+        selectTarget,
+        toggleCollective,
+        toggleOpposition,
+        toggleCounterAttack,
+        save,
+        requestDelete,
+        confirmDelete,
+        cancelDelete,
+    } = dispatchers;
 
     const sortedPlayers = [...team.players].sort((a, b) => a.number - b.number);
     const opponentGoalkeepers = opponentTeam?.players.filter(p => p.isGoalkeeper) || [];
@@ -177,8 +118,14 @@ export const EventForm = ({
     const categoryRef = useRef<HTMLDivElement>(null);
     const formTopRef = useRef<HTMLDivElement>(null);
 
+    const categories: Array<{ value: EventCategory; label: string }> = [
+        { value: 'Shot', label: t('eventForm.categoryShot') },
+        { value: 'Sanction', label: t('eventForm.categoryFoul') },
+        { value: 'Turnover', label: t('eventForm.categoryTurnover') },
+    ];
+
     const handlePlayerSelect = (playerId: string) => {
-        setSelectedPlayerId(playerId);
+        selectPlayer(playerId);
         setTimeout(() => {
             categoryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);
@@ -211,7 +158,7 @@ export const EventForm = ({
                                 return (
                                     <button
                                         key={gk.id}
-                                        onClick={() => setSelectedOpponentGkId(gk.id)}
+                                        onClick={() => selectOpponentGk(gk.id)}
                                         className={`flex items-center gap-2 p-2 rounded-lg border transition-all ${selectedOpponentGkId === gk.id
                                             ? 'bg-orange-600 border-orange-600 text-white shadow-sm'
                                             : 'bg-white border-gray-200 text-gray-700 hover:border-orange-300 hover:bg-orange-50'
@@ -279,14 +226,10 @@ export const EventForm = ({
             <div className={lockClass} ref={categoryRef}>
                 <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('eventForm.category')}</div>
                 <div className="grid grid-cols-3 gap-2">
-                    {[
-                        { value: 'Shot', label: t('eventForm.categoryShot') },
-                        { value: 'Sanction', label: t('eventForm.categoryFoul') },
-                        { value: 'Turnover', label: t('eventForm.categoryTurnover') },
-                    ].map(cat => (
+                    {categories.map(cat => (
                         <button
                             key={cat.value}
-                            onClick={() => handleCategoryChange(cat.value)}
+                            onClick={() => selectCategory(cat.value)}
                             className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${selectedCategory === cat.value
                                 ? 'bg-indigo-500 text-white shadow-sm'
                                 : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
@@ -313,7 +256,7 @@ export const EventForm = ({
                         <ShotResultSelector
                             selectedAction={selectedAction}
                             results={shotResults}
-                            onSelect={setSelectedAction}
+                            onSelect={selectAction}
                         />
                     )}
 
@@ -321,9 +264,9 @@ export const EventForm = ({
                         <TurnoverSelector
                             selectedAction={selectedAction}
                             types={turnoverTypes}
-                            onSelect={setSelectedAction as (value: TurnoverType) => void}
-                            onForceCollective={() => handleIsCollectiveChange(true)}
-                            onForceOpposition={() => handleHasOppositionChange(true)}
+                            onSelect={(value: TurnoverType) => selectAction(value)}
+                            onForceCollective={() => toggleCollective(true)}
+                            onForceOpposition={() => toggleOpposition(true)}
                         />
                     )}
 
@@ -331,15 +274,15 @@ export const EventForm = ({
                         <SanctionSelector
                             selectedAction={selectedAction}
                             sanctions={sanctionTypes}
-                            onSelect={setSelectedAction as (value: SanctionType) => void}
-                            onForceOpposition={() => handleHasOppositionChange(true)}
+                            onSelect={(value: SanctionType) => selectAction(value)}
+                            onForceOpposition={() => toggleOpposition(true)}
                         />
                     )}
                 </div>
 
                 {/* 5. Goal Target (Only for Goal/Save) */}
                 {/* Shot flow always shows the goal until the user explicitly selects an outcome that doesn't need it */}
-                {(selectedCategory === 'Shot' && !['Miss', 'Post', 'Block'].includes(selectedAction || '')) && (
+                {isGoalTargetVisible && (
                     <div className="animate-fade-in bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                         <h4 className="text-sm font-bold text-gray-500 mb-3 text-center">
                             {selectedAction === 'Goal'
@@ -355,7 +298,7 @@ export const EventForm = ({
                                             key={target}
                                             aria-label={`goal-target-${target}`}
                                             aria-pressed={isActive}
-                                            onClick={() => setSelectedTarget(target)}
+                                            onClick={() => selectTarget(target)}
                                             className={`h-14 rounded-lg transition-all border-2 flex items-center justify-center ${isActive
                                                 ? 'bg-indigo-600 border-indigo-600 shadow-sm'
                                                 : 'bg-white border-gray-200 hover:border-indigo-500 hover:bg-indigo-50'
@@ -373,15 +316,7 @@ export const EventForm = ({
                     <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('eventForm.selectZone')}</div>
                     <ZoneSelector
                         selectedZone={selectedZone}
-                        onZoneSelect={(zone) => {
-                            setSelectedZone(zone);
-                            if (selectedCategory === 'Shot' && zone === '7m') {
-                                // Penalty shots are individual, free, and static by definition.
-                                setIsCollective(false);
-                                setHasOpposition(false);
-                                setIsCounterAttack(false);
-                            }
-                        }}
+                        onZoneSelect={selectZone}
                         variant="minimal"
                     />
                 </div>
@@ -393,19 +328,19 @@ export const EventForm = ({
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <SplitToggle
                                 value={isCollective}
-                                onChange={handleIsCollectiveChange}
+                                onChange={toggleCollective}
                                 leftOption={{ label: t('eventForm.context.individual'), icon: User }}
                                 rightOption={{ label: t('eventForm.context.collective'), icon: Users }}
                             />
                             <SplitToggle
                                 value={hasOpposition}
-                                onChange={handleHasOppositionChange}
+                                onChange={toggleOpposition}
                                 leftOption={{ label: t('eventForm.context.free'), icon: User }}
                                 rightOption={{ label: t('eventForm.context.opposition'), icon: [User, Users] }}
                             />
                             <SplitToggle
                                 value={isCounterAttack}
-                                onChange={setIsCounterAttack}
+                                onChange={toggleCounterAttack}
                                 leftOption={{ label: t('eventForm.context.static'), icon: ArrowLeftRight }}
                                 rightOption={{ label: t('eventForm.context.counter'), icon: ArrowUp }}
                             />
@@ -419,7 +354,7 @@ export const EventForm = ({
                 <div className="flex items-center gap-3 flex-wrap">
                     {event && (
                         <button
-                            onClick={handleDelete}
+                            onClick={requestDelete}
                             className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-700 font-medium transition-colors disabled:text-gray-300 disabled:hover:text-gray-300"
                             disabled={locked}
                             data-testid="delete-event-button"
@@ -441,7 +376,7 @@ export const EventForm = ({
                         {t('eventForm.cancelButton')}
                     </button>
                     <button
-                        onClick={handleSave}
+                        onClick={save}
                         className="px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 text-white hover:bg-indigo-700"
                         disabled={!isPlayerSelected || locked}
                     >
@@ -461,7 +396,7 @@ export const EventForm = ({
                 cancelLabel={t('eventForm.cancelButton')}
                 variant="danger"
                 onConfirm={confirmDelete}
-                onCancel={() => setShowDeleteConfirmation(false)}
+                onCancel={cancelDelete}
             />
         </div>
     );
