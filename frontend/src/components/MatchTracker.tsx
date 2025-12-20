@@ -313,12 +313,13 @@ const MatchTracker = () => {
           activeTeamId={activeTeamId}
           onHomeScoreChange={setHomeScore}
           onVisitorScoreChange={setVisitorScore}
-          onTeamSelect={handleTeamSelect}
-          isFinished={timerStopped || !!realTimeSecondHalfEnd}
-          onFinishMatch={async () => {
-            try {
-              await fetch(`${API_BASE_URL}/api/matches/${matchId}`, {
-                method: 'PATCH',
+        onTeamSelect={handleTeamSelect}
+        isFinished={timerStopped || !!realTimeSecondHalfEnd}
+        hideHalfControls={activeTeamLocked}
+        onFinishMatch={async () => {
+          try {
+            await fetch(`${API_BASE_URL}/api/matches/${matchId}`, {
+              method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ isFinished: true })
               });
