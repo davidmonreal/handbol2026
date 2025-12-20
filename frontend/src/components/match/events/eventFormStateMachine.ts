@@ -131,15 +131,67 @@ const sanitizeAction = (
     return SANCTION_ACTIONS.includes(action as SanctionType) ? (action as SanctionType) : null;
 };
 
+type BuildInput = BaseEventState & {
+    selectedCategory: EventCategory;
+    selectedAction: ShotResult | TurnoverType | SanctionType | null;
+};
+
+const buildStateForCategory = (input: BuildInput): EventFormState => {
+    const action = sanitizeAction(input.selectedCategory, input.selectedAction);
+    const common = {
+        selectedPlayerId: input.selectedPlayerId,
+        selectedOpponentGkId: input.selectedOpponentGkId,
+        selectedZone: input.selectedZone,
+        selectedTarget: input.selectedTarget,
+        isCollective: input.isCollective,
+        hasOpposition: input.hasOpposition,
+        isCounterAttack: input.isCounterAttack,
+        showDeleteConfirmation: input.showDeleteConfirmation,
+    };
+
+    if (input.selectedCategory === 'Shot') {
+        return { ...common, selectedCategory: 'Shot', selectedAction: action as ShotResult | null };
+    }
+    if (input.selectedCategory === 'Turnover') {
+        return {
+            ...common,
+            selectedCategory: 'Turnover',
+            selectedAction: action as TurnoverType | null,
+        };
+    }
+    return {
+        ...common,
+        selectedCategory: 'Sanction',
+        selectedAction: action as SanctionType | null,
+    };
+};
+
+const mergeState = (state: EventFormState, patch: Partial<BuildInput>): EventFormState => {
+    const category = patch.selectedCategory ?? state.selectedCategory;
+    const merged: BuildInput = {
+        selectedCategory: category,
+        selectedAction:
+            patch.selectedAction !== undefined ? patch.selectedAction : state.selectedAction,
+        selectedPlayerId: patch.selectedPlayerId ?? state.selectedPlayerId,
+        selectedOpponentGkId: patch.selectedOpponentGkId ?? state.selectedOpponentGkId,
+        selectedZone: patch.selectedZone ?? state.selectedZone,
+        selectedTarget: patch.selectedTarget !== undefined ? patch.selectedTarget : state.selectedTarget,
+        isCollective: patch.isCollective ?? state.isCollective,
+        hasOpposition: patch.hasOpposition ?? state.hasOpposition,
+        isCounterAttack: patch.isCounterAttack ?? state.isCounterAttack,
+        showDeleteConfirmation: patch.showDeleteConfirmation ?? state.showDeleteConfirmation,
+    };
+    return buildStateForCategory(merged);
+};
+
 export const initializeState = ({ event, initialState }: InitializeParams): EventFormState => {
-    const baseState: EventFormState = {
+    const category = (event?.category as EventCategory) || 'Shot';
+    const baseInput: BuildInput = {
         selectedPlayerId: event?.playerId || initialState?.playerId || '',
         selectedOpponentGkId: initialState?.opponentGoalkeeperId || '',
-        selectedCategory: (event?.category as EventCategory) || 'Shot',
-        selectedAction: sanitizeAction(
-            (event?.category as EventCategory) || 'Shot',
+        selectedCategory: category,
+        selectedAction:
             (event?.action as ShotResult | TurnoverType | SanctionType | null) || null,
-        ),
         selectedZone: event?.zone || null,
         selectedTarget: event?.goalTarget,
         isCollective: event?.isCollective ?? true,
@@ -148,7 +200,7 @@ export const initializeState = ({ event, initialState }: InitializeParams): Even
         showDeleteConfirmation: false,
     };
 
-    return applyFormRules(baseState);
+    return applyFormRules(buildStateForCategory(baseInput));
 };
 
 export const eventFormReducer = (state: EventFormState, action: EventFormAction): EventFormState => {
@@ -158,35 +210,32 @@ export const eventFormReducer = (state: EventFormState, action: EventFormAction)
         case 'selectOpponentGk':
             return { ...state, selectedOpponentGkId: action.playerId };
         case 'selectCategory': {
-            const nextState: EventFormState = {
-                ...state,
+            const next = mergeState(state, {
                 selectedCategory: action.category,
                 selectedAction: action.category === 'Sanction' ? 'Foul' : null,
                 selectedTarget: undefined,
-            };
-            if (action.category === 'Sanction') {
-                nextState.hasOpposition = true;
-            }
-            return applyFormRules(nextState);
+                hasOpposition: action.category === 'Sanction' ? true : state.hasOpposition,
+            });
+            return applyFormRules(next);
         }
         case 'selectAction':
-            return applyFormRules({
-                ...state,
-                selectedAction: sanitizeAction(state.selectedCategory, action.action),
-            } as EventFormState);
+            return applyFormRules(
+                mergeState(state, {
+                    selectedAction: sanitizeAction(state.selectedCategory, action.action),
+                }),
+            );
         case 'selectZone':
-            return applyFormRules({ ...state, selectedZone: action.zone } as EventFormState);
+            return applyFormRules(mergeState(state, { selectedZone: action.zone }));
         case 'selectTarget':
             return { ...state, selectedTarget: action.target };
         case 'toggleCollective':
-            return applyFormRules({ ...state, isCollective: action.value } as EventFormState);
+            return applyFormRules(mergeState(state, { isCollective: action.value }));
         case 'toggleOpposition':
-            return applyFormRules({ ...state, hasOpposition: action.value } as EventFormState);
+            return applyFormRules(mergeState(state, { hasOpposition: action.value }));
         case 'toggleCounterAttack':
-            return applyFormRules({ ...state, isCounterAttack: action.value } as EventFormState);
+            return applyFormRules(mergeState(state, { isCounterAttack: action.value }));
         case 'resetAfterSave': {
-            const resetState: EventFormState = {
-                ...state,
+            const resetState = mergeState(state, {
                 selectedCategory: 'Shot',
                 selectedAction: null,
                 selectedZone: null,
@@ -195,11 +244,8 @@ export const eventFormReducer = (state: EventFormState, action: EventFormAction)
                 hasOpposition: false,
                 isCounterAttack: false,
                 showDeleteConfirmation: false,
-            };
-
-            if (action.resetPlayer) {
-                resetState.selectedPlayerId = '';
-            }
+                selectedPlayerId: action.resetPlayer ? '' : state.selectedPlayerId,
+            });
 
             return applyFormRules(resetState);
         }

@@ -1,5 +1,5 @@
 import { useMemo, useReducer, useRef } from 'react';
-import type { MatchEvent, ZoneType } from '../../../types';
+import type { MatchEvent, ZoneType, ShotResult, TurnoverType, SanctionType } from '../../../types';
 import { buildEventFromForm } from './eventFormBuilder';
 import { buildSanctionTypes, buildShotResults, buildTurnoverTypes } from './actionOptions';
 import {
@@ -183,7 +183,8 @@ export const useEventFormState = ({
                 dispatch({ type: 'selectOpponentGk', playerId }),
             selectCategory: (category: EventCategory) =>
                 dispatch({ type: 'selectCategory', category }),
-            selectAction: (action: string | null) => dispatch({ type: 'selectAction', action }),
+            selectAction: (action: ShotResult | TurnoverType | SanctionType | null) =>
+                dispatch({ type: 'selectAction', action }),
             selectZone: (zone: ZoneType | null) => dispatch({ type: 'selectZone', zone }),
             selectTarget: (target?: number) => dispatch({ type: 'selectTarget', target }),
             toggleCollective: (value: boolean) => dispatch({ type: 'toggleCollective', value }),
