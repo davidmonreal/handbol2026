@@ -2,6 +2,13 @@ import { GameEvent, Match } from '@prisma/client';
 import { GameEventRepository } from '../repositories/game-event-repository';
 import { MatchRepository } from '../repositories/match-repository';
 import { CreateGameEventInput, UpdateGameEventInput } from '../schemas/game-event';
+import {
+  assertMatchStarted,
+  assertSecondHalfStartedIfNeeded,
+  assertTeamUnlocked,
+  computeFirstHalfBoundarySeconds,
+  getScorePatchForGoal,
+} from './game-event-rules';
 
 export class GameEventService {
   constructor(
@@ -30,42 +37,16 @@ export class GameEventService {
   }
 
   private assertTeamUnlocked(match: Match, teamId: string) {
-    const isHome = teamId === match.homeTeamId;
-    const isAway = teamId === match.awayTeamId;
-    const homeLocked = (match as { homeEventsLocked?: boolean }).homeEventsLocked ?? false;
-    const awayLocked = (match as { awayEventsLocked?: boolean }).awayEventsLocked ?? false;
-    if ((isHome && homeLocked) || (isAway && awayLocked)) {
-      throw new Error('Events are locked for this team');
-    }
+    assertTeamUnlocked(match, teamId);
   }
 
   // For live matches we need kickoff; for video matches we need calibration timestamps.
   private assertMatchStarted(match: Match) {
-    const hasLiveStart = !!match.realTimeFirstHalfStart;
-    const hasVideoStart =
-      match.firstHalfVideoStart !== null && match.firstHalfVideoStart !== undefined;
-    if (!hasLiveStart && !hasVideoStart) {
-      throw new Error('Match has not been started yet');
-    }
+    assertMatchStarted(match);
   }
 
   private computeFirstHalfBoundarySeconds(match: Match): number | null {
-    return match.realTimeFirstHalfStart && match.realTimeSecondHalfStart
-      ? Math.max(
-          0,
-          Math.floor((match.realTimeSecondHalfStart - match.realTimeFirstHalfStart) / 1000),
-        )
-      : match.realTimeFirstHalfStart && match.realTimeFirstHalfEnd
-        ? Math.max(
-            0,
-            Math.floor((match.realTimeFirstHalfEnd - match.realTimeFirstHalfStart) / 1000),
-          )
-        : match.firstHalfVideoStart !== null &&
-            match.firstHalfVideoStart !== undefined &&
-            match.secondHalfVideoStart !== null &&
-            match.secondHalfVideoStart !== undefined
-          ? Math.max(0, match.secondHalfVideoStart - match.firstHalfVideoStart)
-          : null;
+    return computeFirstHalfBoundarySeconds(match);
   }
 
   private assertSecondHalfStartedIfNeeded(
@@ -73,14 +54,7 @@ export class GameEventService {
     data: { timestamp: number; teamId: string; matchId: string },
     match: Match,
   ) {
-    if (
-      boundarySeconds !== null &&
-      data.timestamp > boundarySeconds &&
-      !match.realTimeSecondHalfStart &&
-      (match.secondHalfVideoStart === null || match.secondHalfVideoStart === undefined)
-    ) {
-      throw new Error('Second half has not started yet');
-    }
+    assertSecondHalfStartedIfNeeded(boundarySeconds, data, match);
   }
 
   async create(data: CreateGameEventInput): Promise<GameEvent> {
@@ -98,21 +72,17 @@ export class GameEventService {
     const event = await this.repository.create(data);
 
     // Update match score if it's a goal AND match is not finished
-    if (shouldUpdateScore && data.type === 'Shot' && data.subtype === 'Goal') {
-      if (data.teamId === match.homeTeamId) {
-        await this.matchRepository.update(match.id, { homeScore: match.homeScore + 1 });
-      } else if (data.teamId === match.awayTeamId) {
-        await this.matchRepository.update(match.id, { awayScore: match.awayScore + 1 });
+    if (shouldUpdateScore) {
+      const patch = getScorePatchForGoal(match, data, 1);
+      if (patch) {
+        await this.matchRepository.update(match.id, patch);
       }
     }
 
     return event;
   }
 
-  async update(
-    id: string,
-    data: UpdateGameEventInput,
-  ): Promise<GameEvent> {
+  async update(id: string, data: UpdateGameEventInput): Promise<GameEvent> {
     return this.repository.update(id, data);
   }
 
@@ -126,11 +96,10 @@ export class GameEventService {
     const deletedEvent = await this.repository.delete(id);
 
     // If it was a goal, recalculate match score
-    if (shouldUpdateScore && event && match && event.type === 'Shot' && event.subtype === 'Goal') {
-      if (event.teamId === match.homeTeamId && match.homeScore > 0) {
-        await this.matchRepository.update(match.id, { homeScore: match.homeScore - 1 });
-      } else if (event.teamId === match.awayTeamId && match.awayScore > 0) {
-        await this.matchRepository.update(match.id, { awayScore: match.awayScore - 1 });
+    if (shouldUpdateScore && event && match) {
+      const patch = getScorePatchForGoal(match, event, -1);
+      if (patch) {
+        await this.matchRepository.update(match.id, patch);
       }
     }
 

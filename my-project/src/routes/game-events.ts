@@ -3,6 +3,8 @@ import { GameEventController } from '../controllers/game-event-controller';
 import { GameEventService } from '../services/game-event-service';
 import { GameEventRepository } from '../repositories/game-event-repository';
 import { MatchRepository } from '../repositories/match-repository';
+import { validateRequest } from '../middleware/validate';
+import { createGameEventSchema, updateGameEventSchema } from '../schemas/game-event';
 
 type GameEventRouterDeps = {
   controller?: GameEventController;
@@ -34,13 +36,13 @@ export function createGameEventRouter(deps: GameEventRouterDeps = {}): Router {
   router.get('/:id', controller.getById);
 
   // Create game event
-  router.post('/', controller.create);
+  router.post('/', validateRequest(createGameEventSchema), controller.create);
 
   // Update game event (full update)
-  router.put('/:id', controller.update);
+  router.put('/:id', validateRequest(updateGameEventSchema), controller.update);
 
   // Update game event (partial update)
-  router.patch('/:id', controller.update);
+  router.patch('/:id', validateRequest(updateGameEventSchema), controller.update);
 
   // Delete game event
   router.delete('/:id', controller.delete);
