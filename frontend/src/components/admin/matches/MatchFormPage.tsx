@@ -109,8 +109,8 @@ export const MatchFormPage = () => {
                 homeTeamId: selectedHomeTeamId,
                 awayTeamId: selectedAwayTeamId,
                 isFinished: status === 'FINISHED',
-                homeScore: status === 'FINISHED' && homeScore !== '' ? parseInt(homeScore) : 0,
-                awayScore: status === 'FINISHED' && awayScore !== '' ? parseInt(awayScore) : 0
+                homeScore: status === 'FINISHED' ? parseInt(homeScore || '0') : undefined,
+                awayScore: status === 'FINISHED' ? parseInt(awayScore || '0') : undefined
             };
 
             const method = isEditMode ? 'PUT' : 'POST';

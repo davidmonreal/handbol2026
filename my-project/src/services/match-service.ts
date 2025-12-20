@@ -50,6 +50,14 @@ export class MatchService extends BaseService<Match> {
       throw error;
     }
 
+    // Default finished matches without scores should keep zeros; frontend should send explicit values
+    if (validated.isFinished && validated.homeScore === undefined) {
+      validated.homeScore = 0;
+    }
+    if (validated.isFinished && validated.awayScore === undefined) {
+      validated.awayScore = 0;
+    }
+
     // Validate home team exists
     const homeTeam = await prisma.team.findUnique({ where: { id: validated.homeTeamId } });
     if (!homeTeam) {
@@ -74,6 +82,14 @@ export class MatchService extends BaseService<Match> {
         throw new Error(mapMatchIssue(error.issues[0]));
       }
       throw error;
+    }
+
+    // Ensure scores default to zero when finished flag is set without scores
+    if (updateData.isFinished && updateData.homeScore === undefined) {
+      updateData.homeScore = 0;
+    }
+    if (updateData.isFinished && updateData.awayScore === undefined) {
+      updateData.awayScore = 0;
     }
 
     // If updating teams, we need to check constraints

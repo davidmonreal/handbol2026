@@ -16,6 +16,9 @@ export const createMatchSchema = z
     date: dateSchema,
     homeTeamId: z.string().min(1, 'Home team is required'),
     awayTeamId: z.string().min(1, 'Away team is required'),
+    isFinished: z.coerce.boolean().optional(),
+    homeScore: z.coerce.number().int().min(0).optional(),
+    awayScore: z.coerce.number().int().min(0).optional(),
   })
   .refine((data) => data.homeTeamId !== data.awayTeamId, {
     message: 'Home and Away teams must be different',
@@ -28,6 +31,8 @@ export const updateMatchSchema = z
     homeTeamId: z.string().min(1, 'Home team is required').optional(),
     awayTeamId: z.string().min(1, 'Away team is required').optional(),
     isFinished: z.coerce.boolean().optional(),
+    homeScore: z.coerce.number().int().min(0).optional(),
+    awayScore: z.coerce.number().int().min(0).optional(),
     videoUrl: z.string().url().nullable().optional(),
     firstHalfVideoStart: z.coerce.number().int().min(0).nullable().optional(),
     secondHalfVideoStart: z.coerce.number().int().min(0).nullable().optional(),
