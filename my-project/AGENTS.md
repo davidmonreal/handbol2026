@@ -44,6 +44,7 @@
 - Do not accept a feature as complete until all tests pass.
 - Add intent comments sparingly to capture why code is shaped this way (functional rationale, engineering trade-offs, chosen flows), so readers understand decisions when revisiting.
 - Frontend: qualsevol text nou de UI ha de provenir de l’arxiu de traducciones (`frontend/src/i18n/translations.ts`) i consumit via els hooks de llenguatge; evita literals incrustats en components.
+- Apply Kent Beck/Fowler’s “Composed Method” with intention-revealing names: keep functions small and at a single level of abstraction so the main flow reads like prose. When a step drops abstraction, extract it to a helper with a “what, not how” name.
 
 ## Testing Guidelines
 

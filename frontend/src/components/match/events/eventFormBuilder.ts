@@ -1,4 +1,10 @@
-import type { MatchEvent, SanctionType, ZoneType } from '../../../types';
+import type {
+    MatchEvent,
+    SanctionType,
+    ZoneType,
+    ShotResult,
+    TurnoverType,
+} from '../../../types';
 
 /**
  * Construïm l'objecte MatchEvent en un helper pur per aïllar la lògica
@@ -8,8 +14,8 @@ import type { MatchEvent, SanctionType, ZoneType } from '../../../types';
 export interface EventFormState {
     teamId: string;
     selectedPlayerId: string;
-    selectedCategory: string;
-    selectedAction: string | null;
+    selectedCategory: 'Shot' | 'Turnover' | 'Sanction';
+    selectedAction: ShotResult | TurnoverType | SanctionType | null;
     selectedZone: ZoneType | null;
     selectedTarget?: number;
     isCollective: boolean;

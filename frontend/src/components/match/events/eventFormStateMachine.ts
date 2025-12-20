@@ -1,12 +1,27 @@
-import type { MatchEvent, ZoneType } from '../../../types';
+import type {
+    MatchEvent,
+    ZoneType,
+    ShotResult,
+    TurnoverType,
+    SanctionType,
+} from '../../../types';
 
 export type EventCategory = 'Shot' | 'Sanction' | 'Turnover';
 
-export type EventFormState = {
+const SHOT_ACTIONS: ShotResult[] = ['Goal', 'Save', 'Miss', 'Post', 'Block'];
+const TURNOVER_ACTIONS: TurnoverType[] = [
+    'Pass',
+    'Catch',
+    'Dribble',
+    'Steps',
+    'Area',
+    'Offensive Foul',
+];
+const SANCTION_ACTIONS: SanctionType[] = ['Foul', 'Yellow', '2min', 'Red', 'Blue Card'];
+
+type BaseEventState = {
     selectedPlayerId: string;
     selectedOpponentGkId: string;
-    selectedCategory: EventCategory;
-    selectedAction: string | null;
     selectedZone: ZoneType | null;
     selectedTarget?: number;
     isCollective: boolean;
@@ -15,11 +30,28 @@ export type EventFormState = {
     showDeleteConfirmation: boolean;
 };
 
+export type ShotEventState = BaseEventState & {
+    selectedCategory: 'Shot';
+    selectedAction: ShotResult | null;
+};
+
+export type TurnoverEventState = BaseEventState & {
+    selectedCategory: 'Turnover';
+    selectedAction: TurnoverType | null;
+};
+
+export type SanctionEventState = BaseEventState & {
+    selectedCategory: 'Sanction';
+    selectedAction: SanctionType | null;
+};
+
+export type EventFormState = ShotEventState | TurnoverEventState | SanctionEventState;
+
 export type EventFormAction =
     | { type: 'selectPlayer'; playerId: string }
     | { type: 'selectOpponentGk'; playerId: string }
     | { type: 'selectCategory'; category: EventCategory }
-    | { type: 'selectAction'; action: string | null }
+    | { type: 'selectAction'; action: ShotResult | TurnoverType | SanctionType | null }
     | { type: 'selectZone'; zone: ZoneType | null }
     | { type: 'selectTarget'; target?: number }
     | { type: 'toggleCollective'; value: boolean }
@@ -27,7 +59,8 @@ export type EventFormAction =
     | { type: 'toggleCounterAttack'; value: boolean }
     | { type: 'resetAfterSave'; resetPlayer: boolean }
     | { type: 'openDelete' }
-    | { type: 'closeDelete' };
+    | { type: 'closeDelete' }
+    | { type: 'replaceState'; state: EventFormState };
 
 type InitializeParams = {
     event?: MatchEvent | null;
@@ -37,36 +70,65 @@ type InitializeParams = {
     };
 };
 
-const mustHaveOpposition = (state: EventFormState) =>
-    (state.selectedCategory === 'Sanction' && state.selectedAction === 'Foul') ||
-    (state.selectedCategory === 'Turnover' && state.selectedAction === 'Offensive Foul');
+type FormRule = (state: EventFormState) => EventFormState;
 
-const mustBeCollective = (state: EventFormState) =>
-    state.selectedCategory === 'Turnover' && state.selectedAction === 'Pass';
-
-const applyBusinessRules = (state: EventFormState): EventFormState => {
-    const next = { ...state };
-
-    if (mustHaveOpposition(next)) {
-        next.hasOpposition = true;
+const forceOppositionOnFoul: FormRule = (state) => {
+    if (
+        (state.selectedCategory === 'Sanction' && state.selectedAction === 'Foul') ||
+        (state.selectedCategory === 'Turnover' && state.selectedAction === 'Offensive Foul')
+    ) {
+        return { ...state, hasOpposition: true };
     }
+    return state;
+};
 
-    if (mustBeCollective(next)) {
-        next.isCollective = true;
+const forceCollectiveOnPass: FormRule = (state) => {
+    if (state.selectedCategory === 'Turnover' && state.selectedAction === 'Pass') {
+        return { ...state, isCollective: true };
     }
+    return state;
+};
 
-    const isPenaltyShot = next.selectedCategory === 'Shot' && next.selectedZone === '7m';
-    if (isPenaltyShot) {
-        next.isCollective = false;
-        next.hasOpposition = false;
-        next.isCounterAttack = false;
+const normalizePenaltyShot: FormRule = (state) => {
+    if (state.selectedCategory === 'Shot' && state.selectedZone === '7m') {
+        return {
+            ...state,
+            isCollective: false,
+            hasOpposition: false,
+            isCounterAttack: false,
+        };
     }
+    return state;
+};
 
-    if (next.selectedCategory !== 'Shot') {
-        next.selectedTarget = undefined;
+const clearTargetForNonShots: FormRule = (state) => {
+    if (state.selectedCategory !== 'Shot') {
+        return { ...state, selectedTarget: undefined };
     }
+    return state;
+};
 
-    return next;
+const formRules: FormRule[] = [
+    forceOppositionOnFoul,
+    forceCollectiveOnPass,
+    normalizePenaltyShot,
+    clearTargetForNonShots,
+];
+
+export const applyFormRules = (state: EventFormState): EventFormState =>
+    formRules.reduce((current, rule) => rule(current), state);
+
+const sanitizeAction = (
+    category: EventCategory,
+    action: ShotResult | TurnoverType | SanctionType | null,
+): ShotResult | TurnoverType | SanctionType | null => {
+    if (category === 'Shot') {
+        return SHOT_ACTIONS.includes(action as ShotResult) ? (action as ShotResult) : null;
+    }
+    if (category === 'Turnover') {
+        return TURNOVER_ACTIONS.includes(action as TurnoverType) ? (action as TurnoverType) : null;
+    }
+    return SANCTION_ACTIONS.includes(action as SanctionType) ? (action as SanctionType) : null;
 };
 
 export const initializeState = ({ event, initialState }: InitializeParams): EventFormState => {
@@ -74,7 +136,10 @@ export const initializeState = ({ event, initialState }: InitializeParams): Even
         selectedPlayerId: event?.playerId || initialState?.playerId || '',
         selectedOpponentGkId: initialState?.opponentGoalkeeperId || '',
         selectedCategory: (event?.category as EventCategory) || 'Shot',
-        selectedAction: event?.action || null,
+        selectedAction: sanitizeAction(
+            (event?.category as EventCategory) || 'Shot',
+            (event?.action as ShotResult | TurnoverType | SanctionType | null) || null,
+        ),
         selectedZone: event?.zone || null,
         selectedTarget: event?.goalTarget,
         isCollective: event?.isCollective ?? true,
@@ -83,7 +148,7 @@ export const initializeState = ({ event, initialState }: InitializeParams): Even
         showDeleteConfirmation: false,
     };
 
-    return applyBusinessRules(baseState);
+    return applyFormRules(baseState);
 };
 
 export const eventFormReducer = (state: EventFormState, action: EventFormAction): EventFormState => {
@@ -102,20 +167,23 @@ export const eventFormReducer = (state: EventFormState, action: EventFormAction)
             if (action.category === 'Sanction') {
                 nextState.hasOpposition = true;
             }
-            return applyBusinessRules(nextState);
+            return applyFormRules(nextState);
         }
         case 'selectAction':
-            return applyBusinessRules({ ...state, selectedAction: action.action });
+            return applyFormRules({
+                ...state,
+                selectedAction: sanitizeAction(state.selectedCategory, action.action),
+            } as EventFormState);
         case 'selectZone':
-            return applyBusinessRules({ ...state, selectedZone: action.zone });
+            return applyFormRules({ ...state, selectedZone: action.zone } as EventFormState);
         case 'selectTarget':
             return { ...state, selectedTarget: action.target };
         case 'toggleCollective':
-            return applyBusinessRules({ ...state, isCollective: action.value });
+            return applyFormRules({ ...state, isCollective: action.value } as EventFormState);
         case 'toggleOpposition':
-            return applyBusinessRules({ ...state, hasOpposition: action.value });
+            return applyFormRules({ ...state, hasOpposition: action.value } as EventFormState);
         case 'toggleCounterAttack':
-            return applyBusinessRules({ ...state, isCounterAttack: action.value });
+            return applyFormRules({ ...state, isCounterAttack: action.value } as EventFormState);
         case 'resetAfterSave': {
             const resetState: EventFormState = {
                 ...state,
@@ -133,18 +201,20 @@ export const eventFormReducer = (state: EventFormState, action: EventFormAction)
                 resetState.selectedPlayerId = '';
             }
 
-            return applyBusinessRules(resetState);
+            return applyFormRules(resetState);
         }
         case 'openDelete':
             return { ...state, showDeleteConfirmation: true };
         case 'closeDelete':
             return { ...state, showDeleteConfirmation: false };
+        case 'replaceState':
+            return applyFormRules(action.state);
         default:
             return state;
     }
 };
 
-export const hasGoalTarget = (category: EventCategory, action: string | null) => {
+export const hasGoalTarget = (category: EventCategory, action: ShotResult | null) => {
     if (category !== 'Shot') return false;
     return !['Miss', 'Post', 'Block'].includes(action || '');
 };

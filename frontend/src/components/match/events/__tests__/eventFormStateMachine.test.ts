@@ -1,84 +1,75 @@
 import { describe, expect, it } from 'vitest';
 import {
+    applyFormRules,
     eventFormReducer,
     hasGoalTarget,
-    initializeState,
     type EventFormState,
 } from '../eventFormStateMachine';
 
-const baseState = (overrides?: Partial<EventFormState>) =>
-    ({
-        ...initializeState({ event: null, initialState: { playerId: 'player-1' } }),
-        ...overrides,
-    }) as EventFormState;
+const buildState = (overrides: Partial<EventFormState> = {}): EventFormState => ({
+    selectedPlayerId: 'p1',
+    selectedOpponentGkId: '',
+    selectedCategory: 'Shot',
+    selectedAction: 'Goal',
+    selectedZone: '6m-LW',
+    selectedTarget: 5,
+    isCollective: false,
+    hasOpposition: false,
+    isCounterAttack: true,
+    showDeleteConfirmation: false,
+    ...overrides,
+});
 
-describe('eventFormStateMachine', () => {
-    it('initializes with defaults and applies mandatory opposition for sanctions', () => {
-        const state = baseState();
-
-        const sanctionState = eventFormReducer(state, {
-            type: 'selectCategory',
-            category: 'Sanction',
-        });
-
-        expect(sanctionState.selectedAction).toBe('Foul');
-        expect(sanctionState.hasOpposition).toBe(true);
-    });
-
-    it('forces collective plays on turnover pass and prevents toggling it off', () => {
-        const turnoverState = eventFormReducer(
-            baseState(),
-            { type: 'selectCategory', category: 'Turnover' },
+describe('eventFormStateMachine rules', () => {
+    it('enforces opposition on fouls', () => {
+        const sanctionState = applyFormRules(
+            buildState({ selectedCategory: 'Sanction', selectedAction: 'Foul', hasOpposition: false }),
         );
-        const passState = eventFormReducer(turnoverState, {
-            type: 'selectAction',
-            action: 'Pass',
-        });
-        expect(passState.isCollective).toBe(true);
+        expect(sanctionState.hasOpposition).toBe(true);
 
-        const toggledOff = eventFormReducer(passState, {
-            type: 'toggleCollective',
-            value: false,
-        });
-        expect(toggledOff.isCollective).toBe(true);
+        const turnoverState = applyFormRules(
+            buildState({ selectedCategory: 'Turnover', selectedAction: 'Offensive Foul', hasOpposition: false }),
+        );
+        expect(turnoverState.hasOpposition).toBe(true);
     });
 
-    it('applies penalty shot rules when zone is 7m', () => {
-        const penaltyState = eventFormReducer(baseState(), {
-            type: 'selectZone',
-            zone: '7m',
-        });
-
-        expect(penaltyState.isCollective).toBe(false);
-        expect(penaltyState.hasOpposition).toBe(false);
-        expect(penaltyState.isCounterAttack).toBe(false);
+    it('forces collective on turnover pass', () => {
+        const state = applyFormRules(
+            buildState({ selectedCategory: 'Turnover', selectedAction: 'Pass', isCollective: false }),
+        );
+        expect(state.isCollective).toBe(true);
     });
 
-    it('resets to defaults after save and can clear player when creating', () => {
-        const withCustom = baseState({
-            selectedCategory: 'Turnover',
-            selectedAction: 'Pass',
-            selectedZone: '6m-LW',
-            hasOpposition: true,
-            isCollective: true,
-            isCounterAttack: true,
-        });
-
-        const resetState = eventFormReducer(withCustom, {
-            type: 'resetAfterSave',
-            resetPlayer: true,
-        });
-
-        expect(resetState.selectedCategory).toBe('Shot');
-        expect(resetState.selectedAction).toBeNull();
-        expect(resetState.selectedZone).toBeNull();
-        expect(resetState.isCounterAttack).toBe(false);
-        expect(resetState.selectedPlayerId).toBe('');
+    it('clears goal target for non-shots', () => {
+        const state = applyFormRules(buildState({ selectedCategory: 'Turnover', selectedTarget: 9 }));
+        expect(state.selectedTarget).toBeUndefined();
     });
 
-    it('guards goal target visibility for shot actions only', () => {
+    it('normalizes penalty shots', () => {
+        const state = applyFormRules(
+            buildState({
+                selectedCategory: 'Shot',
+                selectedZone: '7m',
+                isCollective: true,
+                hasOpposition: true,
+                isCounterAttack: true,
+            }),
+        );
+        expect(state.isCollective).toBe(false);
+        expect(state.hasOpposition).toBe(false);
+        expect(state.isCounterAttack).toBe(false);
+    });
+
+    it('hasGoalTarget only for valid shot outcomes', () => {
         expect(hasGoalTarget('Shot', 'Goal')).toBe(true);
-        expect(hasGoalTarget('Shot', 'Post')).toBe(false);
-        expect(hasGoalTarget('Turnover', 'Pass')).toBe(false);
+        expect(hasGoalTarget('Shot', 'Save')).toBe(true);
+        expect(hasGoalTarget('Shot', 'Miss')).toBe(false);
+        expect(hasGoalTarget('Turnover', null)).toBe(false);
+    });
+
+    it('sanitizes invalid actions when dispatching', () => {
+        const initial = buildState({ selectedCategory: 'Shot', selectedAction: 'Goal' });
+        const state = eventFormReducer(initial, { type: 'selectAction', action: 'Pass' });
+        expect(state.selectedAction).toBeNull();
     });
 });

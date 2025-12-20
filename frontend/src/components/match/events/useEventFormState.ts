@@ -1,16 +1,14 @@
 import { useMemo, useReducer, useRef } from 'react';
 import type { MatchEvent, ZoneType } from '../../../types';
 import { buildEventFromForm } from './eventFormBuilder';
-import {
-    buildSanctionTypes,
-    buildShotResults,
-    buildTurnoverTypes,
-} from './ActionSelectors';
+import { buildSanctionTypes, buildShotResults, buildTurnoverTypes } from './actionOptions';
 import {
     eventFormReducer,
     hasGoalTarget,
     initializeState,
     type EventCategory,
+    type EventFormState,
+    type ShotEventState,
 } from './eventFormStateMachine';
 
 type DebugDurationEntry = {
@@ -22,13 +20,18 @@ type DebugDurationEntry = {
 
 const DEBUG_STORAGE_KEY = 'eventFormDebugDurations';
 
-const persistDebugDuration = (entry: DebugDurationEntry) => {
-    if (typeof localStorage === 'undefined') return;
+type StorageAdapter = { getItem: (key: string) => string | null; setItem: (key: string, value: string) => void };
+
+const persistDebugDuration = (
+    entry: DebugDurationEntry,
+    storage: StorageAdapter | null,
+) => {
+    if (!storage) return;
     try {
-        const raw = localStorage.getItem(DEBUG_STORAGE_KEY);
+        const raw = storage.getItem(DEBUG_STORAGE_KEY);
         const parsed: DebugDurationEntry[] = raw ? JSON.parse(raw) : [];
         parsed.push(entry);
-        localStorage.setItem(DEBUG_STORAGE_KEY, JSON.stringify(parsed));
+        storage.setItem(DEBUG_STORAGE_KEY, JSON.stringify(parsed));
     } catch {
         // Debug-only; ignore persistence errors.
     }
@@ -48,6 +51,14 @@ type UseEventFormStateParams = {
     onCancel: () => void;
     onDelete?: (eventId: string) => void;
     t: (key: string) => string;
+    deps?: Partial<{
+        clock: { now: () => number };
+        storage: {
+            getItem: (key: string) => string | null;
+            setItem: (key: string, value: string) => void;
+        };
+        logger: { log: (...args: unknown[]) => void };
+    }>;
 };
 
 export const useEventFormState = ({
@@ -61,17 +72,36 @@ export const useEventFormState = ({
     onCancel,
     onDelete,
     t,
+    deps,
 }: UseEventFormStateParams) => {
+    const initialSnapshotRef = useRef<EventFormState | null>(null);
     const [state, dispatch] = useReducer(
         eventFormReducer,
         { event, initialState },
-        initializeState,
+        (args) => {
+            const initial = initializeState(args);
+            initialSnapshotRef.current = initial;
+            return initial;
+        },
     );
     const startTimeRef = useRef<number | null>(null);
 
     const shotResults = useMemo(() => buildShotResults(t), [t]);
     const turnoverTypes = useMemo(() => buildTurnoverTypes(t), [t]);
     const sanctionTypes = useMemo(() => buildSanctionTypes(t), [t]);
+
+    const clock = deps?.clock ?? { now: () => (typeof performance !== 'undefined' ? performance.now() : Date.now()) };
+    const storage: StorageAdapter | null =
+        deps?.storage ??
+        (typeof localStorage !== 'undefined' &&
+        typeof localStorage.getItem === 'function' &&
+        typeof localStorage.setItem === 'function'
+            ? {
+                  getItem: localStorage.getItem.bind(localStorage),
+                  setItem: localStorage.setItem.bind(localStorage),
+              }
+            : null);
+    const logger = deps?.logger ?? { log: console.log };
 
     const save = async () => {
         if (locked || !state.selectedPlayerId) return;
@@ -98,7 +128,7 @@ export const useEventFormState = ({
             onSaved?.();
             dispatch({ type: 'resetAfterSave', resetPlayer: !event });
             if (startTimeRef.current) {
-                const elapsed = Math.round(performance.now() - startTimeRef.current);
+                const elapsed = Math.round(clock.now() - startTimeRef.current);
                 const debugEntry: DebugDurationEntry = {
                     category: updatedEvent.category ?? null,
                     action: updatedEvent.action ?? null,
@@ -106,8 +136,8 @@ export const useEventFormState = ({
                     savedAt: new Date().toISOString(),
                 };
                 // Quick and dirty tracing: persisted locally to compute averages later.
-                persistDebugDuration(debugEntry);
-                console.log('[EventFormDebug] timeToCreateMs', elapsed, debugEntry);
+                persistDebugDuration(debugEntry, storage);
+                logger.log('[EventFormDebug] timeToCreateMs', elapsed, debugEntry);
                 startTimeRef.current = null;
             }
         } catch (err) {
@@ -133,7 +163,10 @@ export const useEventFormState = ({
 
     const cancelDelete = () => dispatch({ type: 'closeDelete' });
 
-    const isGoalTargetVisible = hasGoalTarget(state.selectedCategory, state.selectedAction);
+    const isGoalTargetVisible = hasGoalTarget(
+        state.selectedCategory,
+        state.selectedCategory === 'Shot' ? (state as ShotEventState).selectedAction : null,
+    );
 
     return {
         state,
@@ -143,7 +176,7 @@ export const useEventFormState = ({
         isGoalTargetVisible,
         dispatchers: {
             selectPlayer: (playerId: string) => {
-                startTimeRef.current = performance.now();
+                startTimeRef.current = clock.now();
                 dispatch({ type: 'selectPlayer', playerId });
             },
             selectOpponentGk: (playerId: string) =>
@@ -157,6 +190,22 @@ export const useEventFormState = ({
             toggleOpposition: (value: boolean) => dispatch({ type: 'toggleOpposition', value }),
             toggleCounterAttack: (value: boolean) =>
                 dispatch({ type: 'toggleCounterAttack', value }),
+            resetForm: () => {
+                if (initialSnapshotRef.current) {
+                    dispatch({ type: 'replaceState', state: initialSnapshotRef.current });
+                }
+            },
+            resetFormPreservingOpponentGk: () => {
+                if (initialSnapshotRef.current) {
+                    dispatch({
+                        type: 'replaceState',
+                        state: {
+                            ...initialSnapshotRef.current,
+                            selectedOpponentGkId: state.selectedOpponentGkId,
+                        },
+                    });
+                }
+            },
             save,
             requestDelete,
             confirmDelete,

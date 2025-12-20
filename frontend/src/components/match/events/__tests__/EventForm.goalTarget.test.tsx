@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { EventForm } from '../EventForm';
 
@@ -11,7 +11,29 @@ const baseProps = {
   onDelete: vi.fn(),
 };
 
+const mockStorage = () => {
+  const store: Record<string, string> = {};
+  return {
+    getItem: vi.fn((key: string) => store[key] ?? null),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = value;
+    }),
+    removeItem: vi.fn(),
+    clear: vi.fn(() => {
+      Object.keys(store).forEach(k => delete store[k]);
+    }),
+  };
+};
+
 describe('EventForm goal target selection', () => {
+  beforeEach(() => {
+    Object.defineProperty(window, 'localStorage', {
+      value: mockStorage(),
+      writable: true,
+      configurable: true,
+    });
+  });
+
   it('preselects goal target when editing an event with goalZone/goalTarget', () => {
     render(
       <EventForm
@@ -29,13 +51,11 @@ describe('EventForm goal target selection', () => {
       />,
     );
 
-    // The first target button should be selected (aria-pressed or class check)
-    const buttons = screen.getAllByRole('button').filter(b => b.title === '');
-    const firstTarget = buttons.find(b => b.className.includes('bg-indigo-600'));
-    expect(firstTarget).toBeDefined();
+    const targetButton = screen.getByLabelText('goal-target-1');
+    expect(targetButton).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('saves the selected goal target when clicking a target cell', () => {
+  it('saves the selected goal target when clicking a target cell', async () => {
     const handleSave = vi.fn();
     const user = userEvent.setup();
     render(
@@ -60,9 +80,9 @@ describe('EventForm goal target selection', () => {
     fireEvent.click(middle);
 
     // Save
-    user.click(screen.getByRole('button', { name: /save changes/i }));
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
 
-    waitFor(() => {
+    await waitFor(() => {
       expect(handleSave).toHaveBeenCalled();
       const savedEvent = handleSave.mock.calls[0][0];
       expect(savedEvent.goalTarget).toBe(5);
