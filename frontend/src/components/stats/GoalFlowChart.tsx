@@ -149,37 +149,14 @@ export function GoalFlowChart({
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 text-indigo-600">
+                    <TrendingUp className="w-4 h-4" aria-hidden />
+                </span>
                 <div>
-                    <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 text-indigo-600">
-                            <TrendingUp className="w-4 h-4" aria-hidden />
-                        </span>
-                        <h3 className="text-lg font-semibold text-gray-800">Goal Flow & Errors</h3>
-                    </div>
+                    <h3 className="text-lg font-semibold text-gray-800">Goal Flow & Errors</h3>
                     <p className="text-sm text-gray-500">Cumulative goals per sequence, fouls received and turnovers</p>
-                </div>
-                <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-gray-600">
-                    <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-full bg-indigo-500" />
-                        {teamName || 'Your team'}
-                    </span>
-                    <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-full bg-indigo-200" />
-                        {opponentName || 'Rival'}
-                    </span>
-                    <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-full bg-red-400" />
-                        Fouls received
-                    </span>
-                    <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-full bg-slate-500" />
-                        Turnovers
-                    </span>
-                    <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-full bg-blue-500" />
-                        Saves
-                    </span>
+                    <p className="sr-only">{teamName} vs {opponentName}</p>
                 </div>
             </div>
 
