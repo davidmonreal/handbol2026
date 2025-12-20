@@ -159,7 +159,7 @@ export const EventForm = ({
     // Handlers
     const handleCategoryChange = (category: string) => {
         setSelectedCategory(category);
-        setSelectedAction(null);
+        setSelectedAction(category === 'Sanction' ? 'Foul' : null);
         setSelectedTarget(undefined);
         if (category === 'Sanction') {
             // Fouls always happen with opposition.
@@ -175,6 +175,10 @@ export const EventForm = ({
         if (selectedCategory === 'Turnover' && selectedAction === 'Pass' && !isCollective) {
             // Bad passes are always collective plays.
             setIsCollective(true);
+        }
+        if (selectedCategory === 'Turnover' && selectedAction === 'Offensive Foul' && !hasOpposition) {
+            // Offensive fouls always involve opposition.
+            setHasOpposition(true);
         }
     }, [selectedCategory, selectedAction, hasOpposition, isCollective]);
 
@@ -408,6 +412,10 @@ export const EventForm = ({
                                                 // Bad passes are always collective plays.
                                                 setIsCollective(true);
                                             }
+                                            if (type.value === 'Offensive Foul') {
+                                                // Offensive fouls always involve opposition.
+                                                setHasOpposition(true);
+                                            }
                                         }}
                                         className={`px-2 py-2.5 rounded-lg text-sm font-semibold transition-all flex flex-col items-center justify-center gap-1.5 ${selectedAction === type.value
                                             ? 'bg-indigo-500 text-white shadow-lg ring-2 ring-indigo-200'
@@ -437,8 +445,8 @@ export const EventForm = ({
                                             }
                                         }}
                                         className={`px-3 py-3 rounded-lg text-sm font-semibold transition-all text-white ${sanction.color} ${isActive
-                                            ? 'shadow-lg ring-2 ring-indigo-200'
-                                            : 'opacity-70 hover:opacity-100'
+                                            ? 'shadow-lg ring-2 ring-offset-1 ring-indigo-200 brightness-110'
+                                            : 'opacity-75 hover:opacity-95'
                                             }`}
                                     >
                                         {sanction.label}
