@@ -159,7 +159,19 @@ const MatchTracker = () => {
   }, [realTimeSecondHalfEnd]);
 
   // Keep the visible clock in sync with real time when halves are calibrated
+  const activeTeam = getActiveTeam();
+  const opponentTeam = getOpponentTeam();
+  const activeTeamLocked = isTeamLocked(activeTeamId);
+
+  // Keep the visible clock in sync with real time when halves are calibrated
   useEffect(() => {
+    // If the currently active team is unlocked, ignore existing half markers from the other team
+    // so we can restart the clock for this side without inheriting stale timestamps.
+    if (!activeTeamLocked) {
+      setTime(0);
+      return;
+    }
+
     if (!realTimeFirstHalfStart || timerStopped) return;
 
     const firstHalfDuration = realTimeFirstHalfEnd
@@ -193,14 +205,7 @@ const MatchTracker = () => {
     setTime(computeTime());
     const timer = setInterval(() => setTime(computeTime()), 1000);
     return () => clearInterval(timer);
-  }, [realTimeFirstHalfStart, realTimeFirstHalfEnd, realTimeSecondHalfStart, realTimeSecondHalfEnd, setTime, timerStopped]);
-
-  const activeTeam = getActiveTeam();
-  const opponentTeam = getOpponentTeam();
-  const activeTeamLocked = isTeamLocked(activeTeamId);
-  const homeLocked = isTeamLocked(homeTeam?.id ?? null);
-  const visitorLocked = isTeamLocked(visitorTeam?.id ?? null);
-  const bothTeamsLocked = homeLocked && visitorLocked;
+  }, [realTimeFirstHalfStart, realTimeFirstHalfEnd, realTimeSecondHalfStart, realTimeSecondHalfEnd, setTime, timerStopped, activeTeamLocked]);
 
 
   /* 
@@ -311,14 +316,16 @@ const MatchTracker = () => {
           homeTeam={homeTeam}
           visitorTeam={visitorTeam}
           homeScore={homeScore}
-          visitorScore={visitorScore}
-          time={time}
-          activeTeamId={activeTeamId}
-          onHomeScoreChange={setHomeScore}
-          onVisitorScoreChange={setVisitorScore}
+        visitorScore={visitorScore}
+        time={time}
+        activeTeamId={activeTeamId}
+        onHomeScoreChange={setHomeScore}
+        onVisitorScoreChange={setVisitorScore}
         onTeamSelect={handleTeamSelect}
         isFinished={timerStopped || !!realTimeSecondHalfEnd}
-        hideHalfControls={bothTeamsLocked}
+        // Hide half controls only when the currently selected team is locked; if the other team is unlocked,
+        // switching to it should re-enable the clock so its plays can be tracked.
+        hideHalfControls={activeTeamLocked}
         onFinishMatch={async () => {
           try {
             await fetch(`${API_BASE_URL}/api/matches/${matchId}`, {
