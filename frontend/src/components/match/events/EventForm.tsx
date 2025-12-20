@@ -48,6 +48,7 @@ interface EventFormProps {
         opponentGoalkeeperId?: string;
     };
     onSave: (event: MatchEvent, opponentGkId?: string) => void;
+    onSaved?: () => void;
     onCancel: () => void;
     onDelete?: (eventId: string) => void;
     locked?: boolean;
@@ -59,13 +60,14 @@ export const EventForm = ({
     opponentTeam,
     initialState,
     onSave,
+    onSaved,
     onCancel,
     onDelete,
     locked = false
 }: EventFormProps) => {
     const { t } = useSafeTranslation();
-    const [saveMessage, setSaveMessage] = useState<string | null>(null);
-    const saveMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [saveState, setSaveState] = useState<'idle' | 'saved'>('idle');
+    const saveStateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // State initialization
     const [selectedPlayerId, setSelectedPlayerId] = useState<string>(
@@ -103,7 +105,7 @@ export const EventForm = ({
             setIsCounterAttack(event.isCounterAttack || false);
             if (event.opponentGoalkeeperId) setSelectedOpponentGkId(event.opponentGoalkeeperId);
 
-            setSaveMessage(null);
+            setSaveState('idle');
             prevEventIdRef.current = event.id;
         } else {
             prevEventIdRef.current = null;
@@ -124,7 +126,7 @@ export const EventForm = ({
     // Clear timeout on unmount
     useEffect(() => {
         return () => {
-            if (saveMessageTimeoutRef.current) clearTimeout(saveMessageTimeoutRef.current);
+            if (saveStateTimeoutRef.current) clearTimeout(saveStateTimeoutRef.current);
         };
     }, []);
 
@@ -203,8 +205,12 @@ export const EventForm = ({
         }, { baseEvent: event || null });
 
         onSave(updatedEvent, selectedOpponentGkId);
-        setSaveMessage(t('eventForm.successMessage'));
-        if (saveMessageTimeoutRef.current) clearTimeout(saveMessageTimeoutRef.current);
+        setSaveState('saved');
+        if (saveStateTimeoutRef.current) clearTimeout(saveStateTimeoutRef.current);
+        saveStateTimeoutRef.current = setTimeout(() => {
+            setSaveState('idle');
+        }, 2500);
+        onSaved?.();
 
         // After saving a new play we reset to the most common configuration (Shot + Collective + Free + Static)
         setSelectedCategory('Shot');
@@ -217,11 +223,6 @@ export const EventForm = ({
             setSelectedZone(null);
             setSelectedTarget(undefined);
             setSelectedPlayerId('');
-
-            // Scroll to top to allow next player selection
-            setTimeout(() => {
-                formTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
         }
     };
 
@@ -546,19 +547,6 @@ export const EventForm = ({
                             {t('eventForm.deleteButton')}
                         </button>
                     )}
-                    {saveMessage && (
-                        <div
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-100 text-green-800 text-sm font-semibold border border-green-200"
-                            role="status"
-                            aria-live="polite"
-                            data-testid="save-message"
-                        >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                            {saveMessage}
-                        </div>
-                    )}
                 </div>
 
                 <div className="flex gap-2 items-center flex-wrap justify-end">
@@ -571,13 +559,21 @@ export const EventForm = ({
                     </button>
                     <button
                         onClick={handleSave}
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                            saveState === 'saved'
+                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                        }`}
                         disabled={!isPlayerSelected || locked}
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
-                        {event ? t('eventForm.saveChanges') : t('eventForm.addEvent')}
+                        {saveState === 'saved'
+                            ? t('eventForm.successMessage')
+                            : event
+                                ? t('eventForm.saveChanges')
+                                : t('eventForm.addEvent')}
                     </button>
                 </div>
             </div>

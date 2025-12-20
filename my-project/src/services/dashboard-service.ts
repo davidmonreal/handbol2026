@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import type { PrismaClient, Prisma } from '@prisma/client';
 import prisma from '../lib/prisma';
 import type { WeeklyInsightsResponse } from './insights-service';
 import { InsightsService } from './insights-service';
@@ -52,6 +52,19 @@ export interface DashboardSnapshot {
   weeklyInsights: WeeklyInsightsResponse;
 }
 
+export interface MatchRepository {
+  findPending(limit: number): Promise<DashboardMatch[]>;
+  findRecent(limit: number): Promise<DashboardMatch[]>;
+}
+
+export interface TeamRepository {
+  findMyTeams(): Promise<DashboardTeam[]>;
+}
+
+export interface InsightsPort {
+  computeWeeklyInsights(): Promise<WeeklyInsightsResponse>;
+}
+
 const parseLimit = (value: string | undefined, fallback: number) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
@@ -61,29 +74,45 @@ const parseLimit = (value: string | undefined, fallback: number) => {
 const PENDING_LIMIT = parseLimit(process.env.DASHBOARD_PENDING_MATCH_LIMIT, 10);
 const RECENT_LIMIT = parseLimit(process.env.DASHBOARD_RECENT_MATCH_LIMIT, 15);
 
+export const createPrismaMatchRepository = (client: PrismaClient = prisma): MatchRepository => ({
+  findPending: (limit: number) =>
+    client.match.findMany({
+      where: { isFinished: false },
+      select: MATCH_SELECT,
+      orderBy: { date: 'asc' },
+      take: limit,
+    }),
+  findRecent: (limit: number) =>
+    client.match.findMany({
+      where: { isFinished: true },
+      select: MATCH_SELECT,
+      orderBy: { date: 'desc' },
+      take: limit,
+    }),
+});
+
+export const createPrismaTeamRepository = (client: PrismaClient = prisma): TeamRepository => ({
+  findMyTeams: () =>
+    client.team.findMany({
+      where: { isMyTeam: true },
+      select: TEAM_SELECT,
+      orderBy: { name: 'asc' },
+    }),
+});
+
 export class DashboardService {
-  constructor(private insightsService: InsightsService = new InsightsService()) {}
+  constructor(
+    private matchRepository: MatchRepository = createPrismaMatchRepository(),
+    private teamRepository: TeamRepository = createPrismaTeamRepository(),
+    private insightsPort: InsightsPort = new InsightsService(),
+  ) {}
 
   async getSnapshot(): Promise<DashboardSnapshot> {
     const [pendingMatches, pastMatches, myTeams, weeklyInsights] = await Promise.all([
-      prisma.match.findMany({
-        where: { isFinished: false },
-        select: MATCH_SELECT,
-        orderBy: { date: 'asc' },
-        take: PENDING_LIMIT,
-      }),
-      prisma.match.findMany({
-        where: { isFinished: true },
-        select: MATCH_SELECT,
-        orderBy: { date: 'desc' },
-        take: RECENT_LIMIT,
-      }),
-      prisma.team.findMany({
-        where: { isMyTeam: true },
-        select: TEAM_SELECT,
-        orderBy: { name: 'asc' },
-      }),
-      this.insightsService.computeWeeklyInsights(),
+      this.matchRepository.findPending(PENDING_LIMIT),
+      this.matchRepository.findRecent(RECENT_LIMIT),
+      this.teamRepository.findMyTeams(),
+      this.insightsPort.computeWeeklyInsights(),
     ]);
 
     return {

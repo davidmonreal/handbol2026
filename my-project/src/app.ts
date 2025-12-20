@@ -9,7 +9,9 @@ import matchRouter from './routes/matches';
 import gameEventRouter from './routes/game-events';
 import importRouter from './routes/import.routes';
 import insightsRouter from './routes/insights';
-import dashboardRouter from './routes/dashboard';
+import { createDashboardRouter } from './routes/dashboard';
+import { DashboardService } from './services/dashboard-service';
+import { DashboardController } from './controllers/dashboard-controller';
 
 import cors from 'cors';
 
@@ -66,6 +68,9 @@ app.use('/api/teams', teamRouter);
 app.use('/api/matches', matchRouter);
 app.use('/api/game-events', gameEventRouter);
 app.use('/api/insights', insightsRouter);
+const dashboardService = new DashboardService();
+const dashboardController = new DashboardController(dashboardService);
+const dashboardRouter = createDashboardRouter({ controller: dashboardController });
 app.use('/api/dashboard', dashboardRouter);
 
 // Global error handler for body-parser errors (e.g. payload too large)

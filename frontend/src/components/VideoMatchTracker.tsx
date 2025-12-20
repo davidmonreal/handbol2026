@@ -342,6 +342,11 @@ const VideoMatchTrackerContent = () => {
                                 opponentTeam={opponentTeam || undefined}
                                 initialState={eventFormInitialState}
                                 onSave={handleSaveEvent}
+                                onSaved={() => {
+                                    if (videoPlayerRef.current) {
+                                        videoPlayerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    }
+                                }}
                                 onCancel={handleCancelEdit}
                                 onDelete={(eventId) => deleteEvent(eventId, true)}
                             />

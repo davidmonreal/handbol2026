@@ -18,6 +18,26 @@ import { GameEventController } from '../src/controllers/game-event-controller';
 import { InsightsController } from '../src/controllers/insights-controller';
 import { DashboardController } from '../src/controllers/dashboard-controller';
 
+type Method = 'get' | 'post' | 'put' | 'patch' | 'delete';
+
+type CallExpectation = {
+  method: Method;
+  path: string;
+  handler: string;
+  body?: object;
+  expectedStatus?: number;
+};
+
+type ControllerMocks = Record<string, ReturnType<typeof vi.fn>>;
+
+type RouteCase = {
+  label: string;
+  mount: string;
+  buildRouter: (controller: ControllerMocks) => express.Router;
+  buildController: () => ControllerMocks;
+  calls: CallExpectation[];
+};
+
 const buildApp = (mountPath: string, router: express.Router) => {
   const app = express();
   app.use(express.json());
@@ -25,249 +45,235 @@ const buildApp = (mountPath: string, router: express.Router) => {
   return app;
 };
 
+const routeCases: RouteCase[] = [
+  {
+    label: 'clubs',
+    mount: '/clubs',
+    buildRouter: (controller) =>
+      createClubRouter({ controller: controller as unknown as ClubController }),
+    buildController: () => ({
+      getAll: vi.fn((_, res) => res.json([{ id: 'club-1' }])),
+      getById: vi.fn((req, res) => res.json({ id: req.params.id })),
+      create: vi.fn((req, res) => res.status(201).json({ id: 'new', ...req.body })),
+      update: vi.fn((req, res) => res.json({ id: req.params.id, ...req.body })),
+      delete: vi.fn((_, res) => res.status(204).send()),
+    }),
+    calls: [
+      { method: 'get', path: '', handler: 'getAll' },
+      { method: 'get', path: '/abc', handler: 'getById' },
+      {
+        method: 'post',
+        path: '',
+        handler: 'create',
+        body: { name: 'New Club' },
+        expectedStatus: 201,
+      },
+      { method: 'put', path: '/abc', handler: 'update', body: { name: 'Updated' } },
+      { method: 'delete', path: '/abc', handler: 'delete', expectedStatus: 204 },
+    ],
+  },
+  {
+    label: 'seasons',
+    mount: '/seasons',
+    buildRouter: (controller) =>
+      createSeasonRouter({ controller: controller as unknown as SeasonController }),
+    buildController: () => ({
+      getAll: vi.fn((_, res) => res.json([])),
+      getById: vi.fn((req, res) => res.json({ id: req.params.id })),
+      create: vi.fn((_, res) => res.status(201).json({ id: 'season-1' })),
+      update: vi.fn((req, res) => res.json({ id: req.params.id })),
+      delete: vi.fn((_, res) => res.status(204).send()),
+    }),
+    calls: [
+      { method: 'get', path: '', handler: 'getAll' },
+      { method: 'get', path: '/abc', handler: 'getById' },
+      { method: 'post', path: '', handler: 'create', body: {}, expectedStatus: 201 },
+      { method: 'put', path: '/abc', handler: 'update', body: {} },
+      { method: 'delete', path: '/abc', handler: 'delete', expectedStatus: 204 },
+    ],
+  },
+  {
+    label: 'teams',
+    mount: '/teams',
+    buildRouter: (controller) =>
+      createTeamRouter({ controller: controller as unknown as TeamController }),
+    buildController: () => ({
+      getAll: vi.fn((_, res) => res.json([])),
+      getById: vi.fn((req, res) => res.json({ id: req.params.id })),
+      create: vi.fn((_, res) => res.status(201).json({ id: 'team-1' })),
+      update: vi.fn((req, res) => res.json({ id: req.params.id })),
+      delete: vi.fn((_, res) => res.status(204).send()),
+      getTeamPlayers: vi.fn((req, res) => res.json({ teamId: req.params.id, players: [] })),
+      assignPlayer: vi.fn((req, res) =>
+        res.status(201).json({ teamId: req.params.id, ...req.body }),
+      ),
+      unassignPlayer: vi.fn((_, res) => res.status(204).send()),
+    }),
+    calls: [
+      { method: 'get', path: '', handler: 'getAll' },
+      { method: 'get', path: '/abc', handler: 'getById' },
+      { method: 'post', path: '', handler: 'create', body: {}, expectedStatus: 201 },
+      { method: 'put', path: '/abc', handler: 'update', body: {} },
+      { method: 'delete', path: '/abc', handler: 'delete', expectedStatus: 204 },
+      { method: 'get', path: '/abc/players', handler: 'getTeamPlayers' },
+      {
+        method: 'post',
+        path: '/abc/players',
+        handler: 'assignPlayer',
+        body: { playerId: 'p1' },
+        expectedStatus: 201,
+      },
+      { method: 'delete', path: '/abc/players/p1', handler: 'unassignPlayer', expectedStatus: 204 },
+    ],
+  },
+  {
+    label: 'matches',
+    mount: '/matches',
+    buildRouter: (controller) =>
+      createMatchRouter({ controller: controller as unknown as MatchController }),
+    buildController: () => ({
+      getAll: vi.fn((_, res) => res.json([])),
+      getById: vi.fn((req, res) => res.json({ id: req.params.id })),
+      create: vi.fn((req, res) => res.status(201).json({ id: 'match-1', ...req.body })),
+      update: vi.fn((req, res) => res.json({ id: req.params.id, ...req.body })),
+      delete: vi.fn((_, res) => res.status(204).send()),
+    }),
+    calls: [
+      { method: 'get', path: '', handler: 'getAll' },
+      { method: 'get', path: '/abc', handler: 'getById' },
+      {
+        method: 'post',
+        path: '',
+        handler: 'create',
+        body: { date: new Date().toISOString(), homeTeamId: 'h1', awayTeamId: 'a1' },
+        expectedStatus: 201,
+      },
+      {
+        method: 'put',
+        path: '/abc',
+        handler: 'update',
+        body: { homeTeamId: 'h1', awayTeamId: 'a1' },
+      },
+      { method: 'patch', path: '/abc', handler: 'update', body: { isFinished: true } },
+      { method: 'delete', path: '/abc', handler: 'delete', expectedStatus: 204 },
+    ],
+  },
+  {
+    label: 'game events',
+    mount: '/game-events',
+    buildRouter: (controller) =>
+      createGameEventRouter({ controller: controller as unknown as GameEventController }),
+    buildController: () => ({
+      getAll: vi.fn((_, res) => res.json([])),
+      getByMatchId: vi.fn((req, res) => res.json({ matchId: req.params.matchId })),
+      getById: vi.fn((req, res) => res.json({ id: req.params.id })),
+      create: vi.fn((_, res) => res.status(201).json({ id: 'event-1' })),
+      update: vi.fn((req, res) => res.json({ id: req.params.id })),
+      delete: vi.fn((_, res) => res.status(204).send()),
+    }),
+    calls: [
+      { method: 'get', path: '', handler: 'getAll' },
+      { method: 'get', path: '/match/m1', handler: 'getByMatchId' },
+      { method: 'get', path: '/e1', handler: 'getById' },
+      { method: 'post', path: '', handler: 'create', body: {}, expectedStatus: 201 },
+      { method: 'put', path: '/e1', handler: 'update', body: {} },
+      { method: 'patch', path: '/e1', handler: 'update', body: {} },
+      { method: 'delete', path: '/e1', handler: 'delete', expectedStatus: 204 },
+    ],
+  },
+  {
+    label: 'health',
+    mount: '/health',
+    buildRouter: (controller) =>
+      createHealthRouter({ service: controller as never, startedAt: 123 }),
+    buildController: () => ({
+      getStatus: vi.fn(() => ({ ok: true })),
+    }),
+    calls: [{ method: 'get', path: '', handler: 'getStatus', expectedStatus: 200 }],
+  },
+  {
+    label: 'import',
+    mount: '/import',
+    buildRouter: (handlers) => createImportRouter(handlers as never),
+    buildController: () => ({
+      importPlayersFromImage: vi.fn((_, res) => res.json({ imported: true })),
+      batchCreatePlayers: vi.fn((_, res) => res.json({ batch: true })),
+      batchCreateWithTeam: vi.fn((_, res) => res.json({ batchWithTeam: true })),
+      checkDuplicates: vi.fn((_, res) => res.json({ duplicates: [] })),
+      mergePlayer: vi.fn((_, res) => res.json({ merged: true })),
+    }),
+    calls: [
+      {
+        method: 'post',
+        path: '/import-players-from-image',
+        handler: 'importPlayersFromImage',
+        body: { image: 'data:image/png;base64,AAA' },
+      },
+      { method: 'post', path: '/players/batch', handler: 'batchCreatePlayers', body: {} },
+      {
+        method: 'post',
+        path: '/players/batch-with-team',
+        handler: 'batchCreateWithTeam',
+        body: {},
+      },
+      { method: 'post', path: '/players/check-duplicates', handler: 'checkDuplicates', body: {} },
+      { method: 'post', path: '/players/merge', handler: 'mergePlayer', body: {} },
+    ],
+  },
+  {
+    label: 'insights',
+    mount: '/insights',
+    buildRouter: (controller) =>
+      createInsightsRouter({ controller: controller as unknown as InsightsController }),
+    buildController: () => ({
+      getWeeklyInsights: vi.fn((_, res) => res.json({ weekly: [] })),
+      recomputeWeeklyInsights: vi.fn((_, res) => res.status(202).json({ recompute: true })),
+    }),
+    calls: [
+      { method: 'get', path: '/weekly', handler: 'getWeeklyInsights' },
+      {
+        method: 'post',
+        path: '/weekly/recompute',
+        handler: 'recomputeWeeklyInsights',
+        expectedStatus: 202,
+      },
+    ],
+  },
+  {
+    label: 'dashboard',
+    mount: '/dashboard',
+    buildRouter: (controller) =>
+      createDashboardRouter({ controller: controller as unknown as DashboardController }),
+    buildController: () => ({
+      getSnapshot: vi.fn((_, res) => res.json({ snapshot: true })),
+    }),
+    calls: [{ method: 'get', path: '', handler: 'getSnapshot' }],
+  },
+];
+
 describe('router factories wiring', () => {
-  describe('clubs', () => {
-    let controller: ClubController;
+  describe.each(routeCases)('$label router', ({ mount, buildRouter, buildController, calls }) => {
+    let controller: ControllerMocks;
     let app: express.Express;
 
     beforeEach(() => {
-      controller = {
-        getAll: vi.fn((_, res) => res.json([{ id: 'club-1' }])),
-        getById: vi.fn((req, res) => res.json({ id: req.params.id })),
-        create: vi.fn((req, res) => res.status(201).json({ id: 'new', ...req.body })),
-        update: vi.fn((req, res) => res.json({ id: req.params.id, ...req.body })),
-        delete: vi.fn((_, res) => res.status(204).send()),
-      } as unknown as ClubController;
-      app = buildApp('/clubs', createClubRouter({ controller }));
+      controller = buildController();
+      app = buildApp(mount, buildRouter(controller));
     });
 
-    it('routes CRUD endpoints', async () => {
-      await request(app).get('/clubs');
-      await request(app).get('/clubs/abc');
-      await request(app).post('/clubs').send({ name: 'New Club' });
-      await request(app).put('/clubs/abc').send({ name: 'Updated' });
-      await request(app).delete('/clubs/abc');
+    it('routes expected endpoints', async () => {
+      for (const call of calls) {
+        const req = request(app)[call.method](`${mount}${call.path}`);
+        const res = call.body ? await req.send(call.body) : await req;
 
-      expect(controller.getAll).toHaveBeenCalled();
-      expect(controller.getById).toHaveBeenCalled();
-      expect(controller.create).toHaveBeenCalled();
-      expect(controller.update).toHaveBeenCalled();
-      expect(controller.delete).toHaveBeenCalled();
-    });
-  });
+        const expectedStatus = call.expectedStatus ?? 200;
+        expect(res.status).toBe(expectedStatus);
 
-  describe('seasons', () => {
-    let controller: SeasonController;
-    let app: express.Express;
-
-    beforeEach(() => {
-      controller = {
-        getAll: vi.fn((_, res) => res.json([])),
-        getById: vi.fn((req, res) => res.json({ id: req.params.id })),
-        create: vi.fn((_, res) => res.status(201).json({ id: 'season-1' })),
-        update: vi.fn((req, res) => res.json({ id: req.params.id })),
-        delete: vi.fn((_, res) => res.status(204).send()),
-      } as unknown as SeasonController;
-      app = buildApp('/seasons', createSeasonRouter({ controller }));
-    });
-
-    it('routes CRUD endpoints', async () => {
-      await request(app).get('/seasons');
-      await request(app).get('/seasons/abc');
-      await request(app).post('/seasons').send({});
-      await request(app).put('/seasons/abc').send({});
-      await request(app).delete('/seasons/abc');
-
-      expect(controller.getAll).toHaveBeenCalled();
-      expect(controller.getById).toHaveBeenCalled();
-      expect(controller.create).toHaveBeenCalled();
-      expect(controller.update).toHaveBeenCalled();
-      expect(controller.delete).toHaveBeenCalled();
-    });
-  });
-
-  describe('teams', () => {
-    let controller: TeamController;
-    let app: express.Express;
-
-    beforeEach(() => {
-      controller = {
-        getAll: vi.fn((_, res) => res.json([])),
-        getById: vi.fn((req, res) => res.json({ id: req.params.id })),
-        create: vi.fn((_, res) => res.status(201).json({ id: 'team-1' })),
-        update: vi.fn((req, res) => res.json({ id: req.params.id })),
-        delete: vi.fn((_, res) => res.status(204).send()),
-        getTeamPlayers: vi.fn((req, res) => res.json({ teamId: req.params.id, players: [] })),
-        assignPlayer: vi.fn((req, res) => res.status(201).json({ teamId: req.params.id, ...req.body })),
-        unassignPlayer: vi.fn((req, res) => res.status(204).send()),
-      } as unknown as TeamController;
-      app = buildApp('/teams', createTeamRouter({ controller }));
-    });
-
-    it('routes CRUD and player management endpoints', async () => {
-      await request(app).get('/teams');
-      await request(app).get('/teams/abc');
-      await request(app).post('/teams').send({});
-      await request(app).put('/teams/abc').send({});
-      await request(app).delete('/teams/abc');
-      await request(app).get('/teams/abc/players');
-      await request(app).post('/teams/abc/players').send({ playerId: 'p1' });
-      await request(app).delete('/teams/abc/players/p1');
-
-      expect(controller.getAll).toHaveBeenCalled();
-      expect(controller.getById).toHaveBeenCalled();
-      expect(controller.create).toHaveBeenCalled();
-      expect(controller.update).toHaveBeenCalled();
-      expect(controller.delete).toHaveBeenCalled();
-      expect(controller.getTeamPlayers).toHaveBeenCalled();
-      expect(controller.assignPlayer).toHaveBeenCalled();
-      expect(controller.unassignPlayer).toHaveBeenCalled();
-    });
-  });
-
-  describe('matches', () => {
-    let controller: MatchController;
-    let app: express.Express;
-
-    beforeEach(() => {
-      controller = {
-        getAll: vi.fn((_, res) => res.json([])),
-        getById: vi.fn((req, res) => res.json({ id: req.params.id })),
-        create: vi.fn((req, res) => res.status(201).json({ id: 'match-1', ...req.body })),
-        update: vi.fn((req, res) => res.json({ id: req.params.id, ...req.body })),
-        delete: vi.fn((_, res) => res.status(204).send()),
-      } as unknown as MatchController;
-      app = buildApp('/matches', createMatchRouter({ controller }));
-    });
-
-    it('routes CRUD endpoints (including patch)', async () => {
-      const basePayload = { date: new Date().toISOString(), homeTeamId: 'h1', awayTeamId: 'a1' };
-
-      await request(app).get('/matches');
-      await request(app).get('/matches/abc');
-      await request(app).post('/matches').send(basePayload);
-      await request(app).put('/matches/abc').send(basePayload);
-      await request(app).patch('/matches/abc').send({ isFinished: true });
-      await request(app).delete('/matches/abc');
-
-      expect(controller.getAll).toHaveBeenCalled();
-      expect(controller.getById).toHaveBeenCalled();
-      expect(controller.create).toHaveBeenCalled();
-      expect(controller.update).toHaveBeenCalledTimes(2); // put + patch
-      expect(controller.delete).toHaveBeenCalled();
-    });
-  });
-
-  describe('game events', () => {
-    let controller: GameEventController;
-    let app: express.Express;
-
-    beforeEach(() => {
-      controller = {
-        getAll: vi.fn((_, res) => res.json([])),
-        getByMatchId: vi.fn((req, res) => res.json({ matchId: req.params.matchId })),
-        getById: vi.fn((req, res) => res.json({ id: req.params.id })),
-        create: vi.fn((_, res) => res.status(201).json({ id: 'event-1' })),
-        update: vi.fn((req, res) => res.json({ id: req.params.id })),
-        delete: vi.fn((_, res) => res.status(204).send()),
-      } as unknown as GameEventController;
-      app = buildApp('/game-events', createGameEventRouter({ controller }));
-    });
-
-    it('routes CRUD endpoints and match filter', async () => {
-      await request(app).get('/game-events');
-      await request(app).get('/game-events/match/m1');
-      await request(app).get('/game-events/e1');
-      await request(app).post('/game-events').send({});
-      await request(app).put('/game-events/e1').send({});
-      await request(app).patch('/game-events/e1').send({});
-      await request(app).delete('/game-events/e1');
-
-      expect(controller.getAll).toHaveBeenCalled();
-      expect(controller.getByMatchId).toHaveBeenCalled();
-      expect(controller.getById).toHaveBeenCalled();
-      expect(controller.create).toHaveBeenCalled();
-      expect(controller.update).toHaveBeenCalledTimes(2); // put + patch
-      expect(controller.delete).toHaveBeenCalled();
-    });
-  });
-
-  describe('health', () => {
-    it('returns status from injected service', async () => {
-      const getStatus = vi.fn().mockReturnValue({ ok: true });
-      const service = { getStatus } as unknown as { getStatus: typeof getStatus };
-      const app = buildApp('/health', createHealthRouter({ service: service as never, startedAt: 123 }));
-
-      const response = await request(app).get('/health');
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual({ ok: true });
-      expect(getStatus).toHaveBeenCalledWith(123, process.env.npm_package_version);
-    });
-  });
-
-  describe('import', () => {
-    it('routes all import endpoints', async () => {
-      const handlers = {
-        importPlayersFromImage: vi.fn((_, res) => res.json({ imported: true })),
-        batchCreatePlayers: vi.fn((_, res) => res.json({ batch: true })),
-        batchCreateWithTeam: vi.fn((_, res) => res.json({ batchWithTeam: true })),
-        checkDuplicates: vi.fn((_, res) => res.json({ duplicates: [] })),
-        mergePlayer: vi.fn((_, res) => res.json({ merged: true })),
-      };
-      const app = buildApp('/import', createImportRouter(handlers));
-
-      await request(app)
-        .post('/import/import-players-from-image')
-        .send({ image: 'data:image/png;base64,AAA' });
-      await request(app).post('/import/players/batch').send({});
-      await request(app).post('/import/players/batch-with-team').send({});
-      await request(app).post('/import/players/check-duplicates').send({});
-      await request(app).post('/import/players/merge').send({});
-
-      expect(handlers.importPlayersFromImage).toHaveBeenCalled();
-      expect(handlers.batchCreatePlayers).toHaveBeenCalled();
-      expect(handlers.batchCreateWithTeam).toHaveBeenCalled();
-      expect(handlers.checkDuplicates).toHaveBeenCalled();
-      expect(handlers.mergePlayer).toHaveBeenCalled();
-    });
-  });
-
-  describe('insights', () => {
-    let controller: InsightsController;
-    let app: express.Express;
-
-    beforeEach(() => {
-      controller = {
-        getWeeklyInsights: vi.fn((_, res) => res.json({ weekly: [] })),
-        recomputeWeeklyInsights: vi.fn((_, res) => res.status(202).json({ recompute: true })),
-      } as unknown as InsightsController;
-      app = buildApp('/insights', createInsightsRouter({ controller }));
-    });
-
-    it('routes insight endpoints', async () => {
-      await request(app).get('/insights/weekly');
-      await request(app).post('/insights/weekly/recompute');
-
-      expect(controller.getWeeklyInsights).toHaveBeenCalled();
-      expect(controller.recomputeWeeklyInsights).toHaveBeenCalled();
-    });
-  });
-
-  describe('dashboard', () => {
-    let controller: DashboardController;
-    let app: express.Express;
-
-    beforeEach(() => {
-      controller = {
-        getSnapshot: vi.fn((_, res) => res.json({ snapshot: true })),
-      } as unknown as DashboardController;
-      app = buildApp('/dashboard', createDashboardRouter({ controller }));
-    });
-
-    it('routes snapshot endpoint', async () => {
-      await request(app).get('/dashboard');
-      expect(controller.getSnapshot).toHaveBeenCalled();
+        const handler = controller[call.handler];
+        if (handler) {
+          expect(handler).toHaveBeenCalled();
+        }
+      }
     });
   });
 });

@@ -374,6 +374,10 @@ const MatchTracker = () => {
                 opponentTeam={opponentTeam || undefined}
                 initialState={eventFormInitialState}
                 onSave={handleSaveEvent}
+                onSaved={() => {
+                  // Scroll to top for quick consecutive entries in manual tracker.
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
                 onCancel={handleCancelEdit}
                 onDelete={(eventId) => deleteEvent(eventId, true)}
                 locked={formLocked}
