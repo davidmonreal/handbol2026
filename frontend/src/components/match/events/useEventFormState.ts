@@ -1,4 +1,4 @@
-import { useMemo, useReducer } from 'react';
+import { useMemo, useReducer, useRef } from 'react';
 import type { MatchEvent, ZoneType } from '../../../types';
 import { buildEventFromForm } from './eventFormBuilder';
 import {
@@ -12,6 +12,27 @@ import {
     initializeState,
     type EventCategory,
 } from './eventFormStateMachine';
+
+type DebugDurationEntry = {
+    category: string | null;
+    action: string | null;
+    durationMs: number;
+    savedAt: string;
+};
+
+const DEBUG_STORAGE_KEY = 'eventFormDebugDurations';
+
+const persistDebugDuration = (entry: DebugDurationEntry) => {
+    if (typeof localStorage === 'undefined') return;
+    try {
+        const raw = localStorage.getItem(DEBUG_STORAGE_KEY);
+        const parsed: DebugDurationEntry[] = raw ? JSON.parse(raw) : [];
+        parsed.push(entry);
+        localStorage.setItem(DEBUG_STORAGE_KEY, JSON.stringify(parsed));
+    } catch {
+        // Debug-only; ignore persistence errors.
+    }
+};
 
 type UseEventFormStateParams = {
     event?: MatchEvent | null;
@@ -46,6 +67,7 @@ export const useEventFormState = ({
         { event, initialState },
         initializeState,
     );
+    const startTimeRef = useRef<number | null>(null);
 
     const shotResults = useMemo(() => buildShotResults(t), [t]);
     const turnoverTypes = useMemo(() => buildTurnoverTypes(t), [t]);
@@ -75,6 +97,19 @@ export const useEventFormState = ({
             onSaveMessage?.(t('eventForm.successMessage'), 'success');
             onSaved?.();
             dispatch({ type: 'resetAfterSave', resetPlayer: !event });
+            if (startTimeRef.current) {
+                const elapsed = Math.round(performance.now() - startTimeRef.current);
+                const debugEntry: DebugDurationEntry = {
+                    category: updatedEvent.category ?? null,
+                    action: updatedEvent.action ?? null,
+                    durationMs: elapsed,
+                    savedAt: new Date().toISOString(),
+                };
+                // Quick and dirty tracing: persisted locally to compute averages later.
+                persistDebugDuration(debugEntry);
+                console.log('[EventFormDebug] timeToCreateMs', elapsed, debugEntry);
+                startTimeRef.current = null;
+            }
         } catch (err) {
             onSaveMessage?.(
                 err instanceof Error ? err.message : t('dashboard.errorLoadMatches'),
@@ -107,7 +142,10 @@ export const useEventFormState = ({
         sanctionTypes,
         isGoalTargetVisible,
         dispatchers: {
-            selectPlayer: (playerId: string) => dispatch({ type: 'selectPlayer', playerId }),
+            selectPlayer: (playerId: string) => {
+                startTimeRef.current = performance.now();
+                dispatch({ type: 'selectPlayer', playerId });
+            },
             selectOpponentGk: (playerId: string) =>
                 dispatch({ type: 'selectOpponentGk', playerId }),
             selectCategory: (category: EventCategory) =>
