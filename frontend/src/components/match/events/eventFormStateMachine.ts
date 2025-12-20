@@ -45,7 +45,7 @@ const mustBeCollective = (state: EventFormState) =>
     state.selectedCategory === 'Turnover' && state.selectedAction === 'Pass';
 
 const applyBusinessRules = (state: EventFormState): EventFormState => {
-    let next = { ...state };
+    const next = { ...state };
 
     if (mustHaveOpposition(next)) {
         next.hasOpposition = true;

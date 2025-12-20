@@ -22,6 +22,7 @@
 - Naming: `camelCase` for variables/functions, `PascalCase` for types/classes, `UPPER_SNAKE_CASE` for constants.
 - File names: `kebab-case.ts` (e.g., `user-service.ts`); index files allowed for small barrels.
 - Imports: relative within `src/`; avoid deep relative chains by reorganizing modules rather than path aliases.
+- `const` per defecte; fes servir `let` només quan necessitis reassignar la referència (encara que mutis les propietats).
 
 ## Validation, Typing, and Routing
 
