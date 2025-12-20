@@ -50,7 +50,7 @@ export const assertSecondHalfStartedIfNeeded = (
 
 export const getScorePatchForGoal = (
   match: Match,
-  event: CreateGameEventInput | { teamId: string; subtype?: string; type: string },
+  event: CreateGameEventInput | { teamId: string; subtype?: string | null; type: string },
   direction: 1 | -1,
 ): Partial<Match> | null => {
   if (event.type !== 'Shot' || event.subtype !== 'Goal') return null;

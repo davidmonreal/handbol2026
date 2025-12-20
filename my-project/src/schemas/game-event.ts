@@ -13,7 +13,7 @@ export const TURNOVER_SUBTYPES = [
 ] as const;
 export const SANCTION_TYPES = ['Foul', 'Yellow', '2min', 'Red', 'Blue Card'] as const;
 
-const eventTypeSchema = z.enum(EVENT_TYPES, { required_error: 'type is required' });
+const eventTypeSchema = z.enum(EVENT_TYPES);
 const shotSubtypeSchema = z.enum(SHOT_SUBTYPES);
 const turnoverSubtypeSchema = z.enum(TURNOVER_SUBTYPES);
 const sanctionTypeSchema = z.enum(SANCTION_TYPES);

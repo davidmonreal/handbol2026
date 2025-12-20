@@ -97,7 +97,11 @@ export class GameEventService {
 
     // If it was a goal, recalculate match score
     if (shouldUpdateScore && event && match) {
-      const patch = getScorePatchForGoal(match, event, -1);
+      const patch = getScorePatchForGoal(
+        match,
+        { ...event, subtype: event.subtype ?? undefined },
+        -1,
+      );
       if (patch) {
         await this.matchRepository.update(match.id, patch);
       }
