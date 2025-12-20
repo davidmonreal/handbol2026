@@ -3,21 +3,31 @@ import { TeamRepository } from '../repositories/team-repository';
 import { TeamService } from '../services/team-service';
 import { TeamController } from '../controllers/team-controller';
 
-const router = Router();
-const teamRepository = new TeamRepository();
-const teamService = new TeamService(teamRepository);
-const teamController = new TeamController(teamService);
+type TeamRouterDeps = {
+  controller?: TeamController;
+  service?: TeamService;
+  repository?: TeamRepository;
+};
 
-// Team CRUD
-router.get('/', teamController.getAll);
-router.get('/:id', teamController.getById);
-router.post('/', teamController.create);
-router.put('/:id', teamController.update);
-router.delete('/:id', teamController.delete);
+export function createTeamRouter(deps: TeamRouterDeps = {}): Router {
+  const router = Router();
 
-// Player management
-router.get('/:id/players', teamController.getTeamPlayers);
-router.post('/:id/players', teamController.assignPlayer);
-router.delete('/:id/players/:playerId', teamController.unassignPlayer);
+  const controller =
+    deps.controller ?? new TeamController(deps.service ?? new TeamService(deps.repository ?? new TeamRepository()));
 
-export default router;
+  // Team CRUD
+  router.get('/', controller.getAll);
+  router.get('/:id', controller.getById);
+  router.post('/', controller.create);
+  router.put('/:id', controller.update);
+  router.delete('/:id', controller.delete);
+
+  // Player management
+  router.get('/:id/players', controller.getTeamPlayers);
+  router.post('/:id/players', controller.assignPlayer);
+  router.delete('/:id/players/:playerId', controller.unassignPlayer);
+
+  return router;
+}
+
+export default createTeamRouter();

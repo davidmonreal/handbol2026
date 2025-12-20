@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PlayerService } from '../services/player-service';
 import { PlayerRepository } from '../repositories/player-repository';
 import prisma from '../lib/prisma';
+import { batchPlayersSchema, batchPlayersWithTeamSchema } from '../schemas/player-batch';
 
 const playerRepository = new PlayerRepository();
 const playerService = new PlayerService(playerRepository);
@@ -14,8 +15,8 @@ export async function batchCreatePlayers(req: Request, res: Response) {
       return res.status(400).json({ error: 'Players array is required' });
     }
 
-    const createdPlayers = [];
-    const errors = [];
+    const createdPlayers: unknown[] = [];
+    const errors: { player: unknown; error: string }[] = [];
 
     for (const playerData of players) {
       try {
@@ -58,12 +59,12 @@ export async function batchCreateWithTeam(req: Request, res: Response) {
       return res.status(400).json({ error: 'Players array is required' });
     }
 
-    if (!teamId) {
+    if (!teamId || typeof teamId !== 'string') {
       return res.status(400).json({ error: 'teamId is required' });
     }
 
-    const createdPlayers = [];
-    const errors = [];
+    const createdPlayers: unknown[] = [];
+    const errors: { player: unknown; error: string }[] = [];
 
     for (const playerData of players) {
       try {

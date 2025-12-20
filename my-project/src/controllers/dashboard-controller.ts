@@ -3,7 +3,8 @@ import { DashboardService } from '../services/dashboard-service';
 
 const CACHE_SECONDS = (() => {
   const parsed = Number(process.env.DASHBOARD_CACHE_SECONDS);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 60;
+  // Default to no cache so deletes/updates show up immediately on the dashboard.
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
 })();
 
 const STALE_SECONDS = (() => {
@@ -19,12 +20,12 @@ export class DashboardController {
   async getSnapshot(req: Request, res: Response) {
     try {
       const snapshot = await this.service.getSnapshot();
-      if (CACHE_SECONDS > 0) {
-        res.set(
-          'Cache-Control',
-          `public, s-maxage=${CACHE_SECONDS}, stale-while-revalidate=${STALE_SECONDS}`,
-        );
-      }
+      res.set(
+        'Cache-Control',
+        CACHE_SECONDS > 0
+          ? `public, s-maxage=${CACHE_SECONDS}, stale-while-revalidate=${STALE_SECONDS}`
+          : 'no-store',
+      );
       res.json(snapshot);
     } catch (error) {
       console.error('Error building dashboard snapshot:', error);

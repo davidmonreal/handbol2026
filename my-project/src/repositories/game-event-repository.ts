@@ -11,11 +11,15 @@ export class GameEventRepository {
     return prisma.gameEvent.findMany({
       where,
       include: {
-        player: true,
+        player: {
+          select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+        },
         match: {
-          include: {
-            homeTeam: true,
-            awayTeam: true,
+          select: {
+            id: true,
+            date: true,
+            homeTeam: { select: { id: true, name: true, category: true, club: { select: { id: true, name: true } } } },
+            awayTeam: { select: { id: true, name: true, category: true, club: { select: { id: true, name: true } } } },
           },
         },
       },
@@ -27,8 +31,12 @@ export class GameEventRepository {
     return prisma.gameEvent.findMany({
       where: { matchId },
       include: {
-        player: true,
-        activeGoalkeeper: true,
+        player: {
+          select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+        },
+        activeGoalkeeper: {
+          select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+        },
       },
       orderBy: { timestamp: 'asc' },
     });
@@ -38,8 +46,17 @@ export class GameEventRepository {
     return prisma.gameEvent.findUnique({
       where: { id },
       include: {
-        player: true,
-        match: true,
+        player: {
+          select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+        },
+        match: {
+          select: {
+            id: true,
+            date: true,
+            homeTeamId: true,
+            awayTeamId: true,
+          },
+        },
       },
     });
   }

@@ -18,12 +18,20 @@ export class TeamRepository {
   async findById(id: string): Promise<Team | null> {
     return prisma.team.findUnique({
       where: { id },
-      include: {
-        club: true,
-        season: true,
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        clubId: true,
+        seasonId: true,
+        isMyTeam: true,
+        club: { select: { id: true, name: true } },
+        season: { select: { id: true, name: true } },
         players: {
-          include: {
-            player: true,
+          select: {
+            player: {
+              select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+            },
           },
         },
       },
@@ -42,12 +50,20 @@ export class TeamRepository {
         ...data,
         isMyTeam: data.isMyTeam ?? false,
       },
-      include: {
-        club: true,
-        season: true,
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        clubId: true,
+        seasonId: true,
+        isMyTeam: true,
+        club: { select: { id: true, name: true } },
+        season: { select: { id: true, name: true } },
         players: {
-          include: {
-            player: true,
+          select: {
+            player: {
+              select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+            },
           },
         },
       },
@@ -67,12 +83,20 @@ export class TeamRepository {
     return prisma.team.update({
       where: { id },
       data,
-      include: {
-        club: true,
-        season: true,
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        clubId: true,
+        seasonId: true,
+        isMyTeam: true,
+        club: { select: { id: true, name: true } },
+        season: { select: { id: true, name: true } },
         players: {
-          include: {
-            player: true,
+          select: {
+            player: {
+              select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+            },
           },
         },
       },
@@ -116,9 +140,13 @@ export class TeamRepository {
         playerId,
         role,
       },
-      include: {
-        player: true,
-        team: true,
+      select: {
+        id: true,
+        teamId: true,
+        playerId: true,
+        role: true,
+        player: { select: { id: true, name: true, number: true } },
+        team: { select: { id: true, name: true } },
       },
     });
   }

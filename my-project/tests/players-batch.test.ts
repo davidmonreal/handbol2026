@@ -7,6 +7,7 @@ import {
 } from '../src/controllers/players.batch.controller';
 import prisma from '../src/lib/prisma';
 import { Handedness } from '@prisma/client';
+import { makePlayerPayload } from './factories/player';
 
 // Types for test mocks
 interface MockPlayer {
@@ -113,7 +114,9 @@ describe('Batch Player Creation (Player Import)', () => {
         mockPlayer as unknown as Awaited<ReturnType<typeof prisma.player.create>>,
       );
 
-      const playersWithHandedness = [{ name: 'Pol Martínez', number: 9, handedness: 'LEFT' }];
+      const playersWithHandedness = [
+        makePlayerPayload({ name: 'Pol Martínez', number: 9, handedness: 'LEFT' }),
+      ];
 
       const response = await request(app)
         .post('/api/players/batch')
@@ -299,7 +302,7 @@ describe('Batch Player Creation (Player Import)', () => {
       );
 
       const playersWithMissingName = [
-        { number: 7 }, // Missing name - but will get default handedness
+        { ...makePlayerPayload({ number: 7 }), name: undefined as unknown as string },
       ];
 
       const response = await request(app)

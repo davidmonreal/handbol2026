@@ -4,7 +4,12 @@ import prisma from '../lib/prisma';
 export class PlayerRepository {
   async findAll(): Promise<Player[]> {
     return prisma.player.findMany({
-      include: {
+      select: {
+        id: true,
+        name: true,
+        number: true,
+        handedness: true,
+        isGoalkeeper: true,
         teams: {
           select: {
             team: {
@@ -12,9 +17,7 @@ export class PlayerRepository {
                 id: true,
                 name: true,
                 category: true,
-                club: {
-                  select: { id: true, name: true },
-                },
+                club: { select: { id: true, name: true } },
               },
             },
           },
@@ -66,7 +69,12 @@ export class PlayerRepository {
     const { skip, take, search, clubId } = params;
     return prisma.player.findMany({
       where: this.buildSearchWhere({ search, clubId }),
-      include: {
+      select: {
+        id: true,
+        name: true,
+        number: true,
+        handedness: true,
+        isGoalkeeper: true,
         teams: {
           select: {
             team: {
@@ -74,9 +82,7 @@ export class PlayerRepository {
                 id: true,
                 name: true,
                 category: true,
-                club: {
-                  select: { id: true, name: true },
-                },
+                club: { select: { id: true, name: true } },
               },
             },
           },
@@ -97,12 +103,20 @@ export class PlayerRepository {
   async findById(id: string): Promise<Player | null> {
     return prisma.player.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        number: true,
+        handedness: true,
+        isGoalkeeper: true,
         teams: {
-          include: {
+          select: {
             team: {
-              include: {
-                club: true,
+              select: {
+                id: true,
+                name: true,
+                category: true,
+                club: { select: { id: true, name: true } },
               },
             },
           },

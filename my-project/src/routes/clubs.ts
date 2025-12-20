@@ -3,15 +3,25 @@ import { ClubRepository } from '../repositories/club-repository';
 import { ClubService } from '../services/club-service';
 import { ClubController } from '../controllers/club-controller';
 
-const router = Router();
-const clubRepository = new ClubRepository();
-const clubService = new ClubService(clubRepository);
-const clubController = new ClubController(clubService);
+type ClubRouterDeps = {
+  controller?: ClubController;
+  service?: ClubService;
+  repository?: ClubRepository;
+};
 
-router.get('/', clubController.getAll);
-router.get('/:id', clubController.getById);
-router.post('/', clubController.create);
-router.put('/:id', clubController.update);
-router.delete('/:id', clubController.delete);
+export function createClubRouter(deps: ClubRouterDeps = {}): Router {
+  const router = Router();
 
-export default router;
+  const controller =
+    deps.controller ?? new ClubController(deps.service ?? new ClubService(deps.repository ?? new ClubRepository()));
+
+  router.get('/', controller.getAll);
+  router.get('/:id', controller.getById);
+  router.post('/', controller.create);
+  router.put('/:id', controller.update);
+  router.delete('/:id', controller.delete);
+
+  return router;
+}
+
+export default createClubRouter();

@@ -1,6 +1,16 @@
 import { Player } from '@prisma/client';
 import { BaseService } from './base-service';
 import { PlayerRepository } from '../repositories/player-repository';
+import { createPlayerSchema, updatePlayerSchema, CreatePlayerInput, UpdatePlayerInput } from '../schemas/player';
+import { ZodError } from 'zod';
+
+const HAND_MESSAGE = 'Handedness must be LEFT or RIGHT';
+
+function mapPlayerIssue(issue: { path?: (string | number)[]; message?: string } | undefined) {
+  // Normalize Zod issues to stable business-facing messages used by tests/clients
+  if (issue?.path?.[0] === 'handedness') return HAND_MESSAGE;
+  return issue?.message ?? 'Invalid player payload';
+}
 
 export class PlayerService extends BaseService<Player> {
   private playerRepository: PlayerRepository;
@@ -23,34 +33,30 @@ export class PlayerService extends BaseService<Player> {
     return this.playerRepository.count(params);
   }
 
-  // Override create to add business logic validation
-  async create(data: Omit<Player, 'id'>): Promise<Player> {
-    // Validation: allow unknown dorsals as 0, otherwise must be positive
-    if (data.number < 0) {
-      throw new Error('Player number must be zero or positive');
+  async create(data: CreatePlayerInput): Promise<Player> {
+    let payload;
+    try {
+      payload = createPlayerSchema.parse(data);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw new Error(mapPlayerIssue(error.issues[0]));
+      }
+      throw error;
     }
-
-    // Validation: handedness must be LEFT or RIGHT
-    if (!['LEFT', 'RIGHT'].includes(data.handedness)) {
-      throw new Error('Handedness must be LEFT or RIGHT');
-    }
-
-    return super.create(data);
+    return super.create(payload);
   }
 
-  // Override update to add business logic validation
-  async update(id: string, data: Partial<Omit<Player, 'id'>>): Promise<Player> {
-    // Validation: allow unknown dorsals as 0, otherwise must be positive
-    if (data.number !== undefined && data.number < 0) {
-      throw new Error('Player number must be zero or positive');
+  async update(id: string, data: UpdatePlayerInput): Promise<Player> {
+    let payload;
+    try {
+      payload = updatePlayerSchema.parse(data);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw new Error(mapPlayerIssue(error.issues[0]));
+      }
+      throw error;
     }
-
-    // Validation: handedness must be LEFT or RIGHT if provided
-    if (data.handedness && !['LEFT', 'RIGHT'].includes(data.handedness)) {
-      throw new Error('Handedness must be LEFT or RIGHT');
-    }
-
-    return this.repository.update(id, data);
+    return this.repository.update(id, payload);
   }
 
   async delete(id: string): Promise<Player> {

@@ -4,31 +4,48 @@ import { GameEventService } from '../services/game-event-service';
 import { GameEventRepository } from '../repositories/game-event-repository';
 import { MatchRepository } from '../repositories/match-repository';
 
-const router = Router();
-const repository = new GameEventRepository();
-const matchRepository = new MatchRepository();
-const service = new GameEventService(repository, matchRepository);
-const controller = new GameEventController(service);
+type GameEventRouterDeps = {
+  controller?: GameEventController;
+  service?: GameEventService;
+  repository?: GameEventRepository;
+  matchRepository?: MatchRepository;
+};
 
-// Get all game events
-router.get('/', controller.getAll);
+export function createGameEventRouter(deps: GameEventRouterDeps = {}): Router {
+  const router = Router();
 
-// Get game events by match ID
-router.get('/match/:matchId', controller.getByMatchId);
+  const controller =
+    deps.controller ??
+    new GameEventController(
+      deps.service ??
+        new GameEventService(
+          deps.repository ?? new GameEventRepository(),
+          deps.matchRepository ?? new MatchRepository(),
+        ),
+    );
 
-// Get single game event
-router.get('/:id', controller.getById);
+  // Get all game events
+  router.get('/', controller.getAll);
 
-// Create game event
-router.post('/', controller.create);
+  // Get game events by match ID
+  router.get('/match/:matchId', controller.getByMatchId);
 
-// Update game event (full update)
-router.put('/:id', controller.update);
+  // Get single game event
+  router.get('/:id', controller.getById);
 
-// Update game event (partial update)
-router.patch('/:id', controller.update);
+  // Create game event
+  router.post('/', controller.create);
 
-// Delete game event
-router.delete('/:id', controller.delete);
+  // Update game event (full update)
+  router.put('/:id', controller.update);
 
-export default router;
+  // Update game event (partial update)
+  router.patch('/:id', controller.update);
+
+  // Delete game event
+  router.delete('/:id', controller.delete);
+
+  return router;
+}
+
+export default createGameEventRouter();

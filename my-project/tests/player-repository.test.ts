@@ -34,7 +34,12 @@ describe('PlayerRepository', () => {
 
     // Optimized query: uses select instead of include for minimal data transfer
     expect(prisma.player.findMany).toHaveBeenCalledWith({
-      include: {
+      select: {
+        id: true,
+        name: true,
+        number: true,
+        handedness: true,
+        isGoalkeeper: true,
         teams: {
           select: {
             team: {
@@ -132,12 +137,20 @@ describe('PlayerRepository', () => {
 
     expect(prisma.player.findUnique).toHaveBeenCalledWith({
       where: { id: '1' },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        number: true,
+        handedness: true,
+        isGoalkeeper: true,
         teams: {
-          include: {
+          select: {
             team: {
-              include: {
-                club: true,
+              select: {
+                id: true,
+                name: true,
+                category: true,
+                club: { select: { id: true, name: true } },
               },
             },
           },

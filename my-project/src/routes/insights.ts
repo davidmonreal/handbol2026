@@ -2,11 +2,20 @@ import { Router } from 'express';
 import { InsightsService } from '../services/insights-service';
 import { InsightsController } from '../controllers/insights-controller';
 
-const router = Router();
-const insightsService = new InsightsService();
-const insightsController = new InsightsController(insightsService);
+type InsightsRouterDeps = {
+  controller?: InsightsController;
+  service?: InsightsService;
+};
 
-router.get('/weekly', insightsController.getWeeklyInsights);
-router.post('/weekly/recompute', insightsController.recomputeWeeklyInsights);
+export function createInsightsRouter(deps: InsightsRouterDeps = {}): Router {
+  const router = Router();
+  const controller =
+    deps.controller ?? new InsightsController(deps.service ?? new InsightsService());
 
-export default router;
+  router.get('/weekly', controller.getWeeklyInsights);
+  router.post('/weekly/recompute', controller.recomputeWeeklyInsights);
+
+  return router;
+}
+
+export default createInsightsRouter();

@@ -2,9 +2,11 @@ import { Request, Response } from 'express';
 import { Player } from '@prisma/client';
 import { BaseController } from './base-controller';
 import { PlayerService } from '../services/player-service';
+import { createPlayerSchema, updatePlayerSchema } from '../schemas/player';
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
+const HANDEDNESS_MESSAGE = 'Handedness must be LEFT or RIGHT';
 
 export class PlayerController extends BaseController<Player> {
   private playerService: PlayerService;
@@ -14,17 +16,33 @@ export class PlayerController extends BaseController<Player> {
     this.playerService = service;
   }
 
+  private parsePagination(query: Request['query']) {
+    const skip = Math.max(0, parseInt(query.skip as string) || 0);
+    const take = Math.min(
+      MAX_PAGE_SIZE,
+      Math.max(1, parseInt(query.take as string) || DEFAULT_PAGE_SIZE),
+    );
+    const search = (query.search as string) || undefined;
+    const clubId = (query.clubId as string) || undefined;
+    return { skip, take, search, clubId };
+  }
+
+  private useLegacyList(query: Request['query']) {
+    return !query.skip && !query.take && !query.search && !query.clubId;
+  }
+
+  private extractErrorMessage(issue: { path?: (string | number)[]; message?: string } | undefined) {
+    if (issue?.path?.[0] === 'handedness') return HANDEDNESS_MESSAGE;
+    return issue?.message ?? 'Invalid player payload';
+  }
+
   async getAll(req: Request, res: Response) {
     try {
-      const skip = Math.max(0, parseInt(req.query.skip as string) || 0);
-      const take = Math.min(MAX_PAGE_SIZE, Math.max(1, parseInt(req.query.take as string) || DEFAULT_PAGE_SIZE));
-      const search = (req.query.search as string) || undefined;
-      const clubId = (req.query.clubId as string) || undefined;
-
-      // If no pagination params, use legacy behavior for backwards compatibility
-      if (!req.query.skip && !req.query.take && !req.query.search && !req.query.clubId) {
+      if (this.useLegacyList(req.query)) {
         return super.getAll(req, res);
       }
+
+      const { skip, take, search, clubId } = this.parsePagination(req.query);
 
       const [data, total] = await Promise.all([
         this.playerService.getAllPaginated({ skip, take, search, clubId }),
@@ -42,37 +60,24 @@ export class PlayerController extends BaseController<Player> {
   }
 
   async create(req: Request, res: Response) {
-    const { number, handedness } = req.body;
-
-    // Specific validation
-    if (parseInt(number) < 0) {
-      return res.status(400).json({ error: 'Player number must be positive' });
+    const parsed = createPlayerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: this.extractErrorMessage(parsed.error.issues[0]),
+      });
     }
-    if (handedness && !['LEFT', 'RIGHT'].includes(handedness)) {
-      return res.status(400).json({ error: 'Handedness must be LEFT or RIGHT' });
-    }
-
-    // Data transformation
-    if (req.body.number) req.body.number = parseInt(req.body.number);
-    if (req.body.isGoalkeeper === undefined) req.body.isGoalkeeper = false;
-
+    req.body = parsed.data;
     return super.create(req, res);
   }
 
   async update(req: Request, res: Response) {
-    const { number, handedness } = req.body;
-
-    // Specific validation
-    if (number && parseInt(number) < 0) {
-      return res.status(400).json({ error: 'Player number must be positive' });
+    const parsed = updatePlayerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: this.extractErrorMessage(parsed.error.issues[0]),
+      });
     }
-    if (handedness && !['LEFT', 'RIGHT'].includes(handedness)) {
-      return res.status(400).json({ error: 'Handedness must be LEFT or RIGHT' });
-    }
-
-    // Data transformation
-    if (req.body.number) req.body.number = parseInt(req.body.number);
-
+    req.body = parsed.data;
     return super.update(req, res);
   }
 }

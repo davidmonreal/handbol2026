@@ -2,17 +2,29 @@ import { Router } from 'express';
 import { MatchRepository } from '../repositories/match-repository';
 import { MatchService } from '../services/match-service';
 import { MatchController } from '../controllers/match-controller';
+import { validateRequest } from '../middleware/validate';
+import { createMatchSchema, updateMatchSchema } from '../schemas/match';
 
-const router = Router();
-const matchRepository = new MatchRepository();
-const matchService = new MatchService(matchRepository);
-const matchController = new MatchController(matchService);
+type MatchRouterDeps = {
+  controller?: MatchController;
+  service?: MatchService;
+  repository?: MatchRepository;
+};
 
-router.get('/', matchController.getAll);
-router.get('/:id', matchController.getById);
-router.post('/', matchController.create);
-router.put('/:id', matchController.update);
-router.patch('/:id', matchController.update);
-router.delete('/:id', matchController.delete);
+export function createMatchRouter(deps: MatchRouterDeps = {}): Router {
+  const router = Router();
 
-export default router;
+  const controller =
+    deps.controller ?? new MatchController(deps.service ?? new MatchService(deps.repository ?? new MatchRepository()));
+
+  router.get('/', controller.getAll);
+  router.get('/:id', controller.getById);
+  router.post('/', validateRequest(createMatchSchema), controller.create);
+  router.put('/:id', validateRequest(updateMatchSchema), controller.update);
+  router.patch('/:id', validateRequest(updateMatchSchema), controller.update);
+  router.delete('/:id', controller.delete);
+
+  return router;
+}
+
+export default createMatchRouter();

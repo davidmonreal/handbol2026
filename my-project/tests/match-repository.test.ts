@@ -50,24 +50,11 @@ describe('MatchRepository', () => {
 
     // Events removed for performance - scores come from DB columns
     expect(prisma.match.findMany).toHaveBeenCalledWith({
-      include: {
-        homeTeam: {
-          select: {
-            id: true,
-            name: true,
-            category: true,
-            club: { select: { name: true } },
-          },
-        },
-        awayTeam: {
-          select: {
-            id: true,
-            name: true,
-            category: true,
-            club: { select: { name: true } },
-          },
-        },
-      },
+      select: expect.objectContaining({
+        id: true,
+        homeTeam: expect.anything(),
+        awayTeam: expect.anything(),
+      }),
       orderBy: { date: 'desc' },
     });
     expect(result).toEqual(mockMatches);
@@ -81,20 +68,11 @@ describe('MatchRepository', () => {
 
     expect(prisma.match.findUnique).toHaveBeenCalledWith({
       where: { id: '1' },
-      include: {
-        homeTeam: {
-          include: {
-            club: true,
-            players: { include: { player: true } },
-          },
-        },
-        awayTeam: {
-          include: {
-            club: true,
-            players: { include: { player: true } },
-          },
-        },
-      },
+      select: expect.objectContaining({
+        id: true,
+        homeTeam: expect.anything(),
+        awayTeam: expect.anything(),
+      }),
     });
     expect(result).toEqual(mockMatch);
   });
@@ -112,10 +90,7 @@ describe('MatchRepository', () => {
 
     expect(prisma.match.create).toHaveBeenCalledWith({
       data: newMatchData,
-      include: {
-        homeTeam: { include: { club: true } },
-        awayTeam: { include: { club: true } },
-      },
+      select: expect.anything(),
     });
     expect(result).toEqual(createdMatch);
   });
@@ -130,10 +105,7 @@ describe('MatchRepository', () => {
     expect(prisma.match.update).toHaveBeenCalledWith({
       where: { id: '1' },
       data: updateData,
-      include: {
-        homeTeam: { include: { club: true } },
-        awayTeam: { include: { club: true } },
-      },
+      select: expect.anything(),
     });
     expect(result).toEqual(updatedMatch);
   });

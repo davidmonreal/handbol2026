@@ -2,10 +2,19 @@ import { Router } from 'express';
 import { DashboardService } from '../services/dashboard-service';
 import { DashboardController } from '../controllers/dashboard-controller';
 
-const router = Router();
-const dashboardService = new DashboardService();
-const dashboardController = new DashboardController(dashboardService);
+type DashboardRouterDeps = {
+  controller?: DashboardController;
+  service?: DashboardService;
+};
 
-router.get('/', dashboardController.getSnapshot);
+export function createDashboardRouter(deps: DashboardRouterDeps = {}): Router {
+  const router = Router();
+  const controller =
+    deps.controller ?? new DashboardController(deps.service ?? new DashboardService());
 
-export default router;
+  router.get('/', controller.getSnapshot);
+
+  return router;
+}
+
+export default createDashboardRouter();

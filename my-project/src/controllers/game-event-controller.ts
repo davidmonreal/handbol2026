@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { GameEventService } from '../services/game-event-service';
+import { createGameEventSchema, updateGameEventSchema } from '../schemas/game-event';
 
 export class GameEventController {
   constructor(private gameEventService: GameEventService) {}
@@ -40,7 +41,13 @@ export class GameEventController {
 
   create = async (req: Request, res: Response) => {
     try {
-      const event = await this.gameEventService.create(req.body);
+      const parsed = createGameEventSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res
+          .status(400)
+          .json({ error: parsed.error.issues[0]?.message ?? 'Invalid game event payload' });
+      }
+      const event = await this.gameEventService.create(parsed.data);
       res.status(201).json(event);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create game event';
@@ -50,7 +57,13 @@ export class GameEventController {
 
   update = async (req: Request, res: Response) => {
     try {
-      const event = await this.gameEventService.update(req.params.id, req.body);
+      const parsed = updateGameEventSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res
+          .status(400)
+          .json({ error: parsed.error.issues[0]?.message ?? 'Invalid game event payload' });
+      }
+      const event = await this.gameEventService.update(req.params.id, parsed.data);
       res.json(event);
     } catch (error) {
       res.status(500).json({ error: 'Failed to update game event' });

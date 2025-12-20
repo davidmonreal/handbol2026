@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Request, Response } from 'express';
 import { TeamController } from '../src/controllers/team-controller';
 import { TeamService } from '../src/services/team-service';
+import { makeTeamPayload } from './factories/team';
 
 vi.mock('../src/services/team-service');
 
@@ -56,13 +57,7 @@ describe('TeamController', () => {
   });
 
   it('create creates a new team', async () => {
-    req.body = {
-      name: 'Team A',
-      category: 'Senior M',
-      clubId: 'c1',
-      seasonId: 's1',
-      isMyTeam: true,
-    };
+    req.body = makeTeamPayload({ isMyTeam: true, clubId: 'c1', seasonId: 's1' });
     const createdTeam = { id: '1', ...req.body };
     vi.mocked(service.create).mockResolvedValue(createdTeam);
 
@@ -74,7 +69,7 @@ describe('TeamController', () => {
   });
 
   it('create returns 400 if club not found', async () => {
-    req.body = { name: 'Team A', category: 'Senior M', clubId: 'invalid', seasonId: 's1' };
+    req.body = makeTeamPayload({ clubId: 'invalid', seasonId: 's1' });
     vi.mocked(service.create).mockRejectedValue(new Error('Club not found'));
 
     await controller.create(req as Request, res as Response);

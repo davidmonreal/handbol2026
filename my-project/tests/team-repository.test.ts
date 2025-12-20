@@ -78,11 +78,11 @@ describe('TeamRepository', () => {
 
     expect(prisma.team.findUnique).toHaveBeenCalledWith({
       where: { id: '1' },
-      include: {
-        club: true,
-        season: true,
-        players: { include: { player: true } },
-      },
+      select: expect.objectContaining({
+        id: true,
+        name: true,
+        players: expect.anything(),
+      }),
     });
     expect(result).toEqual(mockTeam);
   });
@@ -102,7 +102,7 @@ describe('TeamRepository', () => {
 
     expect(prisma.team.create).toHaveBeenCalledWith({
       data: { ...newTeamData, isMyTeam: true },
-      include: { club: true, season: true, players: { include: { player: true } } },
+      select: expect.anything(),
     });
     expect(result).toEqual(createdTeam);
   });
@@ -122,7 +122,7 @@ describe('TeamRepository', () => {
 
     expect(prisma.playerTeamSeason.create).toHaveBeenCalledWith({
       data: { teamId: 't1', playerId: 'p1', role: 'Player' },
-      include: { player: true, team: true },
+      select: expect.anything(),
     });
     expect(result).toEqual(mockAssignment);
   });

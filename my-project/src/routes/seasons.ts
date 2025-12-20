@@ -4,16 +4,29 @@ import { TeamRepository } from '../repositories/team-repository';
 import { SeasonService } from '../services/season-service';
 import { SeasonController } from '../controllers/season-controller';
 
-const router = Router();
-const seasonRepository = new SeasonRepository();
-const teamRepository = new TeamRepository();
-const seasonService = new SeasonService(seasonRepository, teamRepository);
-const seasonController = new SeasonController(seasonService);
+type SeasonRouterDeps = {
+  controller?: SeasonController;
+  service?: SeasonService;
+  seasonRepository?: SeasonRepository;
+  teamRepository?: TeamRepository;
+};
 
-router.get('/', seasonController.getAll);
-router.get('/:id', seasonController.getById);
-router.post('/', seasonController.create);
-router.put('/:id', seasonController.update);
-router.delete('/:id', seasonController.delete);
+export function createSeasonRouter(deps: SeasonRouterDeps = {}): Router {
+  const router = Router();
 
-export default router;
+  const seasonRepo = deps.seasonRepository ?? new SeasonRepository();
+  const teamRepo = deps.teamRepository ?? new TeamRepository();
+  const controller =
+    deps.controller ??
+    new SeasonController(deps.service ?? new SeasonService(seasonRepo, teamRepo));
+
+  router.get('/', controller.getAll);
+  router.get('/:id', controller.getById);
+  router.post('/', controller.create);
+  router.put('/:id', controller.update);
+  router.delete('/:id', controller.delete);
+
+  return router;
+}
+
+export default createSeasonRouter();

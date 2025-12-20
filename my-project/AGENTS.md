@@ -23,6 +23,17 @@
 - File names: `kebab-case.ts` (e.g., `user-service.ts`); index files allowed for small barrels.
 - Imports: relative within `src/`; avoid deep relative chains by reorganizing modules rather than path aliases.
 
+## Validation, Typing, and Routing
+
+- Validate all external input with Zod. Schemas live in `src/schemas/` (e.g., `src/schemas/player.ts`, `src/schemas/match.ts`, `src/schemas/import.ts`). Extend there when adding new endpoints.
+- Use `validateRequest` middleware from `src/middleware/validate.ts` to parse/validate `body`/`query`/`params`; prefer `safeParse` + middleware-level errors over inline `if` checks.
+- Routes are factories under `src/routes/` exposing `createXRouter` (players, clubs, seasons, teams, matches, game-events, health, import, insights, dashboard). Inject dependencies for tests; default export wires real deps.
+- Keep controllers/services/repositories typed: reuse Prisma types at boundaries, domain DTOs in services, and Zod-inferred types from schemas when consuming request data.
+- Fes el codi llegible i curt: posa noms semàntics a helpers i dades (p.ex. `parsePagination`, `mapMatchIssue`), extreu blocs lògics repetits a funcions petites, i evita lògica inline en controllers/rutes. Reutilitza helpers en tests per mantenir els casos descriptius.
+- Quan afegeixis nova lògica d’estat (p.ex. bloqueig de partits, cronòmetres, càlcul de marcador), encapsula-la en helpers/estratègies amb nom i valida via esquemes Zod; mapeja errors a constants/strings reutilitzables per evitar literals “màgics”.
+- Per a entrades batch (imports, assignacions), valida el contenidor i després cada element amb els mateixos esquemes que els endpoints normals; no retornis 400 global per un error puntual: acumula errors per element amb missatges consistents.
+- Optimitza consultes Prisma: usa `select` per retornar només els camps necessaris (evita `include` profund) i, si cal, crea helpers/repositories específics per a vistes de lectura. Quan necessitis múltiples validacions d’existència, prefereix un sol `findMany` amb `in` o `select` acotat abans que múltiples crides. Documenta als tests les expectatives de `select`.
+
 ## Engineering Principles
 
 - Follow SOLID principles; keep modules small, cohesive, and loosely coupled.
@@ -30,6 +41,7 @@
 - All new code must include unit tests; update or add tests when modifying behavior.
 - Verify all new features are covered by tests.
 - Do not accept a feature as complete until all tests pass.
+- Add intent comments sparingly to capture why code is shaped this way (functional rationale, engineering trade-offs, chosen flows), so readers understand decisions when revisiting.
 
 ## Testing Guidelines
 
@@ -45,6 +57,37 @@
 - PRs must include: clear description, linked issue (if any), before/after notes, and steps to verify (commands, endpoints).
 - Keep PRs focused and small; include updates to docs/tests for changed behavior.
 
+## Arquitectura, SOLID i TDD
+
+To keep the project sustainable and easy to change, follow these concrete rules:
+
+1. File structure and tests alongside code
+
+- Keep tests near the code they cover. Ideal: tests next to the module (`src/module/x.ts` and `src/module/x.spec.ts` or `src/module/__tests__/x.spec.ts`). This eases refactors and ensures artifacts that change together live together.
+
+2. SOLID and design patterns
+
+- Follow SOLID to keep responsibilities clear. When a pattern improves separation of concerns or testability (e.g., Strategy to vary behaviors, Factory to create dependencies), use it and add a PR note explaining why.
+
+3. Reuse and factorization
+
+- Avoid duplication: extract common utilities/components into reusable modules. Prefer composition over inheritance whenever possible.
+
+4. TDD and coverage
+
+- Work in TDD mode: write automated tests before implementing. Cover critical units and integration flows. For new or changed areas, target high coverage (recommended 85–90% for the affected area).
+
+5. Test types and tooling
+
+- Unit tests: Vitest for frontend and backend isolated code.
+- Integration/API: Supertest + Vitest to validate routes and Prisma/DB integrations.
+- E2E: add a solution when flows require it (optional).
+- CI: ensure the pipeline runs `prisma generate` if needed and executes tests with the same setup as local (`npm ci && npm test`).
+
+6. PRs and verification
+
+- In the PR include: how to test locally, which tests were added, and a justification if a design pattern was applied. Do not close the PR until all tests pass and required coverage is met for modified files.
+
 ## Security & Configuration
 
 - Configuration via env vars (e.g., `PORT`). Use a local `.env` and never commit secrets.
@@ -56,26 +99,10 @@
 - Templates:
   - Supertest: `.github/ISSUE_TEMPLATE/millora-supertest.md`
   - Husky + lint-staged: `.github/ISSUE_TEMPLATE/millora-husky-lint-staged.md`
-- Use: on GitHub, New issue → tria la plantilla, assigna responsable, ajusta criteris d’acceptació.
-- PRs: vincula l’issue al PR (`Closes #<num>`), afegeix passos de verificació i mantén l’abast petit.
-- Tancament: el PR ha de tancar l’issue automàticament; actualitza aquesta guia si el flux canvia.
+- Use: on GitHub, New issue → pick the template, assign an owner, adjust acceptance criteria.
 
-## GameEvent Zone Derivation
+## Local Guides
 
-The `GameEvent` model includes a canonical `zone` field that is derived and persisted by the backend at create/update time. This ensures consistent zone representation across the application:
-
-- **7m (Penalty)**: events with `distance: '7M'` → `zone: '7m'` (position is intentionally omitted).
-- **6m Line**: events with `distance: '6M'` + position (e.g., LW, CB) → `zone: '6m-LW'`, `zone: '6m-CB'`, etc.
-- **9m Line**: events with `distance: '9M'` + position → `zone: '9m-LB'`, `zone: '9m-RB'`, etc.
-
-**Backend Implementation** (in `repositories/game-event-repository.ts`):
-
-- The `create()` and `update()` methods derive `zone` based on `position` and `distance` fields before persisting.
-- Special case: 7m penalties have `distance = '7M'` and `position = null` → they correctly yield `zone = '7m'`.
-
-**Frontend Usage** (in `utils/eventTransformers.ts`):
-
-- Backend now provides the canonical `zone` on all `GameEvent` responses.
-- Frontend uses `zone` directly; client-side derivation is a fallback for backward compatibility only.
-
-**Testing**: See `tests/game-event-zone.test.ts` for zone derivation tests including 7m penalties, zone updates on field changes, and null handling.
+- Carpeta `src/repositories/AGENTS.md`: instruccions específiques per optimitzar consultes (ús de `select`, evitar `include` profund, tests de `select`).
+- Carpeta `src/controllers/AGENTS.md`: validació amb Zod, mètodes curts, gestió d’errors i dependències injectades.
+- Carpeta `tests/AGENTS.md`: ús de factories, verificació de queries i wiring, cobertura de validacions i patrons de mocks.

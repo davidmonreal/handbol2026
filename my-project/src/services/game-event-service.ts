@@ -1,6 +1,7 @@
-import { GameEvent } from '@prisma/client';
+import { GameEvent, Match } from '@prisma/client';
 import { GameEventRepository } from '../repositories/game-event-repository';
 import { MatchRepository } from '../repositories/match-repository';
+import { CreateGameEventInput, UpdateGameEventInput } from '../schemas/game-event';
 
 export class GameEventService {
   constructor(
@@ -20,73 +21,76 @@ export class GameEventService {
     return this.repository.findById(id);
   }
 
-  async create(data: {
-    matchId: string;
-    timestamp: number;
-    playerId?: string;
-    teamId: string;
-    type: string;
-    subtype?: string;
-    position?: string;
-    distance?: string;
-    isCollective?: boolean;
-    goalZone?: string;
-    sanctionType?: string;
-    hasOpposition?: boolean;
-    isCounterAttack?: boolean;
-    videoTimestamp?: number;
-    activeGoalkeeperId?: string;
-  }): Promise<GameEvent> {
-    // Fetch match to check status
-    const match = await this.matchRepository.findById(data.matchId);
+  private async getMatchOrThrow(matchId: string): Promise<Match> {
+    const match = await this.matchRepository.findById(matchId);
     if (!match) {
-      throw new Error(`Match ${data.matchId} not found`);
+      throw new Error(`Match ${matchId} not found`);
     }
+    return match;
+  }
 
-    // Block new events if the team is locked
-    const isHome = data.teamId === match.homeTeamId;
-    const isAway = data.teamId === match.awayTeamId;
+  private assertTeamUnlocked(match: Match, teamId: string) {
+    const isHome = teamId === match.homeTeamId;
+    const isAway = teamId === match.awayTeamId;
     const homeLocked = (match as { homeEventsLocked?: boolean }).homeEventsLocked ?? false;
     const awayLocked = (match as { awayEventsLocked?: boolean }).awayEventsLocked ?? false;
     if ((isHome && homeLocked) || (isAway && awayLocked)) {
       throw new Error('Events are locked for this team');
     }
+  }
 
+  // For live matches we need kickoff; for video matches we need calibration timestamps.
+  private assertMatchStarted(match: Match) {
     const hasLiveStart = !!match.realTimeFirstHalfStart;
     const hasVideoStart =
       match.firstHalfVideoStart !== null && match.firstHalfVideoStart !== undefined;
     if (!hasLiveStart && !hasVideoStart) {
-      // Live matches require a kickoff timestamp; video matches rely on calibration.
       throw new Error('Match has not been started yet');
     }
+  }
 
-    // Live matches use real time (ms); video matches use calibrated video seconds.
-    const firstHalfBoundarySeconds =
-      match.realTimeFirstHalfStart && match.realTimeSecondHalfStart
+  private computeFirstHalfBoundarySeconds(match: Match): number | null {
+    return match.realTimeFirstHalfStart && match.realTimeSecondHalfStart
+      ? Math.max(
+          0,
+          Math.floor((match.realTimeSecondHalfStart - match.realTimeFirstHalfStart) / 1000),
+        )
+      : match.realTimeFirstHalfStart && match.realTimeFirstHalfEnd
         ? Math.max(
             0,
-            Math.floor((match.realTimeSecondHalfStart - match.realTimeFirstHalfStart) / 1000),
+            Math.floor((match.realTimeFirstHalfEnd - match.realTimeFirstHalfStart) / 1000),
           )
-        : match.realTimeFirstHalfStart && match.realTimeFirstHalfEnd
-          ? Math.max(
-              0,
-              Math.floor((match.realTimeFirstHalfEnd - match.realTimeFirstHalfStart) / 1000),
-            )
-          : hasVideoStart &&
-              match.secondHalfVideoStart !== null &&
-              match.secondHalfVideoStart !== undefined
-            ? Math.max(0, match.secondHalfVideoStart - (match.firstHalfVideoStart ?? 0))
-            : null;
+        : match.firstHalfVideoStart !== null &&
+            match.firstHalfVideoStart !== undefined &&
+            match.secondHalfVideoStart !== null &&
+            match.secondHalfVideoStart !== undefined
+          ? Math.max(0, match.secondHalfVideoStart - match.firstHalfVideoStart)
+          : null;
+  }
 
+  private assertSecondHalfStartedIfNeeded(
+    boundarySeconds: number | null,
+    data: { timestamp: number; teamId: string; matchId: string },
+    match: Match,
+  ) {
     if (
-      firstHalfBoundarySeconds !== null &&
-      data.timestamp > firstHalfBoundarySeconds &&
+      boundarySeconds !== null &&
+      data.timestamp > boundarySeconds &&
       !match.realTimeSecondHalfStart &&
       (match.secondHalfVideoStart === null || match.secondHalfVideoStart === undefined)
     ) {
-      // For video matches, secondHalfVideoStart is the equivalent of "second half started".
       throw new Error('Second half has not started yet');
     }
+  }
+
+  async create(data: CreateGameEventInput): Promise<GameEvent> {
+    const match = await this.getMatchOrThrow(data.matchId);
+    this.assertTeamUnlocked(match, data.teamId);
+    this.assertMatchStarted(match);
+
+    // Live matches use real time (ms); video matches use calibrated video seconds.
+    const firstHalfBoundarySeconds = this.computeFirstHalfBoundarySeconds(match);
+    this.assertSecondHalfStartedIfNeeded(firstHalfBoundarySeconds, data, match);
 
     // Only update match scores while the match is live
     const shouldUpdateScore = !match.isFinished;
@@ -107,20 +111,7 @@ export class GameEventService {
 
   async update(
     id: string,
-    data: Partial<{
-      timestamp: number;
-      playerId: string;
-      type: string;
-      subtype: string;
-      position: string;
-      distance: string;
-      isCollective: boolean;
-      goalZone: string;
-      sanctionType: string;
-      hasOpposition: boolean;
-      isCounterAttack: boolean;
-      activeGoalkeeperId: string;
-    }>,
+    data: UpdateGameEventInput,
   ): Promise<GameEvent> {
     return this.repository.update(id, data);
   }

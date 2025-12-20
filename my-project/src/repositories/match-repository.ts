@@ -6,13 +6,20 @@ export class MatchRepository {
   async findAll() {
     try {
       return await prisma.match.findMany({
-        include: {
+        select: {
+          id: true,
+          date: true,
+          homeTeamId: true,
+          awayTeamId: true,
+          homeScore: true,
+          awayScore: true,
+          isFinished: true,
           homeTeam: {
             select: {
               id: true,
               name: true,
               category: true,
-              club: { select: { name: true } },
+              club: { select: { id: true, name: true } },
             },
           },
           awayTeam: {
@@ -20,10 +27,9 @@ export class MatchRepository {
               id: true,
               name: true,
               category: true,
-              club: { select: { name: true } },
+              club: { select: { id: true, name: true } },
             },
           },
-          // Events removed - scores are in homeScore/awayScore columns
         },
         orderBy: { date: 'desc' },
       });
@@ -43,9 +49,64 @@ export class MatchRepository {
     try {
       return await prisma.match.findUnique({
         where: { id },
-        include: {
-          homeTeam: { include: { club: true, players: { include: { player: true } } } },
-          awayTeam: { include: { club: true, players: { include: { player: true } } } },
+        select: {
+          id: true,
+          date: true,
+          homeTeamId: true,
+          awayTeamId: true,
+          homeScore: true,
+          awayScore: true,
+          isFinished: true,
+          homeEventsLocked: true,
+          awayEventsLocked: true,
+          firstHalfVideoStart: true,
+          secondHalfVideoStart: true,
+          realTimeFirstHalfStart: true,
+          realTimeSecondHalfStart: true,
+          realTimeFirstHalfEnd: true,
+          realTimeSecondHalfEnd: true,
+          homeTeam: {
+            select: {
+              id: true,
+              name: true,
+              category: true,
+              club: { select: { id: true, name: true } },
+              players: {
+                select: {
+                  player: {
+                    select: {
+                      id: true,
+                      name: true,
+                      number: true,
+                      handedness: true,
+                      isGoalkeeper: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          awayTeam: {
+            select: {
+              id: true,
+              name: true,
+              category: true,
+              club: { select: { id: true, name: true } },
+              players: {
+                select: {
+                  player: {
+                    select: {
+                      id: true,
+                      name: true,
+                      number: true,
+                      handedness: true,
+                      isGoalkeeper: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       });
     } catch (error) {
@@ -63,9 +124,25 @@ export class MatchRepository {
   async create(data: { date: Date; homeTeamId: string; awayTeamId: string }): Promise<Match> {
     return prisma.match.create({
       data,
-      include: {
-        homeTeam: { include: { club: true } },
-        awayTeam: { include: { club: true } },
+      select: {
+        id: true,
+        date: true,
+        homeTeamId: true,
+        awayTeamId: true,
+        homeScore: true,
+        awayScore: true,
+        isFinished: true,
+        homeEventsLocked: true,
+        awayEventsLocked: true,
+        videoUrl: true,
+        firstHalfVideoStart: true,
+        secondHalfVideoStart: true,
+        realTimeFirstHalfStart: true,
+        realTimeSecondHalfStart: true,
+        realTimeFirstHalfEnd: true,
+        realTimeSecondHalfEnd: true,
+        homeTeam: { select: { id: true, name: true, category: true, club: { select: { id: true, name: true } } } },
+        awayTeam: { select: { id: true, name: true, category: true, club: { select: { id: true, name: true } } } },
       },
     });
   }
@@ -93,9 +170,25 @@ export class MatchRepository {
     return prisma.match.update({
       where: { id },
       data,
-      include: {
-        homeTeam: { include: { club: true } },
-        awayTeam: { include: { club: true } },
+      select: {
+        id: true,
+        date: true,
+        homeTeamId: true,
+        awayTeamId: true,
+        homeScore: true,
+        awayScore: true,
+        isFinished: true,
+        homeEventsLocked: true,
+        awayEventsLocked: true,
+        videoUrl: true,
+        firstHalfVideoStart: true,
+        secondHalfVideoStart: true,
+        realTimeFirstHalfStart: true,
+        realTimeSecondHalfStart: true,
+        realTimeFirstHalfEnd: true,
+        realTimeSecondHalfEnd: true,
+        homeTeam: { select: { id: true, name: true, category: true, club: { select: { id: true, name: true } } } },
+        awayTeam: { select: { id: true, name: true, category: true, club: { select: { id: true, name: true } } } },
       },
     });
   }

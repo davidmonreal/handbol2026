@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Team } from '@prisma/client';
 import { BaseController } from './base-controller';
 import { TeamService } from '../services/team-service';
+import { assignPlayerSchema } from '../schemas/team';
 
 export class TeamController extends BaseController<Team> {
   constructor(private teamService: TeamService) {
@@ -32,7 +33,13 @@ export class TeamController extends BaseController<Team> {
 
   async assignPlayer(req: Request, res: Response) {
     try {
-      const { playerId, role } = req.body;
+      const parsed = assignPlayerSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res
+          .status(400)
+          .json({ error: parsed.error.issues[0]?.message ?? 'Invalid assignment payload' });
+      }
+      const { playerId, role } = parsed.data;
       const assignment = await this.teamService.assignPlayer(
         req.params.id,
         playerId,
