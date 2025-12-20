@@ -26,8 +26,8 @@ interface ScoreboardProps {
   showCalibration?: boolean; // Show calibration buttons (for MatchTracker only)
   onFinishMatch?: () => void;
   isFinished?: boolean;
-  // When both teams have events locked, hide half controls so we don't finish halves while
-  // neither side can add plays; leave them visible if at least one team remains unlocked.
+  // Hide half controls when the currently selected team has events locked; switching to an unlocked
+  // team should show them again so their plays can still be tracked.
   hideHalfControls?: boolean;
 }
 
@@ -67,58 +67,65 @@ export const Scoreboard = ({
   } = useMatch();
   const [calibrationLoading, setCalibrationLoading] = useState<'first' | 'second' | null>(null);
 
-  const firstHalfDuration = realTimeFirstHalfStart && realTimeFirstHalfEnd
-    ? Math.max(0, Math.floor((realTimeFirstHalfEnd - realTimeFirstHalfStart) / 1000))
+  // When the active team is locked we hide controls. When it's unlocked, ignore previous half markers
+  // so the user can re-start halves for the unlocked side even if the other team already finished theirs.
+  const effectiveFirstHalfStart = hideHalfControls ? realTimeFirstHalfStart : null;
+  const effectiveFirstHalfEnd = hideHalfControls ? realTimeFirstHalfEnd : null;
+  const effectiveSecondHalfStart = hideHalfControls ? realTimeSecondHalfStart : null;
+  const effectiveSecondHalfEnd = hideHalfControls ? realTimeSecondHalfEnd : null;
+
+  const firstHalfDuration = effectiveFirstHalfStart && effectiveFirstHalfEnd
+    ? Math.max(0, Math.floor((effectiveFirstHalfEnd - effectiveFirstHalfStart) / 1000))
     : null;
-  const liveFirstPhaseDuration = realTimeFirstHalfStart
-    ? realTimeFirstHalfEnd
-      ? Math.max(0, Math.floor((realTimeFirstHalfEnd - realTimeFirstHalfStart) / 1000))
-      : realTimeSecondHalfStart
-        ? Math.max(0, Math.floor((realTimeSecondHalfStart - realTimeFirstHalfStart) / 1000))
+  const liveFirstPhaseDuration = effectiveFirstHalfStart
+    ? effectiveFirstHalfEnd
+      ? Math.max(0, Math.floor((effectiveFirstHalfEnd - effectiveFirstHalfStart) / 1000))
+      : effectiveSecondHalfStart
+        ? Math.max(0, Math.floor((effectiveSecondHalfStart - effectiveFirstHalfStart) / 1000))
         : null
     : null;
   const videoFirstPhaseDuration = firstHalfVideoStart !== null && secondHalfVideoStart !== null
     ? Math.max(0, secondHalfVideoStart - firstHalfVideoStart)
     : null;
   const halfOffset = liveFirstPhaseDuration ?? videoFirstPhaseDuration;
-  const isSecondHalfConfigured = !!realTimeSecondHalfStart || secondHalfVideoStart !== null;
+  const isSecondHalfConfigured = !!effectiveSecondHalfStart || secondHalfVideoStart !== null;
   // Guard: if we calibrated la 2a part però seguim dins el minutatge de la 1a, no restem l’offset;
   // així evitem quedar a 00:00 quan el vídeo encara és dins la primera part.
   const isSecondHalfActive = isSecondHalfConfigured && halfOffset !== null && time >= halfOffset;
   const displayTime = isSecondHalfActive && halfOffset !== null
     ? Math.max(0, time - halfOffset)
     : time;
-  const secondHalfDuration = realTimeSecondHalfStart && realTimeSecondHalfEnd
-    ? Math.max(0, Math.floor((realTimeSecondHalfEnd - realTimeSecondHalfStart) / 1000))
+  const secondHalfDuration = effectiveSecondHalfStart && effectiveSecondHalfEnd
+    ? Math.max(0, Math.floor((effectiveSecondHalfEnd - effectiveSecondHalfStart) / 1000))
     : null;
   const secondHalfEndClock = secondHalfDuration !== null
     ? secondHalfDuration
     : null;
 
-  const firstHalfButtonLabel = !realTimeFirstHalfStart
+  const firstHalfButtonLabel = !effectiveFirstHalfStart
     ? t('scoreboard.startFirstHalf')
-    : !realTimeFirstHalfEnd
+    : !effectiveFirstHalfEnd
       ? t('scoreboard.finishFirstHalf')
       : t('scoreboard.firstHalfFinished');
-  const secondHalfButtonLabel = !realTimeSecondHalfStart
+  const secondHalfButtonLabel = !effectiveSecondHalfStart
     ? t('scoreboard.startSecondHalf')
-    : !realTimeSecondHalfEnd
+    : !effectiveSecondHalfEnd
       ? t('scoreboard.finishSecondHalf')
       : t('scoreboard.secondHalfFinished');
 
-  const firstHalfButtonDisabled = isFinished || !!realTimeFirstHalfEnd || calibrationLoading !== null;
-  const secondHalfLocked = !realTimeSecondHalfStart && !realTimeFirstHalfEnd;
-  const secondHalfButtonDisabled = isFinished || (!!realTimeSecondHalfEnd) || (secondHalfLocked && !realTimeSecondHalfStart) || calibrationLoading !== null;
+  const firstHalfButtonDisabled = hideHalfControls || isFinished || !!effectiveFirstHalfEnd || calibrationLoading !== null;
+  const secondHalfLocked = !effectiveSecondHalfStart && !effectiveFirstHalfEnd;
+  const secondHalfButtonDisabled = hideHalfControls || isFinished || (!!effectiveSecondHalfEnd) || (secondHalfLocked && !effectiveSecondHalfStart) || calibrationLoading !== null;
   const homeCategoryLabel = formatCategoryLabel(homeTeam.category, t);
   const visitorCategoryLabel = formatCategoryLabel(visitorTeam.category, t);
 
   const handleFirstHalfAction = async () => {
-    if (isFinished) return;
+    if (isFinished || hideHalfControls) return;
     setCalibrationLoading('first');
     try {
-      if (!realTimeFirstHalfStart) {
+      if (!effectiveFirstHalfStart) {
         await setRealTimeCalibration(1, Date.now());
-      } else if (!realTimeFirstHalfEnd) {
+      } else if (!effectiveFirstHalfEnd) {
         await setRealTimeCalibration(1, Date.now(), 'end');
       }
     } finally {
@@ -127,12 +134,12 @@ export const Scoreboard = ({
   };
 
   const handleSecondHalfAction = async () => {
-    if (isFinished || secondHalfLocked) return;
+    if (isFinished || secondHalfLocked || hideHalfControls) return;
     setCalibrationLoading('second');
     try {
-      if (!realTimeSecondHalfStart) {
+      if (!effectiveSecondHalfStart) {
         await setRealTimeCalibration(2, Date.now());
-      } else if (!realTimeSecondHalfEnd) {
+      } else if (!effectiveSecondHalfEnd) {
         await setRealTimeCalibration(2, Date.now(), 'end');
         if (onFinishMatch) {
           await onFinishMatch();
@@ -200,11 +207,11 @@ export const Scoreboard = ({
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300'
                     }`}
                   title={
-                    !realTimeFirstHalfStart
+                    !effectiveFirstHalfStart
                       ? t('scoreboard.startFirstHalfTooltip')
-                      : !realTimeFirstHalfEnd
+                      : !effectiveFirstHalfEnd
                         ? t('scoreboard.halfStartedAt', {
-                          time: new Date(realTimeFirstHalfStart).toLocaleTimeString([], {
+                          time: new Date(effectiveFirstHalfStart).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
                           }),
@@ -226,13 +233,13 @@ export const Scoreboard = ({
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300'
                     }`}
                   title={
-                    !realTimeSecondHalfStart
+                    !effectiveSecondHalfStart
                       ? secondHalfLocked
                         ? t('scoreboard.waitFirstHalfEnd')
                         : t('scoreboard.startSecondHalfTooltip')
-                      : !realTimeSecondHalfEnd
+                      : !effectiveSecondHalfEnd
                         ? t('scoreboard.halfStartedAt', {
-                          time: new Date(realTimeSecondHalfStart).toLocaleTimeString([], {
+                          time: new Date(effectiveSecondHalfStart).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
                           }),
