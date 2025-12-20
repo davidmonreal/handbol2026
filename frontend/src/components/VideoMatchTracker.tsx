@@ -11,7 +11,6 @@ import { YouTubePlayer } from './video/YouTubePlayer';
 import { VideoUrlInput } from './video/VideoUrlInput';
 import { VideoCalibration } from './video/VideoCalibration';
 import { useSafeTranslation } from '../context/LanguageContext';
-import { useEffect as useReactEffect } from 'react';
 
 const VideoMatchTrackerContent = () => {
     const { matchId } = useParams<{ matchId: string }>();

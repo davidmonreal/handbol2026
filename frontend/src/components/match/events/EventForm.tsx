@@ -178,7 +178,7 @@ export const EventForm = ({
         }
     }, [selectedCategory, selectedAction, hasOpposition, isCollective]);
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (locked) return;
         if (!selectedPlayerId) return;
 
