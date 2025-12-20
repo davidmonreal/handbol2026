@@ -14,6 +14,7 @@ import { VideoCalibration } from './video/VideoCalibration';
 const VideoMatchTrackerContent = () => {
     const { matchId } = useParams<{ matchId: string }>();
     const navigate = useNavigate();
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     // Video Sync Context
     const {
@@ -69,8 +70,15 @@ const VideoMatchTrackerContent = () => {
 
         const loadMatchData = async () => {
             try {
+                setLoadError(null);
                 const response = await fetch(`${API_BASE_URL}/api/matches/${matchId}`);
-                if (!response.ok) throw new Error('Failed to load match');
+                if (response.status === 404) {
+                    throw new Error('Match not found (404). Check that the match exists in this environment.');
+                }
+                if (!response.ok) {
+                    const body = await response.text();
+                    throw new Error(`Failed to load match (${response.status}): ${body || 'Unknown error'}`);
+                }
 
                 const data = await response.json();
 
@@ -112,6 +120,7 @@ const VideoMatchTrackerContent = () => {
                 });
             } catch (error) {
                 console.error('Error loading match:', error);
+                setLoadError(error instanceof Error ? error.message : 'Failed to load match');
             }
         };
 
@@ -215,6 +224,35 @@ const VideoMatchTrackerContent = () => {
             setSelectedOpponentGoalkeeper(null);
         }
     }, [activeTeamId, opponentTeam, matchId, setSelectedOpponentGoalkeeper]);
+
+    if (loadError) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+                <div className="max-w-lg w-full bg-white border border-red-200 rounded-xl shadow-sm p-6 space-y-3">
+                    <div className="text-red-600 font-semibold text-lg">Error carregant el partit</div>
+                    <p className="text-gray-700">{loadError}</p>
+                    <div className="flex items-center justify-between">
+                        <button
+                            onClick={() => navigate('/matches')}
+                            className="px-4 py-2 rounded-lg bg-gray-100 text-gray-800 hover:bg-gray-200"
+                        >
+                            Tornar a la llista de partits
+                        </button>
+                        <button
+                            onClick={() => {
+                                setLoadError(null);
+                                window.location.reload();
+                            }}
+                            className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+                        >
+                            Reintenta
+                        </button>
+                    </div>
+                    <p className="text-xs text-gray-500">API: {API_BASE_URL}</p>
+                </div>
+            </div>
+        );
+    }
 
     if (!homeTeam || !visitorTeam) {
         return <div className="p-8 text-center">Loading match data...</div>;
