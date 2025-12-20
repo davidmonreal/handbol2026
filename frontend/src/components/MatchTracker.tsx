@@ -198,6 +198,9 @@ const MatchTracker = () => {
   const activeTeam = getActiveTeam();
   const opponentTeam = getOpponentTeam();
   const activeTeamLocked = isTeamLocked(activeTeamId);
+  const homeLocked = isTeamLocked(homeTeam?.id ?? null);
+  const visitorLocked = isTeamLocked(visitorTeam?.id ?? null);
+  const bothTeamsLocked = homeLocked && visitorLocked;
 
 
   /* 
@@ -315,7 +318,7 @@ const MatchTracker = () => {
           onVisitorScoreChange={setVisitorScore}
         onTeamSelect={handleTeamSelect}
         isFinished={timerStopped || !!realTimeSecondHalfEnd}
-        hideHalfControls={activeTeamLocked}
+        hideHalfControls={bothTeamsLocked}
         onFinishMatch={async () => {
           try {
             await fetch(`${API_BASE_URL}/api/matches/${matchId}`, {
