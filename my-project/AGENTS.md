@@ -57,6 +57,7 @@
 - Limit subject to ~72 chars; include a concise body explaining rationale and impacts.
 - PRs must include: clear description, linked issue (if any), before/after notes, and steps to verify (commands, endpoints).
 - Keep PRs focused and small; include updates to docs/tests for changed behavior.
+- Push: l’agent pot fer `git push` si l’usuari ho demana explícitament.
 
 ## Arquitectura, SOLID i TDD
 

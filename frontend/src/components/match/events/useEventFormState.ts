@@ -11,7 +11,6 @@ import {
     hasGoalTarget,
     initializeState,
     type EventCategory,
-    type EventFormState,
 } from './eventFormStateMachine';
 
 type UseEventFormStateParams = {

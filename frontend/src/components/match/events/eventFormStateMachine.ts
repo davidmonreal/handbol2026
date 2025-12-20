@@ -1,4 +1,4 @@
-import type { MatchEvent, SanctionType, TurnoverType, ZoneType } from '../../../types';
+import type { MatchEvent, ZoneType } from '../../../types';
 
 export type EventCategory = 'Shot' | 'Sanction' | 'Turnover';
 
