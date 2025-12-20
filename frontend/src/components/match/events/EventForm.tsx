@@ -159,20 +159,17 @@ export const EventForm = ({
         }
     };
 
-    useEffect(() => {
-        if (selectedCategory === 'Sanction' && selectedAction === 'Foul' && !hasOpposition) {
-            // Fouls always happen with opposition.
-            setHasOpposition(true);
-        }
-        if (selectedCategory === 'Turnover' && selectedAction === 'Pass' && !isCollective) {
-            // Bad passes are always collective plays.
-            setIsCollective(true);
-        }
-        if (selectedCategory === 'Turnover' && selectedAction === 'Offensive Foul' && !hasOpposition) {
-            // Offensive fouls always involve opposition.
-            setHasOpposition(true);
-        }
-    }, [selectedCategory, selectedAction, hasOpposition, isCollective]);
+    const handleHasOppositionChange = (value: boolean) => {
+        const mustHaveOpposition =
+            (selectedCategory === 'Sanction' && selectedAction === 'Foul') ||
+            (selectedCategory === 'Turnover' && selectedAction === 'Offensive Foul');
+        setHasOpposition(mustHaveOpposition ? true : value);
+    };
+
+    const handleIsCollectiveChange = (value: boolean) => {
+        const mustBeCollective = selectedCategory === 'Turnover' && selectedAction === 'Pass';
+        setIsCollective(mustBeCollective ? true : value);
+    };
 
     const handleSave = async () => {
         if (locked) return;
@@ -402,11 +399,11 @@ export const EventForm = ({
                                             setSelectedAction(type.value);
                                             if (type.value === 'Pass') {
                                                 // Bad passes are always collective plays.
-                                                setIsCollective(true);
+                                                handleIsCollectiveChange(true);
                                             }
                                             if (type.value === 'Offensive Foul') {
                                                 // Offensive fouls always involve opposition.
-                                                setHasOpposition(true);
+                                                handleHasOppositionChange(true);
                                             }
                                         }}
                                         className={`px-2 py-2.5 rounded-lg text-sm font-semibold transition-all flex flex-col items-center justify-center gap-1.5 ${selectedAction === type.value
@@ -433,7 +430,7 @@ export const EventForm = ({
                                             setSelectedAction(sanction.value);
                                             if (sanction.value === 'Foul') {
                                                 // Fouls always happen with opposition.
-                                                setHasOpposition(true);
+                                                handleHasOppositionChange(true);
                                             }
                                         }}
                                         className={`px-3 py-3 rounded-lg text-sm font-semibold transition-all text-white ${sanction.color} ${isActive
@@ -505,13 +502,13 @@ export const EventForm = ({
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <SplitToggle
                                 value={isCollective}
-                                onChange={setIsCollective}
+                                onChange={handleIsCollectiveChange}
                                 leftOption={{ label: t('eventForm.context.individual'), icon: User }}
                                 rightOption={{ label: t('eventForm.context.collective'), icon: Users }}
                             />
                             <SplitToggle
                                 value={hasOpposition}
-                                onChange={setHasOpposition}
+                                onChange={handleHasOppositionChange}
                                 leftOption={{ label: t('eventForm.context.free'), icon: User }}
                                 rightOption={{ label: t('eventForm.context.opposition'), icon: [User, Users] }}
                             />
