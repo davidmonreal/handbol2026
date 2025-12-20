@@ -56,7 +56,7 @@ const VideoSyncContext = createContext<VideoSyncContextType | undefined>(undefin
  * - https://www.youtube.com/live/VIDEO_ID
  * - https://www.youtube.com/embed/VIDEO_ID
  */
-const extractVideoId = (url: string): string | null => {
+export const extractVideoId = (url: string): string | null => {
     const patterns = [
         /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
         /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,
@@ -110,32 +110,38 @@ export const VideoSyncProvider = ({ children, matchId }: VideoSyncProviderProps)
                     // 3. 0 (fresh uncalibrated match)
                     const initialTime = lastVideoTime ?? dbFirstHalf ?? 0;
 
-                    if (matchData.videoUrl) {
-                        const videoId = extractVideoId(matchData.videoUrl);
-                        if (videoId) {
-                            setState({
+                    const nextStateFromDb = (() => {
+                        if (matchData.videoUrl) {
+                            const videoId = extractVideoId(matchData.videoUrl);
+                            if (videoId) {
+                                return {
+                                    ...INITIAL_STATE,
+                                    videoUrl: matchData.videoUrl,
+                                    videoId,
+                                    isVideoLoaded: true,
+                                    firstHalfStart: dbFirstHalf,
+                                    secondHalfStart: dbSecondHalf,
+                                    isCalibrated: dbFirstHalf !== null,
+                                    currentVideoTime: initialTime,
+                                } satisfies VideoSyncState;
+                            }
+                        }
+
+                        if (dbFirstHalf !== null) {
+                            return {
                                 ...INITIAL_STATE,
-                                videoUrl: matchData.videoUrl,
-                                videoId,
-                                isVideoLoaded: true,
                                 firstHalfStart: dbFirstHalf,
                                 secondHalfStart: dbSecondHalf,
-                                isCalibrated: dbFirstHalf !== null,
+                                isCalibrated: true,
                                 currentVideoTime: initialTime,
-                            });
-                            isInitialized.current = true;
-                            return;
+                            } satisfies VideoSyncState;
                         }
-                    }
+                        return null;
+                    })();
 
-                    // No video but has calibration data
-                    if (dbFirstHalf !== null) {
-                        setState(prev => ({
-                            ...prev,
-                            firstHalfStart: dbFirstHalf,
-                            secondHalfStart: dbSecondHalf,
-                            isCalibrated: true,
-                        }));
+                    if (nextStateFromDb) {
+                        // Avoid clobbering a URL the user just pasted while the initial fetch was inflight
+                        setState(prev => (prev.videoUrl ? prev : nextStateFromDb));
                     }
                     isInitialized.current = true;
                 }

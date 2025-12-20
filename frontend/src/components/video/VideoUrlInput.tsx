@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useVideoSync } from '../../context/VideoSyncContext';
+import { useVideoSync, extractVideoId } from '../../context/VideoSyncContext';
 import { API_BASE_URL } from '../../config/api';
 
 interface VideoUrlInputProps {
@@ -35,6 +35,13 @@ export const VideoUrlInput = ({ matchId }: VideoUrlInputProps) => {
             return;
         }
 
+        // Ensure we can extract a video ID before saving
+        const videoId = extractVideoId(url);
+        if (!videoId) {
+            setError('Could not parse this YouTube URL. Please double-check the link.');
+            return;
+        }
+
         // Save URL to backend
         setIsSaving(true);
         try {
@@ -45,13 +52,21 @@ export const VideoUrlInput = ({ matchId }: VideoUrlInputProps) => {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to save video URL');
+                let details = '';
+                try {
+                    const payload = await response.json();
+                    details = payload?.error || '';
+                } catch {
+                    // ignore
+                }
+                throw new Error(details || 'Failed to save video URL');
             }
 
             // Set URL in context (this will load the video)
             setVideoUrl(url);
         } catch (err) {
-            setError('Failed to save video URL. Please try again.');
+            const message = err instanceof Error ? err.message : 'Failed to save video URL. Please try again.';
+            setError(message);
         } finally {
             setIsSaving(false);
         }
