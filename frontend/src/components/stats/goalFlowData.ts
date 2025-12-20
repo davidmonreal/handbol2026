@@ -22,7 +22,8 @@ export const PADDING_LEFT = 5;
 export const PADDING_RIGHT = 5;
 export const PADDING_TOP = 40;
 export const PADDING_BOTTOM = 44;
-export const CLUSTER_WINDOW_SECONDS = 120;
+// Reduce clustering window so turnovers are shown more granularly on the chart.
+export const CLUSTER_WINDOW_SECONDS = 20;
 export const HALF_BOUNDARY_POSITION = 0.5;
 export const HALF_GAP = 0.04;
 export const FIRST_SEGMENT: [number, number] = [0, HALF_BOUNDARY_POSITION - HALF_GAP / 2];

@@ -47,9 +47,8 @@ describe('buildGoalFlowData', () => {
     it('clusters turnovers inside the configured time window', () => {
         const data = buildGoalFlowData(baseEvents, teamId, opponentId, halfSplit);
 
-        expect(data.turnoversByPosition).toHaveLength(2);
-        expect(data.turnoversByPosition[0]?.count).toBe(2); // 100s + 150s merge
-        expect(data.turnoversByPosition[1]?.count).toBe(1); // 500s stands alone
+        expect(data.turnoversByPosition).toHaveLength(3);
+        expect(data.turnoversByPosition.map(c => c.count)).toEqual([1, 1, 1]);
     });
 
     it('separates clusters across halves for saves and preserves ordering', () => {
