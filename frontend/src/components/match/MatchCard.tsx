@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Calendar, Clock, MapPin, Play, Volleyball, Edit2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, Play, Volleyball, BarChart3 } from 'lucide-react';
 import { useSafeTranslation } from '../../context/LanguageContext';
 import { formatCategoryLabel } from '../../utils/categoryLabels';
 
@@ -100,11 +100,11 @@ export const MatchCard = ({ match, isPending }: { match: DashboardMatch; isPendi
             </svg>
           </button>
           <button
-            onClick={() => navigate(`/matches/${match.id}/edit`)}
+            onClick={() => navigate(`/statistics?matchId=${match.id}`)}
             className="flex-1 flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 transition-colors"
           >
-            <Edit2 size={12} className="mr-1.5" />
-            Edit match
+            <BarChart3 size={12} className="mr-1.5" />
+            {t('matchTracker.statistics')}
           </button>
         </div>
       </div>
