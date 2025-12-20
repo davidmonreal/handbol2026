@@ -49,6 +49,7 @@ interface EventFormProps {
     };
     onSave: (event: MatchEvent, opponentGkId?: string) => void;
     onSaved?: () => void;
+    onSaveMessage?: (message: string, variant?: 'success' | 'error') => void;
     onCancel: () => void;
     onDelete?: (eventId: string) => void;
     locked?: boolean;
@@ -61,13 +62,12 @@ export const EventForm = ({
     initialState,
     onSave,
     onSaved,
+    onSaveMessage,
     onCancel,
     onDelete,
     locked = false
 }: EventFormProps) => {
     const { t } = useSafeTranslation();
-    const [saveState, setSaveState] = useState<'idle' | 'saved'>('idle');
-    const saveStateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // State initialization
     const [selectedPlayerId, setSelectedPlayerId] = useState<string>(
@@ -105,7 +105,6 @@ export const EventForm = ({
             setIsCounterAttack(event.isCounterAttack || false);
             if (event.opponentGoalkeeperId) setSelectedOpponentGkId(event.opponentGoalkeeperId);
 
-            setSaveState('idle');
             prevEventIdRef.current = event.id;
         } else {
             prevEventIdRef.current = null;
@@ -122,13 +121,6 @@ export const EventForm = ({
             if (initialState?.opponentGoalkeeperId) setSelectedOpponentGkId(initialState.opponentGoalkeeperId);
         }
     }, [initialState, event]);
-
-    // Clear timeout on unmount
-    useEffect(() => {
-        return () => {
-            if (saveStateTimeoutRef.current) clearTimeout(saveStateTimeoutRef.current);
-        };
-    }, []);
 
     // Constants
     const shotResults = useMemo(
@@ -204,13 +196,16 @@ export const EventForm = ({
             opponentGoalkeeperId: selectedOpponentGkId || undefined,
         }, { baseEvent: event || null });
 
-        onSave(updatedEvent, selectedOpponentGkId);
-        setSaveState('saved');
-        if (saveStateTimeoutRef.current) clearTimeout(saveStateTimeoutRef.current);
-        saveStateTimeoutRef.current = setTimeout(() => {
-            setSaveState('idle');
-        }, 2500);
-        onSaved?.();
+        try {
+            await Promise.resolve(onSave(updatedEvent, selectedOpponentGkId));
+            onSaveMessage?.(t('eventForm.successMessage'), 'success');
+            onSaved?.();
+        } catch (err) {
+            onSaveMessage?.(
+                err instanceof Error ? err.message : t('dashboard.errorLoadMatches'),
+                'error',
+            );
+        }
 
         // After saving a new play we reset to the most common configuration (Shot + Collective + Free + Static)
         setSelectedCategory('Shot');
@@ -559,21 +554,13 @@ export const EventForm = ({
                     </button>
                     <button
                         onClick={handleSave}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-                            saveState === 'saved'
-                                ? 'bg-green-600 text-white hover:bg-green-700'
-                                : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                        }`}
+                        className="px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 text-white hover:bg-indigo-700"
                         disabled={!isPlayerSelected || locked}
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
-                        {saveState === 'saved'
-                            ? t('eventForm.successMessage')
-                            : event
-                                ? t('eventForm.saveChanges')
-                                : t('eventForm.addEvent')}
+                        {event ? t('eventForm.saveChanges') : t('eventForm.addEvent')}
                     </button>
                 </div>
             </div>

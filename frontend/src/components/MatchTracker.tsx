@@ -36,6 +36,8 @@ const MatchTracker = () => {
   } = useMatch();
   const [matchLoaded, setMatchLoaded] = useState(false);
   const [timerStopped, setTimerStopped] = useState(false);
+  const [saveBanner, setSaveBanner] = useState<{ message: string; variant?: 'success' | 'error' } | null>(null);
+  const bannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Ref to track context match ID without triggering effect re-runs
   const contextMatchIdRef = useRef(contextMatchId);
@@ -103,6 +105,12 @@ const MatchTracker = () => {
     loadMatchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId]);
+
+  useEffect(() => {
+    return () => {
+      if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
+    };
+  }, []);
 
   // Editing State
   const [editingEvent, setEditingEvent] = useState<MatchEvent | null>(null);
@@ -343,6 +351,31 @@ const MatchTracker = () => {
                     </>
                   )}
                 </h2>
+                {saveBanner && (
+                  <div
+                    className={`flex items-center gap-2 text-sm font-semibold px-3 py-2 rounded-lg border ${
+                      saveBanner.variant === 'error'
+                        ? 'bg-red-50 text-red-700 border-red-200'
+                        : 'bg-green-50 text-green-700 border-green-200'
+                    }`}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d={
+                          saveBanner.variant === 'error'
+                            ? 'M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+                            : 'M5 13l4 4L19 7'
+                        }
+                      />
+                    </svg>
+                    {saveBanner.message}
+                  </div>
+                )}
                 {activeTeam && (
                   <button
                     onClick={() => toggleTeamLock(activeTeam.id, !activeTeamLocked)}
@@ -374,6 +407,11 @@ const MatchTracker = () => {
                 opponentTeam={opponentTeam || undefined}
                 initialState={eventFormInitialState}
                 onSave={handleSaveEvent}
+                onSaveMessage={(message, variant) => {
+                  setSaveBanner({ message, variant });
+                  if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
+                  bannerTimeoutRef.current = setTimeout(() => setSaveBanner(null), 3000);
+                }}
                 onSaved={() => {
                   // Scroll to top for quick consecutive entries in manual tracker.
                   window.scrollTo({ top: 0, behavior: 'smooth' });

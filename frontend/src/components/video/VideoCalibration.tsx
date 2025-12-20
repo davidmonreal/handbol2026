@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useVideoSync } from '../../context/VideoSyncContext';
 import { useMatch } from '../../context/MatchContext';
+import { useSafeTranslation } from '../../context/LanguageContext';
 
 export const VideoCalibration = () => {
     const {
@@ -12,6 +13,7 @@ export const VideoCalibration = () => {
         setSecondHalfStart,
     } = useVideoSync();
     const { setVideoCalibration } = useMatch();
+    const { t } = useSafeTranslation();
 
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -36,7 +38,7 @@ export const VideoCalibration = () => {
                         <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span className="text-sm font-medium text-gray-600">Calibrated</span>
+                        <span className="text-sm font-medium text-gray-600">{t('eventForm.calibrated')}</span>
                     </div>
                 </div>
 
@@ -44,7 +46,7 @@ export const VideoCalibration = () => {
                 <button
                     onClick={() => setIsExpanded(true)}
                     className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Edit calibration"
+                    title={t('eventForm.editCalibration')}
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -63,7 +65,7 @@ export const VideoCalibration = () => {
                     <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Time Calibration
+                    {t('eventForm.timeCalibration')}
                 </h3>
                 {isCalibrated && (
                     <button
@@ -90,13 +92,13 @@ export const VideoCalibration = () => {
                             : 'bg-gray-50 border-gray-200 hover:bg-gray-100 text-gray-700'
                         }`}
                 >
-                    <span className="font-medium text-sm">1st Half Start</span>
+                    <span className="font-medium text-sm">{t('eventForm.firstHalfStart')}</span>
                     {firstHalfStart !== null ? (
                         <span className="font-mono text-sm bg-green-200 px-2 py-0.5 rounded">
                             {formatTime(firstHalfStart)}
                         </span>
                     ) : (
-                        <span className="text-xs text-gray-400">Click to set</span>
+                        <span className="text-xs text-gray-400">{t('eventForm.clickToSet')}</span>
                     )}
                 </button>
 
@@ -114,14 +116,14 @@ export const VideoCalibration = () => {
                                 : 'bg-gray-50 border-gray-200 hover:bg-gray-100 text-gray-700'
                         }`}
                 >
-                    <span className="font-medium text-sm">2nd Half Start</span>
+                    <span className="font-medium text-sm">{t('eventForm.secondHalfStart')}</span>
                     {secondHalfStart !== null ? (
                         <span className="font-mono text-sm bg-green-200 px-2 py-0.5 rounded">
                             {formatTime(secondHalfStart)}
                         </span>
                     ) : (
                         <span className="text-xs text-gray-400">
-                            {firstHalfStart === null ? 'Set 1st first' : 'Click to set'}
+                            {firstHalfStart === null ? t('eventForm.setFirstFirst') : t('eventForm.clickToSet')}
                         </span>
                     )}
                 </button>
@@ -129,7 +131,7 @@ export const VideoCalibration = () => {
             {/* Help Text - Only when not calibrated */}
             {!isCalibrated && (
                 <div className="p-2 bg-blue-50 rounded-lg text-xs text-blue-700">
-                    Play video to the first whistle, then click "1st Half Start"
+                    {t('eventForm.helpCalibration')}
                 </div>
             )}
         </div>

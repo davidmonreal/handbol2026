@@ -10,11 +10,16 @@ import { EventForm } from './match/events/EventForm';
 import { YouTubePlayer } from './video/YouTubePlayer';
 import { VideoUrlInput } from './video/VideoUrlInput';
 import { VideoCalibration } from './video/VideoCalibration';
+import { useSafeTranslation } from '../context/LanguageContext';
+import { useEffect as useReactEffect } from 'react';
 
 const VideoMatchTrackerContent = () => {
     const { matchId } = useParams<{ matchId: string }>();
     const navigate = useNavigate();
     const [loadError, setLoadError] = useState<string | null>(null);
+    const { t } = useSafeTranslation();
+    const [saveBanner, setSaveBanner] = useState<{ message: string; variant?: 'success' | 'error' } | null>(null);
+    const bannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Video Sync Context
     const {
@@ -45,12 +50,23 @@ const VideoMatchTrackerContent = () => {
     // Refs for scrolling
     const eventFormRef = useRef<HTMLDivElement>(null);
     const videoPlayerRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        return () => {
+            if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
+        };
+    }, []);
 
     // Ref to track context match ID without triggering effect re-runs
     const contextMatchIdRef = useRef(contextMatchId);
     useEffect(() => {
         contextMatchIdRef.current = contextMatchId;
     }, [contextMatchId]);
+
+    useEffect(() => {
+        return () => {
+            if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
+        };
+    }, []);
 
     // Sync match time with video time when calibrated
     useEffect(() => {
@@ -73,17 +89,17 @@ const VideoMatchTrackerContent = () => {
                 setLoadError(null);
                 const response = await fetch(`${API_BASE_URL}/api/matches/${matchId}`);
                 if (response.status === 404) {
-                    throw new Error('Match not found (404). Check that the match exists in this environment.');
+                    throw new Error(t('video.matchNotFound'));
                 }
                 if (!response.ok) {
                     const body = await response.text();
-                    throw new Error(`Failed to load match (${response.status}): ${body || 'Unknown error'}`);
+                    throw new Error(`Failed to load match (${response.status}): ${body || t('dashboard.errorLoadMatches')}`);
                 }
 
                 const data = await response.json();
 
                 if (!data.homeTeam || !data.awayTeam) {
-                    throw new Error('Invalid match data: Missing team information');
+                    throw new Error(t('dashboard.errorLoadMatches'));
                 }
 
                 const transformTeam = (teamData: any, color: string) => ({
@@ -120,7 +136,7 @@ const VideoMatchTrackerContent = () => {
                 });
             } catch (error) {
                 console.error('Error loading match:', error);
-                setLoadError(error instanceof Error ? error.message : 'Failed to load match');
+                setLoadError(error instanceof Error ? error.message : t('dashboard.errorLoadMatches'));
             }
         };
 
@@ -229,14 +245,14 @@ const VideoMatchTrackerContent = () => {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
                 <div className="max-w-lg w-full bg-white border border-red-200 rounded-xl shadow-sm p-6 space-y-3">
-                    <div className="text-red-600 font-semibold text-lg">Error carregant el partit</div>
+                    <div className="text-red-600 font-semibold text-lg">{t('dashboard.errorLoadMatches')}</div>
                     <p className="text-gray-700">{loadError}</p>
                     <div className="flex items-center justify-between">
                         <button
                             onClick={() => navigate('/matches')}
                             className="px-4 py-2 rounded-lg bg-gray-100 text-gray-800 hover:bg-gray-200"
                         >
-                            Tornar a la llista de partits
+                            {t('matchTracker.backToDashboard')}
                         </button>
                         <button
                             onClick={() => {
@@ -245,7 +261,7 @@ const VideoMatchTrackerContent = () => {
                             }}
                             className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
                         >
-                            Reintenta
+                            {t('common.retry')}
                         </button>
                     </div>
                     <p className="text-xs text-gray-500">API: {API_BASE_URL}</p>
@@ -271,10 +287,10 @@ const VideoMatchTrackerContent = () => {
                             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                             </svg>
-                            Back to Dashboard
+                            {t('video.back')}
                         </button>
                         <h1 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                            <span className="hidden md:inline">Video Tracker:</span> {homeTeam.name} vs {visitorTeam.name}
+                            <span className="hidden md:inline">{t('video.title')}:</span> {homeTeam.name} vs {visitorTeam.name}
                         </h1>
                         <button
                             onClick={() => navigate(`/statistics?matchId=${matchId}${activeTeamId ? `&activeTeamId=${activeTeamId}` : ''}`)}
@@ -283,7 +299,7 @@ const VideoMatchTrackerContent = () => {
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                             </svg>
-                            Statistics
+                            {t('video.statistics')}
                         </button>
                     </div>
                 </div>
@@ -322,17 +338,42 @@ const VideoMatchTrackerContent = () => {
                                 <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                                     {editingEvent ? (
                                         <>
-                                            <span className="text-indigo-600">Edit Event</span>
+                                            <span className="text-indigo-600">{t('video.editEvent')}</span>
                                         </>
                                     ) : (
                                         <>
-                                            <span className="text-green-600">New Event</span>
+                                            <span className="text-green-600">{t('video.newEvent')}</span>
                                             <span className="text-sm font-normal text-gray-500 ml-2">
-                                                (Click an event below to edit)
+                                                {t('video.newEventHint')}
                                             </span>
                                         </>
                                     )}
                                 </h2>
+                                {saveBanner && (
+                                    <div
+                                        className={`flex items-center gap-2 text-sm font-semibold px-3 py-2 rounded-lg border ${
+                                            saveBanner.variant === 'error'
+                                                ? 'bg-red-50 text-red-700 border-red-200'
+                                                : 'bg-green-50 text-green-700 border-green-200'
+                                        }`}
+                                        role="status"
+                                        aria-live="polite"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d={
+                                                    saveBanner.variant === 'error'
+                                                        ? 'M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+                                                        : 'M5 13l4 4L19 7'
+                                                }
+                                            />
+                                        </svg>
+                                        {saveBanner.message}
+                                    </div>
+                                )}
                             </div>
 
                             <EventForm
@@ -342,6 +383,11 @@ const VideoMatchTrackerContent = () => {
                                 opponentTeam={opponentTeam || undefined}
                                 initialState={eventFormInitialState}
                                 onSave={handleSaveEvent}
+                                onSaveMessage={(message, variant) => {
+                                    setSaveBanner({ message, variant });
+                                    if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
+                                    bannerTimeoutRef.current = setTimeout(() => setSaveBanner(null), 3000);
+                                }}
                                 onSaved={() => {
                                     if (videoPlayerRef.current) {
                                         videoPlayerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -353,7 +399,7 @@ const VideoMatchTrackerContent = () => {
                         </div>
                     ) : (
                         <div className="bg-gray-50 rounded-xl p-8 text-center text-gray-500 border-2 border-dashed mb-8">
-                            Select a team above to start tracking
+                            {t('video.selectTeamPrompt')}
                         </div>
                     )}
                 </div>
