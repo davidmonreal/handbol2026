@@ -1,20 +1,10 @@
 
-import { useState, useEffect, useRef, useMemo } from 'react';
-import type { ComponentType } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import {
     User,
     Users,
     ArrowUp,
     ArrowLeftRight,
-    Target,
-    Wind,
-    Ban,
-    Hand,
-    Goal as GoalIcon,
-    Shuffle,
-    UserX,
-    Footprints,
-    Square
 } from 'lucide-react';
 import type { MatchEvent, ZoneType, TurnoverType, SanctionType } from '../../../types';
 import { ZoneSelector } from '../shared/ZoneSelector';
@@ -22,6 +12,14 @@ import { SplitToggle } from '../shared/SplitToggle';
 import { ConfirmationModal } from '../../common';
 import { useSafeTranslation } from '../../../context/LanguageContext';
 import { buildEventFromForm } from './eventFormBuilder';
+import {
+    buildShotResults,
+    buildTurnoverTypes,
+    buildSanctionTypes,
+    ShotResultSelector,
+    TurnoverSelector,
+    SanctionSelector,
+} from './ActionSelectors';
 
 // Define interfaces locally to match MatchContext structure
 interface Player {
@@ -87,66 +85,10 @@ export const EventForm = ({
     const [isCounterAttack, setIsCounterAttack] = useState(event?.isCounterAttack || false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
-    const prevEventIdRef = useRef<string | null>(null);
-
-    // Initialize/Update state when editing a specific event
-    useEffect(() => {
-        if (event) {
-            // Avoid resetting local edits when the same event object is re-created
-            if (prevEventIdRef.current === event.id) return;
-
-            setSelectedPlayerId(event.playerId || '');
-            setSelectedCategory(event.category);
-            setSelectedAction(event.action);
-            setSelectedZone(event.zone || null);
-            setSelectedTarget(event.goalTarget);
-            setIsCollective(event.isCollective || false);
-            setHasOpposition(event.hasOpposition || false);
-            setIsCounterAttack(event.isCounterAttack || false);
-            if (event.opponentGoalkeeperId) setSelectedOpponentGkId(event.opponentGoalkeeperId);
-
-            prevEventIdRef.current = event.id;
-        } else {
-            prevEventIdRef.current = null;
-            setIsCollective(true);
-            setHasOpposition(false);
-            setIsCounterAttack(false);
-        }
-    }, [event]);
-
     // Constants
-    const shotResults = useMemo(
-        () => [
-            { value: 'Goal', label: t('eventForm.result.goal'), icon: Target },
-            { value: 'Save', label: t('eventForm.result.save'), icon: Hand },
-            { value: 'Miss', label: t('eventForm.result.miss'), icon: Wind },
-            { value: 'Post', label: t('eventForm.result.post'), icon: GoalIcon },
-            { value: 'Block', label: t('eventForm.result.block'), icon: Ban },
-        ],
-        [t],
-    );
-
-    const turnoverTypes: { value: TurnoverType; label: string; icon: ComponentType<{ size?: number }> }[] = useMemo(
-        () => [
-            { value: 'Pass', label: t('eventForm.turnover.badPass'), icon: Shuffle },
-            { value: 'Catch', label: t('eventForm.turnover.droppedBall'), icon: Hand },
-            { value: 'Offensive Foul', label: t('eventForm.turnover.offensiveFoul'), icon: UserX },
-            { value: 'Steps', label: t('eventForm.turnover.steps'), icon: Footprints },
-            { value: 'Area', label: t('eventForm.turnover.area'), icon: Square },
-        ],
-        [t],
-    );
-
-    const sanctionTypes: { value: SanctionType; label: string; color: string }[] = useMemo(
-        () => [
-            { value: 'Foul', label: t('eventForm.sanction.commonFoul'), color: 'bg-gray-600' },
-            { value: '2min', label: t('eventForm.sanction.twoMinutes'), color: 'bg-blue-600' },
-            { value: 'Yellow', label: t('eventForm.sanction.yellow'), color: 'bg-yellow-500' },
-            { value: 'Red', label: t('eventForm.sanction.red'), color: 'bg-red-600' },
-            { value: 'Blue Card', label: t('eventForm.sanction.blue'), color: 'bg-blue-800' },
-        ],
-        [t],
-    );
+    const shotResults = useMemo(() => buildShotResults(t), [t]);
+    const turnoverTypes = useMemo(() => buildTurnoverTypes(t), [t]);
+    const sanctionTypes = useMemo(() => buildSanctionTypes(t), [t]);
 
     // Handlers
     const handleCategoryChange = (category: string) => {
@@ -368,81 +310,30 @@ export const EventForm = ({
                     </div>
 
                     {selectedCategory === 'Shot' && (
-                        <div className="grid grid-cols-5 gap-2">
-                            {shotResults.map(result => {
-                                const Icon = result.icon;
-                                return (
-                                    <button
-                                        key={result.value}
-                                        onClick={() => setSelectedAction(result.value)}
-                                        className={`px-2 py-2.5 rounded-lg text-sm font-semibold transition-all flex flex-col items-center justify-center gap-1.5 ${selectedAction === result.value
-                                            ? 'bg-indigo-500 text-white shadow-lg ring-2 ring-indigo-200'
-                                            : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-indigo-300'
-                                            }`}
-                                    >
-                                        <Icon size={20} />
-                                        <span className="text-xs">{result.label}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
+                        <ShotResultSelector
+                            selectedAction={selectedAction}
+                            results={shotResults}
+                            onSelect={setSelectedAction}
+                        />
                     )}
 
                     {selectedCategory === 'Turnover' && (
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                            {turnoverTypes.map(type => {
-                                const Icon = type.icon;
-                                return (
-                                    <button
-                                        key={type.value}
-                                        onClick={() => {
-                                            setSelectedAction(type.value);
-                                            if (type.value === 'Pass') {
-                                                // Bad passes are always collective plays.
-                                                handleIsCollectiveChange(true);
-                                            }
-                                            if (type.value === 'Offensive Foul') {
-                                                // Offensive fouls always involve opposition.
-                                                handleHasOppositionChange(true);
-                                            }
-                                        }}
-                                        className={`px-2 py-2.5 rounded-lg text-sm font-semibold transition-all flex flex-col items-center justify-center gap-1.5 ${selectedAction === type.value
-                                            ? 'bg-indigo-500 text-white shadow-lg ring-2 ring-indigo-200'
-                                            : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-indigo-300'
-                                            }`}
-                                    >
-                                        <Icon size={20} />
-                                        <span className="text-xs text-center">{type.label}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
+                        <TurnoverSelector
+                            selectedAction={selectedAction}
+                            types={turnoverTypes}
+                            onSelect={setSelectedAction as (value: TurnoverType) => void}
+                            onForceCollective={() => handleIsCollectiveChange(true)}
+                            onForceOpposition={() => handleHasOppositionChange(true)}
+                        />
                     )}
 
                     {selectedCategory === 'Sanction' && (
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                            {sanctionTypes.map(sanction => {
-                                const isActive = selectedAction === sanction.value;
-                                return (
-                                    <button
-                                        key={sanction.value}
-                                        onClick={() => {
-                                            setSelectedAction(sanction.value);
-                                            if (sanction.value === 'Foul') {
-                                                // Fouls always happen with opposition.
-                                                handleHasOppositionChange(true);
-                                            }
-                                        }}
-                                        className={`px-3 py-3 rounded-lg text-sm font-semibold transition-all text-white ${sanction.color} ${isActive
-                                            ? 'shadow-lg ring-2 ring-offset-1 ring-indigo-200 brightness-110'
-                                            : 'opacity-40 hover:opacity-90'
-                                            }`}
-                                    >
-                                        {sanction.label}
-                                    </button>
-                                );
-                            })}
-                        </div>
+                        <SanctionSelector
+                            selectedAction={selectedAction}
+                            sanctions={sanctionTypes}
+                            onSelect={setSelectedAction as (value: SanctionType) => void}
+                            onForceOpposition={() => handleHasOppositionChange(true)}
+                        />
                     )}
                 </div>
 
