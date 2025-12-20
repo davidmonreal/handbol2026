@@ -42,6 +42,7 @@
 - Verify all new features are covered by tests.
 - Do not accept a feature as complete until all tests pass.
 - Add intent comments sparingly to capture why code is shaped this way (functional rationale, engineering trade-offs, chosen flows), so readers understand decisions when revisiting.
+- Frontend: qualsevol text nou de UI ha de provenir de l’arxiu de traducciones (`frontend/src/i18n/translations.ts`) i consumit via els hooks de llenguatge; evita literals incrustats en components.
 
 ## Testing Guidelines
 
@@ -59,7 +60,7 @@
 
 ## Arquitectura, SOLID i TDD
 
-To keep the project sustainable and easy to change, follow these concrete rules:
+To keep the project sustainable and easy to change and test, follow these concrete rules:
 
 1. File structure and tests alongside code
 

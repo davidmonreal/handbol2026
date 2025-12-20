@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, Search } from 'lucide-react';
 import { API_BASE_URL } from '../../../config/api';
 import type { CrudConfig, FormFieldConfig } from '../../../types';
 import { LoadingTable, ErrorMessage, ConfirmationModal } from '../../common';
+import { useSafeTranslation } from '../../../context/LanguageContext';
 
 
 interface CrudManagerProps<T> {
@@ -26,6 +27,18 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
     const [totalItems, setTotalItems] = useState(0);
     const [isMoreLoading, setIsMoreLoading] = useState(false);
     const PAGE_SIZE = 20;
+    const { t } = useSafeTranslation();
+
+    const minSearchLength = config.minSearchLength ?? 1;
+    const hasActiveFilters = Boolean(
+        config.serverFilters &&
+        Object.values(config.serverFilters).some((value) => value !== undefined && value !== null && value !== '')
+    );
+    const shouldFetch = () => {
+        if (!config.requireSearchBeforeFetch) return true;
+        if (config.allowFetchWithoutSearchIfFilters && hasActiveFilters) return true;
+        return debouncedSearchTerm.trim().length >= minSearchLength;
+    };
 
     // Debounce search term
     useEffect(() => {
@@ -41,6 +54,12 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
         // Only fetch from server if we don't have all items already loaded
         // If all items are loaded (serverFilters applied + totalItems <= items.length), filter client-side
         const allItemsLoaded = config.pagination && config.serverFilters && items.length > 0 && items.length >= totalItems;
+        if (!shouldFetch()) {
+            setItems([]);
+            setTotalItems(0);
+            setIsInitialLoading(false);
+            return;
+        }
         if (!allItemsLoaded) {
             fetchItems(false, 0); // Fetch initial data or new search results with explicit page 0
         }
@@ -55,6 +74,12 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
     }, [page]);
 
     const fetchItems = async (isLoadMore = false, pageOverride?: number) => {
+        if (!shouldFetch()) {
+            setIsInitialLoading(false);
+            setIsMoreLoading(false);
+            return;
+        }
+
         const currentPage = pageOverride ?? page;
 
         // Prevent double fetching on initial load since searchTerm effect runs too
@@ -252,6 +277,7 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
 
     // Determine if all items are loaded (for client-side search optimization)
     const allItemsLoaded = config.pagination && config.serverFilters && items.length > 0 && items.length >= totalItems;
+    const canFetchNow = shouldFetch();
 
     const filteredItems = items.filter((item: T) => {
         const searchLower = searchTerm.toLowerCase();
@@ -525,7 +551,12 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                 </table>
                 {sortedItems.length === 0 && (
                     <div className="text-center py-12 text-gray-500">
-                        No {config.entityNamePlural.toLowerCase()} found. Create your first {config.entityName.toLowerCase()}!
+                        {config.requireSearchBeforeFetch && !canFetchNow
+                            ? t('crud.emptySearchPrompt', { entityPlural: config.entityNamePlural.toLowerCase() })
+                            : t('crud.emptyCreatePrompt', {
+                                entityPlural: config.entityNamePlural.toLowerCase(),
+                                entity: config.entityName.toLowerCase(),
+                              })}
                     </div>
                 )}
 

@@ -181,4 +181,8 @@ export interface CrudConfig<T> {
     };
     hideDefaultActions?: boolean; // Hide built-in edit/delete buttons
     sortItems?: (items: T[]) => T[];
+    // Defer fetching until user intent is clear (e.g., typed a search or applied a filter)
+    requireSearchBeforeFetch?: boolean;
+    minSearchLength?: number;
+    allowFetchWithoutSearchIfFilters?: boolean;
 }

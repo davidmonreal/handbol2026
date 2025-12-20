@@ -77,8 +77,11 @@ export const Scoreboard = ({
     ? Math.max(0, secondHalfVideoStart - firstHalfVideoStart)
     : null;
   const halfOffset = liveFirstPhaseDuration ?? videoFirstPhaseDuration;
-  const isSecondHalf = !!realTimeSecondHalfStart || secondHalfVideoStart !== null;
-  const displayTime = isSecondHalf && halfOffset !== null
+  const isSecondHalfConfigured = !!realTimeSecondHalfStart || secondHalfVideoStart !== null;
+  // Guard: if we calibrated la 2a part però seguim dins el minutatge de la 1a, no restem l’offset;
+  // així evitem quedar a 00:00 quan el vídeo encara és dins la primera part.
+  const isSecondHalfActive = isSecondHalfConfigured && halfOffset !== null && time >= halfOffset;
+  const displayTime = isSecondHalfActive && halfOffset !== null
     ? Math.max(0, time - halfOffset)
     : time;
   const secondHalfDuration = realTimeSecondHalfStart && realTimeSecondHalfEnd

@@ -5,44 +5,91 @@ import { API_BASE_URL } from '../../../config/api';
 import { RemoveIconButton, EditIconButton, AddIconButton } from '../../common';
 import { TEAM_CATEGORIES } from '../../../utils/teamUtils';
 import type { Team, Player } from '../../../types';
+import { useSafeTranslation } from '../../../context/LanguageContext';
 
 export const TeamPlayersPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { t } = useSafeTranslation();
 
     const [team, setTeam] = useState<Team | null>(null);
     const [players, setPlayers] = useState<Player[]>([]);
     const [playerSearch, setPlayerSearch] = useState('');
-    const [isLoading, setIsLoading] = useState(true);
+    const [debouncedPlayerSearch, setDebouncedPlayerSearch] = useState('');
+    const [isTeamLoading, setIsTeamLoading] = useState(true);
+    const [isPlayersLoading, setIsPlayersLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [playerLoadError, setPlayerLoadError] = useState<string | null>(null);
 
     useEffect(() => {
-        const loadData = async () => {
+        const loadTeam = async () => {
             if (!id) return;
-            setIsLoading(true);
+            setIsTeamLoading(true);
             try {
-                const [teamRes, playersRes] = await Promise.all([
-                    fetch(`${API_BASE_URL}/api/teams/${id}`),
-                    fetch(`${API_BASE_URL}/api/players`)
-                ]);
-
+                const teamRes = await fetch(`${API_BASE_URL}/api/teams/${id}`);
                 if (!teamRes.ok) throw new Error('Team not found');
-
                 const teamData = await teamRes.json();
-                const playersData = await playersRes.json();
-
                 setTeam(teamData);
-                setPlayers(playersData);
             } catch (err) {
-                console.error('Error loading data:', err);
+                console.error('Error loading team data:', err);
                 setError('Failed to load team data');
             } finally {
-                setIsLoading(false);
+                setIsTeamLoading(false);
             }
         };
 
-        loadData();
+        loadTeam();
     }, [id]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedPlayerSearch(playerSearch.trim());
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [playerSearch]);
+
+    useEffect(() => {
+        if (!id) return;
+        const controller = new AbortController();
+
+        const fetchPlayers = async () => {
+            if (!debouncedPlayerSearch || debouncedPlayerSearch.length < 2) {
+                setPlayers([]);
+                setPlayerLoadError(null);
+                setIsPlayersLoading(false);
+                return;
+            }
+
+            setIsPlayersLoading(true);
+            setPlayerLoadError(null);
+
+            try {
+                const params = new URLSearchParams({
+                    search: debouncedPlayerSearch,
+                    take: '50',
+                    skip: '0',
+                });
+                const playersRes = await fetch(`${API_BASE_URL}/api/players?${params.toString()}`, {
+                    signal: controller.signal,
+                });
+                if (!playersRes.ok) {
+                    throw new Error(`Failed to load players (${playersRes.status})`);
+                }
+                const data = await playersRes.json();
+                const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+                setPlayers(list);
+            } catch (err) {
+                if ((err as { name?: string }).name === 'AbortError') return;
+                console.error('Error loading players:', err);
+                setPlayerLoadError('No s\'han pogut carregar els jugadors. Torna-ho a provar.');
+            } finally {
+                setIsPlayersLoading(false);
+            }
+        };
+
+        fetchPlayers();
+        return () => controller.abort();
+    }, [debouncedPlayerSearch, id]);
 
     const handleAssignPlayer = async (playerId: string) => {
         if (!id) return;
@@ -88,15 +135,8 @@ export const TeamPlayersPage = () => {
     };
 
     const filteredPlayers = players.filter(player => {
-        const searchLower = playerSearch.toLowerCase();
-        const matchesSearch =
-            player.name.toLowerCase().includes(searchLower) ||
-            player.number.toString().includes(searchLower);
-
-        // Filter out players already assigned to this team
         const isAssigned = team?.players?.some(p => p.player?.id === player.id);
-
-        return matchesSearch && !isAssigned;
+        return !isAssigned;
     });
 
     const assignedPlayersSorted = (team?.players || [])
@@ -108,7 +148,7 @@ export const TeamPlayersPage = () => {
             return (a.player?.name || '').localeCompare(b.player?.name || '');
         });
 
-    if (isLoading) {
+    if (isTeamLoading) {
         return (
             <div className="flex justify-center items-center min-h-screen">
                 <div className="flex items-center gap-3">
@@ -221,8 +261,16 @@ export const TeamPlayersPage = () => {
                         />
                     </div>
                     <div className="max-h-[60vh] overflow-y-auto border border-gray-200 rounded-lg">
-                        {filteredPlayers.length === 0 ? (
-                            <div className="p-4 text-center text-gray-500">No players found</div>
+                        {!debouncedPlayerSearch || debouncedPlayerSearch.length < 2 ? (
+                            <div className="p-4 text-center text-gray-500">
+                                {t('teamPlayers.searchHint')}
+                            </div>
+                        ) : playerLoadError ? (
+                            <div className="p-4 text-center text-red-600">{t('teamPlayers.loadError')}</div>
+                        ) : isPlayersLoading ? (
+                            <div className="p-4 text-center text-gray-500">{t('teamPlayers.loadingPlayers')}</div>
+                        ) : filteredPlayers.length === 0 ? (
+                            <div className="p-4 text-center text-gray-500">{t('teamPlayers.noPlayersFound')}</div>
                         ) : (
                             <div className="divide-y divide-gray-100">
                                 {filteredPlayers.map(player => (

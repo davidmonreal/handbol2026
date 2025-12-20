@@ -154,6 +154,12 @@ export const translations: Record<LanguageCode, TranslationMap> = {
     'dashboard.myTeamsStats.cta': 'Open statistics',
     'dashboard.myTeamsStats.empty': 'You have no teams marked as yours yet.',
     'dashboard.myTeamsStats.error': 'We couldn\'t load your teams right now.',
+    'crud.emptySearchPrompt': 'Search to load {{entityPlural}} or apply a filter.',
+    'crud.emptyCreatePrompt': 'No {{entityPlural}} found. Create your first {{entity}}!',
+    'teamPlayers.searchHint': 'Type at least 2 characters to search players.',
+    'teamPlayers.loadingPlayers': 'Loading players...',
+    'teamPlayers.loadError': 'Could not load players. Please try again.',
+    'teamPlayers.noPlayersFound': 'No players found',
   },
   ca: {
     'nav.dashboard': 'Dashboard',
@@ -298,6 +304,12 @@ export const translations: Record<LanguageCode, TranslationMap> = {
     'dashboard.myTeamsStats.cta': 'Obrir estadístiques',
     'dashboard.myTeamsStats.empty': 'Encara no tens cap equip marcat com a teu.',
     'dashboard.myTeamsStats.error': 'No s\'han pogut carregar els teus equips.',
+    'crud.emptySearchPrompt': 'Cerca per carregar {{entityPlural}} o aplica un filtre.',
+    'crud.emptyCreatePrompt': 'No s\'han trobat {{entityPlural}}. Crea el primer {{entity}}!',
+    'teamPlayers.searchHint': 'Escriu com a mínim 2 caràcters per buscar jugadors.',
+    'teamPlayers.loadingPlayers': 'Carregant jugadors...',
+    'teamPlayers.loadError': 'No s\'han pogut carregar els jugadors. Torna-ho a provar.',
+    'teamPlayers.noPlayersFound': 'No s\'han trobat jugadors',
   },
   es: {
     'nav.dashboard': 'Dashboard',
@@ -442,6 +454,12 @@ export const translations: Record<LanguageCode, TranslationMap> = {
     'dashboard.myTeamsStats.cta': 'Abrir estadísticas',
     'dashboard.myTeamsStats.empty': 'Aún no tienes equipos marcados como tuyos.',
     'dashboard.myTeamsStats.error': 'No se pudieron cargar tus equipos.',
+    'crud.emptySearchPrompt': 'Busca para cargar {{entityPlural}} o aplica un filtro.',
+    'crud.emptyCreatePrompt': 'No se han encontrado {{entityPlural}}. ¡Crea el primer {{entity}}!',
+    'teamPlayers.searchHint': 'Escribe al menos 2 caracteres para buscar jugadores.',
+    'teamPlayers.loadingPlayers': 'Cargando jugadores...',
+    'teamPlayers.loadError': 'No se han podido cargar los jugadores. Inténtalo de nuevo.',
+    'teamPlayers.noPlayersFound': 'No se encontraron jugadores',
   },
 };
 

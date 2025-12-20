@@ -121,6 +121,9 @@ export const PlayersManagement = () => {
         formFields: [],
 
         searchFields: ['name'],
+        requireSearchBeforeFetch: true,
+        minSearchLength: 2,
+        allowFetchWithoutSearchIfFilters: true,
 
         // Server-side filtering by clubId
         serverFilters: selectedClubId ? { clubId: selectedClubId } : undefined,
