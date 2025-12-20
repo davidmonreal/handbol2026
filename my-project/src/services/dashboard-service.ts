@@ -57,8 +57,9 @@ const parseLimit = (value: string | undefined, fallback: number) => {
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
 };
 
-const PENDING_LIMIT = parseLimit(process.env.DASHBOARD_PENDING_MATCH_LIMIT, 5);
-const RECENT_LIMIT = parseLimit(process.env.DASHBOARD_RECENT_MATCH_LIMIT, 5);
+// Show more items on home so past matches remain visible without tweaking env vars
+const PENDING_LIMIT = parseLimit(process.env.DASHBOARD_PENDING_MATCH_LIMIT, 10);
+const RECENT_LIMIT = parseLimit(process.env.DASHBOARD_RECENT_MATCH_LIMIT, 15);
 
 export class DashboardService {
   constructor(private insightsService: InsightsService = new InsightsService()) {}
