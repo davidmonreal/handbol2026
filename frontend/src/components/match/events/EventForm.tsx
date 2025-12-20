@@ -114,14 +114,6 @@ export const EventForm = ({
         }
     }, [event]);
 
-    // Apply initial state
-    useEffect(() => {
-        if (!event) {
-            if (initialState?.playerId) setSelectedPlayerId(initialState.playerId);
-            if (initialState?.opponentGoalkeeperId) setSelectedOpponentGkId(initialState.opponentGoalkeeperId);
-        }
-    }, [initialState, event]);
-
     // Constants
     const shotResults = useMemo(
         () => [
@@ -446,7 +438,7 @@ export const EventForm = ({
                                         }}
                                         className={`px-3 py-3 rounded-lg text-sm font-semibold transition-all text-white ${sanction.color} ${isActive
                                             ? 'shadow-lg ring-2 ring-offset-1 ring-indigo-200 brightness-110'
-                                            : 'opacity-60 hover:opacity-90'
+                                            : 'opacity-40 hover:opacity-90'
                                             }`}
                                     >
                                         {sanction.label}

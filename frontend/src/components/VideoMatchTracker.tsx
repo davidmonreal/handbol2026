@@ -193,7 +193,8 @@ const VideoMatchTrackerContent = () => {
     const activeTeam = getActiveTeam();
     const opponentTeam = getOpponentTeam();
     const eventFormInitialState = useMemo(() => ({
-        opponentGoalkeeperId: selectedOpponentGoalkeeper?.id
+        opponentGoalkeeperId: selectedOpponentGoalkeeper?.id,
+        playerId: undefined as string | undefined,
     }), [selectedOpponentGoalkeeper?.id]);
 
     const handleSaveEvent = async (event: MatchEvent, opponentGkId?: string) => {
@@ -376,7 +377,9 @@ const VideoMatchTrackerContent = () => {
                             </div>
 
                             <EventForm
-                                key={editingEvent ? editingEvent.id : `new-event-${activeTeamId}`}
+                                key={editingEvent
+                                    ? editingEvent.id
+                                    : `new-event-${activeTeamId}-${eventFormInitialState.playerId ?? 'none'}-${eventFormInitialState.opponentGoalkeeperId ?? 'none'}`}
                                 event={editingEvent}
                                 team={activeTeam}
                                 opponentTeam={opponentTeam || undefined}

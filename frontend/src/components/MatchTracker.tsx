@@ -255,7 +255,8 @@ const MatchTracker = () => {
 
   // Memoize initialState to prevent EventForm from resetting local state on every timer tick
   const eventFormInitialState = useMemo(() => ({
-    opponentGoalkeeperId: selectedOpponentGoalkeeper?.id
+    opponentGoalkeeperId: selectedOpponentGoalkeeper?.id,
+    playerId: undefined as string | undefined,
   }), [selectedOpponentGoalkeeper?.id]);
 
   const missingFirstHalf = !realTimeFirstHalfStart;
@@ -401,7 +402,9 @@ const MatchTracker = () => {
               )}
 
               <EventForm
-                key={editingEvent ? editingEvent.id : `new-event-${activeTeamId}`}
+                key={editingEvent
+                  ? editingEvent.id
+                  : `new-event-${activeTeamId}-${eventFormInitialState.playerId ?? 'none'}-${eventFormInitialState.opponentGoalkeeperId ?? 'none'}`}
                 event={editingEvent}
                 team={activeTeam}
                 opponentTeam={opponentTeam || undefined}
