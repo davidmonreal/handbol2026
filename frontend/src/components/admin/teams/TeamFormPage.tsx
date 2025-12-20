@@ -11,6 +11,7 @@ export const TeamFormPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
+    const fromState = location.state as { from?: string; prefillClubId?: string; next?: string } | null;
     const isEditMode = !!id;
 
     const [isLoading, setIsLoading] = useState(false);
@@ -68,6 +69,8 @@ export const TeamFormPage = () => {
                     setSelectedClubId(team.club?.id || null);
                     setSelectedSeasonId(team.season?.id || null);
                     setIsMyTeam(team.isMyTeam || false);
+                } else if (fromState?.prefillClubId) {
+                    setSelectedClubId(fromState.prefillClubId);
                 }
             } catch (err) {
                 console.error('Error loading data:', err);
@@ -132,11 +135,17 @@ export const TeamFormPage = () => {
             const clubName = clubs.find(c => c.id === selectedClubId)?.name || '';
             const successMessage = `${savedTeam.name} ${isEditMode ? 'updated' : 'created'} in ${clubName} ${category}`;
 
-            if (location.state?.from) {
-                navigate(location.state.from, { state: { message: successMessage } });
-            } else {
-                navigate('/teams', { state: { message: successMessage } });
+            if (!isEditMode && fromState?.next === 'team-players') {
+                const goToPlayers = window.confirm('Add players to this team now?');
+                if (goToPlayers) {
+                    navigate(`/teams/${savedTeam.id}/players`, { replace: true });
+                    return;
+                }
+            } else if (fromState?.from) {
+                navigate(fromState.from, { state: { message: successMessage } });
             }
+
+            navigate('/teams', { state: { message: successMessage } });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to save team');
         } finally {
@@ -158,8 +167,8 @@ export const TeamFormPage = () => {
             <div className="flex items-center gap-4 mb-6">
                 <button
                     onClick={() => {
-                        if (location.state?.from) {
-                            navigate(location.state.from);
+                        if (fromState?.from) {
+                            navigate(fromState.from);
                         } else {
                             navigate('/teams');
                         }

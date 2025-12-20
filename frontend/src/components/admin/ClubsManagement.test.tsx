@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { ClubsManagement } from './ClubsManagement';
 
 // Mock API
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
+const mockConfirm = vi.spyOn(window, 'confirm');
 
 describe('ClubsManagement', () => {
     beforeEach(() => {
@@ -13,15 +15,22 @@ describe('ClubsManagement', () => {
             ok: true,
             json: async () => [],
         });
+        mockConfirm.mockReturnValue(false);
     });
 
+    const renderWithRouter = () => render(
+        <MemoryRouter>
+            <ClubsManagement />
+        </MemoryRouter>
+    );
+
     it('renders the component title', async () => {
-        render(<ClubsManagement />);
+        renderWithRouter();
         expect(screen.getByText('Clubs Management')).toBeInTheDocument();
     });
 
     it('fetches clubs on mount', async () => {
-        render(<ClubsManagement />);
+        renderWithRouter();
         expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/api/clubs'));
     });
 
@@ -36,7 +45,7 @@ describe('ClubsManagement', () => {
             json: async () => mockClubs,
         });
 
-        render(<ClubsManagement />);
+        renderWithRouter();
 
         await waitFor(() => {
             expect(screen.getByText('Club A')).toBeInTheDocument();

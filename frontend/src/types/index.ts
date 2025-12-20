@@ -185,4 +185,5 @@ export interface CrudConfig<T> {
     requireSearchBeforeFetch?: boolean;
     minSearchLength?: number;
     allowFetchWithoutSearchIfFilters?: boolean;
+    onAfterSave?: (item: T) => void;
 }

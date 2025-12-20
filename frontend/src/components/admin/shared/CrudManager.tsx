@@ -188,6 +188,11 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                 const errorData = await response.json();
                 throw new Error(errorData.error || `Failed to save ${config.entityName}`);
             }
+            const savedItem = await response.json();
+
+            if (config.onAfterSave) {
+                config.onAfterSave(savedItem);
+            }
 
             // Refresh items (reset to page 0)
             setPage(0);
