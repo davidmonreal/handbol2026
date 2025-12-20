@@ -446,7 +446,7 @@ export const EventForm = ({
                                         }}
                                         className={`px-3 py-3 rounded-lg text-sm font-semibold transition-all text-white ${sanction.color} ${isActive
                                             ? 'shadow-lg ring-2 ring-offset-1 ring-indigo-200 brightness-110'
-                                            : 'opacity-75 hover:opacity-95'
+                                            : 'opacity-60 hover:opacity-90'
                                             }`}
                                     >
                                         {sanction.label}
