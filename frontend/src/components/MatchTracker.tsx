@@ -3,10 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useMatch } from '../context/MatchContext';
 import { useSafeTranslation } from '../context/LanguageContext';
 import type { MatchEvent } from '../types';
+import type { TeamApiResponse, TeamPlayerApiResponse } from '../types/api.types';
 import { API_BASE_URL } from '../config/api';
 import { Scoreboard } from './match/Scoreboard';
 import { EventList } from './match/events/EventList';
 import { EventForm } from './match/events/EventForm';
+import { useMatchClock } from './match/useMatchClock';
 
 
 const MatchTracker = () => {
@@ -62,20 +64,22 @@ const MatchTracker = () => {
 
         const data = await response.json();
 
-        const transformTeam = (teamData: any, color: string) => ({
-          id: teamData.id,
-          name: teamData.name,
-          category: teamData.category,
-          club: teamData.club,
-          color: color,
-          players: (teamData.players || []).map((p: any) => ({
-            id: p.player.id,
-            number: p.player.number,
-            name: p.player.name,
-            position: p.role || 'Player',
-            isGoalkeeper: p.player.isGoalkeeper
-          }))
-        });
+    const transformTeam = (teamData: TeamApiResponse, color: string) => ({
+      id: teamData.id,
+      name: teamData.name,
+      category: teamData.category,
+      club: teamData.club
+        ? { id: teamData.club.id ?? '', name: teamData.club.name }
+        : undefined,
+      color: color,
+      players: (teamData.players || []).map((p: TeamPlayerApiResponse) => ({
+        id: p.player.id,
+        number: p.player.number,
+        name: p.player.name,
+        position: p.role || 'Player',
+        isGoalkeeper: p.player.isGoalkeeper ?? false
+      }))
+    });
 
         const home = transformTeam(data.homeTeam, 'bg-yellow-400');
         const visitor = transformTeam(data.awayTeam, 'bg-white');
@@ -163,49 +167,15 @@ const MatchTracker = () => {
   const opponentTeam = getOpponentTeam();
   const activeTeamLocked = isTeamLocked(activeTeamId);
 
-  // Keep the visible clock in sync with real time when halves are calibrated
-  useEffect(() => {
-    // If the currently active team is unlocked, ignore existing half markers from the other team
-    // so we can restart the clock for this side without inheriting stale timestamps.
-    if (!activeTeamLocked) {
-      setTime(0);
-      return;
-    }
-
-    if (!realTimeFirstHalfStart || timerStopped) return;
-
-    const firstHalfDuration = realTimeFirstHalfEnd
-      ? Math.max(0, Math.floor((realTimeFirstHalfEnd - realTimeFirstHalfStart) / 1000))
-      : null;
-
-    // If we've finished the first half but haven't started the second, keep the last recorded time
-    if (realTimeFirstHalfEnd && !realTimeSecondHalfStart) {
-      setTime(firstHalfDuration ?? 0);
-      return;
-    }
-
-    // If the match is finished, stick to the final recorded value
-    if (realTimeSecondHalfEnd && realTimeSecondHalfStart) {
-      const firstPhase = firstHalfDuration ?? Math.max(0, Math.floor((realTimeSecondHalfStart - realTimeFirstHalfStart) / 1000));
-      const elapsedSecond = Math.max(0, Math.floor((realTimeSecondHalfEnd - realTimeSecondHalfStart) / 1000));
-      setTime(firstPhase + elapsedSecond);
-      return;
-    }
-
-    const computeTime = () => {
-      if (realTimeSecondHalfStart) {
-        const firstPhase = firstHalfDuration ?? Math.max(0, Math.floor((realTimeSecondHalfStart - realTimeFirstHalfStart) / 1000));
-        const elapsedSecond = Math.max(0, Math.floor((Date.now() - realTimeSecondHalfStart) / 1000));
-        return firstPhase + elapsedSecond;
-      }
-
-      return Math.max(0, Math.floor((Date.now() - realTimeFirstHalfStart) / 1000));
-    };
-
-    setTime(computeTime());
-    const timer = setInterval(() => setTime(computeTime()), 1000);
-    return () => clearInterval(timer);
-  }, [realTimeFirstHalfStart, realTimeFirstHalfEnd, realTimeSecondHalfStart, realTimeSecondHalfEnd, setTime, timerStopped, activeTeamLocked]);
+  useMatchClock({
+    activeTeamLocked,
+    timerStopped,
+    realTimeFirstHalfStart,
+    realTimeFirstHalfEnd,
+    realTimeSecondHalfStart,
+    realTimeSecondHalfEnd,
+    setTime,
+  });
 
 
   /* 

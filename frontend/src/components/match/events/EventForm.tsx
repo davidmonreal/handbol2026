@@ -10,7 +10,7 @@ import { CategorySelector } from './components/CategorySelector';
 import { OpponentGoalkeeperSelector, PlayerGrid } from './components/ParticipantSelectors';
 import { GoalTargetGrid } from './components/GoalTargetGrid';
 import { ContextToggles } from './components/ContextToggles';
-import type { Team } from './components/types';
+import type { EventFormTeam as Team } from './components/types';
 
 interface EventFormProps {
     event?: MatchEvent | null; // Optional for creation mode

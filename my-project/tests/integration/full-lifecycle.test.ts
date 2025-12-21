@@ -36,13 +36,16 @@ describe('Full Application Lifecycle Integration Test', () => {
         ].filter(Boolean) as unknown as { id?: string; homeTeamId?: string; awayTeamId?: string }[],
       },
     });
-    await prisma.playerTeamSeason.deleteMany({
-      where: { teamId: { in: [homeTeamId, awayTeamId] } },
-    });
-    await prisma.team.deleteMany({ where: { id: { in: [homeTeamId, awayTeamId] } } });
-    await prisma.player.deleteMany({ where: { id: playerId } });
-    await prisma.season.deleteMany({ where: { id: seasonId } });
-    await prisma.club.deleteMany({ where: { id: clubId } });
+    const teamIds = [homeTeamId, awayTeamId].filter(Boolean) as string[];
+    if (teamIds.length) {
+      await prisma.playerTeamSeason.deleteMany({
+        where: { teamId: { in: teamIds } },
+      });
+      await prisma.team.deleteMany({ where: { id: { in: teamIds } } });
+    }
+    if (playerId) await prisma.player.deleteMany({ where: { id: playerId } });
+    if (seasonId) await prisma.season.deleteMany({ where: { id: seasonId } });
+    if (clubId) await prisma.club.deleteMany({ where: { id: clubId } });
   };
 
   beforeAll(async () => {
