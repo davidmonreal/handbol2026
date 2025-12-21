@@ -2,41 +2,64 @@ import { Component, Suspense, lazy } from 'react';
 import type { ReactNode } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { MatchProvider } from './context/MatchContext';
-const AdminLayout = lazy(async () => ({
+const lazyWithRetry = (factory: () => Promise<{ default: React.ComponentType<any> }>) =>
+  lazy(async () => {
+    try {
+      return await factory();
+    } catch (err: any) {
+      const message = err?.message ?? '';
+      // Handle stale chunk loads (e.g., deployment race) by forcing a one-time reload.
+      const isMimeTypeError = message.includes('valid JavaScript MIME type');
+      const isChunkError = /ChunkLoadError|Loading chunk|Failed to fetch dynamically imported module/i.test(message);
+      if ((isMimeTypeError || isChunkError) && typeof window !== 'undefined') {
+        const win = window as Window & { __lazyChunkReloaded?: boolean };
+        if (!win.__lazyChunkReloaded) {
+          win.__lazyChunkReloaded = true;
+          win.location.reload();
+          return new Promise(() => {
+            /* wait for reload */
+          });
+        }
+      }
+      throw err;
+    }
+  });
+
+const AdminLayout = lazyWithRetry(async () => ({
   default: (await import('./components/admin/AdminLayout')).AdminLayout,
 }));
-const Dashboard = lazy(() => import('./components/Dashboard'));
-const MatchTracker = lazy(() => import('./components/MatchTracker'));
-const VideoMatchTracker = lazy(() => import('./components/VideoMatchTracker'));
-const Statistics = lazy(() => import('./components/Statistics'));
-const MatchesManagement = lazy(async () => ({
+const Dashboard = lazyWithRetry(() => import('./components/Dashboard'));
+const MatchTracker = lazyWithRetry(() => import('./components/MatchTracker'));
+const VideoMatchTracker = lazyWithRetry(() => import('./components/VideoMatchTracker'));
+const Statistics = lazyWithRetry(() => import('./components/Statistics'));
+const MatchesManagement = lazyWithRetry(async () => ({
   default: (await import('./components/admin/MatchesManagement')).MatchesManagement,
 }));
-const ClubsManagement = lazy(async () => ({
+const ClubsManagement = lazyWithRetry(async () => ({
   default: (await import('./components/admin/ClubsManagement')).ClubsManagement,
 }));
-const SeasonsManagement = lazy(async () => ({
+const SeasonsManagement = lazyWithRetry(async () => ({
   default: (await import('./components/admin/SeasonsManagement')).SeasonsManagement,
 }));
-const PlayersManagement = lazy(async () => ({
+const PlayersManagement = lazyWithRetry(async () => ({
   default: (await import('./components/admin/PlayersManagement')).PlayersManagement,
 }));
-const ImportPlayers = lazy(async () => ({
+const ImportPlayers = lazyWithRetry(async () => ({
   default: (await import('./components/admin/ImportPlayers')).ImportPlayers,
 }));
-const TeamsManagement = lazy(async () => ({
+const TeamsManagement = lazyWithRetry(async () => ({
   default: (await import('./components/admin/TeamsManagement')).TeamsManagement,
 }));
-const PlayerFormPage = lazy(async () => ({
+const PlayerFormPage = lazyWithRetry(async () => ({
   default: (await import('./components/admin/players/PlayerFormPage')).PlayerFormPage,
 }));
-const TeamFormPage = lazy(async () => ({
+const TeamFormPage = lazyWithRetry(async () => ({
   default: (await import('./components/admin/teams/TeamFormPage')).TeamFormPage,
 }));
-const TeamPlayersPage = lazy(async () => ({
+const TeamPlayersPage = lazyWithRetry(async () => ({
   default: (await import('./components/admin/teams/TeamPlayersPage')).TeamPlayersPage,
 }));
-const MatchFormPage = lazy(async () => ({
+const MatchFormPage = lazyWithRetry(async () => ({
   default: (await import('./components/admin/matches/MatchFormPage')).MatchFormPage,
 }));
 
