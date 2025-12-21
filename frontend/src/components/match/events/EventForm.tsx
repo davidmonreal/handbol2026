@@ -1,6 +1,5 @@
-
 import { useRef } from 'react';
-import type { MatchEvent, TurnoverType, SanctionType } from '../../../types';
+import type { MatchEvent, TurnoverType, SanctionType, ShotResult, ZoneType } from '../../../types';
 import { ZoneSelector } from '../shared/ZoneSelector';
 import { ConfirmationModal } from '../../common';
 import { useSafeTranslation } from '../../../context/LanguageContext';
@@ -11,6 +10,26 @@ import { OpponentGoalkeeperSelector, PlayerGrid } from './components/Participant
 import { GoalTargetGrid } from './components/GoalTargetGrid';
 import { ContextToggles } from './components/ContextToggles';
 import type { EventFormTeam as Team } from './components/types';
+import type { EventCategory } from './eventFormStateMachine';
+
+export type EventFormController = ReturnType<typeof useEventFormState>;
+
+type EventFormHandlers = {
+    onSelectPlayer: (playerId: string) => void;
+    onSelectOpponentGk: (playerId: string) => void;
+    onSelectCategory: (category: EventCategory) => void;
+    onSelectAction: (action: ShotResult | TurnoverType | SanctionType | null) => void;
+    onSelectZone: (zone: ZoneType | null) => void;
+    onSelectTarget: (target?: number) => void;
+    onToggleCollective: (value: boolean) => void;
+    onToggleOpposition: (value: boolean) => void;
+    onToggleCounterAttack: (value: boolean) => void;
+    onRequestDelete: () => void;
+    onConfirmDelete: () => void;
+    onCancelDelete: () => void;
+    onResetAndCancel: () => void;
+    onSave: () => void | Promise<void>;
+};
 
 interface EventFormProps {
     event?: MatchEvent | null; // Optional for creation mode
@@ -26,7 +45,260 @@ interface EventFormProps {
     onCancel: () => void;
     onDelete?: (eventId: string) => void;
     locked?: boolean;
+    controller?: EventFormController;
 }
+
+type EventFormViewProps = {
+    event?: MatchEvent | null;
+    team: Team;
+    opponentTeam?: Team;
+    locked: boolean;
+    controller: EventFormController;
+    handlers: EventFormHandlers;
+    t: (key: string) => string;
+};
+
+type OpponentGoalkeeperSectionProps = {
+    opponentGoalkeepers: Team['players'];
+    selectedOpponentGkId: string | null;
+    onSelect: (playerId: string) => void;
+    t: (key: string) => string;
+};
+
+const OpponentGoalkeeperSection = ({
+    opponentGoalkeepers,
+    selectedOpponentGkId,
+    onSelect,
+    t,
+}: OpponentGoalkeeperSectionProps) => (
+    <OpponentGoalkeeperSelector
+        opponentGoalkeepers={opponentGoalkeepers}
+        selectedOpponentGkId={selectedOpponentGkId}
+        onSelect={onSelect}
+        t={t}
+    />
+);
+
+type PlayerGridSectionProps = {
+    players: Team['players'];
+    selectedPlayerId: string | null;
+    onSelect: (playerId: string) => void;
+    t: (key: string) => string;
+};
+
+const PlayerGridSection = ({
+    players,
+    selectedPlayerId,
+    onSelect,
+    t,
+}: PlayerGridSectionProps) => (
+    <PlayerGrid players={players} selectedPlayerId={selectedPlayerId} onSelect={onSelect} t={t} />
+);
+
+type ActionSelectionSectionProps = {
+    selectedCategory: EventCategory;
+    selectedAction: ShotResult | TurnoverType | SanctionType | null;
+    shotResults: EventFormController['shotResults'];
+    turnoverTypes: EventFormController['turnoverTypes'];
+    sanctionTypes: EventFormController['sanctionTypes'];
+    onSelectAction: (action: ShotResult | TurnoverType | SanctionType | null) => void;
+    onForceCollective: () => void;
+    onForceOpposition: () => void;
+    lockClass: string;
+    t: (key: string) => string;
+};
+
+const ActionSelectionSection = ({
+    selectedCategory,
+    selectedAction,
+    shotResults,
+    turnoverTypes,
+    sanctionTypes,
+    onSelectAction,
+    onForceCollective,
+    onForceOpposition,
+    lockClass,
+    t,
+}: ActionSelectionSectionProps) => (
+    <div className={lockClass}>
+        <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            {selectedCategory === 'Shot'
+                ? t('eventForm.resultLabel')
+                : selectedCategory === 'Turnover'
+                    ? t('eventForm.typeLabel')
+                    : t('eventForm.severityLabel')}
+        </div>
+
+        {selectedCategory === 'Shot' && (
+            <ShotResultSelector
+                selectedAction={selectedAction as ShotResult | null}
+                results={shotResults}
+                onSelect={(value: ShotResult) => onSelectAction(value)}
+            />
+        )}
+
+        {selectedCategory === 'Turnover' && (
+            <TurnoverSelector
+                selectedAction={selectedAction}
+                types={turnoverTypes}
+                onSelect={(value: TurnoverType) => onSelectAction(value)}
+                onForceCollective={onForceCollective}
+                onForceOpposition={onForceOpposition}
+            />
+        )}
+
+        {selectedCategory === 'Sanction' && (
+            <SanctionSelector
+                selectedAction={selectedAction}
+                sanctions={sanctionTypes}
+                onSelect={(value: SanctionType) => onSelectAction(value)}
+                onForceOpposition={onForceOpposition}
+            />
+        )}
+    </div>
+);
+
+type GoalTargetSectionProps = {
+    isVisible: boolean;
+    selectedAction: ShotResult | TurnoverType | SanctionType | null;
+    selectedTarget?: number;
+    onSelectTarget: (target?: number) => void;
+    t: (key: string) => string;
+};
+
+const GoalTargetSection = ({
+    isVisible,
+    selectedAction,
+    selectedTarget,
+    onSelectTarget,
+    t,
+}: GoalTargetSectionProps) =>
+    isVisible ? (
+        <GoalTargetGrid
+            selectedAction={selectedAction}
+            selectedTarget={selectedTarget}
+            onSelect={onSelectTarget}
+            t={t}
+        />
+    ) : null;
+
+type ZoneSelectionSectionProps = {
+    selectedZone: ZoneType | null;
+    onZoneSelect: (zone: ZoneType | null) => void;
+    lockClass: string;
+    t: (key: string) => string;
+};
+
+const ZoneSelectionSection = ({
+    selectedZone,
+    onZoneSelect,
+    lockClass,
+    t,
+}: ZoneSelectionSectionProps) => (
+    <div className={lockClass}>
+        <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            {t('eventForm.selectZone')}
+        </div>
+        <ZoneSelector selectedZone={selectedZone} onZoneSelect={onZoneSelect} variant="minimal" />
+    </div>
+);
+
+type ContextToggleSectionProps = {
+    selectedCategory: EventCategory;
+    isCollective: boolean;
+    hasOpposition: boolean;
+    isCounterAttack: boolean;
+    onToggleCollective: (value: boolean) => void;
+    onToggleOpposition: (value: boolean) => void;
+    onToggleCounterAttack: (value: boolean) => void;
+    lockClass: string;
+    t: (key: string) => string;
+};
+
+const ContextToggleSection = ({
+    selectedCategory,
+    isCollective,
+    hasOpposition,
+    isCounterAttack,
+    onToggleCollective,
+    onToggleOpposition,
+    onToggleCounterAttack,
+    lockClass,
+    t,
+}: ContextToggleSectionProps) =>
+    selectedCategory === 'Shot' || selectedCategory === 'Sanction' || selectedCategory === 'Turnover'
+        ? (
+            <div className={lockClass}>
+                <ContextToggles
+                    isCollective={isCollective}
+                    hasOpposition={hasOpposition}
+                    isCounterAttack={isCounterAttack}
+                    onToggleCollective={onToggleCollective}
+                    onToggleOpposition={onToggleOpposition}
+                    onToggleCounterAttack={onToggleCounterAttack}
+                    t={t}
+                />
+            </div>
+        )
+        : null;
+
+type FooterActionsSectionProps = {
+    event?: MatchEvent | null;
+    locked: boolean;
+    isPlayerSelected: boolean;
+    onCancel: () => void;
+    onSave: () => void;
+    onDelete?: () => void;
+    t: (key: string) => string;
+};
+
+const FooterActionsSection = ({
+    event,
+    locked,
+    isPlayerSelected,
+    onCancel,
+    onSave,
+    onDelete,
+    t,
+}: FooterActionsSectionProps) => (
+    <div className={`flex items-center justify-between gap-3 pt-3 border-t border-gray-300 flex-wrap ${locked ? 'opacity-50 cursor-not-allowed' : ''}`}>
+        <div className="flex items-center gap-3 flex-wrap">
+            {event && (
+                <button
+                    onClick={onDelete}
+                    className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-700 font-medium transition-colors disabled:text-gray-300 disabled:hover:text-gray-300"
+                    disabled={locked}
+                    data-testid="delete-event-button"
+                >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    {t('eventForm.deleteButton')}
+                </button>
+            )}
+        </div>
+
+        <div className="flex gap-2 items-center flex-wrap justify-end">
+            <button
+                onClick={onCancel}
+                disabled={locked}
+                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors disabled:text-gray-400 disabled:border-gray-200 disabled:hover:bg-white"
+            >
+                {t('eventForm.cancelButton')}
+            </button>
+            <button
+                onClick={onSave}
+                className="px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 text-white hover:bg-indigo-700"
+                disabled={!isPlayerSelected || locked}
+            >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                {event ? t('eventForm.saveChanges') : t('eventForm.addEvent')}
+            </button>
+        </div>
+    </div>
+);
 
 export const EventForm = ({
     event = null,
@@ -39,17 +311,11 @@ export const EventForm = ({
     onCancel,
     onDelete,
     locked = false,
+    controller: injectedController,
 }: EventFormProps) => {
     const { t } = useSafeTranslation();
 
-    const {
-        state,
-        shotResults,
-        turnoverTypes,
-        sanctionTypes,
-        isGoalTargetVisible,
-        dispatchers,
-    } = useEventFormState({
+    const internalController = useEventFormState({
         event,
         teamId: team.id,
         initialState,
@@ -61,44 +327,83 @@ export const EventForm = ({
         onDelete,
         t,
     });
+    const controller = injectedController ?? internalController;
 
-    const {
-        selectedPlayerId,
-        selectedOpponentGkId,
-        selectedCategory,
-        selectedAction,
-        selectedZone,
-        selectedTarget,
-        isCollective,
-        hasOpposition,
-        isCounterAttack,
-        showDeleteConfirmation,
-    } = state;
+    const handlers: EventFormHandlers = {
+        onSelectPlayer: controller.dispatchers.selectPlayer,
+        onSelectOpponentGk: controller.dispatchers.selectOpponentGk,
+        onSelectCategory: controller.dispatchers.selectCategory,
+        onSelectAction: controller.dispatchers.selectAction,
+        onSelectZone: controller.dispatchers.selectZone,
+        onSelectTarget: controller.dispatchers.selectTarget,
+        onToggleCollective: controller.dispatchers.toggleCollective,
+        onToggleOpposition: controller.dispatchers.toggleOpposition,
+        onToggleCounterAttack: controller.dispatchers.toggleCounterAttack,
+        onRequestDelete: controller.dispatchers.requestDelete,
+        onConfirmDelete: controller.dispatchers.confirmDelete,
+        onCancelDelete: controller.dispatchers.cancelDelete,
+        onResetAndCancel: () => {
+            if (locked) return;
+            controller.dispatchers.resetFormPreservingOpponentGk();
+            onCancel();
+        },
+        onSave: controller.dispatchers.save,
+    };
 
+    return (
+        <EventFormView
+            event={event}
+            team={team}
+            opponentTeam={opponentTeam}
+            locked={locked}
+            controller={controller}
+            handlers={handlers}
+            t={t}
+        />
+    );
+};
+
+const EventFormView = ({
+    event,
+    team,
+    opponentTeam,
+    locked,
+    controller,
+    handlers,
+    t,
+}: EventFormViewProps) => {
     const {
-        selectPlayer,
-        selectOpponentGk,
-        selectCategory,
-        selectAction,
-        selectZone,
-        selectTarget,
-        toggleCollective,
-        toggleOpposition,
-        toggleCounterAttack,
-        resetFormPreservingOpponentGk,
-        save,
-        requestDelete,
-        confirmDelete,
-        cancelDelete,
-    } = dispatchers;
+        state: {
+            selectedPlayerId,
+            selectedOpponentGkId,
+            selectedCategory,
+            selectedAction,
+            selectedZone,
+            selectedTarget,
+            isCollective,
+            hasOpposition,
+            isCounterAttack,
+            showDeleteConfirmation,
+        },
+        shotResults,
+        turnoverTypes,
+        sanctionTypes,
+        isGoalTargetVisible,
+    } = controller;
+
+    const categoryRef = useRef<HTMLDivElement>(null);
+    const formTopRef = useRef<HTMLDivElement>(null);
 
     const sortedPlayers = [...team.players].sort((a, b) => a.number - b.number);
     const opponentGoalkeepers = opponentTeam?.players.filter(p => p.isGoalkeeper) || [];
     const isPlayerSelected = !!selectedPlayerId;
     const lockClass = locked ? 'opacity-50 pointer-events-none' : '';
 
-    const categoryRef = useRef<HTMLDivElement>(null);
-    const formTopRef = useRef<HTMLDivElement>(null);
+    const scrollCategoryIntoView = () => {
+        setTimeout(() => {
+            categoryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+    };
 
     return (
         <div ref={formTopRef} className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-6 relative">
@@ -106,159 +411,83 @@ export const EventForm = ({
                 <div className="absolute inset-0 bg-white/40 rounded-lg pointer-events-none" aria-hidden />
             )}
 
-            {/* Top Row: Opponent GK & Players */}
             <div className={`space-y-4 ${lockClass}`}>
-                {/* Opponent GK selector */}
-                <OpponentGoalkeeperSelector
+                <OpponentGoalkeeperSection
                     opponentGoalkeepers={opponentGoalkeepers}
                     selectedOpponentGkId={selectedOpponentGkId}
-                    onSelect={selectOpponentGk}
+                    onSelect={handlers.onSelectOpponentGk}
                     t={t}
                 />
-                {/* Player grid */}
-                <PlayerGrid
+                <PlayerGridSection
                     players={sortedPlayers}
                     selectedPlayerId={selectedPlayerId}
                     onSelect={(playerId) => {
-                        selectPlayer(playerId);
-                        setTimeout(() => {
-                            categoryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }, 100);
+                        handlers.onSelectPlayer(playerId);
+                        scrollCategoryIntoView();
                     }}
                     t={t}
                 />
             </div>
 
-            {/* 3. Category Selection */}
-            {/* Shot / Foul / Turnover tab buttons */}
             <CategorySelector
                 ref={categoryRef}
                 selectedCategory={selectedCategory}
-                onSelect={selectCategory}
+                onSelect={handlers.onSelectCategory}
                 lockClass={lockClass}
                 t={t}
             />
 
             <div className={isPlayerSelected ? `space-y-6 ${lockClass}` : `space-y-6 opacity-50 pointer-events-none ${lockClass}`}>
-                {/* 4. Action Selection */}
-                {/* Result/Type/Severity buttons per category */}
-                <div className={lockClass}>
-                    <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                        {selectedCategory === 'Shot'
-                            ? t('eventForm.resultLabel')
-                            : selectedCategory === 'Turnover'
-                                ? t('eventForm.typeLabel')
-                                : t('eventForm.severityLabel')}
-                    </div>
+                <ActionSelectionSection
+                    selectedCategory={selectedCategory}
+                    selectedAction={selectedAction}
+                    shotResults={shotResults}
+                    turnoverTypes={turnoverTypes}
+                    sanctionTypes={sanctionTypes}
+                    onSelectAction={handlers.onSelectAction}
+                    onForceCollective={() => handlers.onToggleCollective(true)}
+                    onForceOpposition={() => handlers.onToggleOpposition(true)}
+                    lockClass={lockClass}
+                    t={t}
+                />
 
-                    {selectedCategory === 'Shot' && (
-                        <ShotResultSelector
-                            selectedAction={selectedAction}
-                            results={shotResults}
-                            onSelect={selectAction}
-                        />
-                    )}
+                <GoalTargetSection
+                    isVisible={isGoalTargetVisible}
+                    selectedAction={selectedAction}
+                    selectedTarget={selectedTarget}
+                    onSelectTarget={handlers.onSelectTarget}
+                    t={t}
+                />
 
-                    {selectedCategory === 'Turnover' && (
-                        <TurnoverSelector
-                            selectedAction={selectedAction}
-                            types={turnoverTypes}
-                            onSelect={(value: TurnoverType) => selectAction(value)}
-                            onForceCollective={() => toggleCollective(true)}
-                            onForceOpposition={() => toggleOpposition(true)}
-                        />
-                    )}
+                <ZoneSelectionSection
+                    selectedZone={selectedZone}
+                    onZoneSelect={handlers.onSelectZone}
+                    lockClass={lockClass}
+                    t={t}
+                />
 
-                    {selectedCategory === 'Sanction' && (
-                        <SanctionSelector
-                            selectedAction={selectedAction}
-                            sanctions={sanctionTypes}
-                            onSelect={(value: SanctionType) => selectAction(value)}
-                            onForceOpposition={() => toggleOpposition(true)}
-                        />
-                    )}
-                </div>
-
-                {/* 5. Goal Target (Only for Goal/Save) */}
-                {/* Shot flow always shows the goal until the user explicitly selects an outcome that doesn't need it */}
-                {isGoalTargetVisible && (
-                    /* 3x3 goal target grid */
-                    <GoalTargetGrid
-                        selectedAction={selectedAction}
-                        selectedTarget={selectedTarget}
-                        onSelect={selectTarget}
-                        t={t}
-                    />
-                )}
-
-                {/* 6. Zone Selection */}
-                {/* 6m/9m/7m zone buttons */}
-                <div className={lockClass}>
-                    <div className="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('eventForm.selectZone')}</div>
-                    <ZoneSelector
-                        selectedZone={selectedZone}
-                        onZoneSelect={selectZone}
-                        variant="minimal"
-                    />
-                </div>
-
-                {/* 7. Context Toggles (Shots, Fouls, Turnovers) */}
-                {(selectedCategory === 'Shot' || selectedCategory === 'Sanction' || selectedCategory === 'Turnover') && (
-                    /* Collective / Opposition / Counter toggles */
-                    <ContextToggles
-                        isCollective={isCollective}
-                        hasOpposition={hasOpposition}
-                        isCounterAttack={isCounterAttack}
-                        onToggleCollective={toggleCollective}
-                        onToggleOpposition={toggleOpposition}
-                        onToggleCounterAttack={toggleCounterAttack}
-                        t={t}
-                    />
-                )}
+                <ContextToggleSection
+                    selectedCategory={selectedCategory}
+                    isCollective={isCollective}
+                    hasOpposition={hasOpposition}
+                    isCounterAttack={isCounterAttack}
+                    onToggleCollective={handlers.onToggleCollective}
+                    onToggleOpposition={handlers.onToggleOpposition}
+                    onToggleCounterAttack={handlers.onToggleCounterAttack}
+                    lockClass={lockClass}
+                    t={t}
+                />
             </div>
 
-            {/* Action Buttons */}
-            <div className={`flex items-center justify-between gap-3 pt-3 border-t border-gray-300 flex-wrap ${locked ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                <div className="flex items-center gap-3 flex-wrap">
-                    {event && (
-                        <button
-                            onClick={requestDelete}
-                            className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-700 font-medium transition-colors disabled:text-gray-300 disabled:hover:text-gray-300"
-                            disabled={locked}
-                            data-testid="delete-event-button"
-                        >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            {t('eventForm.deleteButton')}
-                        </button>
-                    )}
-                </div>
-
-                <div className="flex gap-2 items-center flex-wrap justify-end">
-                    <button
-                        onClick={() => {
-                            if (locked) return;
-                            resetFormPreservingOpponentGk();
-                            onCancel();
-                        }}
-                        disabled={locked}
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors disabled:text-gray-400 disabled:border-gray-200 disabled:hover:bg-white"
-                    >
-                        {t('eventForm.cancelButton')}
-                    </button>
-                    <button
-                        onClick={save}
-                        className="px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 text-white hover:bg-indigo-700"
-                        disabled={!isPlayerSelected || locked}
-                    >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        {event ? t('eventForm.saveChanges') : t('eventForm.addEvent')}
-                    </button>
-                </div>
-            </div>
+            <FooterActionsSection
+                event={event}
+                locked={locked}
+                isPlayerSelected={isPlayerSelected}
+                onCancel={handlers.onResetAndCancel}
+                onSave={handlers.onSave}
+                onDelete={handlers.onRequestDelete}
+                t={t}
+            />
 
             <ConfirmationModal
                 isOpen={showDeleteConfirmation}
@@ -267,8 +496,8 @@ export const EventForm = ({
                 confirmLabel={t('eventForm.deleteButton')}
                 cancelLabel={t('eventForm.cancelButton')}
                 variant="danger"
-                onConfirm={confirmDelete}
-                onCancel={cancelDelete}
+                onConfirm={handlers.onConfirmDelete}
+                onCancel={handlers.onCancelDelete}
             />
         </div>
     );

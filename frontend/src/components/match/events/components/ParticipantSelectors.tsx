@@ -2,7 +2,7 @@ import type { Translator, EventFormPlayer } from './types';
 
 type OpponentGoalkeeperSelectorProps = {
     opponentGoalkeepers: EventFormPlayer[];
-    selectedOpponentGkId: string;
+    selectedOpponentGkId: string | null;
     onSelect: (playerId: string) => void;
     t: Translator;
 };
@@ -72,7 +72,7 @@ export const OpponentGoalkeeperSelector = ({
 
 type PlayerGridProps = {
     players: EventFormPlayer[];
-    selectedPlayerId: string;
+    selectedPlayerId: string | null;
     onSelect: (playerId: string) => void;
     t: Translator;
 };
