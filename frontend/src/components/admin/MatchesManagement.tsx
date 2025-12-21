@@ -240,8 +240,8 @@ export const MatchesManagement = () => {
             },
             {
                 icon: Volleyball,
-                label: 'Video Tracker',
-                onClick: (match) => navigate(`/video-tracker/${match.id}`),
+                label: 'Match Tracker',
+                onClick: (match) => navigate(`/match-tracker/${match.id}`),
                 className: 'text-orange-600 hover:text-orange-900 mr-3',
             },
             {

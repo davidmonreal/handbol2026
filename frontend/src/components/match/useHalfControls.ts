@@ -31,6 +31,7 @@ type HalfControlsResult = {
   firstHalfFinish: HalfButtonState;
   secondHalfStart: HalfButtonState;
   secondHalfFinish: HalfButtonState;
+  showHalfControls: boolean;
   showSecondHalfControls: boolean;
   calibrationLoading: 'first' | 'second' | null;
   formatTime: (seconds: number) => string;
@@ -56,6 +57,9 @@ export function useHalfControls({
   t,
 }: HalfControlsParams): HalfControlsResult {
   const [calibrationLoading, setCalibrationLoading] = useState<'first' | 'second' | null>(null);
+  // Live clock state (no video): remember a user-initiated 1H start so we can enable Finish 1H
+  // after the first play, even before the backend marker is persisted.
+  const [firstHalfStartIssued, setFirstHalfStartIssued] = useState(false);
   // Start with 2H controls hidden; they'll appear immediately if 2H markers already exist (page refresh).
   const [showSecondHalfControls, setShowSecondHalfControls] = useState<boolean>(false);
   const finishMatchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -65,6 +69,9 @@ export function useHalfControls({
   const firstHalfFinished = !!realTimeFirstHalfEnd;
   const secondHalfStarted = !!realTimeSecondHalfStart;
   const secondHalfFinished = !!realTimeSecondHalfEnd;
+  const effectiveFirstHalfStarted = firstHalfStarted || firstHalfStartIssued;
+  // If we have video markers, we defer timekeeping to the video calibration (live buttons disable).
+  const hasVideoCalibration = firstHalfVideoStart !== null || secondHalfVideoStart !== null;
   // When the active team is locked, the user must see a frozen 00:00 clock and no start buttons.
   const effectiveTime = hideHalfControls ? 0 : time;
 
@@ -82,6 +89,18 @@ export function useHalfControls({
       if (timer) clearTimeout(timer);
     };
   }, [firstHalfFinished, secondHalfFinished, secondHalfStarted]);
+
+  useEffect(() => {
+    // Keep the issued flag in sync with persisted markers; reset when markers clear.
+    setFirstHalfStartIssued(!!realTimeFirstHalfStart);
+  }, [realTimeFirstHalfStart]);
+
+  useEffect(() => {
+    // When 2H finishes, hide its controls after the 3s grace period and leave the clock at 00:00.
+    if (!secondHalfFinished) return;
+    const timer = setTimeout(() => setShowSecondHalfControls(false), 3000);
+    return () => clearTimeout(timer);
+  }, [secondHalfFinished]);
 
   useEffect(() => {
     return () => {
@@ -124,6 +143,14 @@ export function useHalfControls({
       ? Math.max(0, Math.floor((realTimeSecondHalfEnd - realTimeSecondHalfStart) / 1000))
       : null;
 
+    // UX: when a half ends we want the visible clock to rest at 00:00 during the 3s gap and once the match is done.
+    if (secondHalfFinished) {
+      return { displayTime: 0, secondHalfDuration: secondDuration };
+    }
+    if (firstHalfFinished && !secondHalfStarted) {
+      return { displayTime: 0, secondHalfDuration: secondDuration };
+    }
+
     return { displayTime: adjustedTime, secondHalfDuration: secondDuration };
   }, [
     effectiveTime,
@@ -136,18 +163,26 @@ export function useHalfControls({
   ]);
 
   // Simplified: once started, show "finish" until the half is completed. Restarts are blocked when events exist.
+  // Button gating (live tracking only):
+  // - If video calibration exists, live buttons stay disabled because the clock is driven by video time.
+  // - 1H Start is enabled until the first play is logged; clearing plays re-enables it.
+  // - 1H Finish requires 1H to be started AND at least one play.
+  // - 2H Start shows after a 3s gap when 1H ends; it disables as soon as 2H starts.
+  // - 2H Finish enables immediately after 2H starts (no need to wait for a play).
   const firstHalfStartDisabled =
     hideHalfControls ||
     isFinished ||
+    hasVideoCalibration ||
     calibrationLoading !== null ||
     firstHalfFinished ||
-    (firstHalfStarted && hasAnyEvents);
+    hasAnyEvents;
 
   const firstHalfFinishDisabled =
     hideHalfControls ||
     isFinished ||
+    hasVideoCalibration ||
     calibrationLoading !== null ||
-    !firstHalfStarted ||
+    !effectiveFirstHalfStarted ||
     firstHalfFinished ||
     !hasAnyEvents;
 
@@ -156,33 +191,35 @@ export function useHalfControls({
   const secondHalfStartDisabled =
     hideHalfControls ||
     isFinished ||
+    hasVideoCalibration ||
     calibrationLoading !== null ||
     secondHalfFinished ||
-    (secondHalfStarted && hasAnyEvents) ||
+    secondHalfStarted ||
     secondHalfLocked ||
     !showSecondHalfControls;
 
   const secondHalfFinishDisabled =
     hideHalfControls ||
     isFinished ||
+    hasVideoCalibration ||
     calibrationLoading !== null ||
     !secondHalfStarted ||
     secondHalfFinished ||
-    !hasAnyEvents ||
     !showSecondHalfControls;
 
   const handleFirstHalfStart = async () => {
-    if (isFinished || hideHalfControls || hasAnyEvents || firstHalfFinished) return;
+    if (isFinished || hideHalfControls || hasVideoCalibration || hasAnyEvents || firstHalfFinished) return;
     setCalibrationLoading('first');
     try {
       await setRealTimeCalibration(1, Date.now(), 'start');
+      setFirstHalfStartIssued(true);
     } finally {
       setCalibrationLoading(null);
     }
   };
 
   const handleFirstHalfFinish = async () => {
-    if (isFinished || hideHalfControls || !firstHalfStarted || firstHalfFinished || !hasAnyEvents) return;
+    if (isFinished || hideHalfControls || hasVideoCalibration || !effectiveFirstHalfStarted || firstHalfFinished || !hasAnyEvents) return;
     setCalibrationLoading('first');
     try {
       await setRealTimeCalibration(1, Date.now(), 'end');
@@ -192,7 +229,7 @@ export function useHalfControls({
   };
 
   const handleSecondHalfStart = async () => {
-    if (isFinished || hideHalfControls || secondHalfLocked || secondHalfFinished) return;
+    if (isFinished || hideHalfControls || hasVideoCalibration || secondHalfLocked || secondHalfFinished) return;
     setCalibrationLoading('second');
     try {
       await setRealTimeCalibration(2, Date.now(), 'start');
@@ -202,7 +239,7 @@ export function useHalfControls({
   };
 
   const handleSecondHalfFinish = async () => {
-    if (isFinished || hideHalfControls || !secondHalfStarted || secondHalfFinished || !hasAnyEvents) return;
+    if (isFinished || hideHalfControls || hasVideoCalibration || !secondHalfStarted || secondHalfFinished) return;
     setCalibrationLoading('second');
     try {
       await setRealTimeCalibration(2, Date.now(), 'end');
@@ -276,6 +313,8 @@ export function useHalfControls({
     firstHalfFinish,
     secondHalfStart,
     secondHalfFinish,
+    // Hide half controls entirely when video calibration drives the clock.
+    showHalfControls: !hasVideoCalibration,
     showSecondHalfControls,
     calibrationLoading,
     formatTime,

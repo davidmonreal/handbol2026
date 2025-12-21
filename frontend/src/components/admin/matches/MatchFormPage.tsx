@@ -15,6 +15,7 @@ interface Match {
     isFinished: boolean;
     homeScore?: number;
     awayScore?: number;
+    videoUrl?: string | null;
 }
 
 export const MatchFormPage = () => {
@@ -27,10 +28,14 @@ export const MatchFormPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isResettingClock, setIsResettingClock] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
     // Data
     const [teams, setTeams] = useState<Team[]>([]);
+    const [hasEvents, setHasEvents] = useState(false);
+    const [hasVideo, setHasVideo] = useState(false);
 
     // Form State
     const [dateValue, setDateValue] = useState('');
@@ -45,6 +50,9 @@ export const MatchFormPage = () => {
     useEffect(() => {
         const loadData = async () => {
             setIsLoading(true);
+            setInfoMessage(null);
+            setHasEvents(false);
+            setHasVideo(false);
             try {
                 const teamsRes = await fetch(`${API_BASE_URL}/api/teams`);
                 const teamsData = await teamsRes.json();
@@ -64,6 +72,17 @@ export const MatchFormPage = () => {
                     setStatus(match.isFinished ? 'FINISHED' : 'SCHEDULED');
                     setHomeScore(match.homeScore?.toString() ?? '');
                     setAwayScore(match.awayScore?.toString() ?? '');
+                    setHasVideo(!!match.videoUrl);
+
+                    try {
+                        const eventsRes = await fetch(`${API_BASE_URL}/api/game-events/match/${id}`);
+                        if (eventsRes.ok) {
+                            const events = await eventsRes.json();
+                            setHasEvents(Array.isArray(events) && events.length > 0);
+                        }
+                    } catch (eventsErr) {
+                        console.error('Failed to load match events', eventsErr);
+                    }
                 }
             } catch (err) {
                 console.error('Error loading data:', err);
@@ -161,6 +180,33 @@ export const MatchFormPage = () => {
         }
     };
 
+    const handleResetClock = async () => {
+        if (!isEditMode || !id) return;
+        setIsResettingClock(true);
+        setError(null);
+        setInfoMessage(null);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/matches/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    realTimeFirstHalfStart: null,
+                    realTimeFirstHalfEnd: null,
+                    realTimeSecondHalfStart: null,
+                    realTimeSecondHalfEnd: null,
+                }),
+            });
+            if (!res.ok) throw new Error('Failed to reset clock');
+            setInfoMessage('Clock reset to 00:00');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to reset clock');
+        } finally {
+            setIsResettingClock(false);
+        }
+    };
+
+    const canResetClock = isEditMode && !hasEvents && !hasVideo;
+
     if (isLoading) {
         return (
             <div className="flex justify-center items-center min-h-screen">
@@ -195,6 +241,11 @@ export const MatchFormPage = () => {
             {error && (
                 <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
                     {error}
+                </div>
+            )}
+            {infoMessage && (
+                <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+                    {infoMessage}
                 </div>
             )}
 
@@ -368,14 +419,26 @@ export const MatchFormPage = () => {
                 {/* Actions */}
                 <div className="flex justify-between items-center pt-4 border-t">
                     {isEditMode ? (
-                        <button
-                            onClick={handleDelete}
-                            disabled={isDeleting}
-                            className="inline-flex items-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
-                        >
-                            <Trash2 size={18} />
-                            {isDeleting ? 'Deleting...' : 'Delete Match'}
-                        </button>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={handleDelete}
+                                disabled={isDeleting}
+                                className="inline-flex items-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                            >
+                                <Trash2 size={18} />
+                                {isDeleting ? 'Deleting...' : 'Delete Match'}
+                            </button>
+                            {canResetClock && (
+                                <button
+                                    onClick={handleResetClock}
+                                    disabled={isResettingClock}
+                                    className="inline-flex items-center gap-2 px-4 py-2 text-orange-600 border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors disabled:opacity-50"
+                                    title="Reset live clock for this match"
+                                >
+                                    {isResettingClock ? 'Resetting...' : 'Reset Clock'}
+                                </button>
+                            )}
+                        </div>
                     ) : <div /> }
                     <div className="flex gap-3">
                         <button

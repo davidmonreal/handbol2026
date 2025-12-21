@@ -75,7 +75,7 @@ beforeEach(() => {
 });
 
 describe('Scoreboard half controls visibility', () => {
-    it('stacks 1H start/finish vertically and disables finish until plays exist', () => {
+    it('stacks 1H start/finish vertically and keeps finish disabled until the first play exists', async () => {
         renderScoreboard();
 
         const start1 = screen.getByText('scoreboard.startFirstHalf');
@@ -84,6 +84,13 @@ describe('Scoreboard half controls visibility', () => {
         expect(start1).toBeEnabled();
         expect(finish1).toBeDisabled();
         expect(screen.queryByText('scoreboard.startSecondHalf')).not.toBeInTheDocument();
+
+        await act(async () => {
+            fireEvent.click(start1);
+            await Promise.resolve();
+        });
+
+        expect(screen.getByText('scoreboard.finishFirstHalf')).toBeDisabled();
     });
 
     it('hides half controls when hideHalfControls is true', () => {
@@ -97,7 +104,7 @@ describe('Scoreboard half controls visibility', () => {
         expect(screen.getByText('00:00')).toBeInTheDocument();
     });
 
-    it('disables start 1H and enables finish 1H after the first play is present', () => {
+    it('disables start 1H and keeps finish 1H enabled after the first play is present', () => {
         setMatchMock({
             realTimeFirstHalfStart: Date.now() - 1000,
             events: [{ id: 'e1' }],

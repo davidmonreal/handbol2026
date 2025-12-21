@@ -69,6 +69,7 @@ export const Scoreboard = ({
     firstHalfFinish,
     secondHalfStart,
     secondHalfFinish,
+    showHalfControls,
     showSecondHalfControls,
     formatTime,
     firstHalfFinished,
@@ -135,7 +136,7 @@ export const Scoreboard = ({
           {/* Calibration Buttons - Only show in MatchTracker (not VideoMatchTracker).
               We only hide them when both teams are locked: if one team is still open,
               we keep the controls visible so the other side can continue tracking. */}
-          {showCalibration && !hideHalfControls && (
+          {showCalibration && !hideHalfControls && showHalfControls && (
             <div className="flex flex-col gap-2 text-xs w-full">
               {/* Half buttons are stacked vertically; 2H appears 3s after finishing 1H (or immediately if already started). */}
               {!showSecondHalfControls && (
