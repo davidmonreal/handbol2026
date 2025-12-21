@@ -37,7 +37,7 @@
 
 ## Engineering Principles
 
-- Follow SOLID principles; keep modules small, cohesive, and loosely coupled.
+- As a pragmatic engineer follow SOLID principles; keep modules small, cohesive, and loosely coupled.
 - Prefer established design patterns where they clarify intent (e.g., Strategy, Factory, Dependency Injection).
 - All new code must include unit tests; update or add tests when modifying behavior.
 - Verify all new features are covered by tests.
