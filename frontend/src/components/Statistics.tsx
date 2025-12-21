@@ -121,8 +121,14 @@ const Statistics = () => {
           const matchRes = await fetch(`${API_BASE_URL}/api/matches/${matchId}`);
           const matchData = await matchRes.json();
           setMatchData(matchData);
-          // Use activeTeamId from URL or context, fallback to homeTeamId
-          setSelectedTeamId(urlActiveTeamId || activeTeamId || matchData.homeTeamId);
+          // Pick an initial team that belongs to the match; avoid leaking a stale activeTeamId from another match.
+          const belongsToMatch = (id: string | null | undefined) =>
+            id === matchData.homeTeamId || id === matchData.awayTeamId;
+          const initialTeamId =
+            (urlActiveTeamId && belongsToMatch(urlActiveTeamId) && urlActiveTeamId) ||
+            (activeTeamId && belongsToMatch(activeTeamId) && activeTeamId) ||
+            matchData.homeTeamId;
+          setSelectedTeamId(initialTeamId);
 
           // Load match events
           const eventsRes = await fetch(`${API_BASE_URL}/api/game-events/match/${matchId}`);
