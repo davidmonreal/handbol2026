@@ -1,0 +1,2 @@
+# Ignore backend artifacts so frontend deploys don't pick up backend routing config.
+my-project
