@@ -3,15 +3,15 @@ import type { ClockMarkers } from './matchClockAdapter';
 import { computeClockTime } from './matchClockAdapter';
 
 type UseMatchClockParams = ClockMarkers & {
-  activeTeamLocked: boolean;
   timerStopped: boolean;
   setTime: (value: number) => void;
+  activeTeamLocked?: boolean;
 };
 
 // Hook that owns side effects (setInterval, resets) while delegating pure math to the adapter.
 export function useMatchClock({
-  activeTeamLocked,
   timerStopped,
+  activeTeamLocked = false,
   realTimeFirstHalfStart,
   realTimeFirstHalfEnd,
   realTimeSecondHalfStart,
@@ -19,8 +19,13 @@ export function useMatchClock({
   setTime,
 }: UseMatchClockParams) {
   useEffect(() => {
+    // Locked team: clock is visually frozen at 0 regardless of backend markers.
+    if (activeTeamLocked) {
+      setTime(0);
+      return undefined;
+    }
+
     const baseParams = {
-      activeTeamLocked,
       timerStopped,
       realTimeFirstHalfStart,
       realTimeFirstHalfEnd,
@@ -46,12 +51,12 @@ export function useMatchClock({
 
     return () => clearInterval(timer);
   }, [
-    activeTeamLocked,
     timerStopped,
     realTimeFirstHalfStart,
     realTimeFirstHalfEnd,
     realTimeSecondHalfStart,
     realTimeSecondHalfEnd,
     setTime,
+    activeTeamLocked,
   ]);
 }

@@ -9,19 +9,9 @@ const baseMarkers = {
 };
 
 describe('computeClockTime', () => {
-  it('resets when active team is unlocked', () => {
-    const result = computeClockTime({
-      ...baseMarkers,
-      activeTeamLocked: false,
-      timerStopped: false,
-    });
-    expect(result).toEqual({ time: 0, shouldTick: false });
-  });
-
   it('does nothing before first half starts', () => {
     const result = computeClockTime({
       ...baseMarkers,
-      activeTeamLocked: true,
       timerStopped: false,
     });
     expect(result).toEqual({ time: undefined, shouldTick: false });
@@ -31,7 +21,6 @@ describe('computeClockTime', () => {
     const result = computeClockTime({
       ...baseMarkers,
       realTimeFirstHalfStart: 1,
-      activeTeamLocked: true,
       timerStopped: false,
       now: 10_001,
     });
@@ -43,7 +32,6 @@ describe('computeClockTime', () => {
       ...baseMarkers,
       realTimeFirstHalfStart: 1,
       realTimeFirstHalfEnd: 60_001,
-      activeTeamLocked: true,
       timerStopped: false,
       now: 120_001,
     });
@@ -56,7 +44,6 @@ describe('computeClockTime', () => {
       realTimeFirstHalfStart: 1,
       realTimeFirstHalfEnd: 60_001,
       realTimeSecondHalfStart: 90_001,
-      activeTeamLocked: true,
       timerStopped: false,
       now: 120_001,
     });
@@ -71,7 +58,6 @@ describe('computeClockTime', () => {
       realTimeFirstHalfEnd: 60_001,
       realTimeSecondHalfStart: 90_001,
       realTimeSecondHalfEnd: 150_001,
-      activeTeamLocked: true,
       timerStopped: false,
     });
     expect(result).toEqual({ time: 120, shouldTick: false });
@@ -81,7 +67,6 @@ describe('computeClockTime', () => {
     const result = computeClockTime({
       ...baseMarkers,
       realTimeFirstHalfStart: 1,
-      activeTeamLocked: true,
       timerStopped: true,
       now: 30_001,
     });

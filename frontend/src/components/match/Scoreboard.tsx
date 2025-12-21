@@ -1,9 +1,9 @@
-import { useState } from 'react';
 import { Plus, Minus, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useMatch } from '../../context/MatchContext';
 import { useSafeTranslation } from '../../context/LanguageContext';
 import { formatCategoryLabel } from '../../utils/categoryLabels';
+import { useHalfControls } from './useHalfControls';
 
 interface MatchTeam {
   id: string;
@@ -47,11 +47,6 @@ export const Scoreboard = ({
   hideHalfControls = false,
 }: ScoreboardProps) => {
   const { t } = useSafeTranslation();
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
 
   // Get calibration and match id from context
   const {
@@ -63,92 +58,36 @@ export const Scoreboard = ({
     secondHalfVideoStart,
     setRealTimeCalibration,
     scoreMode,
-    matchId
+    matchId,
+    events,
   } = useMatch();
-  const [calibrationLoading, setCalibrationLoading] = useState<'first' | 'second' | null>(null);
-
-  // When the active team is locked we hide controls. When it's unlocked, ignore previous half markers
-  // so the user can re-start halves for the unlocked side even if the other team already finished theirs.
-  const effectiveFirstHalfStart = hideHalfControls ? realTimeFirstHalfStart : null;
-  const effectiveFirstHalfEnd = hideHalfControls ? realTimeFirstHalfEnd : null;
-  const effectiveSecondHalfStart = hideHalfControls ? realTimeSecondHalfStart : null;
-  const effectiveSecondHalfEnd = hideHalfControls ? realTimeSecondHalfEnd : null;
-
-  const firstHalfDuration = effectiveFirstHalfStart && effectiveFirstHalfEnd
-    ? Math.max(0, Math.floor((effectiveFirstHalfEnd - effectiveFirstHalfStart) / 1000))
-    : null;
-  const liveFirstPhaseDuration = effectiveFirstHalfStart
-    ? effectiveFirstHalfEnd
-      ? Math.max(0, Math.floor((effectiveFirstHalfEnd - effectiveFirstHalfStart) / 1000))
-      : effectiveSecondHalfStart
-        ? Math.max(0, Math.floor((effectiveSecondHalfStart - effectiveFirstHalfStart) / 1000))
-        : null
-    : null;
-  const videoFirstPhaseDuration = firstHalfVideoStart !== null && secondHalfVideoStart !== null
-    ? Math.max(0, secondHalfVideoStart - firstHalfVideoStart)
-    : null;
-  const halfOffset = liveFirstPhaseDuration ?? videoFirstPhaseDuration;
-  const isSecondHalfConfigured = !!effectiveSecondHalfStart || secondHalfVideoStart !== null;
-  // Guard: if we calibrated la 2a part però seguim dins el minutatge de la 1a, no restem l’offset;
-  // així evitem quedar a 00:00 quan el vídeo encara és dins la primera part.
-  const isSecondHalfActive = isSecondHalfConfigured && halfOffset !== null && time >= halfOffset;
-  const displayTime = isSecondHalfActive && halfOffset !== null
-    ? Math.max(0, time - halfOffset)
-    : time;
-  const secondHalfDuration = effectiveSecondHalfStart && effectiveSecondHalfEnd
-    ? Math.max(0, Math.floor((effectiveSecondHalfEnd - effectiveSecondHalfStart) / 1000))
-    : null;
-  const secondHalfEndClock = secondHalfDuration !== null
-    ? secondHalfDuration
-    : null;
-
-  const firstHalfButtonLabel = !effectiveFirstHalfStart
-    ? t('scoreboard.startFirstHalf')
-    : !effectiveFirstHalfEnd
-      ? t('scoreboard.finishFirstHalf')
-      : t('scoreboard.firstHalfFinished');
-  const secondHalfButtonLabel = !effectiveSecondHalfStart
-    ? t('scoreboard.startSecondHalf')
-    : !effectiveSecondHalfEnd
-      ? t('scoreboard.finishSecondHalf')
-      : t('scoreboard.secondHalfFinished');
-
-  const firstHalfButtonDisabled = hideHalfControls || isFinished || !!effectiveFirstHalfEnd || calibrationLoading !== null;
-  const secondHalfLocked = !effectiveSecondHalfStart && !effectiveFirstHalfEnd;
-  const secondHalfButtonDisabled = hideHalfControls || isFinished || (!!effectiveSecondHalfEnd) || (secondHalfLocked && !effectiveSecondHalfStart) || calibrationLoading !== null;
   const homeCategoryLabel = formatCategoryLabel(homeTeam.category, t);
   const visitorCategoryLabel = formatCategoryLabel(visitorTeam.category, t);
-
-  const handleFirstHalfAction = async () => {
-    if (isFinished || hideHalfControls) return;
-    setCalibrationLoading('first');
-    try {
-      if (!effectiveFirstHalfStart) {
-        await setRealTimeCalibration(1, Date.now());
-      } else if (!effectiveFirstHalfEnd) {
-        await setRealTimeCalibration(1, Date.now(), 'end');
-      }
-    } finally {
-      setCalibrationLoading(null);
-    }
-  };
-
-  const handleSecondHalfAction = async () => {
-    if (isFinished || secondHalfLocked || hideHalfControls) return;
-    setCalibrationLoading('second');
-    try {
-      if (!effectiveSecondHalfStart) {
-        await setRealTimeCalibration(2, Date.now());
-      } else if (!effectiveSecondHalfEnd) {
-        await setRealTimeCalibration(2, Date.now(), 'end');
-        if (onFinishMatch) {
-          await onFinishMatch();
-        }
-      }
-    } finally {
-      setCalibrationLoading(null);
-    }
-  };
+  const {
+    displayTime,
+    firstHalfStart,
+    firstHalfFinish,
+    secondHalfStart,
+    secondHalfFinish,
+    showSecondHalfControls,
+    formatTime,
+    firstHalfFinished,
+    secondHalfFinished,
+  } = useHalfControls({
+    time,
+    hideHalfControls,
+    isFinished,
+    hasAnyEvents: (events ?? []).length > 0,
+    realTimeFirstHalfStart,
+    realTimeFirstHalfEnd,
+    realTimeSecondHalfStart,
+    realTimeSecondHalfEnd,
+    firstHalfVideoStart,
+    secondHalfVideoStart,
+    setRealTimeCalibration,
+    onFinishMatch,
+    t,
+  });
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-2 md:p-3 mb-4">
@@ -198,60 +137,60 @@ export const Scoreboard = ({
               we keep the controls visible so the other side can continue tracking. */}
           {showCalibration && !hideHalfControls && (
             <div className="flex flex-col gap-2 text-xs w-full">
-              <div className="flex gap-2">
-                <button
-                  onClick={handleFirstHalfAction}
-                  disabled={firstHalfButtonDisabled}
-                  className={`flex-1 px-3 py-1 rounded-md font-medium transition-colors ${realTimeFirstHalfEnd
-                    ? 'bg-green-50 text-green-700 cursor-default'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300'
-                    }`}
-                  title={
-                    !effectiveFirstHalfStart
-                      ? t('scoreboard.startFirstHalfTooltip')
-                      : !effectiveFirstHalfEnd
-                        ? t('scoreboard.halfStartedAt', {
-                          time: new Date(effectiveFirstHalfStart).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          }),
-                        })
-                        : firstHalfDuration !== null
-                          ? t('scoreboard.halfFinishedAtClock', { clock: formatTime(firstHalfDuration) })
-                          : undefined
-                  }
-                >
-                  {firstHalfButtonLabel}
-                </button>
-                <button
-                  onClick={handleSecondHalfAction}
-                  disabled={secondHalfButtonDisabled}
-                  className={`flex-1 px-3 py-1 rounded-md font-medium transition-colors ${realTimeSecondHalfEnd
-                    ? 'bg-green-50 text-green-700 cursor-default'
-                    : secondHalfLocked
-                      ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
+              {/* Half buttons are stacked vertically; 2H appears 3s after finishing 1H (or immediately if already started). */}
+              {!showSecondHalfControls && (
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={firstHalfStart.onClick}
+                    disabled={firstHalfStart.disabled}
+                    className={`w-full px-3 py-1 rounded-md font-medium transition-colors ${firstHalfFinished
+                      ? 'bg-green-50 text-green-700 cursor-default'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300'
-                    }`}
-                  title={
-                    !effectiveSecondHalfStart
-                      ? secondHalfLocked
-                        ? t('scoreboard.waitFirstHalfEnd')
-                        : t('scoreboard.startSecondHalfTooltip')
-                      : !effectiveSecondHalfEnd
-                        ? t('scoreboard.halfStartedAt', {
-                          time: new Date(effectiveSecondHalfStart).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          }),
-                        })
-                        : secondHalfEndClock !== null
-                          ? t('scoreboard.halfFinishedAtClock', { clock: formatTime(secondHalfEndClock) })
-                          : undefined
-                  }
-                >
-                  {secondHalfButtonLabel}
-                </button>
-              </div>
+                      }`}
+                    title={firstHalfStart.title}
+                  >
+                    {firstHalfStart.label}
+                  </button>
+                  <button
+                    onClick={firstHalfFinish.onClick}
+                    disabled={firstHalfFinish.disabled}
+                    className={`w-full px-3 py-1 rounded-md font-medium transition-colors ${firstHalfFinished
+                      ? 'bg-green-50 text-green-700 cursor-default'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300'
+                      }`}
+                    title={firstHalfFinish.title}
+                  >
+                    {firstHalfFinish.label}
+                  </button>
+                </div>
+              )}
+
+              {secondHalfStart.visible && showSecondHalfControls && scoreMode !== 'manual' && (
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={secondHalfStart.onClick}
+                    disabled={secondHalfStart.disabled}
+                    className={`w-full px-3 py-1 rounded-md font-medium transition-colors ${secondHalfFinished
+                      ? 'bg-green-50 text-green-700 cursor-default'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300'
+                      }`}
+                    title={secondHalfStart.title}
+                  >
+                    {secondHalfStart.label}
+                  </button>
+                  <button
+                    onClick={secondHalfFinish.onClick}
+                    disabled={secondHalfFinish.disabled}
+                    className={`w-full px-3 py-1 rounded-md font-medium transition-colors ${secondHalfFinished
+                      ? 'bg-green-50 text-green-700 cursor-default'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300'
+                      }`}
+                    title={secondHalfFinish.title}
+                  >
+                    {secondHalfFinish.label}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

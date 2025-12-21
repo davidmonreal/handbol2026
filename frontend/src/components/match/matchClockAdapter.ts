@@ -6,7 +6,6 @@ export type ClockMarkers = {
 };
 
 export type ClockAdapterInput = ClockMarkers & {
-  activeTeamLocked: boolean;
   timerStopped: boolean;
   now?: number;
 };
@@ -18,7 +17,6 @@ export type ClockAdapterOutput = {
 
 // Pure function that maps raw match timing markers to a UI-friendly clock value.
 export function computeClockTime({
-  activeTeamLocked,
   timerStopped,
   realTimeFirstHalfStart,
   realTimeFirstHalfEnd,
@@ -26,11 +24,6 @@ export function computeClockTime({
   realTimeSecondHalfEnd,
   now = Date.now(),
 }: ClockAdapterInput): ClockAdapterOutput {
-  if (!activeTeamLocked) {
-    // Unlocking a team should reset the clock so its side can start fresh.
-    return { time: 0, shouldTick: false };
-  }
-
   // If we never started or the timer is manually stopped, leave the current value untouched.
   if (!realTimeFirstHalfStart || timerStopped) {
     return { time: undefined, shouldTick: false };

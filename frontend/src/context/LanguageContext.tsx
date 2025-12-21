@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { availableLanguages, fallbackLanguage, getTranslation } from '../i18n/translations';
 import type { LanguageCode } from '../i18n/translations';
 
-type TranslationParams = Record<string, string | number>;
+export type TranslationParams = Record<string, string | number>;
 
 interface LanguageContextValue {
   language: LanguageCode;
