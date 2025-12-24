@@ -14,7 +14,7 @@ import type { Player } from '../../../types';
 
 interface PlayerTeamEntry {
     id?: string;
-    team: Team;
+    team: Pick<Team, 'id' | 'name' | 'category' | 'club'>;
     position?: number;
     player?: Player;
 }
