@@ -34,10 +34,12 @@ export async function mergePlayer(req: Request, res: Response) {
     // Use transaction to ensure atomicity
     const result = await prisma.$transaction(async (tx) => {
       // Create new player
-      const hasValidPosition = isValidPlayerPosition(newPlayerData.position);
+      const positionCandidate = newPlayerData.position;
+      const hasValidPosition =
+        typeof positionCandidate === 'number' && isValidPlayerPosition(positionCandidate);
       const shouldMarkGoalkeeper =
         newPlayerData.isGoalkeeper ||
-        (hasValidPosition && newPlayerData.position === PLAYER_POSITION.GOALKEEPER);
+        (hasValidPosition && positionCandidate === PLAYER_POSITION.GOALKEEPER);
 
       const newPlayer = await tx.player.create({
         data: {
@@ -79,11 +81,12 @@ export async function mergePlayer(req: Request, res: Response) {
         });
 
         if (!existingAssociation) {
-          const resolvedPosition = hasValidPosition
-            ? newPlayerData.position
-            : shouldMarkGoalkeeper
-              ? PLAYER_POSITION.GOALKEEPER
-              : PLAYER_POSITION.UNSET;
+          const resolvedPosition =
+            typeof positionCandidate === 'number' && isValidPlayerPosition(positionCandidate)
+              ? positionCandidate
+              : shouldMarkGoalkeeper
+                ? PLAYER_POSITION.GOALKEEPER
+                : PLAYER_POSITION.UNSET;
           await tx.playerTeamSeason.create({
             data: {
               playerId: newPlayer.id,
