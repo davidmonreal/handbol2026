@@ -8,6 +8,8 @@ import type { BackendEvent as TransformerBackendEvent } from '../utils/eventTran
 import { StatisticsView } from './stats';
 import { API_BASE_URL } from '../config/api';
 import { formatCategoryLabel } from '../utils/categoryLabels';
+import { DEFAULT_FIELD_POSITION, PLAYER_POSITION_ABBR, PLAYER_POSITIONS } from '../constants/playerPositions';
+import type { PlayerPositionId } from '../constants/playerPositions';
 
 type BackendMatchRef = {
   homeTeamId?: string;
@@ -19,11 +21,8 @@ type BackendMatchRef = {
 type ApiEvent = TransformerBackendEvent & { match?: BackendMatchRef };
 
 type PlayerSummary = {
-  id?: string;
-  name?: string;
-  number?: number;
-  position?: string;
-  role?: string;
+  player: { id: string; name: string; number: number; isGoalkeeper?: boolean };
+  position?: number;
 };
 
 type MatchData = {
@@ -51,7 +50,7 @@ type PlayerData = {
   id?: string;
   name?: string;
   number?: number;
-  isGoalkeeper?: boolean;
+  teams?: { position?: number }[];
 };
 
 const normalizeMatchData = (data: MatchData | null) => {
@@ -91,6 +90,7 @@ const normalizeTeamData = (data: TeamData | null) => {
 };
 
 const Statistics = () => {
+  const GOALKEEPER_POSITION_ID: PlayerPositionId = 1;
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -110,6 +110,17 @@ const Statistics = () => {
   const [foulStatsEvents, setFoulStatsEvents] = useState<MatchEvent[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const playerPositionIds = useMemo(() => {
+    const ids = new Set<number>();
+    playerData?.teams?.forEach((team) => {
+      if (typeof team.position === 'number') {
+        ids.add(team.position);
+      }
+    });
+    const ordered = PLAYER_POSITIONS.map((pos) => pos.id).filter((id) => ids.has(id));
+    return ordered.length > 0 ? ordered : [DEFAULT_FIELD_POSITION];
+  }, [playerData]);
 
   // Load data based on context
   useEffect(() => {
@@ -143,9 +154,12 @@ const Statistics = () => {
           // Load all events
           const eventsRes = await fetch(`${API_BASE_URL}/api/game-events`);
           const allEvents: ApiEvent[] = await eventsRes.json();
+          const hasGoalkeeperPosition =
+            playerData?.teams?.some((team: { position?: number }) => team.position === GOALKEEPER_POSITION_ID) ??
+            false;
 
           // Filter based on player type
-          const playerEvents = playerData.isGoalkeeper
+          const playerEvents = hasGoalkeeperPosition
             ? allEvents.filter((e) =>
               e.activeGoalkeeperId === playerId &&
               e.type === 'Shot' &&
@@ -222,14 +236,29 @@ const Statistics = () => {
       return `Match Statistics: ${displayName || 'Team'}`;
     }
     if (playerId && playerData) {
+      const renderPositionBadges = () =>
+        playerPositionIds.map((positionId) => {
+          const abbr =
+            PLAYER_POSITION_ABBR[positionId as PlayerPositionId] ??
+            PLAYER_POSITION_ABBR[DEFAULT_FIELD_POSITION];
+          const isGoalkeeper = positionId === GOALKEEPER_POSITION_ID;
+          return (
+            <span
+              key={abbr}
+              className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                isGoalkeeper
+                  ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                  : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+              }`}
+            >
+              {abbr}
+            </span>
+          );
+        });
       return (
         <div className="flex items-center gap-2">
           <span>{playerData.name} - Statistics</span>
-          {playerData.isGoalkeeper && (
-            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
-              GK
-            </span>
-          )}
+          {renderPositionBadges()}
         </div>
       );
     }
@@ -237,7 +266,17 @@ const Statistics = () => {
       return `${teamData.name} - Statistics`;
     }
     return 'Team Statistics';
-  }, [matchId, playerId, teamId, matchData, playerData, teamData, selectedTeamId, t]);
+  }, [
+    matchId,
+    playerId,
+    teamId,
+    matchData,
+    playerData,
+    teamData,
+    selectedTeamId,
+    t,
+    playerPositionIds,
+  ]);
 
   // Handle back navigation
   const fromPath = (location.state as { fromPath?: string } | null)?.fromPath;

@@ -20,8 +20,8 @@ const mockMatchData = {
         category: 'Cadet M',
         club: { name: 'AB Investiments Joventut Mataró' },
         players: [
-            { player: { id: 'p1', name: 'Player 1', number: 10, isGoalkeeper: false }, role: 'CB' },
-            { player: { id: 'p2', name: 'Goalkeeper 1', number: 1, isGoalkeeper: true }, role: 'GK' }
+            { player: { id: 'p1', name: 'Player 1', number: 10, isGoalkeeper: false }, position: 4 },
+            { player: { id: 'p2', name: 'Goalkeeper 1', number: 1, isGoalkeeper: true }, position: 1 }
         ]
     },
     awayTeam: {
@@ -30,8 +30,8 @@ const mockMatchData = {
         category: 'Cadet M',
         club: { name: 'La Roca' },
         players: [
-            { player: { id: 'p3', name: 'Player 3', number: 15, isGoalkeeper: false }, role: 'LW' },
-            { player: { id: 'p4', name: 'Goalkeeper 2', number: 12, isGoalkeeper: true }, role: 'GK' }
+            { player: { id: 'p3', name: 'Player 3', number: 15, isGoalkeeper: false }, position: 2 },
+            { player: { id: 'p4', name: 'Goalkeeper 2', number: 12, isGoalkeeper: true }, position: 1 }
         ]
     }
 };
@@ -319,4 +319,3 @@ describe('Match Tracker - Statistics Integration Flow', () => {
     });
 });
 */
-

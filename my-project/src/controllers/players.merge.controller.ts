@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { PlayerRepository } from '../repositories/player-repository';
 import prisma from '../lib/prisma';
-import { PLAYER_POSITION } from '../types/player-position';
+import { PLAYER_POSITION, isValidPlayerPosition } from '../types/player-position';
 
 const playerRepository = new PlayerRepository();
 
@@ -12,6 +12,7 @@ interface MergePlayerRequest {
     number: number;
     handedness?: string;
     isGoalkeeper?: boolean;
+    position?: number;
   };
   teamId?: string;
 }
@@ -33,12 +34,17 @@ export async function mergePlayer(req: Request, res: Response) {
     // Use transaction to ensure atomicity
     const result = await prisma.$transaction(async (tx) => {
       // Create new player
+      const hasValidPosition = isValidPlayerPosition(newPlayerData.position);
+      const shouldMarkGoalkeeper =
+        newPlayerData.isGoalkeeper ||
+        (hasValidPosition && newPlayerData.position === PLAYER_POSITION.GOALKEEPER);
+
       const newPlayer = await tx.player.create({
         data: {
           name: newPlayerData.name,
           number: newPlayerData.number,
           handedness: newPlayerData.handedness as 'LEFT' | 'RIGHT',
-          isGoalkeeper: newPlayerData.isGoalkeeper || false,
+          isGoalkeeper: shouldMarkGoalkeeper || false,
         },
       });
 
@@ -73,13 +79,16 @@ export async function mergePlayer(req: Request, res: Response) {
         });
 
         if (!existingAssociation) {
+          const resolvedPosition = hasValidPosition
+            ? newPlayerData.position
+            : shouldMarkGoalkeeper
+              ? PLAYER_POSITION.GOALKEEPER
+              : PLAYER_POSITION.UNSET;
           await tx.playerTeamSeason.create({
             data: {
               playerId: newPlayer.id,
               teamId,
-              position: newPlayerData.isGoalkeeper
-                ? PLAYER_POSITION.GOALKEEPER
-                : PLAYER_POSITION.UNSET,
+              position: resolvedPosition,
             },
           });
         }

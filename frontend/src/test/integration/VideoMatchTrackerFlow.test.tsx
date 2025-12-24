@@ -60,9 +60,9 @@ describe('VideoMatchTracker Integration', () => {
             name: 'Home Team',
             color: 'blue',
             players: [
-                { player: { id: 'p1', number: 1, name: 'Player 1', isGoalkeeper: true }, role: 'Player' },
-                { player: { id: 'p2', number: 7, name: 'Player 2', isGoalkeeper: false }, role: 'Player' },
-                { player: { id: 'p3', number: 9, name: 'Player 3', isGoalkeeper: false }, role: 'Player' },
+                { player: { id: 'p1', number: 1, name: 'Player 1', isGoalkeeper: true }, position: 1 },
+                { player: { id: 'p2', number: 7, name: 'Player 2', isGoalkeeper: false }, position: 4 },
+                { player: { id: 'p3', number: 9, name: 'Player 3', isGoalkeeper: false }, position: 5 },
             ],
         },
         awayTeam: {
@@ -70,9 +70,9 @@ describe('VideoMatchTracker Integration', () => {
             name: 'Away Team',
             color: 'red',
             players: [
-                { player: { id: 'ap1', number: 1, name: 'Away GK 1', isGoalkeeper: true }, role: 'Goalkeeper' },
-                { player: { id: 'ap2', number: 12, name: 'Away GK 2', isGoalkeeper: true }, role: 'Goalkeeper' },
-                { player: { id: 'ap3', number: 7, name: 'Away Player', isGoalkeeper: false }, role: 'Player' },
+                { player: { id: 'ap1', number: 1, name: 'Away GK 1', isGoalkeeper: true }, position: 1 },
+                { player: { id: 'ap2', number: 12, name: 'Away GK 2', isGoalkeeper: true }, position: 1 },
+                { player: { id: 'ap3', number: 7, name: 'Away Player', isGoalkeeper: false }, position: 2 },
             ],
         },
         events: [],

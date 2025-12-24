@@ -5,6 +5,8 @@ import { useSafeTranslation } from '../context/LanguageContext';
 import type { MatchEvent } from '../types';
 import type { TeamApiResponse, TeamPlayerApiResponse } from '../types/api.types';
 import { API_BASE_URL } from '../config/api';
+import { DEFAULT_FIELD_POSITION, PLAYER_POSITION_ABBR } from '../constants/playerPositions';
+import type { PlayerPositionId } from '../constants/playerPositions';
 import { Scoreboard } from './match/Scoreboard';
 import { EventList } from './match/events/EventList';
 import { EventForm } from './match/events/EventForm';
@@ -64,6 +66,7 @@ const MatchTracker = () => {
 
         const data = await response.json();
 
+    const GOALKEEPER_POSITION_ID = 1;
     const transformTeam = (teamData: TeamApiResponse, color: string) => ({
       id: teamData.id,
       name: teamData.name,
@@ -72,13 +75,19 @@ const MatchTracker = () => {
         ? { id: teamData.club.id ?? '', name: teamData.club.name }
         : undefined,
       color: color,
-      players: (teamData.players || []).map((p: TeamPlayerApiResponse) => ({
-        id: p.player.id,
-        number: p.player.number,
-        name: p.player.name,
-        position: p.role || 'Player',
-        isGoalkeeper: p.player.isGoalkeeper ?? false
-      }))
+      players: (teamData.players || []).map((p: TeamPlayerApiResponse) => {
+        const positionId = typeof p.position === 'number' ? p.position : DEFAULT_FIELD_POSITION;
+        const positionLabel =
+          PLAYER_POSITION_ABBR[positionId as PlayerPositionId] ??
+          PLAYER_POSITION_ABBR[DEFAULT_FIELD_POSITION];
+        return {
+          id: p.player.id,
+          number: p.player.number,
+          name: p.player.name,
+          position: positionLabel,
+          isGoalkeeper: positionId === GOALKEEPER_POSITION_ID,
+        };
+      })
     });
 
         const home = transformTeam(data.homeTeam, 'bg-yellow-400');

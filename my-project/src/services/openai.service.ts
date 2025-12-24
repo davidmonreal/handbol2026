@@ -19,6 +19,7 @@ export interface ExtractedPlayer {
   number: number;
   handedness?: Handedness;
   isGoalkeeper?: boolean;
+  position?: number;
 }
 
 // Load prompt from file

@@ -1,6 +1,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MatchProvider, useMatch } from './MatchContext';
+import { PLAYER_POSITION_ABBR } from '../constants/playerPositions';
 import type { ReactNode } from 'react';
 
 // Mock fetch globally
@@ -19,7 +20,7 @@ const mockMatchData = {
         category: 'Cadet M',
         club: { name: 'Club A' },
         players: [
-            { player: { id: 'p1', name: 'Player 1', number: 10, isGoalkeeper: false }, role: 'CB' }
+            { player: { id: 'p1', name: 'Player 1', number: 10, isGoalkeeper: false }, position: 4 }
         ]
     },
     awayTeam: {
@@ -28,7 +29,7 @@ const mockMatchData = {
         category: 'Juvenil M',
         club: { name: 'Club B' },
         players: [
-            { player: { id: 'p2', name: 'Player 2', number: 12, isGoalkeeper: true }, role: 'GK' }
+            { player: { id: 'p2', name: 'Player 2', number: 12, isGoalkeeper: true }, position: 1 }
         ]
     }
 };
@@ -102,7 +103,7 @@ describe('MatchContext', () => {
                             id: p.player.id,
                             name: p.player.name,
                             number: p.player.number,
-                            position: p.role,
+                            position: PLAYER_POSITION_ABBR[p.position as keyof typeof PLAYER_POSITION_ABBR],
                             isGoalkeeper: p.player.isGoalkeeper
                         }))
                     },
@@ -116,7 +117,7 @@ describe('MatchContext', () => {
                             id: p.player.id,
                             name: p.player.name,
                             number: p.player.number,
-                            position: p.role,
+                            position: PLAYER_POSITION_ABBR[p.position as keyof typeof PLAYER_POSITION_ABBR],
                             isGoalkeeper: p.player.isGoalkeeper
                         }))
                     }

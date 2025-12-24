@@ -12,6 +12,7 @@ export interface ExtractedPlayer {
     number: number;
     handedness?: Handedness;
     isGoalkeeper?: boolean;
+    position?: number;
 }
 
 export interface DuplicateMatch {
@@ -22,7 +23,8 @@ export interface DuplicateMatch {
     similarity: number;
     handedness?: Handedness;
     isGoalkeeper?: boolean;
-    teams?: { id: string; name: string; club: string; category?: string }[];
+    position?: number;
+    teams?: { id: string; name: string; club: string; category?: string; position?: number }[];
 }
 
 export interface DuplicateInfo {

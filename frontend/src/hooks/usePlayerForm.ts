@@ -307,7 +307,7 @@ export const usePlayerForm = (playerId?: string) => {
             res = await fetch(`${API_BASE_URL}/api/teams/${teamId}/players`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerId, position, role: 'Player' }),
+                body: JSON.stringify({ playerId, position }),
             });
             text = await res.text();
             payload = parseJson(text);

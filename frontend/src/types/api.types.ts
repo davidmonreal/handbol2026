@@ -12,7 +12,7 @@ export interface PlayerApiResponse {
 
 export interface TeamPlayerApiResponse {
     player: PlayerApiResponse;
-    role?: string;
+    position?: number;
 }
 
 export interface ClubApiResponse {

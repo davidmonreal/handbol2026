@@ -273,6 +273,47 @@ describe('Batch Player Creation (Player Import)', () => {
       expect(response.status).toBe(400);
       expect(response.body.error).toBe('teamId is required');
     });
+
+    it('uses provided position when assigning to team', async () => {
+      const mockPlayer: MockPlayer = {
+        id: 'p99',
+        name: 'Pos Test',
+        number: 20,
+        handedness: Handedness.RIGHT,
+        isGoalkeeper: false,
+      };
+
+      const mockPlayerTeamSeason: MockPlayerTeamSeason = {
+        id: 'pts99',
+        playerId: 'p99',
+        teamId: 'team-1',
+        position: PLAYER_POSITION.PIVOT,
+      };
+
+      vi.mocked(prisma.player.create).mockResolvedValueOnce(
+        mockPlayer as unknown as Awaited<ReturnType<typeof prisma.player.create>>,
+      );
+      vi.mocked(prisma.playerTeamSeason.create).mockResolvedValueOnce(
+        mockPlayerTeamSeason as unknown as Awaited<
+          ReturnType<typeof prisma.playerTeamSeason.create>
+        >,
+      );
+
+      const response = await request(app)
+        .post('/api/players/batch-with-team')
+        .send({
+          teamId: 'team-1',
+          players: [{ name: 'Pos Test', number: 20, position: PLAYER_POSITION.PIVOT }],
+        });
+
+      expect(response.status).toBe(200);
+      expect(prisma.playerTeamSeason.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          teamId: 'team-1',
+          position: PLAYER_POSITION.PIVOT,
+        }),
+      });
+    });
   });
 
   describe('Input Validation', () => {

@@ -175,6 +175,7 @@ export const usePlayerImport = () => {
             initialChoices.set('number', 'existing');
             initialChoices.set('handedness', 'existing');
             initialChoices.set('isGoalkeeper', 'existing');
+            initialChoices.set('position', 'existing');
             const newMergeChoices = new Map(mergeChoices);
             newMergeChoices.set(index, initialChoices);
             setMergeChoices(newMergeChoices);
@@ -226,11 +227,15 @@ export const usePlayerImport = () => {
         if (choices && duplicate && duplicate.matches[0]) {
             const existing = duplicate.matches[0];
             const newExtractedPlayers = [...extractedPlayers];
+            const existingTeamPosition = selectedTeamId
+                ? existing.teams?.find((team) => team.id === selectedTeamId)?.position
+                : undefined;
 
             if (choices.get('name') === 'existing') newExtractedPlayers[index].name = existing.name;
             if (choices.get('number') === 'existing') newExtractedPlayers[index].number = existing.number;
             if (choices.get('handedness') === 'existing' && existing.handedness) newExtractedPlayers[index].handedness = existing.handedness;
             if (choices.get('isGoalkeeper') === 'existing' && existing.isGoalkeeper !== undefined) newExtractedPlayers[index].isGoalkeeper = existing.isGoalkeeper;
+            if (choices.get('position') === 'existing') newExtractedPlayers[index].position = existingTeamPosition;
 
             setExtractedPlayers(newExtractedPlayers);
 
@@ -396,4 +401,3 @@ export const usePlayerImport = () => {
         }
     };
 };
-

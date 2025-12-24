@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
 import type { ExtractedPlayer, DuplicateMatch } from '../../../services/playerImportService';
+import { useSafeTranslation } from '../../../context/LanguageContext';
+import { DropdownSelect } from '../../common/DropdownSelect';
+import { DEFAULT_FIELD_POSITION, PLAYER_POSITIONS } from '../../../constants/playerPositions';
+import type { PlayerPositionId } from '../../../constants/playerPositions';
 
 interface MergeComparisonRowProps {
     newPlayer: ExtractedPlayer;
@@ -16,18 +20,11 @@ interface MergeComparisonRowProps {
     onCancel?: () => void;
 }
 
-// Constants for field configuration
-const FIELD_LABELS = {
-    name: 'Name',
-    number: 'Number',
-    handedness: 'Handedness',
-    isGoalkeeper: 'Goalkeeper'
-} as const;
-
-type FieldKey = keyof typeof FIELD_LABELS;
+type FieldKey = 'name' | 'number' | 'handedness' | 'isGoalkeeper' | 'position';
 
 interface ComparisonFieldProps {
     field: FieldKey;
+    label: string;
     existingValue: string;
     newValue: string;
     choice?: 'existing' | 'new';
@@ -35,20 +32,23 @@ interface ComparisonFieldProps {
     isEditing: boolean;
     editForm?: ExtractedPlayer;
     setEditForm?: (form: ExtractedPlayer) => void;
+    positionOptions?: Array<{ value: number; label: string }>;
+    positionPlaceholder?: string;
 }
 
 const ComparisonField = ({
     field,
+    label,
     existingValue,
     newValue,
     choice,
     onChoiceChange,
     isEditing,
     editForm,
-    setEditForm
+    setEditForm,
+    positionOptions,
+    positionPlaceholder
 }: ComparisonFieldProps) => {
-    const label = FIELD_LABELS[field];
-
     if (isEditing && editForm && setEditForm) {
         return (
             <div className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-b-0">
@@ -105,6 +105,19 @@ const ComparisonField = ({
                             ))}
                         </div>
                     )}
+                    {field === 'position' && (
+                        <DropdownSelect
+                            options={positionOptions ?? []}
+                            value={(editForm.position ?? DEFAULT_FIELD_POSITION) as PlayerPositionId}
+                            onChange={(value) =>
+                                setEditForm({
+                                    ...editForm,
+                                    position: (value ?? DEFAULT_FIELD_POSITION) as PlayerPositionId,
+                                })
+                            }
+                            placeholder={positionPlaceholder}
+                        />
+                    )}
                 </div>
             </div>
         );
@@ -157,12 +170,44 @@ export const MergeComparisonRow = ({
     onSave,
     onCancel
 }: MergeComparisonRowProps) => {
+    const { t } = useSafeTranslation();
     // Local state for editing
     const [editForm, setEditForm] = useState<ExtractedPlayer>(newPlayer);
+    const positionOptions = PLAYER_POSITIONS.map((pos) => ({
+        value: pos.id,
+        label: t(pos.tKey),
+    }));
 
     useEffect(() => {
         setEditForm(newPlayer);
     }, [newPlayer]);
+
+    const getFieldLabel = (field: FieldKey) => {
+        switch (field) {
+            case 'name':
+                return 'Name';
+            case 'number':
+                return 'Number';
+            case 'handedness':
+                return 'Handedness';
+            case 'isGoalkeeper':
+                return 'Goalkeeper';
+            case 'position':
+                return t('positions.label');
+            default:
+                return '';
+        }
+    };
+
+    const getTeamPosition = () => {
+        if (!existingPlayer || !selectedTeam) return undefined;
+        return existingPlayer.teams?.find((team) => team.id === selectedTeam.id)?.position;
+    };
+
+    const formatPositionLabel = (position?: number) => {
+        const match = PLAYER_POSITIONS.find((pos) => pos.id === position);
+        return match ? t(match.tKey) : t('positions.unset');
+    };
 
     // Helper to format values for display
     const formatValue = (field: FieldKey, existing: boolean): string => {
@@ -181,6 +226,12 @@ export const MergeComparisonRow = ({
                 return player.handedness === 'RIGHT' ? 'Right' : 'Left';
             case 'isGoalkeeper':
                 return player.isGoalkeeper ? 'Yes' : 'No';
+            case 'position': {
+                if (existing) {
+                    return formatPositionLabel(getTeamPosition());
+                }
+                return formatPositionLabel(player.position);
+            }
             default:
                 return '-';
         }
@@ -238,7 +289,7 @@ export const MergeComparisonRow = ({
     })();
 
     // Merge mode - show comparison cards
-    const fields: FieldKey[] = ['name', 'number', 'handedness', 'isGoalkeeper'];
+    const fields: FieldKey[] = ['name', 'number', 'handedness', 'isGoalkeeper', 'position'];
 
     return (
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 mb-4">
@@ -316,6 +367,7 @@ export const MergeComparisonRow = ({
                     <ComparisonField
                         key={field}
                         field={field}
+                        label={getFieldLabel(field)}
                         existingValue={formatValue(field, true)}
                         newValue={formatValue(field, false)}
                         choice={mergeChoices.get(field)}
@@ -323,6 +375,8 @@ export const MergeComparisonRow = ({
                         isEditing={isEditing}
                         editForm={editForm}
                         setEditForm={setEditForm}
+                        positionOptions={positionOptions}
+                        positionPlaceholder={t('positions.unset')}
                     />
                 ))}
             </div>
@@ -387,8 +441,8 @@ export const MergeComparisonRow = ({
                             </button>
                             <button
                                 onClick={onConfirmMerge}
-                                disabled={mergeChoices.size < 4}
-                                className={`flex-1 px-4 py-3 rounded-lg font-medium text-left transition-all ${mergeChoices.size === 4
+                                disabled={mergeChoices.size < fields.length}
+                                className={`flex-1 px-4 py-3 rounded-lg font-medium text-left transition-all ${mergeChoices.size === fields.length
                                     ? isSameClub
                                         ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
                                         : 'bg-white border-2 border-blue-600 text-blue-700 hover:bg-blue-50'
@@ -396,7 +450,7 @@ export const MergeComparisonRow = ({
                                     }`}
                             >
                                 <div className="text-base font-semibold">Link & Update Existing</div>
-                                <div className={`text-xs ${mergeChoices.size === 4
+                                <div className={`text-xs ${mergeChoices.size === fields.length
                                     ? isSameClub ? 'text-blue-50' : 'text-blue-700/80'
                                     : 'text-gray-500'
                                     }`}>

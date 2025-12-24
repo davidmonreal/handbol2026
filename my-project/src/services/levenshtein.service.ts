@@ -92,7 +92,7 @@ export interface SimilarPlayer {
   similarity: number;
   handedness?: string;
   isGoalkeeper?: boolean;
-  teams?: Array<{ id: string; name: string; club: string; category?: string }>;
+  teams?: Array<{ id: string; name: string; club: string; category?: string; position?: number }>;
 }
 
 /**
@@ -113,6 +113,7 @@ export async function findSimilarPlayers(
       teams: {
         select: {
           id: true,
+          position: true,
           team: {
             select: {
               id: true,
@@ -151,6 +152,7 @@ export async function findSimilarPlayers(
           name: t.team.name,
           club: t.team.club.name,
           category: t.team.category,
+          position: t.position ?? undefined,
         })),
       };
     })

@@ -6,7 +6,7 @@ import { RemoveIconButton, AddIconButton, EditIconButton } from '../../common';
 import { TEAM_CATEGORIES } from '../../../utils/teamUtils';
 import type { Team, Player } from '../../../types';
 import { useSafeTranslation } from '../../../context/LanguageContext';
-import { PLAYER_POSITIONS, PLAYER_POSITION_ABBR } from '../../../constants/playerPositions';
+import { DEFAULT_FIELD_POSITION, PLAYER_POSITIONS, PLAYER_POSITION_ABBR } from '../../../constants/playerPositions';
 import type { PlayerPositionId } from '../../../constants/playerPositions';
 import { DropdownSelect } from '../../common/DropdownSelect';
 
@@ -103,16 +103,25 @@ export const TeamPlayersPage = () => {
         (player.isGoalkeeper ? PLAYER_POSITIONS.find((p) => p.id === 1)?.id : undefined) ??
         (player.isGoalkeeper ? 1 : 0);
 
-    const renderPositionBadges = (position?: number) => {
-        const labels = new Set<string>();
-        if (position === 1) {
-            labels.add('GK');
-        } else {
-            const abbr = PLAYER_POSITION_ABBR[(position ?? 0) as PlayerPositionId];
-            labels.add(abbr ?? '—');
+    const getPlayerPositionIds = (player: Player, fallbackPosition?: number) => {
+        const rawPositions = (player.teams ?? [])
+            .map((team) => team.position)
+            .filter((pos): pos is number => typeof pos === 'number');
+        if (rawPositions.length === 0 && typeof fallbackPosition === 'number') {
+            rawPositions.push(fallbackPosition);
         }
 
-        return Array.from(labels).map((abbr) => (
+        const unique = new Set(rawPositions);
+        const ordered = PLAYER_POSITIONS.map((pos) => pos.id).filter((id) => unique.has(id));
+        const hasExplicit = ordered.some((id) => id !== DEFAULT_FIELD_POSITION);
+        const filtered = hasExplicit ? ordered.filter((id) => id !== DEFAULT_FIELD_POSITION) : ordered;
+        return filtered.length > 0 ? filtered : [DEFAULT_FIELD_POSITION];
+    };
+
+    const renderPositionBadges = (positions: number[]) => (
+        positions.map((positionId) => {
+            const abbr = PLAYER_POSITION_ABBR[positionId as PlayerPositionId] ?? PLAYER_POSITION_ABBR[DEFAULT_FIELD_POSITION];
+            return (
             <span
                 key={abbr}
                 className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
@@ -123,8 +132,9 @@ export const TeamPlayersPage = () => {
             >
                 {abbr}
             </span>
-        ));
-    };
+            );
+        })
+    );
 
     const handleAssignPlayer = async (player: Player & { position?: number }) => {
         if (!id) return;
@@ -364,7 +374,7 @@ export const TeamPlayersPage = () => {
                                         <div className="flex items-center gap-3 flex-1">
                                             <div>{renderPlayerItem(player)}</div>
                                             <div className="flex items-center gap-2">
-                                                {renderPositionBadges(position)}
+                                                {renderPositionBadges(getPlayerPositionIds(player, position))}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2 ml-4">

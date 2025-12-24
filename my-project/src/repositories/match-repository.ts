@@ -47,6 +47,7 @@ const MATCH_WITH_PLAYERS_SELECT = {
       club: { select: { id: true, name: true } },
       players: {
         select: {
+          position: true,
           player: {
             select: {
               id: true,
@@ -68,6 +69,7 @@ const MATCH_WITH_PLAYERS_SELECT = {
       club: { select: { id: true, name: true } },
       players: {
         select: {
+          position: true,
           player: {
             select: {
               id: true,

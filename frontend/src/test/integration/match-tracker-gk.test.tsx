@@ -24,14 +24,14 @@ const mockMatchData = {
     homeTeam: {
         id: 'home-1',
         name: 'Home Team',
-        players: [{ player: { id: 'p1', number: 1, name: 'P1' } }]
+        players: [{ player: { id: 'p1', number: 1, name: 'P1' }, position: 4 }]
     },
     awayTeam: {
         id: 'away-1',
         name: 'Away Team',
         players: [
-            { player: { id: 'gk-1', number: 1, name: 'GK One', isGoalkeeper: true } },
-            { player: { id: 'gk-2', number: 2, name: 'GK Two', isGoalkeeper: true } }
+            { player: { id: 'gk-1', number: 1, name: 'GK One', isGoalkeeper: true }, position: 1 },
+            { player: { id: 'gk-2', number: 2, name: 'GK Two', isGoalkeeper: true }, position: 1 }
         ]
     },
     isFinished: false,

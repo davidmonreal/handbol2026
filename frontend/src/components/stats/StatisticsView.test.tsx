@@ -368,7 +368,7 @@ describe('StatisticsView', () => {
 
     const teamData = {
       players: [
-        { player: { id: 'gk1', name: 'Goalkeeper One', number: 1, isGoalkeeper: true } },
+        { player: { id: 'gk1', name: 'Goalkeeper One', number: 1, isGoalkeeper: true }, position: 1 },
       ],
     };
 

@@ -46,12 +46,12 @@ describe('MatchTracker Integration', () => {
         homeTeam: {
             id: 'home-1',
             name: 'Home Team',
-            players: [{ player: { id: 'p1', number: 1, name: 'Player 1', isGoalkeeper: false } }]
+            players: [{ player: { id: 'p1', number: 1, name: 'Player 1', isGoalkeeper: false }, position: 4 }]
         },
         awayTeam: {
             id: 'visitor-1',
             name: 'Visitor Team',
-            players: [{ player: { id: 'p2', number: 2, name: 'Player 2', isGoalkeeper: false } }]
+            players: [{ player: { id: 'p2', number: 2, name: 'Player 2', isGoalkeeper: false }, position: 6 }]
         }
     };
 

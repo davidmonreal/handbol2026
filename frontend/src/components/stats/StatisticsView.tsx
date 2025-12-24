@@ -28,6 +28,7 @@ export function StatisticsView({
   onTeamChange,
   onBack,
 }: StatisticsViewProps) {
+  const GOALKEEPER_POSITION_ID = 1;
   // Helper function to format team display with club, category, and name
   const formatTeamDisplay = (team: { name: string; club?: { name: string }; category?: string }) => {
     const parts = [];
@@ -59,14 +60,44 @@ export function StatisticsView({
   };
 
   // Player info lookup function
-  const getPlayerInfo = (playerId: string): { name: string; number: number; isGoalkeeper?: boolean } => {
+  const getPlayerPositionIds = (playerId: string): number[] => {
+    if (matchData) {
+      const homePlayer = matchData.homeTeam.players.find((p: any) => p.player.id === playerId);
+      if (homePlayer && typeof homePlayer.position === 'number') return [homePlayer.position];
+      const awayPlayer = matchData.awayTeam.players.find((p: any) => p.player.id === playerId);
+      if (awayPlayer && typeof awayPlayer.position === 'number') return [awayPlayer.position];
+    }
+
+    if (teamData) {
+      const teamPlayer = teamData.players.find((p: any) => p.player.id === playerId);
+      if (teamPlayer && typeof teamPlayer.position === 'number') return [teamPlayer.position];
+    }
+
+    if (playerData && playerData.id === playerId) {
+      return (playerData.teams ?? [])
+        .map((team: { position?: number }) => team.position)
+        .filter((pos: number | undefined): pos is number => typeof pos === 'number');
+    }
+
+    return [];
+  };
+
+  const getPlayerInfo = (playerId: string): {
+    name: string;
+    number: number;
+    isGoalkeeper?: boolean;
+    positionIds?: number[];
+  } => {
+    const positionIds = getPlayerPositionIds(playerId);
+    const isGoalkeeper = positionIds.includes(GOALKEEPER_POSITION_ID);
     if (matchData) {
       // Look in home team
       const homePlayer = matchData.homeTeam.players.find((p: any) => p.player.id === playerId);
       if (homePlayer) return {
         name: homePlayer.player.name,
         number: homePlayer.player.number,
-        isGoalkeeper: homePlayer.player.isGoalkeeper
+        isGoalkeeper,
+        positionIds,
       };
 
       // Look in away team
@@ -74,7 +105,8 @@ export function StatisticsView({
       if (awayPlayer) return {
         name: awayPlayer.player.name,
         number: awayPlayer.player.number,
-        isGoalkeeper: awayPlayer.player.isGoalkeeper
+        isGoalkeeper,
+        positionIds,
       };
     }
 
@@ -84,7 +116,8 @@ export function StatisticsView({
       if (teamPlayer) return {
         name: teamPlayer.player.name,
         number: teamPlayer.player.number,
-        isGoalkeeper: teamPlayer.player.isGoalkeeper
+        isGoalkeeper,
+        positionIds,
       };
     }
 
@@ -92,13 +125,19 @@ export function StatisticsView({
       return {
         name: playerData.name,
         number: playerData.number,
-        isGoalkeeper: playerData.isGoalkeeper
+        isGoalkeeper,
+        positionIds,
       };
     }
 
     // Fallback to event data (we might not have isGoalkeeper here if it's not in event)
     const event = events.find(e => e.playerId === playerId);
-    return { name: event?.playerName || 'Unknown', number: event?.playerNumber || 0 };
+    return {
+      name: event?.playerName || 'Unknown',
+      number: event?.playerNumber || 0,
+      isGoalkeeper,
+      positionIds,
+    };
   };
 
   // Calculate baselines if comparison is enabled
@@ -152,8 +191,10 @@ export function StatisticsView({
       // Player filter with goalkeeper support
       if (filterPlayer) {
         const playerInfo = getPlayerInfo(filterPlayer);
+        const isGoalkeeperFilter =
+          playerInfo.isGoalkeeper || events.some((e) => e.activeGoalkeeperId === filterPlayer);
 
-        if (playerInfo.isGoalkeeper) {
+        if (isGoalkeeperFilter) {
           if (e.activeGoalkeeperId !== filterPlayer) return false;
           if (e.category === 'Shot' && !['Goal', 'Save'].includes(e.action)) return false;
         } else {
@@ -181,7 +222,7 @@ export function StatisticsView({
 
   // Determine if we're viewing goalkeeper statistics
   const isGoalkeeperView = useMemo(() => {
-    // 1. If we have a specific player selected, check their role
+    // 1. If we have a specific player selected, check their position
     if (filterPlayer) {
       // First check official data source
       const info = getPlayerInfo(filterPlayer);

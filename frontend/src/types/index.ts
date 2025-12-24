@@ -55,7 +55,7 @@ export interface Team {
     club?: { id: string; name: string };
     season?: { id: string; name: string };
     color: string;
-    // Players with their role in this specific team
+    // Players with their position in this specific team
     players?: { id?: string; player: Player; position?: number }[];
     isMyTeam?: boolean;
 }

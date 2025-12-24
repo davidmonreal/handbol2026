@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { PlayerService } from '../services/player-service';
 import { PlayerRepository } from '../repositories/player-repository';
 import prisma from '../lib/prisma';
-import { PLAYER_POSITION } from '../types/player-position';
+import { PLAYER_POSITION, isValidPlayerPosition } from '../types/player-position';
 
 const playerRepository = new PlayerRepository();
 const playerService = new PlayerService(playerRepository);
@@ -20,11 +20,15 @@ export async function batchCreatePlayers(req: Request, res: Response) {
 
     for (const playerData of players) {
       try {
+        const hasValidPosition = isValidPlayerPosition(playerData.position);
+        const shouldMarkGoalkeeper =
+          playerData.isGoalkeeper ||
+          (hasValidPosition && playerData.position === PLAYER_POSITION.GOALKEEPER);
         const player = await playerService.create({
           name: playerData.name,
           number: playerData.number,
           handedness: playerData.handedness || 'RIGHT', // Default to RIGHT if not provided by AI
-          isGoalkeeper: playerData.isGoalkeeper || false,
+          isGoalkeeper: shouldMarkGoalkeeper || false,
         });
         createdPlayers.push(player);
       } catch (error) {
@@ -68,12 +72,21 @@ export async function batchCreateWithTeam(req: Request, res: Response) {
 
     for (const playerData of players) {
       try {
+        const hasValidPosition = isValidPlayerPosition(playerData.position);
+        const shouldMarkGoalkeeper =
+          playerData.isGoalkeeper ||
+          (hasValidPosition && playerData.position === PLAYER_POSITION.GOALKEEPER);
+        const resolvedPosition = hasValidPosition
+          ? playerData.position
+          : shouldMarkGoalkeeper
+            ? PLAYER_POSITION.GOALKEEPER
+            : PLAYER_POSITION.UNSET;
         // Create player with validation
         const player = await playerService.create({
           name: playerData.name,
           number: playerData.number,
           handedness: playerData.handedness || 'RIGHT', // Default to RIGHT if not provided by AI
-          isGoalkeeper: playerData.isGoalkeeper || false,
+          isGoalkeeper: shouldMarkGoalkeeper || false,
         });
 
         // Associate player with team
@@ -81,7 +94,7 @@ export async function batchCreateWithTeam(req: Request, res: Response) {
           data: {
             playerId: player.id,
             teamId,
-            position: playerData.isGoalkeeper ? PLAYER_POSITION.GOALKEEPER : PLAYER_POSITION.UNSET,
+            position: resolvedPosition,
           },
         });
 
