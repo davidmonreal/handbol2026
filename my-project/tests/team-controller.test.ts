@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { TeamController } from '../src/controllers/team-controller';
 import { TeamService } from '../src/services/team-service';
 import { makeTeamPayload } from './factories/team';
+import { PLAYER_POSITION } from '../src/types/player-position';
 
 vi.mock('../src/services/team-service');
 
@@ -103,7 +104,7 @@ describe('TeamController', () => {
 
   it('getTeamPlayers returns players', async () => {
     req.params = { id: '1' };
-    const mockPlayers = [{ playerId: 'p1', teamId: '1', role: 'Player' }];
+    const mockPlayers = [{ playerId: 'p1', teamId: '1', position: PLAYER_POSITION.CENTRAL }];
     vi.mocked(service.getTeamPlayers).mockResolvedValue(mockPlayers as any);
 
     await controller.getTeamPlayers(req as Request, res as Response);
@@ -114,15 +115,43 @@ describe('TeamController', () => {
 
   it('assignPlayer assigns a player', async () => {
     req.params = { id: '1' };
-    req.body = { playerId: 'p1', role: 'Captain' };
-    const assignment = { playerId: 'p1', teamId: '1', role: 'Captain' };
+    req.body = { playerId: 'p1', position: PLAYER_POSITION.LATERAL_ESQ };
+    const assignment = { playerId: 'p1', teamId: '1', position: PLAYER_POSITION.LATERAL_ESQ };
     vi.mocked(service.assignPlayer).mockResolvedValue(assignment as any);
 
     await controller.assignPlayer(req as Request, res as Response);
 
-    expect(service.assignPlayer).toHaveBeenCalledWith('1', 'p1', 'Captain');
+    expect(service.assignPlayer).toHaveBeenCalledWith('1', 'p1', PLAYER_POSITION.LATERAL_ESQ);
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith(assignment);
+  });
+
+  it('assignPlayer rejects invalid payload', async () => {
+    req.params = { id: '1' };
+    req.body = { playerId: 'p1' };
+
+    await controller.assignPlayer(req as Request, res as Response);
+
+    expect(service.assignPlayer).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: expect.any(String) });
+  });
+
+  it('updatePlayerPosition updates position', async () => {
+    req.params = { id: '1', playerId: 'p1' };
+    req.body = { position: PLAYER_POSITION.GOALKEEPER };
+    const updated = { id: 'a1', teamId: '1', playerId: 'p1', position: PLAYER_POSITION.GOALKEEPER };
+    vi.mocked(service.updatePlayerPosition).mockResolvedValue(updated as any);
+
+    // @ts-expect-error partial req/res
+    await controller.updatePlayerPosition(req as Request, res as Response);
+
+    expect(service.updatePlayerPosition).toHaveBeenCalledWith(
+      '1',
+      'p1',
+      PLAYER_POSITION.GOALKEEPER,
+    );
+    expect(res.json).toHaveBeenCalledWith(updated);
   });
 
   it('unassignPlayer removes a player', async () => {

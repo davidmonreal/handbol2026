@@ -29,6 +29,8 @@ export class TeamRepository {
         season: { select: { id: true, name: true } },
         players: {
           select: {
+            id: true,
+            position: true,
             player: {
               select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
             },
@@ -61,6 +63,8 @@ export class TeamRepository {
         season: { select: { id: true, name: true } },
         players: {
           select: {
+            id: true,
+            position: true,
             player: {
               select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
             },
@@ -94,6 +98,8 @@ export class TeamRepository {
         season: { select: { id: true, name: true } },
         players: {
           select: {
+            id: true,
+            position: true,
             player: {
               select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
             },
@@ -132,19 +138,47 @@ export class TeamRepository {
   async assignPlayer(
     teamId: string,
     playerId: string,
-    role: string = 'Player',
+    position: number,
   ): Promise<PlayerTeamSeason> {
     return prisma.playerTeamSeason.create({
       data: {
         teamId,
         playerId,
-        role,
+        position,
       },
       select: {
         id: true,
         teamId: true,
         playerId: true,
-        role: true,
+        position: true,
+        player: { select: { id: true, name: true, number: true } },
+        team: { select: { id: true, name: true } },
+      },
+    });
+  }
+
+  async updatePlayerPosition(
+    teamId: string,
+    playerId: string,
+    position: number,
+  ): Promise<PlayerTeamSeason> {
+    const assignment = await prisma.playerTeamSeason.findFirst({
+      where: { teamId, playerId },
+      select: { id: true },
+    });
+
+    if (!assignment) {
+      throw new Error('Player not assigned to this team');
+    }
+
+    return prisma.playerTeamSeason.update({
+      where: { id: assignment.id },
+      data: { position },
+      select: {
+        id: true,
+        teamId: true,
+        playerId: true,
+        position: true,
         player: { select: { id: true, name: true, number: true } },
         team: { select: { id: true, name: true } },
       },

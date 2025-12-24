@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PlayerRepository } from '../repositories/player-repository';
 import prisma from '../lib/prisma';
+import { PLAYER_POSITION } from '../types/player-position';
 
 const playerRepository = new PlayerRepository();
 
@@ -57,7 +58,7 @@ export async function mergePlayer(req: Request, res: Response) {
           data: {
             playerId: newPlayer.id,
             teamId: pt.teamId,
-            role: pt.role || 'Player',
+            position: pt.position ?? PLAYER_POSITION.UNSET,
           },
         });
       }
@@ -76,7 +77,9 @@ export async function mergePlayer(req: Request, res: Response) {
             data: {
               playerId: newPlayer.id,
               teamId,
-              role: 'Player',
+              position: newPlayerData.isGoalkeeper
+                ? PLAYER_POSITION.GOALKEEPER
+                : PLAYER_POSITION.UNSET,
             },
           });
         }

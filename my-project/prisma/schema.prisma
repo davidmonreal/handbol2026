@@ -58,7 +58,7 @@ model PlayerTeamSeason {
   id       String @id @default(uuid())
   playerId String
   teamId   String
-  role     String
+  position Int    @default(0)
   player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
   team     Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
 

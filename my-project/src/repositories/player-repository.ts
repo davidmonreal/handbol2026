@@ -12,6 +12,7 @@ export class PlayerRepository {
         isGoalkeeper: true,
         teams: {
           select: {
+            position: true,
             team: {
               select: {
                 id: true,
@@ -65,7 +66,12 @@ export class PlayerRepository {
     return { AND: conditions };
   }
 
-  async findAllPaginated(params: { skip: number; take: number; search?: string; clubId?: string }): Promise<Player[]> {
+  async findAllPaginated(params: {
+    skip: number;
+    take: number;
+    search?: string;
+    clubId?: string;
+  }): Promise<Player[]> {
     const { skip, take, search, clubId } = params;
     return prisma.player.findMany({
       where: this.buildSearchWhere({ search, clubId }),
@@ -77,6 +83,7 @@ export class PlayerRepository {
         isGoalkeeper: true,
         teams: {
           select: {
+            position: true,
             team: {
               select: {
                 id: true,
@@ -111,6 +118,7 @@ export class PlayerRepository {
         isGoalkeeper: true,
         teams: {
           select: {
+            position: true,
             team: {
               select: {
                 id: true,

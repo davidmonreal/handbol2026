@@ -13,7 +13,8 @@ export function createTeamRouter(deps: TeamRouterDeps = {}): Router {
   const router = Router();
 
   const controller =
-    deps.controller ?? new TeamController(deps.service ?? new TeamService(deps.repository ?? new TeamRepository()));
+    deps.controller ??
+    new TeamController(deps.service ?? new TeamService(deps.repository ?? new TeamRepository()));
 
   // Team CRUD
   router.get('/', controller.getAll);
@@ -25,6 +26,7 @@ export function createTeamRouter(deps: TeamRouterDeps = {}): Router {
   // Player management
   router.get('/:id/players', controller.getTeamPlayers);
   router.post('/:id/players', controller.assignPlayer);
+  router.patch('/:id/players/:playerId', controller.updatePlayerPosition);
   router.delete('/:id/players/:playerId', controller.unassignPlayer);
 
   return router;

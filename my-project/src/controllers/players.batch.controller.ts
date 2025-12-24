@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PlayerService } from '../services/player-service';
 import { PlayerRepository } from '../repositories/player-repository';
 import prisma from '../lib/prisma';
+import { PLAYER_POSITION } from '../types/player-position';
 
 const playerRepository = new PlayerRepository();
 const playerService = new PlayerService(playerRepository);
@@ -80,7 +81,7 @@ export async function batchCreateWithTeam(req: Request, res: Response) {
           data: {
             playerId: player.id,
             teamId,
-            role: 'Player',
+            position: playerData.isGoalkeeper ? PLAYER_POSITION.GOALKEEPER : PLAYER_POSITION.UNSET,
           },
         });
 

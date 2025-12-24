@@ -2,6 +2,7 @@ import { describe, it, expect, afterAll } from 'vitest';
 import request from 'supertest';
 import { PrismaClient, Handedness } from '@prisma/client';
 import app from '../src/app';
+import { PLAYER_POSITION } from '../src/types/player-position';
 
 const prisma = new PrismaClient();
 const createdPlayerIds: string[] = [];
@@ -139,7 +140,7 @@ describe.sequential('Player CRUD integration', () => {
       data: {
         playerId,
         teamId: team.id,
-        role: 'INTEGRATION-TEST',
+        position: PLAYER_POSITION.CENTRAL,
       },
     });
 

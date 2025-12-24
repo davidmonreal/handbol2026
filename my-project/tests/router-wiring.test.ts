@@ -107,6 +107,9 @@ const routeCases: RouteCase[] = [
       assignPlayer: vi.fn((req, res) =>
         res.status(201).json({ teamId: req.params.id, ...req.body }),
       ),
+      updatePlayerPosition: vi.fn((req, res) =>
+        res.json({ teamId: req.params.id, playerId: req.params.playerId, ...req.body }),
+      ),
       unassignPlayer: vi.fn((_, res) => res.status(204).send()),
     }),
     calls: [
@@ -122,6 +125,12 @@ const routeCases: RouteCase[] = [
         handler: 'assignPlayer',
         body: { playerId: 'p1' },
         expectedStatus: 201,
+      },
+      {
+        method: 'patch',
+        path: '/abc/players/p1',
+        handler: 'updatePlayerPosition',
+        body: { position: 1 },
       },
       { method: 'delete', path: '/abc/players/p1', handler: 'unassignPlayer', expectedStatus: 204 },
     ],

@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { isApiAvailable } from '../utils/api-availability';
+import { PLAYER_POSITION } from '../../src/types/player-position';
 
 const prisma = new PrismaClient();
 const API_URL = process.env.API_URL ?? 'http://localhost:3000';
@@ -51,7 +52,7 @@ const createTeamWithPlayer = async (label: string) => {
     data: {
       playerId: player.id,
       teamId: team.id,
-      role: `${label}-Test`,
+      position: label === 'Home' ? PLAYER_POSITION.CENTRAL : PLAYER_POSITION.PIVOT,
     },
   });
 

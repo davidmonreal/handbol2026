@@ -1,8 +1,20 @@
 import { z } from 'zod';
 
+import { isValidPlayerPosition } from '../types/player-position';
+
 export const assignPlayerSchema = z.object({
   playerId: z.string(),
-  role: z.string().optional(),
+  position: z.number().int().refine(isValidPlayerPosition, {
+    message: 'Invalid position',
+  }),
 });
 
 export type AssignPlayerInput = z.infer<typeof assignPlayerSchema>;
+
+export const updatePlayerPositionSchema = z.object({
+  position: z.number().int().refine(isValidPlayerPosition, {
+    message: 'Invalid position',
+  }),
+});
+
+export type UpdatePlayerPositionInput = z.infer<typeof updatePlayerPositionSchema>;

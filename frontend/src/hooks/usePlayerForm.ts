@@ -3,6 +3,8 @@ import { API_BASE_URL } from '../config/api';
 import { toTitleCase } from '../utils/textUtils';
 import { playerImportService, type DuplicateMatch } from '../services/playerImportService';
 import type { Player, Club, Team, Season } from '../types';
+import { DEFAULT_FIELD_POSITION } from '../constants/playerPositions';
+import type { PlayerPositionId } from '../constants/playerPositions';
 
 interface PlayerFormData {
     name: string;
@@ -11,12 +13,22 @@ interface PlayerFormData {
     isGoalkeeper: boolean;
 }
 
+interface PlayerTeamAssignment {
+    team: Pick<Team, 'id' | 'name' | 'category' | 'club'>;
+    position?: number;
+}
+
+interface TeamPlayer {
+    player?: Player;
+    position?: number;
+}
+
 interface PlayerData {
     clubs: Club[];
     teams: Team[];
     seasons: Season[];
-    playerTeams: any[]; // Explicit type from PlayerFormPage
-    currentTeamPlayers: any[];
+    playerTeams: PlayerTeamAssignment[];
+    currentTeamPlayers: TeamPlayer[];
 }
 
 interface DuplicateState {
@@ -76,7 +88,7 @@ export const usePlayerForm = (playerId?: string) => {
             clubs.sort((a: Club, b: Club) => a.name.localeCompare(b.name));
             teams.sort((a: Team, b: Team) => a.name.localeCompare(b.name));
 
-            let playerTeams: any[] = [];
+            let playerTeams: PlayerTeamAssignment[] = [];
 
             if (isEditMode && playerId) {
                 const playerRes = await fetch(`${API_BASE_URL}/api/players/${playerId}`);
@@ -89,7 +101,11 @@ export const usePlayerForm = (playerId?: string) => {
                     handedness: player.handedness as 'RIGHT' | 'LEFT',
                     isGoalkeeper: player.isGoalkeeper
                 });
-                playerTeams = player.teams || [];
+                playerTeams =
+                    player.teams?.map((pt) => ({
+                        team: pt.team as Team,
+                        position: pt.position,
+                    })) || [];
             }
 
             setData({ clubs, teams, seasons, playerTeams, currentTeamPlayers: [] });
@@ -156,8 +172,11 @@ export const usePlayerForm = (playerId?: string) => {
     }, [formData.name, isEditMode]);
 
 
-    const savePlayer = async (selectedTeamId?: string | null) => {
+    const savePlayer = async (selectedTeamId?: string | null, selectedPosition?: PlayerPositionId | null) => {
         if (!formData.name || formData.number === '') throw new Error('Name and Number required');
+        if (selectedTeamId && (selectedPosition === undefined || selectedPosition === null)) {
+            throw new Error('Position required');
+        }
 
         setIsSaving(true);
         try {
@@ -166,7 +185,6 @@ export const usePlayerForm = (playerId?: string) => {
                 number: Number(formData.number)
             };
 
-            let savedPlayer: Player;
             const url = isEditMode ? `${API_BASE_URL}/api/players/${playerId}` : `${API_BASE_URL}/api/players`;
             const method = isEditMode ? 'PUT' : 'POST';
 
@@ -177,7 +195,7 @@ export const usePlayerForm = (playerId?: string) => {
             });
 
             if (!res.ok) throw new Error('Failed to save player');
-            savedPlayer = await res.json();
+            const savedPlayer: Player = await res.json();
 
             // Handle Team Assignment
             if (selectedTeamId) {
@@ -186,7 +204,7 @@ export const usePlayerForm = (playerId?: string) => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         playerId: savedPlayer.id,
-                        role: 'Player'
+                        position: selectedPosition ?? DEFAULT_FIELD_POSITION
                     })
                 });
             }
@@ -237,6 +255,71 @@ export const usePlayerForm = (playerId?: string) => {
         }));
     };
 
+    const refreshPlayerTeams = async () => {
+        if (!playerId) return;
+        const playerRes = await fetch(`${API_BASE_URL}/api/players/${playerId}`);
+        if (!playerRes.ok) return;
+        const player: Player = await playerRes.json();
+        setData(prev => ({
+            ...prev,
+            playerTeams:
+                player.teams?.map((pt) => ({
+                    team: pt.team as Pick<Team, 'id' | 'name' | 'category' | 'club'>,
+                    position: pt.position,
+                })) || [],
+        }));
+    };
+
+    const updateTeamPositionHandler = async (teamId: string, position: PlayerPositionId) => {
+        if (!playerId) {
+            throw new Error('Save player before updating position');
+        }
+        const patchUrl = `${API_BASE_URL}/api/teams/${teamId}/players/${playerId}`;
+        const sendPatch = async () =>
+            fetch(patchUrl, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ position }),
+            });
+
+        const previousTeams = data.playerTeams;
+        setData((prev) => ({
+            ...prev,
+            playerTeams: prev.playerTeams.map((pt) =>
+                pt.team.id === teamId ? { ...pt, position } : pt,
+            ),
+        }));
+
+        let res = await sendPatch();
+        let text = await res.text();
+        const parseJson = (raw: string) => {
+            try {
+                return raw ? JSON.parse(raw) : {};
+            } catch {
+                return {};
+            }
+        };
+        let payload = parseJson(text);
+
+        // Fallback: if route not found (older backend), reassign by delete+create
+        if (res.status === 404 || res.status === 405) {
+            await fetch(patchUrl, { method: 'DELETE' }).catch(() => {});
+            res = await fetch(`${API_BASE_URL}/api/teams/${teamId}/players`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ playerId, position, role: 'Player' }),
+            });
+            text = await res.text();
+            payload = parseJson(text);
+        }
+
+        if (!res.ok) {
+            setData((prev) => ({ ...prev, playerTeams: previousTeams }));
+            throw new Error((payload as { error?: string }).error || text || 'Failed to update position');
+        }
+        await refreshPlayerTeams();
+    };
+
     const fetchTeamPlayers = async (teamId: string) => {
         try {
             const res = await fetch(`${API_BASE_URL}/api/teams/${teamId}/players`);
@@ -266,6 +349,7 @@ export const usePlayerForm = (playerId?: string) => {
             createClub: createClubHandler,
             createTeam: createTeamHandler,
             removeTeam: removeTeamHandler,
+            updateTeamPosition: updateTeamPositionHandler,
             fetchTeamPlayers
         }
     };

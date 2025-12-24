@@ -6,25 +6,40 @@ import { ConfirmationModal } from '../../common';
 import { toTitleCase } from '../../../utils/textUtils';
 import { TEAM_CATEGORIES } from '../../../utils/teamUtils';
 import type { Club, Team, Season } from '../../../types';
+import { PLAYER_POSITIONS } from '../../../constants/playerPositions';
+import type { PlayerPositionId } from '../../../constants/playerPositions';
+import { useSafeTranslation } from '../../../context/LanguageContext';
+import { DropdownSelect } from '../../common/DropdownSelect';
+import type { Player } from '../../../types';
+
+interface PlayerTeamEntry {
+    id?: string;
+    team: Team;
+    position?: number;
+    player?: Player;
+}
 
 interface PlayerTeamManagerProps {
     clubs: Club[];
     teams: Team[];
     seasons: Season[];
-    playerTeams: any[];
+    playerTeams: PlayerTeamEntry[];
     isEditMode: boolean;
     // Handlers
     onCreateClub: (name: string) => Promise<Club | undefined>;
-    onCreateTeam: (data: any) => Promise<any>;
+    onCreateTeam: (data: Partial<Team> & { clubId: string; seasonId: string }) => Promise<Team>;
     onRemoveTeam: (teamId: string) => Promise<void>;
     // Selection State (managed by parent or local? Let's Manage Local for selection)
     selectedClubId: string | null;
     selectedCategory: string;
     selectedTeamId: string | null;
+    selectedPosition: PlayerPositionId;
     onSelectedClubChange: (id: string | null) => void;
     onSelectedCategoryChange: (cat: string) => void;
     onSelectedTeamChange: (id: string | null) => void;
-    collision: { player: any } | null;
+    onSelectedPositionChange: (pos: PlayerPositionId) => void;
+    onUpdateTeamPosition: (teamId: string, position: PlayerPositionId) => Promise<void>;
+    collision: { player?: Player } | null;
 }
 
 export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
@@ -39,11 +54,15 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
     selectedClubId,
     selectedCategory,
     selectedTeamId,
+    selectedPosition,
     onSelectedClubChange,
     onSelectedCategoryChange,
     onSelectedTeamChange,
+    onSelectedPositionChange,
+    onUpdateTeamPosition,
     collision
 }) => {
+    const { t } = useSafeTranslation();
     // UI State
     const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
     const [createClubConfirmation, setCreateClubConfirmation] = useState<{ isOpen: boolean; clubName: string | null }>({
@@ -89,6 +108,11 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
         setRemoveTeamConfirmation({ isOpen: false, teamId: null });
     };
 
+    const positionOptions = PLAYER_POSITIONS.map((pos) => ({
+        value: pos.id,
+        label: t(pos.tKey),
+    }));
+
     return (
         <div>
             {/* Current Teams List - Badge Style */}
@@ -101,7 +125,7 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                             return (
                                 <div
                                     key={pt.team.id}
-                                    className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg group hover:shadow-sm transition-all"
+                                    className="inline-flex items-center gap-3 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg group hover:shadow-sm transition-all"
                                 >
                                     <span className="text-sm">
                                         <span className="font-semibold text-indigo-900">{pt.team.club?.name}</span>
@@ -110,6 +134,22 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                                         {' '}
                                         <span className="text-indigo-600">{pt.team.name}</span>
                                     </span>
+                                    <div className="flex items-center gap-2">
+                                        <DropdownSelect
+                                            label={null}
+                                            options={positionOptions}
+                                            value={pt.position ?? 0}
+                                            onChange={(val) => {
+                                                const next = (val ?? 0) as PlayerPositionId;
+                                                onUpdateTeamPosition(pt.team.id, next).catch((err) => {
+                                                    console.error('Failed to update position', err);
+                                                    alert(err instanceof Error ? err.message : 'Failed to update position');
+                                                });
+                                            }}
+                                            placeholder={t('positions.unset')}
+                                            buttonClassName="text-sm font-normal text-gray-800"
+                                        />
+                                    </div>
                                     <button
                                         onClick={() => setRemoveTeamConfirmation({ isOpen: true, teamId: pt.team.id })}
                                         className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
@@ -172,11 +212,20 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                     disabled={!selectedClubId}
                 />
             </div>
+            <div className="mt-4 max-w-xs">
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('positions.label')}</label>
+                <DropdownSelect
+                    options={positionOptions}
+                    value={selectedPosition}
+                    onChange={(val) => onSelectedPositionChange((val ?? 0) as PlayerPositionId)}
+                    placeholder={t('positions.unset')}
+                />
+            </div>
             <p className="text-sm text-gray-500 mt-2">
                 Select club and category to see available teams. You can create new clubs and teams directly from the dropdowns.
             </p>
 
-            {collision && selectedTeamId && (
+            {collision && collision.player && selectedTeamId && (
                 <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800 flex items-start gap-2 animate-fadeIn">
                     <span className="font-bold flex-shrink-0">⚠️ Number Conflict:</span>
                     <div>

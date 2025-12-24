@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, Search } from 'lucide-react';
 import { API_BASE_URL } from '../../../config/api';
-import { RemoveIconButton, EditIconButton, AddIconButton } from '../../common';
+import { RemoveIconButton, AddIconButton, EditIconButton } from '../../common';
 import { TEAM_CATEGORIES } from '../../../utils/teamUtils';
 import type { Team, Player } from '../../../types';
 import { useSafeTranslation } from '../../../context/LanguageContext';
+import { PLAYER_POSITIONS, PLAYER_POSITION_ABBR } from '../../../constants/playerPositions';
+import type { PlayerPositionId } from '../../../constants/playerPositions';
+import { DropdownSelect } from '../../common/DropdownSelect';
 
 export const TeamPlayersPage = () => {
     const { id } = useParams();
@@ -20,6 +23,11 @@ export const TeamPlayersPage = () => {
     const [isPlayersLoading, setIsPlayersLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [playerLoadError, setPlayerLoadError] = useState<string | null>(null);
+    const [pendingPositions, setPendingPositions] = useState<Record<string, number>>({});
+    const positionOptions = PLAYER_POSITIONS.map((pos) => ({
+        value: pos.id,
+        label: t(pos.tKey),
+    }));
 
     useEffect(() => {
         const loadTeam = async () => {
@@ -91,13 +99,46 @@ export const TeamPlayersPage = () => {
         return () => controller.abort();
     }, [debouncedPlayerSearch, id]);
 
-    const handleAssignPlayer = async (playerId: string) => {
+    const getDefaultPosition = (player: Player) =>
+        (player.isGoalkeeper ? PLAYER_POSITIONS.find((p) => p.id === 1)?.id : undefined) ??
+        (player.isGoalkeeper ? 1 : 0);
+
+    const renderPositionBadges = (position?: number) => {
+        const labels = new Set<string>();
+        if (position === 1) {
+            labels.add('GK');
+        } else {
+            const abbr = PLAYER_POSITION_ABBR[(position ?? 0) as PlayerPositionId];
+            labels.add(abbr ?? '—');
+        }
+
+        return Array.from(labels).map((abbr) => (
+            <span
+                key={abbr}
+                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                    abbr === 'GK'
+                        ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                        : 'bg-indigo-100 text-indigo-800'
+                }`}
+            >
+                {abbr}
+            </span>
+        ));
+    };
+
+    const handleAssignPlayer = async (player: Player & { position?: number }) => {
         if (!id) return;
         try {
             const response = await fetch(`${API_BASE_URL}/api/teams/${id}/players`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerId, role: 'Player' }),
+                body: JSON.stringify({
+                    playerId: player.id,
+                    position:
+                        player.position ??
+                        pendingPositions[player.id] ??
+                        getDefaultPosition(player),
+                }),
             });
 
             if (!response.ok) {
@@ -180,11 +221,6 @@ export const TeamPlayersPage = () => {
         <div className="flex-1">
             <div className="font-medium flex items-center gap-2 text-lg text-gray-900">
                 #{player.number} • {player.name}
-                {player.isGoalkeeper && (
-                    <span className="px-1.5 py-0.5 text-xs font-bold rounded bg-purple-100 text-purple-700 border border-purple-200">
-                        GK
-                    </span>
-                )}
             </div>
             {player.teams && player.teams.length > 0 && (
                 <div className="mt-1 flex flex-col gap-0.5">
@@ -276,10 +312,26 @@ export const TeamPlayersPage = () => {
                                 {filteredPlayers.map(player => (
                                     <div key={player.id} className="p-4 flex justify-between items-start hover:bg-gray-50 transition-colors">
                                         {renderPlayerItem(player)}
-                                        <AddIconButton
-                                            onClick={() => handleAssignPlayer(player.id)}
-                                            title="Afegir a l'equip"
-                                        />
+                                        <div className="flex items-center gap-2">
+                                            <DropdownSelect
+                                                options={positionOptions}
+                                                value={pendingPositions[player.id] ?? getDefaultPosition(player)}
+                                                onChange={(val) => {
+                                                    const value = (val ?? getDefaultPosition(player)) as PlayerPositionId;
+                                                    setPendingPositions(prev => ({ ...prev, [player.id]: value }));
+                                                }}
+                                                placeholder={t('positions.unset')}
+                                            />
+                                            <AddIconButton
+                                                onClick={() =>
+                                                    handleAssignPlayer({
+                                                        ...player,
+                                                        position: pendingPositions[player.id] ?? getDefaultPosition(player),
+                                                    })
+                                                }
+                                                title="Afegir a l'equip"
+                                            />
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -304,12 +356,24 @@ export const TeamPlayersPage = () => {
                             </div>
                         ) : (
                             <div className="divide-y divide-gray-200">
-                                {assignedPlayersSorted.map(({ player }) => (
-                                    <div key={player.id} className="p-4 flex justify-between items-start bg-white hover:bg-gray-50 transition-colors">
-                                        {renderPlayerItem(player)}
+                                {assignedPlayersSorted.map(({ player, position }) => (
+                                    <div
+                                        key={player.id}
+                                        className="p-4 flex justify-between items-center bg-white hover:bg-gray-50 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-3 flex-1">
+                                            <div>{renderPlayerItem(player)}</div>
+                                            <div className="flex items-center gap-2">
+                                                {renderPositionBadges(position)}
+                                            </div>
+                                        </div>
                                         <div className="flex items-center gap-2 ml-4">
                                             <EditIconButton
-                                                onClick={() => navigate(`/players/${player.id}/edit`, { state: { from: `/teams/${id}/players` } })}
+                                                onClick={() =>
+                                                    navigate(`/players/${player.id}/edit`, {
+                                                        state: { from: `/teams/${id}/players` },
+                                                    })
+                                                }
                                                 title="Editar jugador"
                                             />
                                             <RemoveIconButton

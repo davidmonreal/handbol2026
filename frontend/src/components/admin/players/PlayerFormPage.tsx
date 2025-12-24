@@ -6,6 +6,8 @@ import { PlayerBasicInfo } from './PlayerBasicInfo';
 import { PlayerAttributes } from './PlayerAttributes';
 import { PlayerTeamManager } from './PlayerTeamManager';
 import { TEAM_CATEGORIES } from '../../../utils/teamUtils';
+import { DEFAULT_FIELD_POSITION, PLAYER_POSITIONS } from '../../../constants/playerPositions';
+import type { PlayerPositionId } from '../../../constants/playerPositions';
 
 export const PlayerFormPage = () => {
     const { id } = useParams();
@@ -36,6 +38,9 @@ export const PlayerFormPage = () => {
         navigationState.preselectCategory ?? TEAM_CATEGORIES[0]
     );
     const [selectedTeamId, setSelectedTeamId] = useState<string | null>(navigationState.preselectTeamId ?? null);
+    const [selectedPosition, setSelectedPosition] = useState<PlayerPositionId>(
+        formData.isGoalkeeper ? PLAYER_POSITIONS[0].id : DEFAULT_FIELD_POSITION
+    );
 
     // Fetch team players when selection changes to check for number collisions
     useEffect(() => {
@@ -45,12 +50,12 @@ export const PlayerFormPage = () => {
     }, [selectedTeamId, handlers]); // handlers.fetchTeamPlayers is stable
 
     const teamCollision = formData.number !== '' && data.currentTeamPlayers
-        ? data.currentTeamPlayers.find((p: any) => p.player?.number === Number(formData.number))
+        ? data.currentTeamPlayers.find((p) => p?.player?.number === Number(formData.number)) ?? null
         : null;
 
     const handleSave = async () => {
         try {
-            await handlers.savePlayer(selectedTeamId);
+            await handlers.savePlayer(selectedTeamId, selectedPosition);
             navigate(backTo);
         } catch (err) {
             console.error(err);
@@ -131,9 +136,7 @@ export const PlayerFormPage = () => {
                         </h2>
                         <PlayerAttributes
                             handedness={formData.handedness}
-                            isGoalkeeper={formData.isGoalkeeper}
                             onHandednessChange={handlers.setHandedness}
-                            onIsGoalkeeperChange={handlers.setIsGoalkeeper}
                         />
                     </section>
 
@@ -156,9 +159,12 @@ export const PlayerFormPage = () => {
                             selectedClubId={selectedClubId}
                             selectedCategory={selectedCategory}
                             selectedTeamId={selectedTeamId}
+                            selectedPosition={selectedPosition}
                             onSelectedClubChange={setSelectedClubId}
                             onSelectedCategoryChange={setSelectedCategory}
                             onSelectedTeamChange={setSelectedTeamId}
+                            onSelectedPositionChange={setSelectedPosition}
+                            onUpdateTeamPosition={handlers.updateTeamPosition}
                             collision={teamCollision}
                         />
                     </section>

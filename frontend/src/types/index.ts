@@ -35,6 +35,7 @@ export interface Player {
     handedness: string;
     isGoalkeeper: boolean;
     teams?: {
+        position?: number;
         team: {
             id: string;
             name: string;
@@ -55,7 +56,7 @@ export interface Team {
     season?: { id: string; name: string };
     color: string;
     // Players with their role in this specific team
-    players?: { player: Player; role?: string }[];
+    players?: { id?: string; player: Player; position?: number }[];
     isMyTeam?: boolean;
 }
 

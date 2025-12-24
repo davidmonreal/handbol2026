@@ -8,6 +8,7 @@ import {
 import prisma from '../src/lib/prisma';
 import { Handedness } from '@prisma/client';
 import { makePlayerPayload } from './factories/player';
+import { PLAYER_POSITION } from '../src/types/player-position';
 
 // Types for test mocks
 interface MockPlayer {
@@ -22,7 +23,7 @@ interface MockPlayerTeamSeason {
   id: string;
   playerId: string;
   teamId: string;
-  role: string;
+  position: number;
 }
 
 // Mock Prisma
@@ -159,12 +160,14 @@ describe('Batch Player Creation (Player Import)', () => {
         isGoalkeeper: false,
       };
 
-      vi.mocked(prisma.player.create).mockImplementation(async (args: unknown) => {
-        const data = (args as { data?: { name?: string } }).data;
+      vi.mocked(prisma.player.create).mockImplementation((args: { data?: { name?: string } }) => {
+        const data = args.data;
         if (data?.name === 'Success Player') {
-          return successfulPlayer as unknown as Awaited<ReturnType<typeof prisma.player.create>>;
+          return Promise.resolve(
+            successfulPlayer as unknown as Awaited<ReturnType<typeof prisma.player.create>>,
+          ) as never;
         }
-        throw new Error('Duplicate player');
+        return Promise.reject(new Error('Duplicate player')) as never;
       });
 
       const response = await request(app)
@@ -208,8 +211,18 @@ describe('Batch Player Creation (Player Import)', () => {
       ];
 
       const mockPlayerTeamSeasons: MockPlayerTeamSeason[] = [
-        { id: 'pts1', playerId: 'p1', teamId: 'team-1', role: 'Player' },
-        { id: 'pts2', playerId: 'p2', teamId: 'team-1', role: 'Player' },
+        {
+          id: 'pts1',
+          playerId: 'p1',
+          teamId: 'team-1',
+          position: PLAYER_POSITION.UNSET,
+        },
+        {
+          id: 'pts2',
+          playerId: 'p2',
+          teamId: 'team-1',
+          position: PLAYER_POSITION.GOALKEEPER,
+        },
       ];
 
       vi.mocked(prisma.player.create)

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { PrismaClient } from '@prisma/client';
 import app from '../../src/app';
+import { PLAYER_POSITION } from '../../src/types/player-position';
 
 const prisma = new PrismaClient();
 
@@ -138,7 +139,7 @@ describe('Full Application Lifecycle Integration Test', () => {
     it('should assign player to home team', async () => {
       const res = await request(app).post(`/api/teams/${homeTeamId}/players`).send({
         playerId,
-        role: 'Player',
+        position: PLAYER_POSITION.CENTRAL,
       });
 
       expect(res.status).toBe(201);

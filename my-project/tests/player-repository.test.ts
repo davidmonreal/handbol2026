@@ -42,6 +42,7 @@ describe('PlayerRepository', () => {
         isGoalkeeper: true,
         teams: {
           select: {
+            position: true,
             team: {
               select: {
                 id: true,
@@ -145,6 +146,7 @@ describe('PlayerRepository', () => {
         isGoalkeeper: true,
         teams: {
           select: {
+            position: true,
             team: {
               select: {
                 id: true,

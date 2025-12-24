@@ -13,6 +13,7 @@ interface DropdownSelectProps<T> {
   value: T | null;
   onChange: (value: T | null) => void;
   placeholder?: string;
+  buttonClassName?: string;
 }
 
 export function DropdownSelect<T extends string | number>({
@@ -21,6 +22,7 @@ export function DropdownSelect<T extends string | number>({
   value,
   onChange,
   placeholder = 'Select an option',
+  buttonClassName,
 }: DropdownSelectProps<T>) {
   const [open, setOpen] = useState(false);
 
@@ -37,7 +39,7 @@ export function DropdownSelect<T extends string | number>({
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="text-sm font-semibold text-gray-800 border border-gray-200 rounded-xl px-3.5 py-2 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 min-w-[170px] flex items-center justify-between gap-2"
+          className={`text-sm font-medium text-gray-800 border border-gray-200 rounded-xl px-3.5 py-2 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 min-w-[170px] flex items-center justify-between gap-2 ${buttonClassName ?? ''}`}
         >
           <span className="truncate">{selected?.label || placeholder}</span>
           <ChevronDown size={16} className="text-gray-500" />

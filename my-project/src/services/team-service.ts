@@ -3,6 +3,7 @@ import { Team, PlayerTeamSeason } from '@prisma/client';
 import { BaseService } from './base-service';
 import { TeamRepository } from '../repositories/team-repository';
 import prisma from '../lib/prisma'; // Keep prisma import for custom validation in create/update
+import { isValidPlayerPosition } from '../types/player-position';
 
 export class TeamService extends BaseService<Team> {
   constructor(private teamRepository: TeamRepository) {
@@ -126,8 +127,12 @@ export class TeamService extends BaseService<Team> {
   async assignPlayer(
     teamId: string,
     playerId: string,
-    role: string = 'Player',
+    position: number,
   ): Promise<PlayerTeamSeason> {
+    if (!isValidPlayerPosition(position)) {
+      throw new Error('Invalid position');
+    }
+
     // Check if player exists
     const player = await prisma.player.findUnique({ where: { id: playerId } });
     if (!player) {
@@ -142,10 +147,21 @@ export class TeamService extends BaseService<Team> {
       throw new Error('Player already assigned to this team');
     }
 
-    return this.teamRepository.assignPlayer(teamId, playerId, role);
+    return this.teamRepository.assignPlayer(teamId, playerId, position);
   }
 
   async unassignPlayer(teamId: string, playerId: string): Promise<PlayerTeamSeason> {
     return this.teamRepository.unassignPlayer(teamId, playerId);
+  }
+
+  async updatePlayerPosition(
+    teamId: string,
+    playerId: string,
+    position: number,
+  ): Promise<PlayerTeamSeason> {
+    if (!isValidPlayerPosition(position)) {
+      throw new Error('Invalid position');
+    }
+    return this.teamRepository.updatePlayerPosition(teamId, playerId, position);
   }
 }
