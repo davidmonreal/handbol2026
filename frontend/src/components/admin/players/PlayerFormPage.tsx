@@ -41,6 +41,7 @@ export const PlayerFormPage = () => {
     const [selectedPosition, setSelectedPosition] = useState<PlayerPositionId>(
         formData.isGoalkeeper ? PLAYER_POSITIONS[0].id : DEFAULT_FIELD_POSITION
     );
+    const [acceptNumberConflict, setAcceptNumberConflict] = useState(false);
 
     // Fetch team players when selection changes to check for number collisions
     useEffect(() => {
@@ -52,6 +53,9 @@ export const PlayerFormPage = () => {
     const teamCollision = formData.number !== '' && data.currentTeamPlayers
         ? data.currentTeamPlayers.find((p) => p?.player?.number === Number(formData.number)) ?? null
         : null;
+    useEffect(() => {
+        setAcceptNumberConflict(false);
+    }, [teamCollision?.player?.id, teamCollision?.player?.number, selectedTeamId]);
 
     const handleSave = async () => {
         try {
@@ -101,7 +105,11 @@ export const PlayerFormPage = () => {
                 </div>
                 <button
                     onClick={handleSave}
-                    disabled={isSaving || (!isEditMode && duplicateState.hasWarning) || !!teamCollision}
+                    disabled={
+                        isSaving ||
+                        (!isEditMode && duplicateState.hasWarning) ||
+                        (Boolean(teamCollision) && !acceptNumberConflict)
+                    }
                     className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium shadow-sm"
                 >
                     {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
@@ -166,6 +174,8 @@ export const PlayerFormPage = () => {
                             onSelectedPositionChange={setSelectedPosition}
                             onUpdateTeamPosition={handlers.updateTeamPosition}
                             collision={teamCollision}
+                            acceptNumberConflict={acceptNumberConflict}
+                            onAcceptNumberConflictChange={setAcceptNumberConflict}
                         />
                     </section>
                 </div>

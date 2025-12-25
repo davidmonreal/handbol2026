@@ -40,6 +40,8 @@ interface PlayerTeamManagerProps {
     onSelectedPositionChange: (pos: PlayerPositionId) => void;
     onUpdateTeamPosition: (teamId: string, position: PlayerPositionId) => Promise<void>;
     collision: { player?: Player } | null;
+    acceptNumberConflict: boolean;
+    onAcceptNumberConflictChange: (value: boolean) => void;
 }
 
 export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
@@ -60,7 +62,9 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
     onSelectedTeamChange,
     onSelectedPositionChange,
     onUpdateTeamPosition,
-    collision
+    collision,
+    acceptNumberConflict,
+    onAcceptNumberConflictChange
 }) => {
     const { t } = useSafeTranslation();
     // UI State
@@ -232,6 +236,17 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                         Player <strong>{collision.player.name}</strong> already holds number <strong>{collision.player.number}</strong> in this team.
                     </div>
                 </div>
+            )}
+            {collision && collision.player && selectedTeamId && (
+                <label className="mt-2 inline-flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                        type="checkbox"
+                        checked={acceptNumberConflict}
+                        onChange={(event) => onAcceptNumberConflictChange(event.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span>{t('playerTeam.acceptNumberConflict')}</span>
+                </label>
             )}
 
             {/* Modals */}
