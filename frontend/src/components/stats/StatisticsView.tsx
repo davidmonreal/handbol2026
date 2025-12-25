@@ -22,6 +22,7 @@ export function StatisticsView({
   selectedPlayerId,
   showComparison = false,
   teamId,
+  matchFilters,
   matchData,
   teamData,
   playerData,
@@ -260,7 +261,22 @@ export function StatisticsView({
   };
 
   // Play window filter (by recency in current filteredEvents)
-  const { options: playWindowOptions, selected: selectedPlayWindow, setSelected: setSelectedPlayWindow, filteredEvents: playWindowEvents } = usePlayWindow(filteredEvents);
+  const playWindowConfig = context === 'team' && (matchFilters?.length ?? 0) > 0
+    ? { mode: 'matches' as const, matchFilters }
+    : undefined;
+  const {
+    options: playWindowOptions,
+    selected: selectedPlayWindow,
+    setSelected: setSelectedPlayWindow,
+    filteredEvents: playWindowEvents,
+  } = usePlayWindow(filteredEvents, playWindowConfig);
+  const playWindowMatchId = selectedPlayWindow?.kind === 'match' ? selectedPlayWindow.matchId : null;
+  const playWindowFoulEvents = playWindowMatchId
+    ? filteredFoulEvents.filter((event) => event.matchId === playWindowMatchId)
+    : filteredFoulEvents;
+  const playWindowOpponentEvents = playWindowMatchId
+    ? filteredOpponentEvents.filter((event) => event.matchId === playWindowMatchId)
+    : filteredOpponentEvents;
 
   const handlePlayerClick = (playerId: string | null) => {
     // Don't apply filter in player context (already viewing single player)
@@ -277,7 +293,7 @@ export function StatisticsView({
     isGoalkeeperView,
     undefined, // No separate foul events needed for player table (it uses events for everything)
     getPlayerInfo,
-    filteredOpponentEvents // Pass opponent events to calculate correct GK stats (Saves/Conceded)
+    playWindowOpponentEvents // Pass opponent events to calculate correct GK stats (Saves/Conceded)
   );
 
   return (
@@ -374,7 +390,7 @@ export function StatisticsView({
       <StatisticsPanel
         data={{
           events: playWindowEvents,
-          foulEvents: filteredFoulEvents,
+          foulEvents: playWindowFoulEvents,
           title: '',
           context,
           isGoalkeeper: isGoalkeeperView,

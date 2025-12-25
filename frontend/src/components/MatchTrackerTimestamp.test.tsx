@@ -1,13 +1,8 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { useEffect } from 'react';
-import { MatchProvider, useMatch } from '../context/MatchContext';
+import { MatchProvider } from '../context/MatchContext';
 import MatchTracker from './MatchTracker';
-
-vi.mock('./match/useMatchClock', () => ({
-    useMatchClock: () => undefined,
-}));
 
 vi.mock('./match/Scoreboard', () => ({
     Scoreboard: () => <div data-testid="scoreboard" />,
@@ -33,19 +28,12 @@ const localStorageMock = {
     removeItem: vi.fn(),
     clear: vi.fn(),
 };
-
-const TimeSetter = () => {
-    const { matchId, homeTeam, setTime } = useMatch();
-    useEffect(() => {
-        if (matchId && homeTeam) {
-            setTime(125);
-        }
-    }, [matchId, homeTeam, setTime]);
-    return null;
-};
+let nowSpy: ReturnType<typeof vi.spyOn> | null = null;
 
 describe('MatchTracker timestamp persistence', () => {
     beforeEach(() => {
+        const now = new Date('2025-01-01T12:00:00Z').getTime();
+        nowSpy = vi.spyOn(Date, 'now').mockReturnValue(now);
         Object.defineProperty(window, 'localStorage', {
             value: localStorageMock,
             configurable: true,
@@ -66,7 +54,7 @@ describe('MatchTracker timestamp persistence', () => {
                         isFinished: false,
                         homeScore: 0,
                         awayScore: 0,
-                        realTimeFirstHalfStart: Date.now() - 60000,
+                        realTimeFirstHalfStart: Date.now() - 125000,
                         realTimeSecondHalfStart: null,
                         realTimeFirstHalfEnd: null,
                         realTimeSecondHalfEnd: null,
@@ -103,11 +91,15 @@ describe('MatchTracker timestamp persistence', () => {
         });
     });
 
+    afterEach(() => {
+        nowSpy?.mockRestore();
+        nowSpy = null;
+    });
+
     it('stores match timestamp from the live clock when no timestamp is provided', async () => {
         render(
             <MemoryRouter initialEntries={['/match/match-1']}>
                 <MatchProvider>
-                    <TimeSetter />
                     <Routes>
                         <Route path="/match/:matchId" element={<MatchTracker />} />
                     </Routes>
@@ -117,6 +109,13 @@ describe('MatchTracker timestamp persistence', () => {
 
         await waitFor(() => {
             expect(screen.getByText('test-Home Team vs test-Away Team')).toBeInTheDocument();
+        });
+        await waitFor(() => {
+            const hasEventsFetch = mockFetch.mock.calls.some(([url]) => {
+                if (typeof url !== 'string') return false;
+                return url.includes('/api/game-events/match/');
+            });
+            expect(hasEventsFetch).toBe(true);
         });
 
         fireEvent.click(screen.getByText('Save Event'));

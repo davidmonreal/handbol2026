@@ -3,7 +3,13 @@ import type { MatchEvent } from '../../../types';
 
 export type PlayWindowRange =
   | { kind: 'range'; start: number; end: number }
-  | { kind: 'half'; half: 1 | 2 };
+  | { kind: 'half'; half: 1 | 2 }
+  | { kind: 'match'; matchId: string };
+
+export type PlayWindowConfig = {
+  mode?: 'plays' | 'matches';
+  matchFilters?: { matchId: string; label: string }[];
+};
 
 interface UsePlayWindowResult {
   options: { label: string; value: PlayWindowRange }[];
@@ -12,10 +18,19 @@ interface UsePlayWindowResult {
   filteredEvents: MatchEvent[];
 }
 
-export function usePlayWindow(events: MatchEvent[]): UsePlayWindowResult {
+export function usePlayWindow(
+  events: MatchEvent[],
+  { mode = 'plays', matchFilters = [] }: PlayWindowConfig = {},
+): UsePlayWindowResult {
   const [selected, setSelected] = useState<PlayWindowRange | null>(null);
 
   const options = useMemo(() => {
+    if (mode === 'matches') {
+      return matchFilters.map((match) => ({
+        label: match.label,
+        value: { kind: 'match', matchId: match.matchId } as PlayWindowRange,
+      }));
+    }
     // A "Play" is any offensive event: Shot, Turnover, or Sanction/Foul (suffered)
     const plays = events.filter(e => ['Shot', 'Turnover', 'Sanction', 'Foul'].includes(e.category));
     const total = plays.length;
@@ -28,10 +43,24 @@ export function usePlayWindow(events: MatchEvent[]): UsePlayWindowResult {
       opts.push({ label: 'Second half', value: { kind: 'half', half: 2 } });
     }
     return opts;
-  }, [events]);
+  }, [events, matchFilters, mode]);
 
   const filteredEvents = useMemo(() => {
     if (!selected) return events;
+    if (mode === 'matches' && selected.kind !== 'match') {
+      setSelected(null);
+      return events;
+    }
+    if (selected.kind === 'match') {
+      const exists = options.some(
+        (opt) => opt.value.kind === 'match' && opt.value.matchId === selected.matchId,
+      );
+      if (!exists) {
+        setSelected(null);
+        return events;
+      }
+      return events.filter((event) => event.matchId === selected.matchId);
+    }
     if (selected.kind === 'half') {
       const HALF_DURATION = 30 * 60;
       return events.filter(e => selected.half === 1 ? e.timestamp < HALF_DURATION : e.timestamp >= HALF_DURATION);
@@ -46,7 +75,7 @@ export function usePlayWindow(events: MatchEvent[]): UsePlayWindowResult {
       return events;
     }
     return plays.slice(opt.value.start, opt.value.end);
-  }, [events, options, selected]);
+  }, [events, mode, options, selected]);
 
   return { options, selected, setSelected, filteredEvents };
 }

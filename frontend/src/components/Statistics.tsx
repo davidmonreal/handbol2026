@@ -11,11 +11,19 @@ import { formatCategoryLabel } from '../utils/categoryLabels';
 import { DEFAULT_FIELD_POSITION, PLAYER_POSITION_ABBR, PLAYER_POSITIONS } from '../constants/playerPositions';
 import type { PlayerPositionId } from '../constants/playerPositions';
 
+type BackendTeamRef = {
+  id?: string;
+  name?: string;
+  club?: { name?: string };
+};
+
 type BackendMatchRef = {
+  id?: string;
+  date?: string;
   homeTeamId?: string;
   awayTeamId?: string;
-  homeTeam?: { id?: string };
-  awayTeam?: { id?: string };
+  homeTeam?: BackendTeamRef;
+  awayTeam?: BackendTeamRef;
 };
 
 type ApiEvent = TransformerBackendEvent & { match?: BackendMatchRef };
@@ -51,6 +59,82 @@ type PlayerData = {
   name?: string;
   number?: number;
   teams?: { position?: number }[];
+};
+
+type MatchFilterOption = { matchId: string; label: string };
+
+const formatMatchDate = (raw?: string, locale = 'ca-ES') => {
+  if (!raw) return null;
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit' }).format(date);
+};
+
+const resolveMatchDateLocale = (language: string) => {
+  if (language === 'en') return 'en-GB';
+  if (language === 'es') return 'es-ES';
+  return 'ca-ES';
+};
+
+const buildTeamMatchFilters = (
+  eventsData: ApiEvent[],
+  teamId: string,
+  fallbackOpponentLabel: string,
+  dateLocale: string,
+): MatchFilterOption[] => {
+  const matches = new Map<string, { label: string; sortKey: number }>();
+
+  eventsData.forEach((event) => {
+    const match = event.match;
+    const matchId = event.matchId ?? match?.id;
+    if (!match || !matchId) return;
+
+    const homeId = match.homeTeamId ?? match.homeTeam?.id;
+    const awayId = match.awayTeamId ?? match.awayTeam?.id;
+    if (homeId !== teamId && awayId !== teamId) return;
+
+    const opponent = homeId === teamId ? match.awayTeam : match.homeTeam;
+    const opponentName = opponent?.club?.name ?? opponent?.name ?? fallbackOpponentLabel;
+    const dateLabel = formatMatchDate(match.date, dateLocale);
+    const label = dateLabel ? `${opponentName} • ${dateLabel}` : opponentName;
+    const sortKey = match.date ? new Date(match.date).getTime() : 0;
+
+    if (!matches.has(matchId)) {
+      matches.set(matchId, { label, sortKey });
+    }
+  });
+
+  return [...matches.entries()]
+    .map(([matchId, meta]) => ({ matchId, label: meta.label, sortKey: meta.sortKey }))
+    .sort((a, b) => b.sortKey - a.sortKey)
+    .map(({ matchId, label }) => ({ matchId, label }));
+};
+
+const normalizeEventTimestampsForVideo = (events: MatchEvent[], matchData: MatchData | null) => {
+  if (!matchData?.firstHalfVideoStart && !matchData?.secondHalfVideoStart) return events;
+  if (matchData?.firstHalfVideoStart == null) return events;
+
+  const firstHalfStart = matchData.firstHalfVideoStart;
+  const secondHalfStart = matchData.secondHalfVideoStart ?? null;
+  const firstHalfDuration = secondHalfStart !== null
+    ? Math.max(0, secondHalfStart - firstHalfStart)
+    : null;
+
+  let hasVideoEvents = false;
+  const normalized = events.map((event) => {
+    if (event.videoTimestamp == null) return event;
+    hasVideoEvents = true;
+
+    let derivedTimestamp = Math.max(0, event.videoTimestamp - firstHalfStart);
+    if (secondHalfStart !== null && event.videoTimestamp >= secondHalfStart && firstHalfDuration !== null) {
+      derivedTimestamp = firstHalfDuration + Math.max(0, event.videoTimestamp - secondHalfStart);
+    }
+
+    if (derivedTimestamp === event.timestamp) return event;
+    return { ...event, timestamp: derivedTimestamp };
+  });
+
+  return hasVideoEvents ? normalized : events;
 };
 
 const normalizeMatchData = (data: MatchData | null) => {
@@ -100,7 +184,7 @@ const Statistics = () => {
   const urlActiveTeamId = searchParams.get('activeTeamId');
 
   const { events, activeTeamId } = useMatch();
-  const { t } = useSafeTranslation();
+  const { t, language } = useSafeTranslation();
 
   // State
   const [matchData, setMatchData] = useState<MatchData | null>(null);
@@ -109,6 +193,7 @@ const Statistics = () => {
   const [statsEvents, setStatsEvents] = useState<MatchEvent[]>([]);
   const [foulStatsEvents, setFoulStatsEvents] = useState<MatchEvent[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [teamMatchFilters, setTeamMatchFilters] = useState<MatchFilterOption[]>([]);
   const [loading, setLoading] = useState(false);
 
   const playerPositionIds = useMemo(() => {
@@ -128,6 +213,7 @@ const Statistics = () => {
       setLoading(true);
       try {
         if (matchId) {
+          setTeamMatchFilters([]);
           // Load match details
           const matchRes = await fetch(`${API_BASE_URL}/api/matches/${matchId}`);
           const matchData = await matchRes.json();
@@ -146,6 +232,7 @@ const Statistics = () => {
           const eventsData = await eventsRes.json();
           setStatsEvents(transformBackendEvents(eventsData));
         } else if (playerId) {
+          setTeamMatchFilters([]);
           // Load player details
           const playerRes = await fetch(`${API_BASE_URL}/api/players/${playerId}`);
           const playerData = await playerRes.json();
@@ -178,6 +265,8 @@ const Statistics = () => {
           const eventsRes = await fetch(`${API_BASE_URL}/api/game-events`);
           const eventsData: ApiEvent[] = await eventsRes.json();
           const transformed = transformBackendEvents(eventsData);
+          const dateLocale = resolveMatchDateLocale(language);
+          setTeamMatchFilters(buildTeamMatchFilters(eventsData, teamId, t('stats.opponentFallback'), dateLocale));
 
           const matchesForTeam = new Set(
             (eventsData || [])
@@ -212,13 +301,14 @@ const Statistics = () => {
     if (matchId || playerId || teamId) {
       loadData();
     }
-  }, [matchId, playerId, teamId, activeTeamId, urlActiveTeamId]);
+  }, [matchId, playerId, teamId, activeTeamId, urlActiveTeamId, language, t]);
 
   // Determine which events to show
   const displayEvents = useMemo(() => {
-    if (matchId || playerId || teamId) return statsEvents;
+    if (matchId) return normalizeEventTimestampsForVideo(statsEvents, matchData);
+    if (playerId || teamId) return statsEvents;
     return events.filter(e => e.teamId === activeTeamId);
-  }, [matchId, playerId, teamId, statsEvents, events, activeTeamId]);
+  }, [matchId, playerId, teamId, statsEvents, events, activeTeamId, matchData]);
 
   // Determine context
   const context = matchId ? 'match' : (playerId ? 'player' : 'team');
@@ -315,7 +405,9 @@ const Statistics = () => {
   const teamDataForView = teamId ? normalizeTeamData(teamData) : undefined;
 
   const teamSubtitle = teamId && teamDataForView
-    ? [teamDataForView?.club?.name, formatCategoryLabel(teamDataForView?.category, t), 'All Matches'].filter(Boolean).join(' • ')
+    ? [teamDataForView?.club?.name, formatCategoryLabel(teamDataForView?.category, t), t('stats.allMatches')]
+      .filter(Boolean)
+      .join(' • ')
     : undefined;
 
   return (
@@ -330,6 +422,7 @@ const Statistics = () => {
         teamData={teamDataForView}
         playerData={playerId ? playerData : undefined}
         teamId={selectedTeamId}
+        matchFilters={teamId ? teamMatchFilters : undefined}
         selectedPlayerId={playerId}
         onTeamChange={setSelectedTeamId}
         onBack={handleBack}

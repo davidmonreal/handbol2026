@@ -203,6 +203,7 @@ export interface StatisticsViewProps {
     showComparison?: boolean;
     teamId?: string | null;
     playerData?: any;
+    matchFilters?: { matchId: string; label: string }[];
     matchData?: {
         homeTeam: { id: string; name: string; club?: { name: string }; category?: string; players: any[] };
         awayTeam: { id: string; name: string; club?: { name: string }; category?: string; players: any[] };

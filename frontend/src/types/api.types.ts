@@ -51,6 +51,7 @@ export interface MatchApiResponse {
 export interface GameEventApiResponse {
     id: string;
     timestamp: number;
+    videoTimestamp?: number;
     playerId: string;
     teamId: string;
     type: string; // 'Shot' | 'Turnover' | 'Sanction'

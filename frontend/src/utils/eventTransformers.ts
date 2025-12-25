@@ -40,6 +40,7 @@ export const positionDistanceToZone = (position: string | null, distance: string
 export interface BackendEvent {
     id: string;
     timestamp: number;
+    videoTimestamp?: number;
     matchId?: string;
     playerId?: string | null;
     player?: {
@@ -66,6 +67,7 @@ export interface BackendEvent {
 export const transformBackendEvent = (e: BackendEvent): MatchEvent => ({
     id: e.id,
     timestamp: e.timestamp,
+    videoTimestamp: e.videoTimestamp,
     playerId: e.playerId ?? null,
     playerName: e.player?.name,
     playerNumber: e.player?.number,

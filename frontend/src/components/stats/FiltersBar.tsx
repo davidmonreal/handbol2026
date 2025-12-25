@@ -118,12 +118,18 @@ export function FiltersBar({
           <DropdownSelect
             options={playWindowOptions.map((opt) => ({
               label: opt.label,
-              value: opt.value.kind === 'half' ? `half-${opt.value.half}` : `range-${opt.value.start}-${opt.value.end}`,
+              value: opt.value.kind === 'half'
+                ? `half-${opt.value.half}`
+                : opt.value.kind === 'match'
+                  ? `match-${opt.value.matchId}`
+                  : `range-${opt.value.start}-${opt.value.end}`,
             }))}
             value={
               selectedPlayWindow
                 ? selectedPlayWindow.kind === 'half'
                   ? `half-${selectedPlayWindow.half}`
+                  : selectedPlayWindow.kind === 'match'
+                    ? `match-${selectedPlayWindow.matchId}`
                   : `range-${selectedPlayWindow.start}-${selectedPlayWindow.end}`
                 : null
             }
@@ -136,12 +142,16 @@ export function FiltersBar({
               if (str.startsWith('half-')) {
                 const half = Number(str.split('-')[1]) as 1 | 2;
                 onPlayWindowChange({ kind: 'half', half });
+              } else if (str.startsWith('match-')) {
+                const matchId = str.replace('match-', '');
+                onPlayWindowChange({ kind: 'match', matchId });
               } else {
                 const [, start, end] = str.split('-');
                 onPlayWindowChange({ kind: 'range', start: Number(start), end: Number(end) });
               }
             }}
             placeholder="All plays"
+            buttonClassName="min-w-[220px]"
           />
         </div>
       )}
