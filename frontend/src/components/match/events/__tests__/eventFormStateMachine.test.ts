@@ -33,6 +33,13 @@ describe('eventFormStateMachine rules', () => {
         expect(turnoverState.hasOpposition).toBe(true);
     });
 
+    it('enforces opposition on blocked shots', () => {
+        const blockState = applyFormRules(
+            buildState({ selectedCategory: 'Shot', selectedAction: 'Block', hasOpposition: false }),
+        );
+        expect(blockState.hasOpposition).toBe(true);
+    });
+
     it('forces collective on turnover pass', () => {
         const state = applyFormRules(
             buildState({ selectedCategory: 'Turnover', selectedAction: 'Pass', isCollective: false }),

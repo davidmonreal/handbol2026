@@ -82,6 +82,13 @@ const forceOppositionOnFoul: FormRule = (state) => {
     return state;
 };
 
+const forceOppositionOnBlock: FormRule = (state) => {
+    if (state.selectedCategory === 'Shot' && state.selectedAction === 'Block') {
+        return { ...state, hasOpposition: true };
+    }
+    return state;
+};
+
 const forceCollectiveOnPass: FormRule = (state) => {
     if (state.selectedCategory === 'Turnover' && state.selectedAction === 'Pass') {
         return { ...state, isCollective: true };
@@ -110,6 +117,7 @@ const clearTargetForNonShots: FormRule = (state) => {
 
 const formRules: FormRule[] = [
     forceOppositionOnFoul,
+    forceOppositionOnBlock,
     forceCollectiveOnPass,
     normalizePenaltyShot,
     clearTargetForNonShots,
