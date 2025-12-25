@@ -7,6 +7,8 @@ test.describe('MatchTracker scoreboard live goal lifecycle', () => {
     // In-memory fake backend state
     const events: any[] = [];
 
+    const startTime = Date.now() - 60_000;
+
     // Stub match details
     await page.route('**/api/matches/test-match', async route => {
       if (route.request().method() !== 'GET') return route.fallback();
@@ -18,22 +20,26 @@ test.describe('MatchTracker scoreboard live goal lifecycle', () => {
           isFinished: false,
           homeScore: 0,
           awayScore: 0,
+          realTimeFirstHalfStart: startTime,
+          realTimeSecondHalfStart: null,
+          realTimeFirstHalfEnd: null,
+          realTimeSecondHalfEnd: null,
           homeTeam: {
             id: 'team-home',
-            name: 'Home Team',
+            name: 'test-Home Team',
             category: 'CADET',
-            club: { name: 'Club A' },
+            club: { name: 'test-Club A' },
             players: [
-              { player: { id: 'p1', name: 'Player 1', number: 10, isGoalkeeper: false }, role: 'CB' },
+              { player: { id: 'p1', name: 'test-Player 1', number: 10, isGoalkeeper: false }, role: 'CB' },
             ],
           },
           awayTeam: {
             id: 'team-away',
-            name: 'Away Team',
+            name: 'test-Away Team',
             category: 'JUVENIL',
-            club: { name: 'Club B' },
+            club: { name: 'test-Club B' },
             players: [
-              { player: { id: 'p2', name: 'Player 2', number: 12, isGoalkeeper: true }, role: 'GK' },
+              { player: { id: 'p2', name: 'test-Player 2', number: 12, isGoalkeeper: true }, role: 'GK' },
             ],
           },
         }),
@@ -96,13 +102,12 @@ test.describe('MatchTracker scoreboard live goal lifecycle', () => {
     await page.getByTestId('home-team-card').click();
 
     // Create a goal
-    await page.getByRole('button', { name: /select player/i }).click();
-    await page.getByRole('button', { name: /player 1/i }).click();
+    await page.getByRole('button', { name: /10 test-player 1/i }).click();
     await page.getByRole('button', { name: /^goal$/i }).click();
     await page.getByRole('button', { name: /add event/i }).click();
 
     await expect(page.getByTestId('home-score')).toHaveText('1');
-    const eventButton = page.getByRole('button', { name: /#10 player 1/i });
+    const eventButton = page.getByTestId(/event-item-/).first();
     await expect(eventButton).toBeVisible();
 
     // Delete the created event

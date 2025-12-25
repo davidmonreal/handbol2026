@@ -3,6 +3,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { isApiAvailable } from '../utils/api-availability';
 import { PLAYER_POSITION } from '../../src/types/player-position';
+import { testClubName, testPlayerName, testSeasonName, testTeamName } from '../utils/test-name';
 
 const prisma = new PrismaClient();
 const API_URL = process.env.API_URL ?? 'http://localhost:3000';
@@ -16,7 +17,7 @@ const createTeamWithPlayer = async (label: string) => {
   const now = Date.now();
   const season = await prisma.season.create({
     data: {
-      name: `test-match-event-flow-season-${label}-${now}`,
+      name: testSeasonName(`match-event-flow-${label}`, String(now)),
       startDate: new Date(),
       endDate: new Date(Date.now() + 1000 * 60 * 60 * 24),
     },
@@ -25,14 +26,14 @@ const createTeamWithPlayer = async (label: string) => {
 
   const club = await prisma.club.create({
     data: {
-      name: `test-match-event-flow-club-${label}-${now}`,
+      name: testClubName(`match-event-flow-${label}`, String(now)),
     },
   });
   createdClubIds.push(club.id);
 
   const team = await prisma.team.create({
     data: {
-      name: `test-match-event-flow-team-${label}-${now}`,
+      name: testTeamName(`match-event-flow-${label}`, String(now)),
       clubId: club.id,
       seasonId: season.id,
       isMyTeam: label === 'Home',
@@ -42,7 +43,7 @@ const createTeamWithPlayer = async (label: string) => {
 
   const player = await prisma.player.create({
     data: {
-      name: `test-match-event-flow-player-${label}-${now}`,
+      name: testPlayerName(`match-event-flow-${label}`, String(now)),
       number: Math.floor(Math.random() * 80) + 1,
     },
   });
@@ -168,6 +169,56 @@ describe('Integration Tests: Match Event Flow', () => {
 
     // Cleanup
     await prisma.gameEvent.delete({ where: { id: createdEvent.id } });
+  });
+
+  it('should update and delete a game event via API', async () => {
+    if (!apiAvailable) return;
+    const newEvent = {
+      matchId: testMatchId,
+      timestamp: 240,
+      playerId: testPlayerId,
+      teamId: testTeamId,
+      type: 'Shot',
+      subtype: 'Goal',
+      position: 'CB',
+      distance: '6M',
+      isCollective: false,
+      goalZone: 'MM',
+    };
+
+    const createResponse = await fetch(`${API_URL}/api/game-events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newEvent),
+    });
+    expect(createResponse.ok).toBe(true);
+    const createdEvent = await createResponse.json();
+
+    const updateResponse = await fetch(`${API_URL}/api/game-events/${createdEvent.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        timestamp: 255,
+        subtype: 'Save',
+        goalZone: 'TL',
+      }),
+    });
+    expect(updateResponse.ok).toBe(true);
+
+    const updatedEventRes = await fetch(`${API_URL}/api/game-events/${createdEvent.id}`);
+    expect(updatedEventRes.ok).toBe(true);
+    const updatedEvent = await updatedEventRes.json();
+    expect(updatedEvent.timestamp).toBe(255);
+    expect(updatedEvent.subtype).toBe('Save');
+    expect(updatedEvent.goalZone).toBe('TL');
+
+    const deleteResponse = await fetch(`${API_URL}/api/game-events/${createdEvent.id}`, {
+      method: 'DELETE',
+    });
+    expect(deleteResponse.ok).toBe(true);
+
+    const fetchDeleted = await fetch(`${API_URL}/api/game-events/${createdEvent.id}`);
+    expect(fetchDeleted.status).toBe(404);
   });
 
   it('should retrieve all events for a match via API', async () => {

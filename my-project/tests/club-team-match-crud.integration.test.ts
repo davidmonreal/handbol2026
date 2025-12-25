@@ -2,11 +2,9 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import app from '../src/app';
 import { PrismaClient, Club, Season, Team } from '@prisma/client';
+import { testClubName, testSeasonName, testTeamName } from './utils/test-name';
 
 const prisma = new PrismaClient();
-const uniqueName = (label: string) =>
-  `test-${label}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
 const created = {
   clubs: new Set<string>(),
   seasons: new Set<string>(),
@@ -22,7 +20,7 @@ const registerMatch = (matchId: string) => created.matches.add(matchId);
 const createSeason = async (label: string) => {
   const season = await prisma.season.create({
     data: {
-      name: uniqueName(label),
+      name: testSeasonName(label),
       startDate: new Date(),
       endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
     },
@@ -34,7 +32,7 @@ const createSeason = async (label: string) => {
 const createClub = async (label: string) => {
   const club = await prisma.club.create({
     data: {
-      name: uniqueName(label),
+      name: testClubName(label),
     },
   });
   registerClub(club);
@@ -44,7 +42,7 @@ const createClub = async (label: string) => {
 const createTeam = async (label: string, clubId: string, seasonId: string) => {
   const team = await prisma.team.create({
     data: {
-      name: uniqueName(label),
+      name: testTeamName(label),
       category: 'Cadet M',
       clubId,
       seasonId,
@@ -83,7 +81,7 @@ afterAll(async () => {
 
 describe.sequential('Club CRUD integration', () => {
   it('performs full CRUD flow for clubs via the API', async () => {
-    const clubName = uniqueName('CRUD-Club');
+    const clubName = testClubName('crud');
     const createRes = await request(app).post('/api/clubs').send({ name: clubName });
     expect(createRes.status).toBe(201);
     expect(createRes.body.name).toBe(clubName);
@@ -112,6 +110,48 @@ describe.sequential('Club CRUD integration', () => {
   }, 15000);
 });
 
+describe.sequential('Season CRUD integration', () => {
+  it('performs full CRUD flow for seasons via the API', async () => {
+    const seasonName = testSeasonName('crud');
+    const startDate = new Date().toISOString();
+    const endDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString();
+
+    const createRes = await request(app)
+      .post('/api/seasons')
+      .send({ name: seasonName, startDate, endDate });
+    expect(createRes.status).toBe(201);
+    expect(createRes.body.name).toBe(seasonName);
+
+    const seasonId = createRes.body.id as string;
+    created.seasons.add(seasonId);
+
+    const listRes = await request(app).get('/api/seasons');
+    expect(listRes.status).toBe(200);
+    const existsOnList = Array.isArray(listRes.body)
+      ? listRes.body.some((season: Season) => season.id === seasonId)
+      : false;
+    expect(existsOnList).toBe(true);
+
+    const updatedName = `${seasonName}-Updated`;
+    const updateRes = await request(app)
+      .put(`/api/seasons/${seasonId}`)
+      .send({
+        name: updatedName,
+        startDate: new Date().toISOString(),
+        endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 60).toISOString(),
+      });
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.name).toBe(updatedName);
+
+    const deleteRes = await request(app).delete(`/api/seasons/${seasonId}`);
+    expect(deleteRes.status).toBe(204);
+    created.seasons.delete(seasonId);
+
+    const fetchDeleted = await request(app).get(`/api/seasons/${seasonId}`);
+    expect(fetchDeleted.status).toBe(404);
+  }, 15000);
+});
+
 describe.sequential('Team CRUD integration', () => {
   let supportingClub: Club;
   let supportingSeason: Season;
@@ -123,7 +163,7 @@ describe.sequential('Team CRUD integration', () => {
 
   it('creates, reads, updates, and deletes teams', async () => {
     const payload = {
-      name: uniqueName('CRUD-Team'),
+      name: testTeamName('crud'),
       category: 'Cadet M',
       clubId: supportingClub.id,
       seasonId: supportingSeason.id,

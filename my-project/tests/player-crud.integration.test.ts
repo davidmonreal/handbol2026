@@ -3,6 +3,7 @@ import request from 'supertest';
 import { PrismaClient, Handedness } from '@prisma/client';
 import app from '../src/app';
 import { PLAYER_POSITION } from '../src/types/player-position';
+import { testClubName, testPlayerName, testSeasonName, testTeamName } from './utils/test-name';
 
 const prisma = new PrismaClient();
 const createdPlayerIds: string[] = [];
@@ -10,13 +11,10 @@ const createdTeamIds: string[] = [];
 const createdClubIds: string[] = [];
 const createdSeasonIds: string[] = [];
 
-const uniqueName = (label: string) =>
-  `test-pcrud-${label}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
 const createTeamForCascadeCheck = async () => {
   const season = await prisma.season.create({
     data: {
-      name: uniqueName('Cascade Season'),
+      name: testSeasonName('cascade'),
       startDate: new Date(),
       endDate: new Date(Date.now() + 1000 * 60 * 60 * 24),
     },
@@ -25,14 +23,14 @@ const createTeamForCascadeCheck = async () => {
 
   const club = await prisma.club.create({
     data: {
-      name: uniqueName('Cascade Club'),
+      name: testClubName('cascade'),
     },
   });
   createdClubIds.push(club.id);
 
   const team = await prisma.team.create({
     data: {
-      name: uniqueName('Cascade Team'),
+      name: testTeamName('cascade'),
       clubId: club.id,
       seasonId: season.id,
     },
@@ -68,7 +66,7 @@ afterAll(async () => {
 describe.sequential('Player CRUD integration', () => {
   it('creates and retrieves a player by id', async () => {
     const payload = {
-      name: uniqueName('Integration Player'),
+      name: testPlayerName('integration'),
       number: 42,
       handedness: Handedness.RIGHT,
       isGoalkeeper: false,
@@ -86,7 +84,7 @@ describe.sequential('Player CRUD integration', () => {
 
   it('updates an existing player', async () => {
     const payload = {
-      name: uniqueName('Update Player'),
+      name: testPlayerName('update'),
       number: 8,
       handedness: Handedness.LEFT,
       isGoalkeeper: false,
@@ -105,7 +103,7 @@ describe.sequential('Player CRUD integration', () => {
   }, 15000);
 
   it('lists players with pagination metadata and search filtering', async () => {
-    const marker = uniqueName('Searchable');
+    const marker = testPlayerName('search');
     const createRes = await request(app)
       .post('/api/players')
       .send({ name: marker, number: 31, handedness: Handedness.RIGHT, isGoalkeeper: false });
@@ -124,7 +122,7 @@ describe.sequential('Player CRUD integration', () => {
 
   it('deletes players and cascades team assignments', async () => {
     const payload = {
-      name: uniqueName('Deletable Player'),
+      name: testPlayerName('delete'),
       number: 73,
       handedness: Handedness.RIGHT,
       isGoalkeeper: false,

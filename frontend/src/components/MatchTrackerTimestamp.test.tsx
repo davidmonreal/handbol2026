@@ -1,32 +1,27 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import MatchTracker from '../../components/MatchTracker';
-import { MatchProvider } from '../../context/MatchContext';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import { MatchProvider, useMatch } from '../context/MatchContext';
+import MatchTracker from './MatchTracker';
 
-const mockNavigate = vi.fn();
-
-vi.mock('react-router-dom', async () => {
-    const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
-    return {
-        ...actual,
-        useNavigate: () => mockNavigate,
-        useParams: () => ({ matchId: 'match-1' }),
-    };
-});
-
-vi.mock('../../components/match/useMatchClock', () => ({
+vi.mock('./match/useMatchClock', () => ({
     useMatchClock: () => undefined,
 }));
 
-vi.mock('../../components/match/Scoreboard', () => ({
+vi.mock('./match/Scoreboard', () => ({
     Scoreboard: () => <div data-testid="scoreboard" />,
 }));
 
-vi.mock('../../components/match/events/EventForm', () => ({
-    EventForm: () => <div data-testid="event-form" />,
+vi.mock('./match/events/EventForm', () => ({
+    EventForm: ({ onSave }: { onSave: (event: any) => void }) => (
+        <button onClick={() => onSave({ teamId: 'home-1', playerId: 'p1', category: 'Shot', action: 'Goal' })}>
+            Save Event
+        </button>
+    ),
 }));
 
-vi.mock('../../components/match/events/EventList', () => ({
+vi.mock('./match/events/EventList', () => ({
     EventList: () => <div data-testid="event-list" />,
 }));
 
@@ -39,9 +34,18 @@ const localStorageMock = {
     clear: vi.fn(),
 };
 
-describe('MatchTracker -> Statistics navigation', () => {
+const TimeSetter = () => {
+    const { matchId, homeTeam, setTime } = useMatch();
+    useEffect(() => {
+        if (matchId && homeTeam) {
+            setTime(125);
+        }
+    }, [matchId, homeTeam, setTime]);
+    return null;
+};
+
+describe('MatchTracker timestamp persistence', () => {
     beforeEach(() => {
-        mockNavigate.mockClear();
         Object.defineProperty(window, 'localStorage', {
             value: localStorageMock,
             configurable: true,
@@ -50,8 +54,9 @@ describe('MatchTracker -> Statistics navigation', () => {
         localStorageMock.setItem.mockClear();
         localStorageMock.removeItem.mockClear();
         localStorageMock.clear.mockClear();
-        mockFetch.mockImplementation((input: RequestInfo | URL) => {
+        mockFetch.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
             const url = input.toString();
+            const method = (init?.method ?? 'GET').toUpperCase();
             if (url.includes('/api/matches/')) {
                 return Promise.resolve({
                     ok: true,
@@ -82,26 +87,49 @@ describe('MatchTracker -> Statistics navigation', () => {
                     }),
                 });
             }
+
             if (url.includes('/api/game-events/match/')) {
                 return Promise.resolve({ ok: true, json: async () => [] });
             }
+
+            if (url.includes('/api/game-events') && method === 'POST') {
+                return Promise.resolve({
+                    ok: true,
+                    json: async () => ({ id: 'event-1' }),
+                });
+            }
+
             return Promise.resolve({ ok: true, json: async () => ({}) });
         });
     });
 
-    it('navigates to statistics with match and active team ids', async () => {
+    it('stores match timestamp from the live clock when no timestamp is provided', async () => {
         render(
-            <MatchProvider>
-                <MatchTracker />
-            </MatchProvider>
+            <MemoryRouter initialEntries={['/match/match-1']}>
+                <MatchProvider>
+                    <TimeSetter />
+                    <Routes>
+                        <Route path="/match/:matchId" element={<MatchTracker />} />
+                    </Routes>
+                </MatchProvider>
+            </MemoryRouter>
         );
 
         await waitFor(() => {
             expect(screen.getByText('test-Home Team vs test-Away Team')).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getByRole('button', { name: 'Statistics' }));
+        fireEvent.click(screen.getByText('Save Event'));
 
-        expect(mockNavigate).toHaveBeenCalledWith('/statistics?matchId=match-1&activeTeamId=home-1');
+        await waitFor(() => {
+            const postCall = mockFetch.mock.calls.find(([url, init]) => {
+                if (typeof url !== 'string') return false;
+                return url.includes('/api/game-events') && (init as RequestInit | undefined)?.method === 'POST';
+            });
+            expect(postCall).toBeDefined();
+            const [, init] = postCall as [string, RequestInit];
+            const body = JSON.parse(init.body as string);
+            expect(body.timestamp).toBe(125);
+        });
     });
 });

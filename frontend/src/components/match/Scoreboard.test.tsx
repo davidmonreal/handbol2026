@@ -41,8 +41,8 @@ vi.mock('../../context/MatchContext', () => ({
     useMatch: () => matchMock,
 }));
 
-const team = { id: 't1', name: 'Team 1', color: 'blue' };
-const opponent = { id: 't2', name: 'Team 2', color: 'red' };
+const team = { id: 't1', name: 'test-Team 1', color: 'blue' };
+const opponent = { id: 't2', name: 'test-Team 2', color: 'red' };
 
 const renderScoreboard = (props?: Partial<React.ComponentProps<typeof Scoreboard>>) =>
     render(
@@ -76,7 +76,7 @@ beforeEach(() => {
 
 describe('Scoreboard half controls visibility', () => {
     it('stacks 1H start/finish vertically and keeps finish disabled until the first play exists', async () => {
-        renderScoreboard();
+        const view = renderScoreboard();
 
         const start1 = screen.getByText('scoreboard.startFirstHalf');
         const finish1 = screen.getByText('scoreboard.finishFirstHalf');
@@ -91,6 +91,41 @@ describe('Scoreboard half controls visibility', () => {
         });
 
         expect(screen.getByText('scoreboard.finishFirstHalf')).toBeDisabled();
+    });
+
+    it('calls setRealTimeCalibration for start/end actions', async () => {
+        const setRealTimeCalibration = vi.fn().mockResolvedValue(undefined);
+
+        setMatchMock({
+            setRealTimeCalibration,
+            events: [],
+            realTimeFirstHalfStart: null,
+        });
+
+        const view = renderScoreboard();
+
+        await act(async () => {
+            fireEvent.click(screen.getByText('scoreboard.startFirstHalf'));
+            await Promise.resolve();
+        });
+
+        expect(setRealTimeCalibration).toHaveBeenCalledWith(1, expect.any(Number), 'start');
+
+        setMatchMock({
+            setRealTimeCalibration,
+            events: [{ id: 'play-1' }],
+            realTimeFirstHalfStart: Date.now() - 1000,
+        });
+
+        view.unmount();
+        renderScoreboard();
+
+        await act(async () => {
+            fireEvent.click(screen.getByText('scoreboard.finishFirstHalf'));
+            await Promise.resolve();
+        });
+
+        expect(setRealTimeCalibration).toHaveBeenCalledWith(1, expect.any(Number), 'end');
     });
 
     it('hides half controls when hideHalfControls is true', () => {

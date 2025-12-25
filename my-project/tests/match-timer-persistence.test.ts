@@ -2,11 +2,11 @@ import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import prisma from '../src/lib/prisma';
 import { MatchRepository } from '../src/repositories/match-repository';
 import { MatchService } from '../src/services/match-service';
+import { testClubName, testSeasonName, testTeamName } from './utils/test-name';
 
 describe('Integration: Match Timer Persistence', () => {
   const matchRepository = new MatchRepository();
   const matchService = new MatchService(matchRepository);
-  const testName = (label: string) => `test-${label}-${Date.now()}`;
 
   let seasonId: string;
   let clubId: string;
@@ -23,7 +23,7 @@ describe('Integration: Match Timer Persistence', () => {
     if (!clubExists) {
       const newClub = await prisma.club.create({
         data: {
-          name: testName('timer-club'),
+          name: testClubName('timer'),
         },
       });
       clubId = newClub.id;
@@ -32,7 +32,7 @@ describe('Integration: Match Timer Persistence', () => {
     if (!seasonExists) {
       const newSeason = await prisma.season.create({
         data: {
-          name: testName('timer-season'),
+          name: testSeasonName('timer'),
           startDate: new Date(),
           endDate: new Date(Date.now() + 1000 * 60 * 60 * 24),
         },
@@ -55,7 +55,7 @@ describe('Integration: Match Timer Persistence', () => {
   beforeAll(async () => {
     const season = await prisma.season.create({
       data: {
-        name: `test-timer-season-${timestampSuffix}`,
+        name: testSeasonName('timer', String(timestampSuffix)),
         startDate: new Date(),
         endDate: new Date(Date.now() + 1000 * 60 * 60 * 24),
       },
@@ -63,7 +63,7 @@ describe('Integration: Match Timer Persistence', () => {
 
     const club = await prisma.club.create({
       data: {
-        name: `test-timer-club-${timestampSuffix}`,
+        name: testClubName('timer', String(timestampSuffix)),
       },
     });
 
@@ -90,14 +90,14 @@ describe('Integration: Match Timer Persistence', () => {
     const now = Date.now();
     const homeTeam = await prisma.team.create({
       data: {
-        name: `test-timer-home-${now}`,
+        name: testTeamName('timer-home', String(now)),
         clubId,
         seasonId,
       },
     });
     const awayTeam = await prisma.team.create({
       data: {
-        name: `test-timer-away-${now}`,
+        name: testTeamName('timer-away', String(now)),
         clubId,
         seasonId,
       },
