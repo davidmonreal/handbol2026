@@ -110,6 +110,49 @@ const buildTeamMatchFilters = (
     .map(({ matchId, label }) => ({ matchId, label }));
 };
 
+const buildPlayerMatchFilters = (
+  eventsData: ApiEvent[],
+  playerId: string,
+  fallbackOpponentLabel: string,
+  dateLocale: string,
+): MatchFilterOption[] => {
+  const matches = new Map<string, { label: string; sortKey: number }>();
+
+  eventsData.forEach((event) => {
+    const match = event.match;
+    const matchId = event.matchId ?? match?.id;
+    if (!match || !matchId) return;
+
+    const homeId = match.homeTeamId ?? match.homeTeam?.id;
+    const awayId = match.awayTeamId ?? match.awayTeam?.id;
+    if (!homeId || !awayId) return;
+
+    let playerTeamId: string | undefined;
+    if (event.playerId === playerId) {
+      playerTeamId = event.teamId;
+    } else if (event.activeGoalkeeperId === playerId) {
+      playerTeamId = event.teamId === homeId ? awayId : homeId;
+    }
+
+    const opponent = playerTeamId
+      ? (playerTeamId === homeId ? match.awayTeam : match.homeTeam)
+      : (event.teamId === homeId ? match.awayTeam : match.homeTeam);
+    const opponentName = opponent?.club?.name ?? opponent?.name ?? fallbackOpponentLabel;
+    const dateLabel = formatMatchDate(match.date, dateLocale);
+    const label = dateLabel ? `${opponentName} • ${dateLabel}` : opponentName;
+    const sortKey = match.date ? new Date(match.date).getTime() : 0;
+
+    if (!matches.has(matchId)) {
+      matches.set(matchId, { label, sortKey });
+    }
+  });
+
+  return [...matches.entries()]
+    .map(([matchId, meta]) => ({ matchId, label: meta.label, sortKey: meta.sortKey }))
+    .sort((a, b) => b.sortKey - a.sortKey)
+    .map(({ matchId, label }) => ({ matchId, label }));
+};
+
 const normalizeEventTimestampsForVideo = (events: MatchEvent[], matchData: MatchData | null) => {
   if (!matchData?.firstHalfVideoStart && !matchData?.secondHalfVideoStart) return events;
   if (matchData?.firstHalfVideoStart == null) return events;
@@ -194,6 +237,7 @@ const Statistics = () => {
   const [foulStatsEvents, setFoulStatsEvents] = useState<MatchEvent[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [teamMatchFilters, setTeamMatchFilters] = useState<MatchFilterOption[]>([]);
+  const [playerMatchFilters, setPlayerMatchFilters] = useState<MatchFilterOption[]>([]);
   const [loading, setLoading] = useState(false);
 
   const playerPositionIds = useMemo(() => {
@@ -214,6 +258,7 @@ const Statistics = () => {
       try {
         if (matchId) {
           setTeamMatchFilters([]);
+          setPlayerMatchFilters([]);
           // Load match details
           const matchRes = await fetch(`${API_BASE_URL}/api/matches/${matchId}`);
           const matchData = await matchRes.json();
@@ -233,6 +278,7 @@ const Statistics = () => {
           setStatsEvents(transformBackendEvents(eventsData));
         } else if (playerId) {
           setTeamMatchFilters([]);
+          setPlayerMatchFilters([]);
           // Load player details
           const playerRes = await fetch(`${API_BASE_URL}/api/players/${playerId}`);
           const playerData = await playerRes.json();
@@ -254,8 +300,11 @@ const Statistics = () => {
             )
             : allEvents.filter((e) => e.playerId === playerId);
 
+          const dateLocale = resolveMatchDateLocale(language);
+          setPlayerMatchFilters(buildPlayerMatchFilters(playerEvents, playerId, t('stats.opponentFallback'), dateLocale));
           setStatsEvents(transformBackendEvents(playerEvents));
         } else if (teamId) {
+          setPlayerMatchFilters([]);
           // Load team details
           const teamRes = await fetch(`${API_BASE_URL}/api/teams/${teamId}`);
           const teamData = await teamRes.json();
@@ -422,7 +471,7 @@ const Statistics = () => {
         teamData={teamDataForView}
         playerData={playerId ? playerData : undefined}
         teamId={selectedTeamId}
-        matchFilters={teamId ? teamMatchFilters : undefined}
+        matchFilters={playerId ? playerMatchFilters : (teamId ? teamMatchFilters : undefined)}
         selectedPlayerId={playerId}
         onTeamChange={setSelectedTeamId}
         onBack={handleBack}

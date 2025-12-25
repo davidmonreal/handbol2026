@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Triangle } from 'lucide-react';
 import { ZONE_CONFIG, getZoneLabel } from '../../config/zones';
 import type { ZoneType } from '../../types';
 import type { ZoneDistributionProps } from './types';
@@ -13,6 +14,7 @@ export function ZoneDistribution({
   foulZoneStats,
   foulReceivedZoneStats,
   dangerZoneStats,
+  summaryBaselines,
   disableFoulToggle,
   onZoneClick,
   selectedZone,
@@ -72,6 +74,20 @@ export function ZoneDistribution({
     const value = isGoalkeeper ? (stats.shots - stats.goals) : stats.goals;
     const numerator = stats.goals;
     const denominator = stats.shots;
+    const ratio = denominator > 0 ? numerator / denominator : null;
+    const baseline = (() => {
+      if (!summaryBaselines || isGoalkeeper) return null;
+      if (mode === 'flow') return summaryBaselines.goalsVsPlays;
+      if (mode === 'fouls') return summaryBaselines.foulsVsPlays;
+      return summaryBaselines.goalsVsShots;
+    })();
+    const trend = ratio != null && baseline != null
+      ? Math.abs(ratio - baseline) < 0.0001
+        ? null
+        : ratio > baseline
+          ? 'up'
+          : 'down'
+      : null;
 
     return (
       <button
@@ -82,8 +98,19 @@ export function ZoneDistribution({
       >
         {mode === 'goals' ? (
           <>
-            <span className="text-xl font-bold">
+            <span className="text-xl font-bold inline-flex items-baseline">
               {value}/{stats.shots}
+              {trend && !isGoalkeeper && (
+                <span
+                  className={`ml-1 inline-flex items-center ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}
+                  aria-hidden="true"
+                >
+                  <Triangle
+                    className={`h-3 w-3 ${trend === 'down' ? 'rotate-180' : ''}`}
+                    fill="currentColor"
+                  />
+                </span>
+              )}
             </span>
             <span className="text-xs opacity-75">
               {stats.shots > 0 ? `${stats.efficiency.toFixed(0)}%` : '-'}
@@ -91,8 +118,19 @@ export function ZoneDistribution({
           </>
         ) : (
           <>
-            <span className="text-xl font-bold">
+            <span className="text-xl font-bold inline-flex items-baseline">
               {numerator}/{denominator}
+              {trend && !isGoalkeeper && (
+                <span
+                  className={`ml-1 inline-flex items-center ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}
+                  aria-hidden="true"
+                >
+                  <Triangle
+                    className={`h-3 w-3 ${trend === 'down' ? 'rotate-180' : ''}`}
+                    fill="currentColor"
+                  />
+                </span>
+              )}
             </span>
             <span className="text-xs opacity-75">
               {denominator > 0

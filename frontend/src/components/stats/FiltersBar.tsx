@@ -12,6 +12,7 @@ interface FiltersBarProps {
   playWindowOptions?: { label: string; value: PlayWindowRange }[];
   selectedPlayWindow?: PlayWindowRange | null;
   onPlayWindowChange?: (range: PlayWindowRange | null) => void;
+  playWindowPlaceholder?: string;
 }
 
 export function FiltersBar({
@@ -24,6 +25,7 @@ export function FiltersBar({
   playWindowOptions = [],
   selectedPlayWindow,
   onPlayWindowChange,
+  playWindowPlaceholder,
 }: FiltersBarProps) {
   return (
     <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full">
@@ -150,7 +152,7 @@ export function FiltersBar({
                 onPlayWindowChange({ kind: 'range', start: Number(start), end: Number(end) });
               }
             }}
-            placeholder="All plays"
+            placeholder={playWindowPlaceholder}
             buttonClassName="min-w-[220px]"
           />
         </div>

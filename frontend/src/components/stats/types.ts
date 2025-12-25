@@ -1,4 +1,5 @@
-import { type MatchEvent, type ZoneType } from '../../types';
+import type { MatchEvent, ZoneType } from '../../types';
+import type { ReactNode } from 'react';
 
 /**
  * Context for statistics display
@@ -28,6 +29,8 @@ export interface StatisticsData {
 export interface ComparisonData {
     /** Map of playerId -> baseline efficiency percentage for that player */
     playerAverages?: Map<string, number>;
+    /** Summary card baselines for player comparisons */
+    summaryBaselines?: SummaryBaselineRatios;
 }
 
 /**
@@ -66,6 +69,14 @@ export interface CalculatedStats {
 
     /** Map of goalTarget (1-9) -> { goals, shots, efficiency } */
     goalTargetStats: Map<number, GoalTargetStatistics>;
+}
+
+export interface SummaryBaselineRatios {
+    goalsVsShots: number | null;
+    goalsVsPlays: number | null;
+    missesVsPlays: number | null;
+    turnoversVsPlays: number | null;
+    foulsVsPlays: number | null;
 }
 
 /**
@@ -162,6 +173,7 @@ export interface ZoneDistributionProps {
     foulReceivedZoneStats?: Map<ZoneType | '7m', ZoneStatistics>;
     turnoverZoneStats?: Map<ZoneType | '7m', ZoneStatistics>;
     dangerZoneStats?: Map<ZoneType | '7m', ZoneStatistics>;
+    summaryBaselines?: SummaryBaselineRatios;
     disableFoulToggle?: boolean;
     onZoneClick?: (zone: ZoneType | '7m' | null) => void;
     selectedZone?: ZoneType | '7m' | null;
@@ -175,7 +187,7 @@ export interface ZoneDistributionProps {
  */
 export interface StatCardProps {
     label: string;
-    value: string | number;
+    value: ReactNode;
     color?: 'blue' | 'green' | 'purple' | 'yellow' | 'orange' | 'gray' | 'red';
     className?: string;
 }

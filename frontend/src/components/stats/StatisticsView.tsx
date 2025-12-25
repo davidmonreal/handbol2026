@@ -10,6 +10,8 @@ import { GoalFlowChart } from './GoalFlowChart';
 import { usePlayWindow } from './hooks/usePlayWindow';
 import { useStatisticsCalculator } from './hooks/useStatisticsCalculator';
 import { downloadTeamEventsCSV } from '../../utils/csvExport';
+import { useSafeTranslation } from '../../context/LanguageContext';
+import { buildSummaryRatios } from './utils/summaryRatios';
 
 export function StatisticsView({
   events,
@@ -30,6 +32,7 @@ export function StatisticsView({
   onBack,
 }: StatisticsViewProps) {
   const GOALKEEPER_POSITION_ID = 1;
+  const { t } = useSafeTranslation();
   // Helper function to format team display with club, category, and name
   const formatTeamDisplay = (team: { name: string; club?: { name: string }; category?: string }) => {
     const parts = [];
@@ -261,9 +264,10 @@ export function StatisticsView({
   };
 
   // Play window filter (by recency in current filteredEvents)
-  const playWindowConfig = context === 'team' && (matchFilters?.length ?? 0) > 0
-    ? { mode: 'matches' as const, matchFilters }
-    : undefined;
+  const playWindowConfig =
+    (context === 'team' || context === 'player') && (matchFilters?.length ?? 0) > 0
+      ? { mode: 'matches' as const, matchFilters }
+      : undefined;
   const {
     options: playWindowOptions,
     selected: selectedPlayWindow,
@@ -295,6 +299,33 @@ export function StatisticsView({
     getPlayerInfo,
     playWindowOpponentEvents // Pass opponent events to calculate correct GK stats (Saves/Conceded)
   );
+
+  const baselineStats = useStatisticsCalculator(
+    filteredEvents,
+    undefined,
+    isGoalkeeperView,
+    filteredFoulEvents,
+    getPlayerInfo,
+    filteredOpponentEvents
+  );
+
+  const summaryBaselines = useMemo(() => {
+    if (context !== 'player' || isGoalkeeperView) return undefined;
+    if (!playWindowMatchId) return undefined;
+    return buildSummaryRatios(baselineStats);
+  }, [baselineStats, context, isGoalkeeperView, playWindowMatchId]);
+
+  const comparisonData = useMemo(() => {
+    if (!showComparison && !summaryBaselines) return undefined;
+    return {
+      playerAverages: showComparison ? playerBaselines : undefined,
+      summaryBaselines,
+    };
+  }, [playerBaselines, showComparison, summaryBaselines]);
+
+  const playWindowPlaceholder = playWindowConfig?.mode === 'matches'
+    ? t('stats.allMatches')
+    : t('stats.allPlays');
 
   return (
     <div className="space-y-6">
@@ -354,6 +385,7 @@ export function StatisticsView({
           playWindowOptions={playWindowOptions}
           selectedPlayWindow={selectedPlayWindow}
           onPlayWindowChange={setSelectedPlayWindow}
+          playWindowPlaceholder={playWindowPlaceholder}
         />
 
         {/* Player Filter Badge */}
@@ -396,7 +428,7 @@ export function StatisticsView({
           isGoalkeeper: isGoalkeeperView,
         }}
         disableFoulToggle={disableFoulToggle ?? !!filterPlayer}
-        comparison={showComparison ? { playerAverages: playerBaselines } : undefined}
+        comparison={comparisonData}
         onZoneFilter={handleZoneFilter}
       />
 

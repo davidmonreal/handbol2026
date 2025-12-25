@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { Triangle } from 'lucide-react';
 import type { ZoneType } from '../../types';
 import { useStatisticsCalculator } from './hooks/useStatisticsCalculator';
 import { StatCard } from './StatCard';
 import { GoalHeatmap } from './GoalHeatmap';
 import { ZoneDistribution } from './ZoneDistribution';
 import type { StatisticsPanelProps } from './types';
+import { buildSummaryRatios } from './utils/summaryRatios';
 
 /**
  * StatisticsPanel - Main container component for statistics display
@@ -45,6 +47,39 @@ export function StatisticsPanel({
     : data.events;
 
   const filteredStats = useStatisticsCalculator(filteredEvents, comparison, data.isGoalkeeper, data.foulEvents);
+  const summaryRatios = buildSummaryRatios(filteredStats);
+  const summaryBaselines = comparison?.summaryBaselines;
+
+  const getTrendIndicator = (current: number | null, baseline: number | null) => {
+    if (current == null || baseline == null) return null;
+    const delta = current - baseline;
+    if (Math.abs(delta) < 0.0001) return null;
+    return delta > 0 ? 'up' : 'down';
+  };
+
+  const renderTrend = (trend: 'up' | 'down' | null) => {
+    if (!trend) return null;
+    return (
+      <span
+        className={`ml-1 inline-flex items-center ${
+          trend === 'up' ? 'text-green-600' : 'text-red-600'
+        }`}
+        aria-hidden="true"
+      >
+        <Triangle
+          className={`h-3 w-3 ${trend === 'down' ? 'rotate-180' : ''}`}
+          fill="currentColor"
+        />
+      </span>
+    );
+  };
+
+  const renderSummaryValue = (value: string, trend: 'up' | 'down' | null) => (
+    <span className="inline-flex items-baseline">
+      <span>{value}</span>
+      {renderTrend(trend)}
+    </span>
+  );
 
 
 
@@ -141,31 +176,46 @@ export function StatisticsPanel({
           <div className="col-span-1 md:col-span-2 grid grid-cols-3 gap-3 md:grid-cols-5 md:gap-4">
             <StatCard
               label="Goals vs shots"
-              value={`${filteredStats.totalGoals}/${filteredStats.totalShots} (${filteredStats.efficiency.toFixed(0)}%)`}
+              value={renderSummaryValue(
+                `${filteredStats.totalGoals}/${filteredStats.totalShots} (${filteredStats.efficiency.toFixed(0)}%)`,
+                getTrendIndicator(summaryRatios.goalsVsShots, summaryBaselines?.goalsVsShots ?? null),
+              )}
               color="green"
               className="min-w-fit"
             />
             <StatCard
               label="Goals vs plays"
-              value={`${filteredStats.totalGoals} (${filteredStats.goalsPercentage.toFixed(0)}%)`}
+              value={renderSummaryValue(
+                `${filteredStats.totalGoals} (${filteredStats.goalsPercentage.toFixed(0)}%)`,
+                getTrendIndicator(summaryRatios.goalsVsPlays, summaryBaselines?.goalsVsPlays ?? null),
+              )}
               color="green"
               className="min-w-fit"
             />
             <StatCard
               label="Misses vs. plays"
-              value={`${filteredStats.totalMisses} (${filteredStats.missesPercentage.toFixed(0)}%)`}
+              value={renderSummaryValue(
+                `${filteredStats.totalMisses} (${filteredStats.missesPercentage.toFixed(0)}%)`,
+                getTrendIndicator(summaryRatios.missesVsPlays, summaryBaselines?.missesVsPlays ?? null),
+              )}
               color="orange"
               className="min-w-fit"
             />
             <StatCard
               label="Turnovers vs. plays"
-              value={`${filteredStats.totalTurnovers} (${filteredStats.turnoversPercentage.toFixed(0)}%)`}
+              value={renderSummaryValue(
+                `${filteredStats.totalTurnovers} (${filteredStats.turnoversPercentage.toFixed(0)}%)`,
+                getTrendIndicator(summaryRatios.turnoversVsPlays, summaryBaselines?.turnoversVsPlays ?? null),
+              )}
               color="yellow"
               className="min-w-fit"
             />
             <StatCard
               label="Fouls vs. plays"
-              value={`${filteredStats.totalFouls} (${filteredStats.foulsPercentage.toFixed(0)}%)`}
+              value={renderSummaryValue(
+                `${filteredStats.totalFouls} (${filteredStats.foulsPercentage.toFixed(0)}%)`,
+                getTrendIndicator(summaryRatios.foulsVsPlays, summaryBaselines?.foulsVsPlays ?? null),
+              )}
               color="gray"
               className="min-w-fit"
             />
@@ -187,6 +237,7 @@ export function StatisticsPanel({
           foulReceivedZoneStats={data.isGoalkeeper ? undefined : stats.foulReceivedZoneStats}
           turnoverZoneStats={data.isGoalkeeper ? undefined : stats.turnoverZoneStats}
           dangerZoneStats={data.isGoalkeeper ? undefined : stats.dangerZoneStats}
+          summaryBaselines={summaryBaselines}
           disableFoulToggle={disableFoulToggle}
           onZoneClick={handleZoneClick}
           selectedZone={selectedZone}

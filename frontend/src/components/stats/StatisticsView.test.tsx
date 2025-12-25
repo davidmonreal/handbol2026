@@ -4,6 +4,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { StatisticsView } from './StatisticsView';
 import type { MatchEvent } from '../../types';
 
+vi.mock('../../context/LanguageContext', () => ({
+  useSafeTranslation: () => ({ t: (key: string) => key }),
+}));
+
 // Mock data
 const mockEvents: MatchEvent[] = [
   {
