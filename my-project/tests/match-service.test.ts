@@ -120,4 +120,57 @@ describe('MatchService', () => {
       expect(result).toEqual([]);
     });
   });
+
+  describe('findById', () => {
+    it('fills missing team player positions from team lookup', async () => {
+      const match = {
+        id: 'm1',
+        homeTeam: {
+          id: 'home-1',
+          players: [{ position: null, player: { id: 'p1' } }],
+        },
+        awayTeam: {
+          id: 'away-1',
+          players: [{ position: null, player: { id: 'p2' } }],
+        },
+      };
+
+      vi.mocked(repository.findById).mockResolvedValue(match as any);
+      vi.mocked(prisma.team.findUnique)
+        .mockResolvedValueOnce({
+          players: [{ position: 2, player: { id: 'p1' } }],
+        } as any)
+        .mockResolvedValueOnce({
+          players: [{ position: 6, player: { id: 'p2' } }],
+        } as any);
+
+      const result = await service.findById('m1');
+
+      expect(prisma.team.findUnique).toHaveBeenCalledTimes(2);
+      expect(result?.homeTeam.players[0].position).toBe(2);
+      expect(result?.awayTeam.players[0].position).toBe(6);
+    });
+
+    it('skips lookup when positions are already present', async () => {
+      const match = {
+        id: 'm1',
+        homeTeam: {
+          id: 'home-1',
+          players: [{ position: 3, player: { id: 'p1' } }],
+        },
+        awayTeam: {
+          id: 'away-1',
+          players: [{ position: 7, player: { id: 'p2' } }],
+        },
+      };
+
+      vi.mocked(repository.findById).mockResolvedValue(match as any);
+
+      const result = await service.findById('m1');
+
+      expect(prisma.team.findUnique).not.toHaveBeenCalled();
+      expect(result?.homeTeam.players[0].position).toBe(3);
+      expect(result?.awayTeam.players[0].position).toBe(7);
+    });
+  });
 });

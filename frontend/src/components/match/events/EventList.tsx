@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useMatch } from '../../../context/MatchContext';
+import { useSafeTranslation } from '../../../context/LanguageContext';
 import { EventItem } from './EventItem';
 import type { MatchEvent } from '../../../types';
 
@@ -26,6 +27,7 @@ export const EventList = ({
     secondHalfStart,
 }: EventListProps) => {
     const { events } = useMatch();
+    const { t } = useSafeTranslation();
     const [eventsToShow, setEventsToShow] = useState(initialEventsToShow);
 
     // Filter events if necessary; if no team selected, show all events
@@ -46,13 +48,16 @@ export const EventList = ({
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
                 <h3 className="font-semibold text-gray-700 uppercase text-xs tracking-wide">
-                    Recent Events ({recentEvents.length} of {filteredEvents.length})
+                    {t('eventList.recentEvents', {
+                        shown: recentEvents.length,
+                        total: filteredEvents.length,
+                    })}
                 </h3>
             </div>
             <div>
                 {recentEvents.length === 0 ? (
                     <div className="p-4 text-center text-gray-500 text-sm">
-                        No events recorded yet
+                        {t('eventList.noEvents')}
                     </div>
                 ) : (
                     recentEvents.map(event => (
@@ -74,7 +79,7 @@ export const EventList = ({
                     className="w-full py-3 px-4 text-sm font-medium text-indigo-600 hover:bg-indigo-50 border-t border-gray-200 flex items-center justify-center gap-2 transition-colors"
                 >
                     <ChevronDown size={16} />
-                    Show {Math.min(incrementBy, remainingEvents)} more events
+                    {t('eventList.showMore', { count: Math.min(incrementBy, remainingEvents) })}
                 </button>
             )}
         </div>

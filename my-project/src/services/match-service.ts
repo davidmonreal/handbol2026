@@ -34,9 +34,50 @@ export class MatchService extends BaseService<Match> {
     const match = await this.matchRepository.findById(id);
     if (!match) return null;
 
+    const enrichTeamPositions = async (team: any) => {
+      if (!team?.players?.length) return team;
+      const hasMissingPositions = team.players.some((entry: any) => entry.position == null);
+      if (!hasMissingPositions) return team;
+
+      const teamWithPositions = await prisma.team.findUnique({
+        where: { id: team.id },
+        select: {
+          players: {
+            select: {
+              position: true,
+              player: { select: { id: true } },
+            },
+          },
+        },
+      });
+
+      if (!teamWithPositions?.players?.length) return team;
+
+      const positionByPlayerId = new Map(
+        teamWithPositions.players.map((entry) => [entry.player.id, entry.position]),
+      );
+
+      return {
+        ...team,
+        players: team.players.map((entry: any) => ({
+          ...entry,
+          position: entry.position ?? positionByPlayerId.get(entry.player.id) ?? entry.position,
+        })),
+      };
+    };
+
+    const enrichedHome = await enrichTeamPositions((match as any).homeTeam);
+    const enrichedAway = await enrichTeamPositions((match as any).awayTeam);
+
+    const enrichedMatch = {
+      ...match,
+      homeTeam: enrichedHome,
+      awayTeam: enrichedAway,
+    };
+
     // No automatic recalculation: if match is finished, scores are manual (truth)
     // Goals only contribute to statistics when match is not finished
-    return match;
+    return enrichedMatch;
   }
 
   async create(data: CreateMatchInput): Promise<Match> {

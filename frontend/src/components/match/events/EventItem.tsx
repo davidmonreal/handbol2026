@@ -111,11 +111,16 @@ export const EventItem = ({
 
     const team = getTeam();
     const player = team?.players?.find(p => p.id === event.playerId);
+    const translatedPosition =
+        player?.position?.startsWith('positions.') ? t(player.position) : player?.position;
+    const playerPositionLabel =
+        player && !player.isGoalkeeper && translatedPosition ? ` (${translatedPosition})` : '';
+    const playerName = player?.name ? `${player.name}${playerPositionLabel}` : t('eventList.unknownPlayer');
 
     const formatZone = () => {
         if (!event.zone) return null;
 
-        if (event.zone === '7m') return '7m Penalty';
+        if (event.zone === '7m') return t('eventZone.penalty');
 
         // Parse zone like '6m-LW' to 'LW 6m'
         const parts = event.zone.split('-');
@@ -128,9 +133,9 @@ export const EventItem = ({
 
     const formatContext = () => {
         const tags = [];
-        if (event.isCollective || event.context?.isCollective) tags.push('Coll');
-        if (event.hasOpposition || event.context?.hasOpposition) tags.push('Opp');
-        if (event.isCounterAttack || event.context?.isCounterAttack) tags.push('Counter');
+        if (event.isCollective || event.context?.isCollective) tags.push(t('eventTags.collective'));
+        if (event.hasOpposition || event.context?.hasOpposition) tags.push(t('eventTags.opposition'));
+        if (event.isCounterAttack || event.context?.isCounterAttack) tags.push(t('eventTags.counter'));
         return tags;
     };
 
@@ -154,6 +159,43 @@ export const EventItem = ({
     const zoneLabel = formatZone();
     const contextTags = formatContext();
     const halfLabel = isSecondHalfEvent ? t('matchEvent.halfSecond') : t('matchEvent.halfFirst');
+    const categoryLabel =
+        event.category === 'Shot'
+            ? t('eventForm.categoryShot')
+            : event.category === 'Turnover'
+                ? t('eventForm.categoryTurnover')
+                : t('eventForm.categoryFoul');
+    const actionLabel = (() => {
+        if (!event.action) return '';
+        if (event.category === 'Shot') {
+            const shotMap: Record<string, string> = {
+                Goal: t('eventForm.result.goal'),
+                Save: t('eventForm.result.save'),
+                Miss: t('eventForm.result.miss'),
+                Post: t('eventForm.result.post'),
+                Block: t('eventForm.result.block'),
+            };
+            return shotMap[event.action] ?? event.action;
+        }
+        if (event.category === 'Turnover') {
+            const turnoverMap: Record<string, string> = {
+                Pass: t('eventForm.turnover.badPass'),
+                Catch: t('eventForm.turnover.droppedBall'),
+                'Offensive Foul': t('eventForm.turnover.offensiveFoul'),
+                Steps: t('eventForm.turnover.steps'),
+                Area: t('eventForm.turnover.area'),
+            };
+            return turnoverMap[event.action] ?? event.action;
+        }
+        const sanctionMap: Record<string, string> = {
+            Foul: t('eventForm.sanction.commonFoul'),
+            '2min': t('eventForm.sanction.twoMinutes'),
+            Yellow: t('eventForm.sanction.yellow'),
+            Red: t('eventForm.sanction.red'),
+            'Blue Card': t('eventForm.sanction.blue'),
+        };
+        return sanctionMap[event.action] ?? event.action;
+    })();
 
     // Show play button if we can calculate video time (from stored or from calibration)
     const canSeekToVideo = calculatedVideoTime !== null && isVideoLoaded && onSeekToVideo;
@@ -184,12 +226,12 @@ export const EventItem = ({
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-gray-100 text-[13px] text-gray-900">
                         {player?.number || '?'}
                     </span>
-                    <span className="truncate max-w-[160px] md:max-w-[220px]">{player?.name || 'Unknown'}</span>
+                    <span className="truncate max-w-[160px] md:max-w-[220px]">{playerName}</span>
                 </div>
 
                 <div className="flex items-center gap-2 min-w-0 text-xs flex-1 overflow-x-auto">
                     <span className={`${chipBaseClass} border-gray-200 bg-white text-gray-700`}>
-                        {event.category}
+                        {categoryLabel}
                     </span>
 
                     {zoneLabel && (
@@ -206,7 +248,7 @@ export const EventItem = ({
                                         : 'border-purple-200 bg-purple-50 text-purple-700'
                             }`}
                         >
-                            <span aria-label={`${event.category}-${event.action}`}>{event.action}</span>
+                            <span aria-label={`${event.category}-${event.action}`}>{actionLabel}</span>
                             {event.category === 'Shot' && event.action === 'Goal' && goalZoneTag && (
                                 <span className="ml-1 text-[10px] uppercase text-indigo-400">{goalZoneTag}</span>
                             )}
@@ -226,7 +268,7 @@ export const EventItem = ({
                             type="button"
                             onClick={handleSeekToVideo}
                             className="p-1.5 rounded-full border border-gray-200 text-red-500 hover:text-red-600 hover:border-red-300 transition-colors"
-                            title={`Go to video ${formatVideoTime(calculatedVideoTime)}`}
+                            title={t('eventList.goToVideo', { time: formatVideoTime(calculatedVideoTime) })}
                         >
                             <Play size={12} fill="currentColor" />
                         </button>

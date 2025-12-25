@@ -1,5 +1,6 @@
 import type { MatchEvent } from '../../../types';
 import { useMatch } from '../../../context/MatchContext';
+import { useSafeTranslation } from '../../../context/LanguageContext';
 
 interface Player {
     id: string;
@@ -24,6 +25,7 @@ interface EventEditPlayerProps {
 
 export const EventEditPlayer = ({ event, team, onSave, onCancel }: EventEditPlayerProps) => {
     const { updateEvent } = useMatch();
+    const { t } = useSafeTranslation();
 
     const handleSelect = async (playerId: string) => {
         const player = team?.players?.find(p => p.id === playerId);
@@ -47,19 +49,25 @@ export const EventEditPlayer = ({ event, team, onSave, onCancel }: EventEditPlay
                 Change Player
             </div>
             <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                {team.players.map(player => (
-                    <button
-                        key={player.id}
-                        onClick={() => handleSelect(player.id)}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all text-left ${event.playerId === player.id
-                            ? 'bg-indigo-600 text-white shadow-sm'
-                            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                            }`}
-                    >
-                        <span className="font-bold min-w-[2ch]">#{player.number}</span>
-                        <span className="flex-1 truncate">{player.name}</span>
-                    </button>
-                ))}
+                {team.players.map((player) => {
+                    const translatedPosition =
+                        player.position?.startsWith('positions.') ? t(player.position) : player.position;
+                    const positionLabel =
+                        !player.isGoalkeeper && translatedPosition ? ` (${translatedPosition})` : '';
+                    return (
+                        <button
+                            key={player.id}
+                            onClick={() => handleSelect(player.id)}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all text-left ${event.playerId === player.id
+                                ? 'bg-indigo-600 text-white shadow-sm'
+                                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                                }`}
+                        >
+                            <span className="font-bold min-w-[2ch]">#{player.number}</span>
+                            <span className="flex-1 truncate">{player.name}{positionLabel}</span>
+                        </button>
+                    );
+                })}
             </div>
 
             {/* Cancel button moved to bottom right */}

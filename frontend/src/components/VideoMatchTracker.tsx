@@ -11,8 +11,7 @@ import { YouTubePlayer } from './video/YouTubePlayer';
 import { VideoUrlInput } from './video/VideoUrlInput';
 import { VideoCalibration } from './video/VideoCalibration';
 import { useSafeTranslation } from '../context/LanguageContext';
-import { DEFAULT_FIELD_POSITION, PLAYER_POSITION_ABBR } from '../constants/playerPositions';
-import type { PlayerPositionId } from '../constants/playerPositions';
+import { resolvePlayerPositionId, resolvePlayerPositionLabel } from '../constants/playerPositions';
 
 const VideoMatchTrackerContent = () => {
     const { matchId } = useParams<{ matchId: string }>();
@@ -111,17 +110,14 @@ const VideoMatchTrackerContent = () => {
                     club: teamData.club,
                     color: color,
                     players: (teamData.players || []).map((p: any) => {
-                        const positionId =
-                            typeof p.position === 'number' ? p.position : DEFAULT_FIELD_POSITION;
-                        const positionLabel =
-                            PLAYER_POSITION_ABBR[positionId as PlayerPositionId] ??
-                            PLAYER_POSITION_ABBR[DEFAULT_FIELD_POSITION];
+                        const positionId = resolvePlayerPositionId(p.position, p.player?.isGoalkeeper);
+                        const positionLabel = resolvePlayerPositionLabel(p.position, p.player?.isGoalkeeper);
                         return {
                             id: p.player.id,
                             number: p.player.number,
                             name: p.player.name,
                             position: positionLabel,
-                            isGoalkeeper: positionId === GOALKEEPER_POSITION_ID,
+                            isGoalkeeper: positionId === GOALKEEPER_POSITION_ID || p.player?.isGoalkeeper,
                         };
                     })
                 });

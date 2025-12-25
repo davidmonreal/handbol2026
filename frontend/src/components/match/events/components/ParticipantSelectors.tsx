@@ -85,8 +85,13 @@ export const PlayerGrid = ({ players, selectedPlayerId, onSelect, t }: PlayerGri
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
             {players.map((player) => {
                 const nameParts = player.name.split(' ');
-                const displayName =
+                const baseName =
                     nameParts.length >= 2 ? `${nameParts[0]} ${nameParts[1]}` : player.name;
+                const translatedPosition =
+                    player.position?.startsWith('positions.') ? t(player.position) : player.position;
+                const positionLabel =
+                    !player.isGoalkeeper && translatedPosition ? ` (${translatedPosition})` : '';
+                const displayName = `${baseName}${positionLabel}`;
                 const isSelected = selectedPlayerId === player.id;
                 const isGoalkeeper = player.isGoalkeeper;
                 const buttonClass = isSelected

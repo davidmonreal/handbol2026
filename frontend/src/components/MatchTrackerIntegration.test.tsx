@@ -25,7 +25,7 @@ vi.mock('./match/FlowSelector', () => ({
 vi.mock('./match/events/EventList', () => ({
     EventList: ({ onEditEvent }: { onEditEvent?: (event: any) => void }) => (
         <div>
-            <div>Recent Events</div>
+            <div>Recent events (1 of 1)</div>
             <button onClick={() => onEditEvent?.({
                 id: 'event-1',
                 timestamp: 100,
@@ -130,7 +130,7 @@ beforeEach(() => {
         });
 
         // Verify event list is present and click the mocked event
-        const recentEventsLabel = await screen.findByText('Recent Events');
+        const recentEventsLabel = await screen.findByText('Recent events (1 of 1)');
         expect(recentEventsLabel).toBeInTheDocument();
         fireEvent.click(screen.getByText('Mock Event'));
 

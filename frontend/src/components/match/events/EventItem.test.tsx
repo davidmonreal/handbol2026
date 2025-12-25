@@ -10,15 +10,15 @@ vi.mock('../../../context/MatchContext', () => ({
             id: 'home-team-1',
             name: 'Home Team',
             players: [
-                { id: 'p1', number: 7, name: 'John Doe' },
-                { id: 'p2', number: 13, name: 'Jane Smith' },
+                { id: 'p1', number: 7, name: 'John Doe', position: 'LB' },
+                { id: 'p2', number: 13, name: 'Jane Smith', position: 'CB' },
             ],
         },
         visitorTeam: {
             id: 'away-team-1',
             name: 'Away Team',
             players: [
-                { id: 'ap1', number: 1, name: 'Away Player' },
+                { id: 'ap1', number: 1, name: 'Away Player', position: 'RW' },
             ],
         },
     }),
@@ -79,7 +79,7 @@ describe('EventItem', () => {
             render(<EventItem {...defaultProps} />);
 
             expect(screen.getByText('7')).toBeInTheDocument();
-            expect(screen.getByText('John Doe')).toBeInTheDocument();
+            expect(screen.getByText('John Doe (LB)')).toBeInTheDocument();
         });
 
         it('should show Unknown for missing player', () => {
@@ -109,7 +109,7 @@ describe('EventItem', () => {
             const event = { ...baseEvent, category: 'Sanction' as const, action: '2min' };
             render(<EventItem {...defaultProps} event={event} />);
 
-            expect(screen.getByText('Sanction')).toBeInTheDocument();
+            expect(screen.getByText('Foul')).toBeInTheDocument();
         });
     });
 

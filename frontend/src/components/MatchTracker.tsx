@@ -5,8 +5,7 @@ import { useSafeTranslation } from '../context/LanguageContext';
 import type { MatchEvent } from '../types';
 import type { TeamApiResponse, TeamPlayerApiResponse } from '../types/api.types';
 import { API_BASE_URL } from '../config/api';
-import { DEFAULT_FIELD_POSITION, PLAYER_POSITION_ABBR } from '../constants/playerPositions';
-import type { PlayerPositionId } from '../constants/playerPositions';
+import { resolvePlayerPositionId, resolvePlayerPositionLabel } from '../constants/playerPositions';
 import { Scoreboard } from './match/Scoreboard';
 import { EventList } from './match/events/EventList';
 import { EventForm } from './match/events/EventForm';
@@ -76,16 +75,14 @@ const MatchTracker = () => {
         : undefined,
       color: color,
       players: (teamData.players || []).map((p: TeamPlayerApiResponse) => {
-        const positionId = typeof p.position === 'number' ? p.position : DEFAULT_FIELD_POSITION;
-        const positionLabel =
-          PLAYER_POSITION_ABBR[positionId as PlayerPositionId] ??
-          PLAYER_POSITION_ABBR[DEFAULT_FIELD_POSITION];
+        const positionId = resolvePlayerPositionId(p.position, p.player.isGoalkeeper);
+        const positionLabel = resolvePlayerPositionLabel(p.position, p.player.isGoalkeeper);
         return {
           id: p.player.id,
           number: p.player.number,
           name: p.player.name,
           position: positionLabel,
-          isGoalkeeper: positionId === GOALKEEPER_POSITION_ID,
+          isGoalkeeper: positionId === GOALKEEPER_POSITION_ID || p.player.isGoalkeeper,
         };
       })
     });
