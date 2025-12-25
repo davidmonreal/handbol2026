@@ -190,6 +190,8 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
 
     const itemsLengthRef = useRef(items.length);
     const pageRef = useRef(page);
+    const fetchIdRef = useRef(0);
+    const lastQueryKeyRef = useRef('');
 
     useEffect(() => {
         itemsLengthRef.current = items.length;
@@ -235,6 +237,8 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
             return;
         }
 
+        const fetchId = ++fetchIdRef.current;
+        const isLatestFetch = () => fetchId === fetchIdRef.current;
         const currentPage = pageOverride ?? pageRef.current;
 
         // Prevent double fetching on initial load since searchTerm effect runs too
@@ -248,6 +252,7 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
             } else {
                 setError(null);
                 setIsFetching(true);
+                setIsMoreLoading(false);
                 // Only show full loading on truly initial load (component mount), not on search changes
                 // This prevents the search input from being unmounted and losing focus
                 if (itemsLengthRef.current === 0 && !debouncedSearchTerm) setIsInitialLoading(true);
@@ -263,6 +268,8 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
             });
             const response = await fetch(url);
             const data = await response.json();
+
+            if (!isLatestFetch()) return;
 
             if (config.pagination) {
                 // Expect { data: [], total: number }
@@ -294,11 +301,13 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                 }
             }
         } catch (err) {
+            if (!isLatestFetch()) return;
             console.error(`Error fetching ${config.entityNamePlural}:`, err);
             setError('Failed to connect to the server.');
             if (!isLoadMore) setItems([]); // Clear items only if not loading more
             setTotalItems(0);
         } finally {
+            if (!isLatestFetch()) return;
             setIsInitialLoading(false);
             setIsMoreLoading(false);
             if (!isLoadMore) {
@@ -329,6 +338,12 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
         const filtersChanged = lastFiltersKeyRef.current !== serverFiltersKey;
         if (filtersChanged) {
             lastFiltersKeyRef.current = serverFiltersKey;
+        }
+
+        const queryKey = JSON.stringify({ term: debouncedSearchTerm, filters: serverFiltersKey });
+        if (lastQueryKeyRef.current !== queryKey) {
+            lastQueryKeyRef.current = queryKey;
+            fetchIdRef.current += 1;
         }
 
         setPage(0); // Reset page on search term change

@@ -1,11 +1,14 @@
+import '@testing-library/jest-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { CrudManager } from './CrudManager';
 import type { CrudConfig } from '../../../types';
 
 // Mock API
-const mockFetch = vi.fn();
-globalThis.fetch = mockFetch as any;
+type MockFetchResponse = { ok: boolean; json: () => Promise<unknown> };
+type MockFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<MockFetchResponse>;
+const mockFetch = vi.fn<MockFetch>();
+globalThis.fetch = mockFetch as unknown as typeof fetch;
 
 
 // Mock Config
