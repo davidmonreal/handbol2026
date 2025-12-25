@@ -310,7 +310,7 @@ export function StatisticsView({
   );
 
   const summaryBaselines = useMemo(() => {
-    if (context !== 'player' || isGoalkeeperView) return undefined;
+    if ((context !== 'player' && context !== 'team') || isGoalkeeperView) return undefined;
     if (!playWindowMatchId) return undefined;
     return buildSummaryRatios(baselineStats);
   }, [baselineStats, context, isGoalkeeperView, playWindowMatchId]);

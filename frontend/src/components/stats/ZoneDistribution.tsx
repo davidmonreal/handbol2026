@@ -88,6 +88,7 @@ export function ZoneDistribution({
           ? 'up'
           : 'down'
       : null;
+    const showTrend = !(mode === 'fouls' && zone === '7m');
 
     return (
       <button
@@ -100,7 +101,7 @@ export function ZoneDistribution({
           <>
             <span className="text-xl font-bold inline-flex items-baseline">
               {value}/{stats.shots}
-              {trend && !isGoalkeeper && (
+              {trend && showTrend && !isGoalkeeper && (
                 <span
                   className={`ml-1 inline-flex items-center ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}
                   aria-hidden="true"
@@ -120,7 +121,7 @@ export function ZoneDistribution({
           <>
             <span className="text-xl font-bold inline-flex items-baseline">
               {numerator}/{denominator}
-              {trend && !isGoalkeeper && (
+              {trend && showTrend && !isGoalkeeper && (
                 <span
                   className={`ml-1 inline-flex items-center ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}
                   aria-hidden="true"
