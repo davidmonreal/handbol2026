@@ -78,8 +78,8 @@ describe('MatchService', () => {
           homeScore: 25,
           awayScore: 22,
           isFinished: true,
-          homeTeam: { id: 'h1', name: 'Home Team', club: { name: 'Club A' } },
-          awayTeam: { id: 'a1', name: 'Away Team', club: { name: 'Club B' } },
+          homeTeam: { id: 'h1', name: 'test-Home Team', club: { name: 'test-Club A' } },
+          awayTeam: { id: 'a1', name: 'test-Away Team', club: { name: 'test-Club B' } },
         },
         {
           id: 'm2',
@@ -89,8 +89,8 @@ describe('MatchService', () => {
           homeScore: 30,
           awayScore: 28,
           isFinished: false,
-          homeTeam: { id: 'h2', name: 'Home Team 2', club: { name: 'Club C' } },
-          awayTeam: { id: 'a2', name: 'Away Team 2', club: { name: 'Club D' } },
+          homeTeam: { id: 'h2', name: 'test-Home Team 2', club: { name: 'test-Club C' } },
+          awayTeam: { id: 'a2', name: 'test-Away Team 2', club: { name: 'test-Club D' } },
         },
       ];
 
@@ -108,8 +108,8 @@ describe('MatchService', () => {
       expect(result[1].awayScore).toBe(28);
 
       // Verify team info is included
-      expect(result[0].homeTeam.name).toBe('Home Team');
-      expect(result[0].awayTeam.club.name).toBe('Club B');
+      expect(result[0].homeTeam.name).toBe('test-Home Team');
+      expect(result[0].awayTeam.club.name).toBe('test-Club B');
     });
 
     it('returns empty array when no matches exist', async () => {

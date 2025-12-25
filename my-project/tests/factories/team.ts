@@ -11,7 +11,7 @@ let teamSequence = 1;
 const baseTeam = () => {
   const seq = teamSequence++;
   return {
-    name: `Team ${seq}`,
+    name: `test-team-${seq}`,
     category: 'Senior M',
     clubId: `club-${seq}`,
     seasonId: `season-${seq}`,

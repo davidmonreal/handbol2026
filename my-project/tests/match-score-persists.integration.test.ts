@@ -4,6 +4,7 @@ import app from '../src/app';
 import { PrismaClient, Club, Season, Team } from '@prisma/client';
 
 const prisma = new PrismaClient();
+const testName = (label: string) => `test-${label}-${Date.now()}`;
 
 describe.sequential('Match score persistence', () => {
   let season: Season;
@@ -15,18 +16,18 @@ describe.sequential('Match score persistence', () => {
   beforeAll(async () => {
     season = await prisma.season.create({
       data: {
-        name: `Season-${Date.now()}`,
+        name: testName('season'),
         startDate: new Date(),
         endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
       },
     });
 
-    clubA = await prisma.club.create({ data: { name: `ClubA-${Date.now()}` } });
-    clubB = await prisma.club.create({ data: { name: `ClubB-${Date.now()}` } });
+    clubA = await prisma.club.create({ data: { name: testName('club-a') } });
+    clubB = await prisma.club.create({ data: { name: testName('club-b') } });
 
     teamA = await prisma.team.create({
       data: {
-        name: `TeamA-${Date.now()}`,
+        name: testName('team-a'),
         category: 'Senior M',
         clubId: clubA.id,
         seasonId: season.id,
@@ -36,7 +37,7 @@ describe.sequential('Match score persistence', () => {
 
     teamB = await prisma.team.create({
       data: {
-        name: `TeamB-${Date.now()}`,
+        name: testName('team-b'),
         category: 'Senior M',
         clubId: clubB.id,
         seasonId: season.id,

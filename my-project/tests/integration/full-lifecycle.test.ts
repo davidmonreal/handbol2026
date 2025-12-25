@@ -62,11 +62,11 @@ describe('Full Application Lifecycle Integration Test', () => {
     it('should create a new club', async () => {
       const res = await request(app)
         .post('/api/clubs')
-        .send({ name: `Test FL Club ${runId}` });
+        .send({ name: `test-fl-club-${runId}` });
 
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('id');
-      expect(res.body.name).toBe(`Test FL Club ${runId}`);
+      expect(res.body.name).toBe(`test-fl-club-${runId}`);
       clubId = res.body.id;
     });
   });
@@ -76,7 +76,7 @@ describe('Full Application Lifecycle Integration Test', () => {
       const res = await request(app)
         .post('/api/seasons')
         .send({
-          name: `Test FL Season ${runId}`,
+          name: `test-fl-season-${runId}`,
           startDate: '2025-09-01T00:00:00.000Z',
           endDate: '2026-07-31T00:00:00.000Z',
         });
@@ -92,7 +92,7 @@ describe('Full Application Lifecycle Integration Test', () => {
       const res = await request(app)
         .post('/api/teams')
         .send({
-          name: `Test FL Home ${runId}`,
+          name: `test-fl-home-${runId}`,
           category: 'Senior M',
           isMyTeam: true,
           clubId,
@@ -108,7 +108,7 @@ describe('Full Application Lifecycle Integration Test', () => {
       const res = await request(app)
         .post('/api/teams')
         .send({
-          name: `Test FL Away ${runId}`,
+          name: `test-fl-away-${runId}`,
           category: 'Senior M',
           isMyTeam: false,
           clubId,
@@ -126,7 +126,7 @@ describe('Full Application Lifecycle Integration Test', () => {
       const res = await request(app)
         .post('/api/players')
         .send({
-          name: `Test FL Player ${runId}`,
+          name: `test-fl-player-${runId}`,
           number: 10,
           handedness: 'RIGHT',
         });

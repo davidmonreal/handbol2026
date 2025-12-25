@@ -20,7 +20,7 @@ describe('SeasonService', () => {
 
   it('getAll calls repository.findAll', async () => {
     const mockSeasons = [
-      { id: '1', name: '2024-2025', startDate: new Date(), endDate: new Date() },
+      { id: '1', name: 'test-2024-2025', startDate: new Date(), endDate: new Date() },
     ];
     vi.mocked(repository.findAll).mockResolvedValue(mockSeasons);
 
@@ -31,7 +31,12 @@ describe('SeasonService', () => {
   });
 
   it('getById calls repository.findById', async () => {
-    const mockSeason = { id: '1', name: '2024-2025', startDate: new Date(), endDate: new Date() };
+    const mockSeason = {
+      id: '1',
+      name: 'test-2024-2025',
+      startDate: new Date(),
+      endDate: new Date(),
+    };
     vi.mocked(repository.findById).mockResolvedValue(mockSeason);
 
     const result = await service.getById('1');
@@ -42,7 +47,7 @@ describe('SeasonService', () => {
 
   it('create calls repository.create with valid data', async () => {
     const newSeasonData = {
-      name: '2025-2026',
+      name: 'test-2025-2026',
       startDate: new Date('2025-09-01'),
       endDate: new Date('2026-06-30'),
     };
@@ -57,7 +62,7 @@ describe('SeasonService', () => {
 
   it('create throws error if endDate is before startDate', async () => {
     const invalidData = {
-      name: 'Invalid Season',
+      name: 'test-Invalid Season',
       startDate: new Date('2026-06-30'),
       endDate: new Date('2025-09-01'),
     };
@@ -67,8 +72,13 @@ describe('SeasonService', () => {
   });
 
   it('update calls repository.update', async () => {
-    const updateData = { name: 'Updated' };
-    const updatedSeason = { id: '1', name: 'Updated', startDate: new Date(), endDate: new Date() };
+    const updateData = { name: 'test-Updated' };
+    const updatedSeason = {
+      id: '1',
+      name: 'test-Updated',
+      startDate: new Date(),
+      endDate: new Date(),
+    };
     vi.mocked(repository.update).mockResolvedValue(updatedSeason);
 
     const result = await service.update('1', updateData);
@@ -78,7 +88,12 @@ describe('SeasonService', () => {
   });
 
   it('delete calls repository.delete', async () => {
-    const deletedSeason = { id: '1', name: 'Deleted', startDate: new Date(), endDate: new Date() };
+    const deletedSeason = {
+      id: '1',
+      name: 'test-Deleted',
+      startDate: new Date(),
+      endDate: new Date(),
+    };
     vi.mocked(repository.delete).mockResolvedValue(deletedSeason);
     vi.mocked(teamRepository.countBySeason).mockResolvedValue(0);
 

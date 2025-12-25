@@ -7,7 +7,7 @@ describe('PlayerSelector', () => {
 
     const mockTeam = {
         id: 'home',
-        name: 'Test Team',
+        name: 'test-team',
         color: 'blue',
         players: [
             { id: 'p1', number: 7, name: 'Player Seven' },

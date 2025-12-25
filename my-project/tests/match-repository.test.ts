@@ -61,7 +61,7 @@ describe('MatchRepository', () => {
   });
 
   it('findById returns a match by id', async () => {
-    const mockMatch = { id: '1', homeTeam: { name: 'Home' }, awayTeam: { name: 'Away' } };
+    const mockMatch = { id: '1', homeTeam: { name: 'test-Home' }, awayTeam: { name: 'test-Away' } };
     (prisma.match.findUnique as any).mockResolvedValue(mockMatch);
 
     const result = await repository.findById('1');

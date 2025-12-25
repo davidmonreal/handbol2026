@@ -5,15 +5,15 @@ import type { EventWithRelations } from '../src/services/weekly-ticker-metrics';
 const createMatch = () => {
   const homeTeam = {
     id: 'team-home',
-    name: 'Home Team',
+    name: 'test-Home Team',
     category: 'Senior M',
-    club: { id: 'club-home', name: 'Home Club' },
+    club: { id: 'club-home', name: 'test-Home Club' },
   };
   const awayTeam = {
     id: 'team-away',
-    name: 'Away Team',
+    name: 'test-Away Team',
     category: 'Juvenil M',
-    club: { id: 'club-away', name: 'Away Club' },
+    club: { id: 'club-away', name: 'test-Away Club' },
   };
 
   const match = {
@@ -49,7 +49,7 @@ const buildGoalEvent = (
     isCounterAttack: false,
     match,
     playerId: 'player-default',
-    player: { id: 'player-default', name: 'Player Default' },
+    player: { id: 'player-default', name: 'test-Player Default' },
     activeGoalkeeperId: null,
     activeGoalkeeper: null,
     ...overrides,
@@ -71,7 +71,7 @@ const buildShotEvent = (
     isCounterAttack: false,
     match,
     playerId: 'player-default',
-    player: { id: 'player-default', name: 'Player Default' },
+    player: { id: 'player-default', name: 'test-Player Default' },
     activeGoalkeeperId: null,
     activeGoalkeeper: null,
     ...overrides,
@@ -99,15 +99,15 @@ describe('WeeklyTickerMetrics', () => {
     const match = createMatch();
     const homeTeamId = match.homeTeamId;
     const awayTeamId = match.awayTeamId;
-    const homeGoalkeeper = { id: 'gk-home', name: 'Home Keeper' };
-    const awayGoalkeeper = { id: 'gk-away', name: 'Away Keeper' };
+    const homeGoalkeeper = { id: 'gk-home', name: 'test-Home Keeper' };
+    const awayGoalkeeper = { id: 'gk-away', name: 'test-Away Keeper' };
 
     const events: EventWithRelations[] = [
       buildGoalEvent(match, {
         id: 'goal-1',
         teamId: homeTeamId,
         playerId: 'player-home',
-        player: { id: 'player-home', name: 'Alice' },
+        player: { id: 'player-home', name: 'test-Alice' },
         isCollective: false,
         activeGoalkeeperId: awayGoalkeeper.id,
         activeGoalkeeper: awayGoalkeeper,
@@ -116,7 +116,7 @@ describe('WeeklyTickerMetrics', () => {
         id: 'goal-2',
         teamId: homeTeamId,
         playerId: 'player-home',
-        player: { id: 'player-home', name: 'Alice' },
+        player: { id: 'player-home', name: 'test-Alice' },
         isCollective: true,
         activeGoalkeeperId: awayGoalkeeper.id,
         activeGoalkeeper: awayGoalkeeper,
@@ -125,21 +125,21 @@ describe('WeeklyTickerMetrics', () => {
         id: 'goal-3',
         teamId: homeTeamId,
         playerId: 'player-home',
-        player: { id: 'player-home', name: 'Alice' },
+        player: { id: 'player-home', name: 'test-Alice' },
         isCollective: true,
       }),
       buildGoalEvent(match, {
         id: 'goal-4',
         teamId: awayTeamId,
         playerId: 'player-away',
-        player: { id: 'player-away', name: 'Bob' },
+        player: { id: 'player-away', name: 'test-Bob' },
         isCollective: false,
       }),
       buildGoalEvent(match, {
         id: 'goal-5',
         teamId: awayTeamId,
         playerId: 'player-away',
-        player: { id: 'player-away', name: 'Bob' },
+        player: { id: 'player-away', name: 'test-Bob' },
         isCollective: false,
       }),
       buildShotEvent(match, {
@@ -221,7 +221,7 @@ describe('WeeklyTickerMetrics', () => {
         id: 'unknown-team',
         teamId: 'unknown',
         playerId: 'ghost',
-        player: { id: 'ghost', name: 'Nobody' },
+        player: { id: 'ghost', name: 'test-Nobody' },
       }),
       buildFoulEvent(match, { id: 'foul-unknown', teamId: 'unknown' }),
     ];

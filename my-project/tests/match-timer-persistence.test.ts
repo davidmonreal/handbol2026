@@ -6,6 +6,7 @@ import { MatchService } from '../src/services/match-service';
 describe('Integration: Match Timer Persistence', () => {
   const matchRepository = new MatchRepository();
   const matchService = new MatchService(matchRepository);
+  const testName = (label: string) => `test-${label}-${Date.now()}`;
 
   let seasonId: string;
   let clubId: string;
@@ -22,7 +23,7 @@ describe('Integration: Match Timer Persistence', () => {
     if (!clubExists) {
       const newClub = await prisma.club.create({
         data: {
-          name: `TimerClub-${Date.now()}`,
+          name: testName('timer-club'),
         },
       });
       clubId = newClub.id;
@@ -31,7 +32,7 @@ describe('Integration: Match Timer Persistence', () => {
     if (!seasonExists) {
       const newSeason = await prisma.season.create({
         data: {
-          name: `TimerSeason-${Date.now()}`,
+          name: testName('timer-season'),
           startDate: new Date(),
           endDate: new Date(Date.now() + 1000 * 60 * 60 * 24),
         },
@@ -54,7 +55,7 @@ describe('Integration: Match Timer Persistence', () => {
   beforeAll(async () => {
     const season = await prisma.season.create({
       data: {
-        name: `TimerSeason-${timestampSuffix}`,
+        name: `test-timer-season-${timestampSuffix}`,
         startDate: new Date(),
         endDate: new Date(Date.now() + 1000 * 60 * 60 * 24),
       },
@@ -62,7 +63,7 @@ describe('Integration: Match Timer Persistence', () => {
 
     const club = await prisma.club.create({
       data: {
-        name: `TimerClub-${timestampSuffix}`,
+        name: `test-timer-club-${timestampSuffix}`,
       },
     });
 
@@ -89,14 +90,14 @@ describe('Integration: Match Timer Persistence', () => {
     const now = Date.now();
     const homeTeam = await prisma.team.create({
       data: {
-        name: `TimerHome-${now}`,
+        name: `test-timer-home-${now}`,
         clubId,
         seasonId,
       },
     });
     const awayTeam = await prisma.team.create({
       data: {
-        name: `TimerAway-${now}`,
+        name: `test-timer-away-${now}`,
         clubId,
         seasonId,
       },

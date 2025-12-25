@@ -207,13 +207,13 @@ describe('StatisticsEngine', () => {
             },
         ] as MatchEvent[];
 
-        const playerResolver = (id: string) => ({ name: 'Test Player', number: 10 });
+        const playerResolver = (id: string) => ({ name: 'test-player', number: 10 });
         const engine = new StatisticsEngine(events, false, undefined, playerResolver);
         const result = engine.calculate();
 
         const stats = result.playerStats.get('p1');
         expect(stats).toBeDefined();
-        expect(stats?.playerName).toBe('Test Player');
+        expect(stats?.playerName).toBe('test-player');
         expect(stats?.playerNumber).toBe(10);
         expect(stats?.goals).toBe(1);
         expect(stats?.shots).toBe(2);

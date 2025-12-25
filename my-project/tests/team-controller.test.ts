@@ -27,7 +27,7 @@ describe('TeamController', () => {
   });
 
   it('getAll returns teams', async () => {
-    const mockTeams = [{ id: '1', name: 'Team A' }];
+    const mockTeams = [{ id: '1', name: 'test-Team A' }];
     vi.mocked(service.getAll).mockResolvedValue(mockTeams as any);
 
     await controller.getAll(req as Request, res as Response);
@@ -38,7 +38,7 @@ describe('TeamController', () => {
 
   it('getById returns a team if found', async () => {
     req.params = { id: '1' };
-    const mockTeam = { id: '1', name: 'Team A' };
+    const mockTeam = { id: '1', name: 'test-Team A' };
     vi.mocked(service.getById).mockResolvedValue(mockTeam as any);
 
     await controller.getById(req as Request, res as Response);
@@ -81,13 +81,13 @@ describe('TeamController', () => {
 
   it('update modifies a team', async () => {
     req.params = { id: '1' };
-    req.body = { name: 'Team A Updated' };
-    const updatedTeam = { id: '1', name: 'Team A Updated' };
+    req.body = { name: 'test-Team A Updated' };
+    const updatedTeam = { id: '1', name: 'test-Team A Updated' };
     vi.mocked(service.update).mockResolvedValue(updatedTeam as any);
 
     await controller.update(req as Request, res as Response);
 
-    expect(service.update).toHaveBeenCalledWith('1', { name: 'Team A Updated' });
+    expect(service.update).toHaveBeenCalledWith('1', { name: 'test-Team A Updated' });
     expect(res.json).toHaveBeenCalledWith(updatedTeam);
   });
 

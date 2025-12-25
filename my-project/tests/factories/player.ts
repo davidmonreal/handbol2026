@@ -9,7 +9,7 @@ type PlayerOverride = Partial<{
 
 export function makePlayerPayload(overrides: PlayerOverride = {}) {
   return {
-    name: 'Test Player',
+    name: 'test-player',
     number: 1,
     handedness: 'RIGHT' as const,
     isGoalkeeper: false,

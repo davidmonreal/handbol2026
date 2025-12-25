@@ -32,6 +32,7 @@ vi.mock('../src/lib/prisma', () => ({
     player: {
       create: vi.fn(),
       findUnique: vi.fn(),
+      delete: vi.fn(),
     },
     playerTeamSeason: {
       create: vi.fn(),
@@ -55,8 +56,14 @@ describe('Batch Player Creation (Player Import)', () => {
   describe('batchCreatePlayers - AI Import Flow', () => {
     it('should create players with default handedness when AI does not provide it', async () => {
       const mockPlayers = [
-        { id: '1', name: 'Marc Rodríguez', number: 7, handedness: 'RIGHT', isGoalkeeper: false },
-        { id: '2', name: 'Joan Garcia', number: 12, handedness: 'RIGHT', isGoalkeeper: false },
+        {
+          id: '1',
+          name: 'test-Marc Rodríguez',
+          number: 7,
+          handedness: 'RIGHT',
+          isGoalkeeper: false,
+        },
+        { id: '2', name: 'test-Joan Garcia', number: 12, handedness: 'RIGHT', isGoalkeeper: false },
       ];
 
       // Mock player creation
@@ -69,8 +76,8 @@ describe('Batch Player Creation (Player Import)', () => {
         );
 
       const playersFromAI = [
-        { name: 'Marc Rodríguez', number: 7 }, // AI only returns name and number
-        { name: 'Joan Garcia', number: 12 },
+        { name: 'test-Marc Rodríguez', number: 7 }, // AI only returns name and number
+        { name: 'test-Joan Garcia', number: 12 },
       ];
 
       const response = await request(app)
@@ -85,7 +92,7 @@ describe('Batch Player Creation (Player Import)', () => {
       // Verify that handedness defaulted to RIGHT
       expect(prisma.player.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          name: 'Marc Rodríguez',
+          name: 'test-Marc Rodríguez',
           number: 7,
           handedness: 'RIGHT',
           isGoalkeeper: false,
@@ -94,7 +101,7 @@ describe('Batch Player Creation (Player Import)', () => {
 
       expect(prisma.player.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          name: 'Joan Garcia',
+          name: 'test-Joan Garcia',
           number: 12,
           handedness: 'RIGHT',
           isGoalkeeper: false,
@@ -105,7 +112,7 @@ describe('Batch Player Creation (Player Import)', () => {
     it('should respect handedness when provided', async () => {
       const mockPlayer: MockPlayer = {
         id: '1',
-        name: 'Pol Martínez',
+        name: 'test-Pol Martínez',
         number: 9,
         handedness: Handedness.LEFT,
         isGoalkeeper: false,
@@ -116,7 +123,7 @@ describe('Batch Player Creation (Player Import)', () => {
       );
 
       const playersWithHandedness = [
-        makePlayerPayload({ name: 'Pol Martínez', number: 9, handedness: 'LEFT' }),
+        makePlayerPayload({ name: 'test-Pol Martínez', number: 9, handedness: 'LEFT' }),
       ];
 
       const response = await request(app)
@@ -136,7 +143,7 @@ describe('Batch Player Creation (Player Import)', () => {
         new Error('Handedness must be LEFT or RIGHT'),
       );
 
-      const invalidPlayers = [{ name: 'Invalid Player', number: 99, handedness: 'INVALID' }];
+      const invalidPlayers = [{ name: 'test-Invalid Player', number: 99, handedness: 'INVALID' }];
 
       const response = await request(app)
         .post('/api/players/batch')
@@ -154,7 +161,7 @@ describe('Batch Player Creation (Player Import)', () => {
     it('should continue processing players when some creations fail', async () => {
       const successfulPlayer = {
         id: '1',
-        name: 'Success Player',
+        name: 'test-Success Player',
         number: 10,
         handedness: Handedness.RIGHT,
         isGoalkeeper: false,
@@ -162,7 +169,7 @@ describe('Batch Player Creation (Player Import)', () => {
 
       vi.mocked(prisma.player.create).mockImplementation((args: { data?: { name?: string } }) => {
         const data = args.data;
-        if (data?.name === 'Success Player') {
+        if (data?.name === 'test-Success Player') {
           return Promise.resolve(
             successfulPlayer as unknown as Awaited<ReturnType<typeof prisma.player.create>>,
           ) as never;
@@ -174,8 +181,8 @@ describe('Batch Player Creation (Player Import)', () => {
         .post('/api/players/batch')
         .send({
           players: [
-            { name: 'Success Player', number: 10 },
-            { name: 'Dup', number: 9 },
+            { name: 'test-Success Player', number: 10 },
+            { name: 'test-Dup', number: 9 },
           ],
         });
 
@@ -196,14 +203,14 @@ describe('Batch Player Creation (Player Import)', () => {
       const mockPlayers: MockPlayer[] = [
         {
           id: 'p1',
-          name: 'Anna López',
+          name: 'test-Anna López',
           number: 5,
           handedness: Handedness.RIGHT,
           isGoalkeeper: false,
         },
         {
           id: 'p2',
-          name: 'Laura Sánchez',
+          name: 'test-Laura Sánchez',
           number: 13,
           handedness: Handedness.RIGHT,
           isGoalkeeper: true,
@@ -245,8 +252,8 @@ describe('Batch Player Creation (Player Import)', () => {
         );
 
       const playersFromAI = [
-        { name: 'Anna López', number: 5 },
-        { name: 'Laura Sánchez', number: 13, isGoalkeeper: true },
+        { name: 'test-Anna López', number: 5 },
+        { name: 'test-Laura Sánchez', number: 13, isGoalkeeper: true },
       ];
 
       const response = await request(app).post('/api/players/batch-with-team').send({
@@ -264,7 +271,7 @@ describe('Batch Player Creation (Player Import)', () => {
     });
 
     it('should return 400 if teamId is missing', async () => {
-      const playersFromAI = [{ name: 'Anna López', number: 5 }];
+      const playersFromAI = [{ name: 'test-Anna López', number: 5 }];
 
       const response = await request(app).post('/api/players/batch-with-team').send({
         players: playersFromAI,
@@ -277,7 +284,7 @@ describe('Batch Player Creation (Player Import)', () => {
     it('uses provided position when assigning to team', async () => {
       const mockPlayer: MockPlayer = {
         id: 'p99',
-        name: 'Pos Test',
+        name: 'test-Pos Test',
         number: 20,
         handedness: Handedness.RIGHT,
         isGoalkeeper: false,
@@ -303,7 +310,7 @@ describe('Batch Player Creation (Player Import)', () => {
         .post('/api/players/batch-with-team')
         .send({
           teamId: 'team-1',
-          players: [{ name: 'Pos Test', number: 20, position: PLAYER_POSITION.PIVOT }],
+          players: [{ name: 'test-Pos Test', number: 20, position: PLAYER_POSITION.PIVOT }],
         });
 
       expect(response.status).toBe(200);

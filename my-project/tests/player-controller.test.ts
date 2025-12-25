@@ -27,7 +27,13 @@ describe('PlayerController', () => {
   it('getAll returns players (legacy mode - no query params)', async () => {
     req.query = {}; // Empty query = legacy mode
     const mockPlayers = [
-      { id: '1', name: 'Alice', number: 10, handedness: Handedness.RIGHT, isGoalkeeper: false },
+      {
+        id: '1',
+        name: 'test-Alice',
+        number: 10,
+        handedness: Handedness.RIGHT,
+        isGoalkeeper: false,
+      },
     ];
     vi.mocked(service.getAll).mockResolvedValue(mockPlayers);
 
@@ -40,7 +46,13 @@ describe('PlayerController', () => {
   it('getAll returns paginated players when skip/take provided', async () => {
     req.query = { skip: '0', take: '20' };
     const mockPlayers = [
-      { id: '1', name: 'Alice', number: 10, handedness: Handedness.RIGHT, isGoalkeeper: false },
+      {
+        id: '1',
+        name: 'test-Alice',
+        number: 10,
+        handedness: Handedness.RIGHT,
+        isGoalkeeper: false,
+      },
     ];
     vi.mocked(service.getAllPaginated).mockResolvedValue(mockPlayers);
     vi.mocked(service.count).mockResolvedValue(50);
@@ -77,7 +89,7 @@ describe('PlayerController', () => {
     req.params = { id: '1' };
     const mockPlayer = {
       id: '1',
-      name: 'Alice',
+      name: 'test-Alice',
       number: 10,
       handedness: Handedness.RIGHT,
       isGoalkeeper: false,
@@ -101,10 +113,10 @@ describe('PlayerController', () => {
   });
 
   it('create creates a new player', async () => {
-    req.body = { name: 'Bob', number: '7', handedness: 'LEFT' };
+    req.body = { name: 'test-Bob', number: '7', handedness: 'LEFT' };
     const createdPlayer = {
       id: '2',
-      name: 'Bob',
+      name: 'test-Bob',
       number: 7,
       handedness: Handedness.LEFT,
       isGoalkeeper: false,
@@ -114,7 +126,7 @@ describe('PlayerController', () => {
     await controller.create(req as Request, res as Response);
 
     expect(service.create).toHaveBeenCalledWith({
-      name: 'Bob',
+      name: 'test-Bob',
       number: 7,
       handedness: 'LEFT',
       isGoalkeeper: false,
@@ -124,10 +136,10 @@ describe('PlayerController', () => {
   });
 
   it('create creates a new goalkeeper', async () => {
-    req.body = { name: 'Nico', number: '1', handedness: 'RIGHT', isGoalkeeper: true };
+    req.body = { name: 'test-Nico', number: '1', handedness: 'RIGHT', isGoalkeeper: true };
     const createdPlayer = {
       id: '3',
-      name: 'Nico',
+      name: 'test-Nico',
       number: 1,
       handedness: Handedness.RIGHT,
       isGoalkeeper: true,
@@ -137,7 +149,7 @@ describe('PlayerController', () => {
     await controller.create(req as Request, res as Response);
 
     expect(service.create).toHaveBeenCalledWith({
-      name: 'Nico',
+      name: 'test-Nico',
       number: 1,
       handedness: 'RIGHT',
       isGoalkeeper: true,
@@ -147,7 +159,7 @@ describe('PlayerController', () => {
   });
 
   it('create returns 400 for invalid number', async () => {
-    req.body = { name: 'Invalid', number: '0', handedness: 'RIGHT' };
+    req.body = { name: 'test-Invalid', number: '0', handedness: 'RIGHT' };
     vi.mocked(service.create).mockRejectedValue(new Error('Player number must be positive'));
 
     await controller.create(req as Request, res as Response);
@@ -157,7 +169,7 @@ describe('PlayerController', () => {
   });
 
   it('create returns 400 for invalid handedness', async () => {
-    req.body = { name: 'Invalid', number: '8', handedness: 'MIDDLE' };
+    req.body = { name: 'test-Invalid', number: '8', handedness: 'MIDDLE' };
     vi.mocked(service.create).mockRejectedValue(new Error('Handedness must be LEFT or RIGHT'));
 
     await controller.create(req as Request, res as Response);
@@ -168,10 +180,10 @@ describe('PlayerController', () => {
 
   it('update modifies a player', async () => {
     req.params = { id: '1' };
-    req.body = { name: 'Alice Updated' };
+    req.body = { name: 'test-Alice Updated' };
     const updatedPlayer = {
       id: '1',
-      name: 'Alice Updated',
+      name: 'test-Alice Updated',
       number: 10,
       handedness: Handedness.RIGHT,
       isGoalkeeper: false,
@@ -189,7 +201,7 @@ describe('PlayerController', () => {
     req.body = { isGoalkeeper: true };
     const updatedPlayer = {
       id: '1',
-      name: 'Alice',
+      name: 'test-Alice',
       number: 10,
       handedness: Handedness.RIGHT,
       isGoalkeeper: true,
@@ -206,7 +218,7 @@ describe('PlayerController', () => {
     req.params = { id: '1' };
     const mockDeleteResult = {
       id: '1',
-      name: 'Deleted',
+      name: 'test-Deleted',
       number: 10,
       handedness: Handedness.RIGHT,
       isGoalkeeper: false,

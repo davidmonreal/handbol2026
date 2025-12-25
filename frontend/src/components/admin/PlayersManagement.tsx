@@ -142,12 +142,12 @@ export const PlayersManagement = () => {
             },
         ],
 
-        headerActions: ({ searchTerm }) => (
+        headerActions: ({ canFetchNow, isResultsReady }) => (
             <button
                 onClick={() => navigate('/players/import')}
-                disabled={!searchTerm}
+                disabled={!canFetchNow || !isResultsReady}
                 className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title={!searchTerm ? "Search to enable import" : "Import Players"}
+                title={!canFetchNow ? "Search to enable import" : "Import Players"}
             >
                 <Upload size={20} />
                 Import Players

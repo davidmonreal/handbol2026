@@ -38,7 +38,7 @@ describe('POST /api/import-players-from-image', () => {
 
   it('should successfully import players from a valid image', async () => {
     const mockPlayers = [
-      { name: 'Player 1', number: 10, handedness: 'RIGHT' as const, isGoalkeeper: false },
+      { name: 'test-Player 1', number: 10, handedness: 'RIGHT' as const, isGoalkeeper: false },
     ];
 
     vi.mocked(openaiService.extractPlayersFromImage).mockResolvedValue(mockPlayers);

@@ -16,7 +16,7 @@ const createTeamWithPlayer = async (label: string) => {
   const now = Date.now();
   const season = await prisma.season.create({
     data: {
-      name: `MatchEventFlowSeason-${label}-${now}`,
+      name: `test-match-event-flow-season-${label}-${now}`,
       startDate: new Date(),
       endDate: new Date(Date.now() + 1000 * 60 * 60 * 24),
     },
@@ -25,14 +25,14 @@ const createTeamWithPlayer = async (label: string) => {
 
   const club = await prisma.club.create({
     data: {
-      name: `MatchEventFlowClub-${label}-${now}`,
+      name: `test-match-event-flow-club-${label}-${now}`,
     },
   });
   createdClubIds.push(club.id);
 
   const team = await prisma.team.create({
     data: {
-      name: `MatchEventFlowTeam-${label}-${now}`,
+      name: `test-match-event-flow-team-${label}-${now}`,
       clubId: club.id,
       seasonId: season.id,
       isMyTeam: label === 'Home',
@@ -42,7 +42,7 @@ const createTeamWithPlayer = async (label: string) => {
 
   const player = await prisma.player.create({
     data: {
-      name: `MatchEventFlowPlayer-${label}-${now}`,
+      name: `test-match-event-flow-player-${label}-${now}`,
       number: Math.floor(Math.random() * 80) + 1,
     },
   });

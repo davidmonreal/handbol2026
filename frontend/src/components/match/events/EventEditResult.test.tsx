@@ -10,7 +10,7 @@ describe('EventEditResult', () => {
         id: 'test-event-1',
         timestamp: 0,
         playerId: 'player-1',
-        playerName: 'Test Player',
+        playerName: 'test-player',
         playerNumber: 21,
         teamId: 'team-1',
         category: 'Shot',
@@ -22,11 +22,11 @@ describe('EventEditResult', () => {
 
     const mockTeam = {
         id: 'team-1',
-        name: 'Test Team',
+        name: 'test-team',
         color: 'bg-blue-500',
         players: [
-            { id: 'player-1', number: 21, name: 'Test Player', position: 'LW' },
-            { id: 'player-2', number: 10, name: 'Other Player', position: 'CB' }
+            { id: 'player-1', number: 21, name: 'test-player', position: 'LW' },
+            { id: 'player-2', number: 10, name: 'test-other-player', position: 'CB' }
         ]
     };
 
@@ -120,12 +120,12 @@ describe('EventEditResult', () => {
         );
 
         // Open player dropdown
-        const playerButton = screen.getAllByText('Test Player')[0];
+        const playerButton = screen.getAllByText('test-player')[0];
         fireEvent.click(playerButton);
 
         // Select other player
         const otherPlayerButton = screen
-            .getAllByText('Other Player')
+            .getAllByText('test-other-player')
             .find(el => el.tagName === 'BUTTON')!;
         fireEvent.click(otherPlayerButton);
 

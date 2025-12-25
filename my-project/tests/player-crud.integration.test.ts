@@ -11,7 +11,7 @@ const createdClubIds: string[] = [];
 const createdSeasonIds: string[] = [];
 
 const uniqueName = (label: string) =>
-  `Pcrud-${label}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  `test-pcrud-${label}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
 const createTeamForCascadeCheck = async () => {
   const season = await prisma.season.create({

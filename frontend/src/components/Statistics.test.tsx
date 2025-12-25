@@ -98,7 +98,7 @@ describe('Statistics', () => {
         it('should read playerId from URL params', async () => {
             const mockPlayerData = {
                 id: 'player-1',
-                name: 'Test Player',
+                name: 'test-player',
                 number: 10,
                 isGoalkeeper: false
             };
@@ -123,9 +123,9 @@ describe('Statistics', () => {
         it('should read teamId from URL params', async () => {
             const mockTeamData = {
                 id: 'team-1',
-                name: 'Test Team',
+                name: 'test-team',
                 category: 'Cadet M',
-                club: { name: 'Test Club' },
+                club: { name: 'test-club' },
                 players: []
             };
 

@@ -35,13 +35,13 @@ describe('TeamRepository', () => {
     const mockTeams = [
       {
         id: '1',
-        name: 'Cadet A',
+        name: 'test-Cadet A',
         category: 'Cadet M',
         isMyTeam: true,
         clubId: 'c1',
         seasonId: 's1',
-        club: { id: 'c1', name: 'Mataró' },
-        season: { id: 's1', name: '2024-2025' },
+        club: { id: 'c1', name: 'test-Mataró' },
+        season: { id: 's1', name: 'test-2024-2025' },
       },
     ];
     vi.mocked(prisma.team.findMany).mockResolvedValue(mockTeams);
@@ -65,13 +65,13 @@ describe('TeamRepository', () => {
   it('findById returns a team by id with relations', async () => {
     const mockTeam = {
       id: '1',
-      name: 'Cadet A',
+      name: 'test-Cadet A',
       category: 'Cadet M',
       isMyTeam: true,
       clubId: 'c1',
       seasonId: 's1',
-      club: { id: 'c1', name: 'Mataró' },
-      season: { id: 's1', name: '2024-2025' },
+      club: { id: 'c1', name: 'test-Mataró' },
+      season: { id: 's1', name: 'test-2024-2025' },
       players: [],
     };
     vi.mocked(prisma.team.findUnique).mockResolvedValue(mockTeam);
@@ -91,7 +91,7 @@ describe('TeamRepository', () => {
 
   it('create creates a new team', async () => {
     const newTeamData = {
-      name: 'Cadet A',
+      name: 'test-Cadet A',
       category: 'Cadet M',
       clubId: 'c1',
       seasonId: 's1',
@@ -115,8 +115,8 @@ describe('TeamRepository', () => {
       teamId: 't1',
       playerId: 'p1',
       position: PLAYER_POSITION.CENTRAL,
-      player: { id: 'p1', name: 'Marc' },
-      team: { id: 't1', name: 'Cadet A' },
+      player: { id: 'p1', name: 'test-Marc' },
+      team: { id: 't1', name: 'test-Cadet A' },
     };
     vi.mocked(prisma.playerTeamSeason.create).mockResolvedValue(mockAssignment);
 

@@ -1,7 +1,13 @@
 import { Request, Response } from 'express';
 import { PlayerRepository } from '../repositories/player-repository';
 import prisma from '../lib/prisma';
-import { PLAYER_POSITION, isValidPlayerPosition } from '../types/player-position';
+import {
+  PLAYER_POSITION,
+  hasGoalkeeperPosition,
+  isGoalkeeperPosition,
+  resolvePlayerPosition,
+} from '../types/player-position';
+import { mergePlayerSchema } from '../schemas/player-merge';
 
 const playerRepository = new PlayerRepository();
 
@@ -19,11 +25,20 @@ interface MergePlayerRequest {
 
 export async function mergePlayer(req: Request, res: Response) {
   try {
-    const { oldPlayerId, newPlayerData, teamId }: MergePlayerRequest = req.body;
-
-    if (!oldPlayerId || !newPlayerData) {
-      return res.status(400).json({ error: 'oldPlayerId and newPlayerData are required' });
+    const parsed = mergePlayerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const hasMissingCoreFields = parsed.error.issues.some(
+        (issue) =>
+          issue.path.length === 1 &&
+          (issue.path[0] === 'oldPlayerId' || issue.path[0] === 'newPlayerData'),
+      );
+      return res.status(400).json({
+        error: hasMissingCoreFields
+          ? 'oldPlayerId and newPlayerData are required'
+          : (parsed.error.issues[0]?.message ?? 'Invalid merge payload'),
+      });
     }
+    const { oldPlayerId, newPlayerData, teamId }: MergePlayerRequest = parsed.data;
 
     // Fetch old player to verify it exists
     const oldPlayer = await playerRepository.findById(oldPlayerId);
@@ -34,19 +49,16 @@ export async function mergePlayer(req: Request, res: Response) {
     // Use transaction to ensure atomicity
     const result = await prisma.$transaction(async (tx) => {
       // Create new player
-      const positionCandidate = newPlayerData.position;
-      const hasValidPosition =
-        typeof positionCandidate === 'number' && isValidPlayerPosition(positionCandidate);
-      const shouldMarkGoalkeeper =
-        newPlayerData.isGoalkeeper ||
-        (hasValidPosition && positionCandidate === PLAYER_POSITION.GOALKEEPER);
+      const resolvedPosition = resolvePlayerPosition(newPlayerData.position, {
+        isGoalkeeper: newPlayerData.isGoalkeeper,
+      });
 
       const newPlayer = await tx.player.create({
         data: {
           name: newPlayerData.name,
           number: newPlayerData.number,
           handedness: newPlayerData.handedness as 'LEFT' | 'RIGHT',
-          isGoalkeeper: shouldMarkGoalkeeper || false,
+          isGoalkeeper: false,
         },
       });
 
@@ -60,6 +72,17 @@ export async function mergePlayer(req: Request, res: Response) {
       const oldPlayerTeams = await tx.playerTeamSeason.findMany({
         where: { playerId: oldPlayerId },
       });
+
+      const oldPositions = oldPlayerTeams.map((pt) => pt.position ?? PLAYER_POSITION.UNSET);
+      const shouldMarkGoalkeeper =
+        hasGoalkeeperPosition(oldPositions) || isGoalkeeperPosition(resolvedPosition);
+
+      if (shouldMarkGoalkeeper) {
+        await tx.player.update({
+          where: { id: newPlayer.id },
+          data: { isGoalkeeper: true },
+        });
+      }
 
       for (const pt of oldPlayerTeams) {
         await tx.playerTeamSeason.create({
@@ -81,12 +104,6 @@ export async function mergePlayer(req: Request, res: Response) {
         });
 
         if (!existingAssociation) {
-          const resolvedPosition =
-            typeof positionCandidate === 'number' && isValidPlayerPosition(positionCandidate)
-              ? positionCandidate
-              : shouldMarkGoalkeeper
-                ? PLAYER_POSITION.GOALKEEPER
-                : PLAYER_POSITION.UNSET;
           await tx.playerTeamSeason.create({
             data: {
               playerId: newPlayer.id,

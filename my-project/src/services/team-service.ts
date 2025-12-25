@@ -3,11 +3,22 @@ import { Team, PlayerTeamSeason } from '@prisma/client';
 import { BaseService } from './base-service';
 import { TeamRepository } from '../repositories/team-repository';
 import prisma from '../lib/prisma'; // Keep prisma import for custom validation in create/update
-import { isValidPlayerPosition } from '../types/player-position';
+import { isValidPlayerPosition, PLAYER_POSITION } from '../types/player-position';
 
 export class TeamService extends BaseService<Team> {
   constructor(private teamRepository: TeamRepository) {
     super(teamRepository);
+  }
+
+  private async syncPlayerGoalkeeperStatus(playerId: string): Promise<void> {
+    const hasGoalkeeperAssignment = await prisma.playerTeamSeason.findFirst({
+      where: { playerId, position: PLAYER_POSITION.GOALKEEPER },
+      select: { id: true },
+    });
+    await prisma.player.update({
+      where: { id: playerId },
+      data: { isGoalkeeper: Boolean(hasGoalkeeperAssignment) },
+    });
   }
 
   // Override create to include custom validation and logic
@@ -147,11 +158,15 @@ export class TeamService extends BaseService<Team> {
       throw new Error('Player already assigned to this team');
     }
 
-    return this.teamRepository.assignPlayer(teamId, playerId, position);
+    const assignment = await this.teamRepository.assignPlayer(teamId, playerId, position);
+    await this.syncPlayerGoalkeeperStatus(playerId);
+    return assignment;
   }
 
   async unassignPlayer(teamId: string, playerId: string): Promise<PlayerTeamSeason> {
-    return this.teamRepository.unassignPlayer(teamId, playerId);
+    const assignment = await this.teamRepository.unassignPlayer(teamId, playerId);
+    await this.syncPlayerGoalkeeperStatus(playerId);
+    return assignment;
   }
 
   async updatePlayerPosition(
@@ -162,6 +177,8 @@ export class TeamService extends BaseService<Team> {
     if (!isValidPlayerPosition(position)) {
       throw new Error('Invalid position');
     }
-    return this.teamRepository.updatePlayerPosition(teamId, playerId, position);
+    const assignment = await this.teamRepository.updatePlayerPosition(teamId, playerId, position);
+    await this.syncPlayerGoalkeeperStatus(playerId);
+    return assignment;
   }
 }

@@ -4,15 +4,27 @@ import { PLAYER_POSITION } from '../src/types/player-position';
 const prisma = new PrismaClient();
 
 async function backfillGoalkeeperPositions() {
-  const updated = await prisma.playerTeamSeason.updateMany({
+  const marked = await prisma.player.updateMany({
     where: {
-      player: { isGoalkeeper: true },
-      position: { not: PLAYER_POSITION.GOALKEEPER },
+      teams: {
+        some: { position: PLAYER_POSITION.GOALKEEPER },
+      },
     },
-    data: { position: PLAYER_POSITION.GOALKEEPER },
+    data: { isGoalkeeper: true },
   });
 
-  console.log(`Updated ${updated.count} player-team assignments to goalkeeper position.`);
+  const unmarked = await prisma.player.updateMany({
+    where: {
+      teams: {
+        none: { position: PLAYER_POSITION.GOALKEEPER },
+      },
+    },
+    data: { isGoalkeeper: false },
+  });
+
+  console.log(
+    `Updated goalkeeper flags from positions (true: ${marked.count}, false: ${unmarked.count}).`,
+  );
 }
 
 backfillGoalkeeperPositions()

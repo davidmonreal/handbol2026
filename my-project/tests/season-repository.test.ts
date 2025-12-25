@@ -24,8 +24,8 @@ describe('SeasonRepository', () => {
 
   it('findAll returns all seasons ordered by startDate desc', async () => {
     const mockSeasons = [
-      { id: '1', name: '2024-2025', startDate: new Date(), endDate: new Date() },
-      { id: '2', name: '2023-2024', startDate: new Date(), endDate: new Date() },
+      { id: '1', name: 'test-2024-2025', startDate: new Date(), endDate: new Date() },
+      { id: '2', name: 'test-2023-2024', startDate: new Date(), endDate: new Date() },
     ];
     vi.mocked(prisma.season.findMany).mockResolvedValue(mockSeasons);
 
@@ -38,7 +38,12 @@ describe('SeasonRepository', () => {
   });
 
   it('findById returns a season by id', async () => {
-    const mockSeason = { id: '1', name: '2024-2025', startDate: new Date(), endDate: new Date() };
+    const mockSeason = {
+      id: '1',
+      name: 'test-2024-2025',
+      startDate: new Date(),
+      endDate: new Date(),
+    };
     vi.mocked(prisma.season.findUnique).mockResolvedValue(mockSeason);
 
     const result = await repository.findById('1');
@@ -51,7 +56,7 @@ describe('SeasonRepository', () => {
 
   it('create creates a new season', async () => {
     const newSeasonData = {
-      name: '2025-2026',
+      name: 'test-2025-2026',
       startDate: new Date('2025-09-01'),
       endDate: new Date('2026-06-30'),
     };
@@ -67,10 +72,10 @@ describe('SeasonRepository', () => {
   });
 
   it('update modifies an existing season', async () => {
-    const updateData = { name: 'Updated Name' };
+    const updateData = { name: 'test-Updated Name' };
     const updatedSeason = {
       id: '1',
-      name: 'Updated Name',
+      name: 'test-Updated Name',
       startDate: new Date(),
       endDate: new Date(),
     };
@@ -86,7 +91,12 @@ describe('SeasonRepository', () => {
   });
 
   it('delete removes a season', async () => {
-    const deletedSeason = { id: '1', name: 'Deleted', startDate: new Date(), endDate: new Date() };
+    const deletedSeason = {
+      id: '1',
+      name: 'test-Deleted',
+      startDate: new Date(),
+      endDate: new Date(),
+    };
     vi.mocked(prisma.season.delete).mockResolvedValue(deletedSeason);
 
     const result = await repository.delete('1');

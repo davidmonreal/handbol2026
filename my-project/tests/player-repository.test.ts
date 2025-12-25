@@ -25,8 +25,14 @@ describe('PlayerRepository', () => {
 
   it('findAll returns all players ordered by name (optimized with select)', async () => {
     const mockPlayers = [
-      { id: '1', name: 'Alice', number: 10, handedness: 'RIGHT' as const, isGoalkeeper: false },
-      { id: '2', name: 'Bob', number: 7, handedness: 'LEFT' as const, isGoalkeeper: false },
+      {
+        id: '1',
+        name: 'test-Alice',
+        number: 10,
+        handedness: 'RIGHT' as const,
+        isGoalkeeper: false,
+      },
+      { id: '2', name: 'test-Bob', number: 7, handedness: 'LEFT' as const, isGoalkeeper: false },
     ];
     vi.mocked(prisma.player.findMany).mockResolvedValue(mockPlayers);
 
@@ -64,7 +70,13 @@ describe('PlayerRepository', () => {
   describe('findAllPaginated', () => {
     it('returns paginated players with skip and take', async () => {
       const mockPlayers = [
-        { id: '1', name: 'Alice', number: 10, handedness: 'RIGHT' as const, isGoalkeeper: false },
+        {
+          id: '1',
+          name: 'test-Alice',
+          number: 10,
+          handedness: 'RIGHT' as const,
+          isGoalkeeper: false,
+        },
       ];
       vi.mocked(prisma.player.findMany).mockResolvedValue(mockPlayers);
 
@@ -82,7 +94,13 @@ describe('PlayerRepository', () => {
 
     it('filters by search term on name', async () => {
       const mockPlayers = [
-        { id: '1', name: 'Alice', number: 10, handedness: 'RIGHT' as const, isGoalkeeper: false },
+        {
+          id: '1',
+          name: 'test-Alice',
+          number: 10,
+          handedness: 'RIGHT' as const,
+          isGoalkeeper: false,
+        },
       ];
       vi.mocked(prisma.player.findMany).mockResolvedValue(mockPlayers);
 
@@ -127,7 +145,7 @@ describe('PlayerRepository', () => {
   it('findById returns a player by id', async () => {
     const mockPlayer = {
       id: '1',
-      name: 'Player 1',
+      name: 'test-Player 1',
       number: 10,
       handedness: 'RIGHT' as const,
       isGoalkeeper: false,
@@ -164,7 +182,7 @@ describe('PlayerRepository', () => {
 
   it('create creates a new player', async () => {
     const newPlayer = {
-      name: 'New Player',
+      name: 'test-New Player',
       number: 11,
       handedness: 'LEFT' as const,
       isGoalkeeper: false,
@@ -181,10 +199,10 @@ describe('PlayerRepository', () => {
   });
 
   it('update modifies an existing player', async () => {
-    const updateData = { name: 'Alice Updated' };
+    const updateData = { name: 'test-Alice Updated' };
     const updatedPlayer = {
       id: '1',
-      name: 'Alice Updated',
+      name: 'test-Alice Updated',
       number: 10,
       handedness: 'RIGHT' as const,
       isGoalkeeper: false,
@@ -203,7 +221,7 @@ describe('PlayerRepository', () => {
   it('delete removes a player', async () => {
     const deletedPlayer = {
       id: '1',
-      name: 'Alice',
+      name: 'test-Alice',
       number: 10,
       handedness: 'RIGHT' as const,
       isGoalkeeper: false,

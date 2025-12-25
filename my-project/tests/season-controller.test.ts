@@ -24,7 +24,7 @@ describe('SeasonController', () => {
   });
 
   it('getAll returns seasons', async () => {
-    const mockSeasons = [{ id: '1', name: '2024-2025' }];
+    const mockSeasons = [{ id: '1', name: 'test-2024-2025' }];
     vi.mocked(service.getAll).mockResolvedValue(mockSeasons);
 
     await controller.getAll(req as Request, res as Response);
@@ -35,7 +35,7 @@ describe('SeasonController', () => {
 
   it('getById returns a season if found', async () => {
     req.params = { id: '1' };
-    const mockSeason = { id: '1', name: '2024-2025' };
+    const mockSeason = { id: '1', name: 'test-2024-2025' };
     vi.mocked(service.getById).mockResolvedValue(mockSeason);
 
     await controller.getById(req as Request, res as Response);
@@ -55,7 +55,7 @@ describe('SeasonController', () => {
   });
 
   it('create creates a new season', async () => {
-    req.body = { name: '2025-2026', startDate: '2025-09-01', endDate: '2026-06-30' };
+    req.body = { name: 'test-2025-2026', startDate: '2025-09-01', endDate: '2026-06-30' };
     const createdSeason = {
       id: '2',
       ...req.body,
@@ -72,7 +72,7 @@ describe('SeasonController', () => {
   });
 
   it('create returns 400 for invalid dates', async () => {
-    req.body = { name: 'Invalid', startDate: '2026-06-30', endDate: '2025-09-01' };
+    req.body = { name: 'test-Invalid', startDate: '2026-06-30', endDate: '2025-09-01' };
     vi.mocked(service.create).mockRejectedValue(new Error('End date must be after start date'));
 
     await controller.create(req as Request, res as Response);
@@ -83,8 +83,8 @@ describe('SeasonController', () => {
 
   it('update modifies a season', async () => {
     req.params = { id: '1' };
-    req.body = { name: 'Updated' };
-    const updatedSeason = { id: '1', name: 'Updated' };
+    req.body = { name: 'test-Updated' };
+    const updatedSeason = { id: '1', name: 'test-Updated' };
     vi.mocked(service.update).mockResolvedValue(updatedSeason);
 
     await controller.update(req as Request, res as Response);
@@ -97,7 +97,7 @@ describe('SeasonController', () => {
     req.params = { id: '1' };
     const mockDeleteResult = {
       id: '1',
-      name: 'Deleted',
+      name: 'test-Deleted',
       startDate: new Date(),
       endDate: new Date(),
     };

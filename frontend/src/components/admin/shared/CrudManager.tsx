@@ -1,10 +1,167 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Plus, Edit2, Trash2, Search } from 'lucide-react';
 import { API_BASE_URL } from '../../../config/api';
 import type { CrudConfig, FormFieldConfig } from '../../../types';
 import { LoadingTable, ErrorMessage, ConfirmationModal } from '../../common';
 import { useSafeTranslation } from '../../../context/LanguageContext';
 
+type ServerFilters = Record<string, string>;
+
+const buildServerFiltersKey = (serverFilters?: ServerFilters) =>
+    JSON.stringify(serverFilters ?? {});
+
+const hasActiveServerFilters = (serverFilters?: ServerFilters) => {
+    if (!serverFilters) return false;
+    return Object.values(serverFilters).some((value) => value !== undefined && value !== null && value !== '');
+};
+
+const buildFetchUrl = ({
+    apiEndpoint,
+    pagination,
+    page,
+    pageSize,
+    searchTerm,
+    serverFilters,
+}: {
+    apiEndpoint: string;
+    pagination?: boolean;
+    page: number;
+    pageSize: number;
+    searchTerm: string;
+    serverFilters?: ServerFilters;
+}) => {
+    let url = `${API_BASE_URL}${apiEndpoint}`;
+
+    if (!pagination) return url;
+
+    const skip = page * pageSize;
+    const params = new URLSearchParams();
+    params.append('skip', skip.toString());
+    params.append('take', pageSize.toString());
+    if (searchTerm) {
+        params.append('search', searchTerm);
+    }
+    if (serverFilters) {
+        Object.entries(serverFilters).forEach(([key, value]) => {
+            if (value) params.append(key, value);
+        });
+    }
+
+    url += `?${params.toString()}`;
+    return url;
+};
+
+const parsePaginatedResult = <T,>(data: unknown) => {
+    if (
+        data &&
+        typeof data === 'object' &&
+        'data' in data &&
+        Array.isArray((data as { data: unknown }).data)
+    ) {
+        const payload = data as { data: T[]; total?: number };
+        return { ok: true, items: payload.data, total: payload.total ?? 0 };
+    }
+
+    const error =
+        data && typeof data === 'object' && 'error' in data
+            ? String((data as { error: unknown }).error)
+            : undefined;
+    return { ok: false, items: [] as T[], total: 0, error };
+};
+
+const parseArrayResult = <T,>(data: unknown) => {
+    if (Array.isArray(data)) {
+        return { ok: true, items: data as T[] };
+    }
+
+    const error =
+        data && typeof data === 'object' && 'error' in data
+            ? String((data as { error: unknown }).error)
+            : undefined;
+    return { ok: false, items: [] as T[], error };
+};
+
+const filterCrudItems = <T,>(
+    items: T[],
+    config: CrudConfig<T>,
+    searchTerm: string,
+    allItemsLoaded: boolean,
+) => {
+    const searchLower = searchTerm.toLowerCase();
+
+    if (config.pagination && allItemsLoaded && searchLower) {
+        return items.filter((item) =>
+            config.searchFields.some((field: keyof T) => {
+                const value = item[field];
+                return value?.toString().toLowerCase().includes(searchLower);
+            }),
+        );
+    }
+
+    if (config.pagination) {
+        if (config.customFilter) {
+            return items.filter((item) => config.customFilter!(item, searchLower));
+        }
+        return items;
+    }
+
+    if (config.customFilter) {
+        return items.filter((item) => config.customFilter!(item, searchLower));
+    }
+
+    return items.filter((item: T) =>
+        config.searchFields.some((field: keyof T) => {
+            const value = item[field];
+            return value?.toString().toLowerCase().includes(searchLower);
+        }),
+    );
+};
+
+const sortCrudItems = <T,>(items: T[], config: CrudConfig<T>) => {
+    if (config.sortItems) {
+        return config.sortItems([...items]);
+    }
+
+    if (!config.defaultSort) return items;
+
+    return [...items].sort((a, b) => {
+        const { key, direction } = config.defaultSort!;
+        const valA = a[key];
+        const valB = b[key];
+
+        if (typeof valA === 'string' && typeof valB === 'string') {
+            return direction === 'asc'
+                ? valA.localeCompare(valB)
+                : valB.localeCompare(valA);
+        }
+
+        if (typeof valA === 'number' && typeof valB === 'number') {
+            return direction === 'asc' ? valA - valB : valB - valA;
+        }
+
+        return 0;
+    });
+};
+
+const buildEditFormData = <T,>(item: T, config: CrudConfig<T>) => {
+    if (config.mapItemToForm) {
+        return config.mapItemToForm(item);
+    }
+
+    const newFormData: Record<string, unknown> = {};
+    config.formFields.forEach((field: FormFieldConfig) => {
+        newFormData[field.name] = (item as Record<string, unknown>)[field.name] ?? '';
+    });
+    return newFormData;
+};
+
+const buildEmptyFormData = <T,>(config: CrudConfig<T>) => {
+    const resetData: Record<string, unknown> = {};
+    config.formFields.forEach((field: FormFieldConfig) => {
+        resetData[field.name] = field.type === 'checkbox' ? false : '';
+    });
+    return resetData;
+};
 
 interface CrudManagerProps<T> {
     config: CrudConfig<T>;
@@ -18,6 +175,8 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
+    const [isFetching, setIsFetching] = useState(false);
+    const [hasFetchResolved, setHasFetchResolved] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; itemId: string | null }>({ isOpen: false, itemId: null });
@@ -29,58 +188,54 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
     const PAGE_SIZE = 20;
     const { t } = useSafeTranslation();
 
+    const itemsLengthRef = useRef(items.length);
+    const pageRef = useRef(page);
+
+    useEffect(() => {
+        itemsLengthRef.current = items.length;
+    }, [items.length]);
+
+    useEffect(() => {
+        pageRef.current = page;
+    }, [page]);
+
     const minSearchLength = config.minSearchLength ?? 1;
-    const hasActiveFilters = Boolean(
-        config.serverFilters &&
-        Object.values(config.serverFilters).some((value) => value !== undefined && value !== null && value !== '')
+    const serverFilters = config.serverFilters;
+    const serverFiltersKey = useMemo(
+        () => buildServerFiltersKey(serverFilters),
+        [serverFilters],
     );
-    const shouldFetch = () => {
+    const hasActiveFilters = useMemo(
+        () => hasActiveServerFilters(serverFilters),
+        [serverFilters],
+    );
+    const shouldFetch = useCallback(() => {
         if (!config.requireSearchBeforeFetch) return true;
         if (config.allowFetchWithoutSearchIfFilters && hasActiveFilters) return true;
         return debouncedSearchTerm.trim().length >= minSearchLength;
-    };
+    }, [
+        config.allowFetchWithoutSearchIfFilters,
+        config.requireSearchBeforeFetch,
+        debouncedSearchTerm,
+        hasActiveFilters,
+        minSearchLength,
+    ]);
 
-    // Debounce search term
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearchTerm(searchTerm);
-        }, 500);
+    const allItemsLoaded = useMemo(() => (
+        Boolean(config.pagination && serverFilters && items.length > 0 && items.length >= totalItems)
+    ), [config.pagination, items.length, serverFilters, totalItems]);
 
-        return () => clearTimeout(timer);
-    }, [searchTerm]);
+    const lastFiltersKeyRef = useRef(serverFiltersKey);
 
-    useEffect(() => {
-        setPage(0); // Reset page on search term change
-        // Only fetch from server if we don't have all items already loaded
-        // If all items are loaded (serverFilters applied + totalItems <= items.length), filter client-side
-        const allItemsLoaded = config.pagination && config.serverFilters && items.length > 0 && items.length >= totalItems;
-        if (!shouldFetch()) {
-            setItems([]);
-            setTotalItems(0);
-            setIsInitialLoading(false);
-            return;
-        }
-        if (!allItemsLoaded) {
-            fetchItems(false, 0); // Fetch initial data or new search results with explicit page 0
-        }
-        // If allItemsLoaded, we skip fetch and filteredItems will handle client-side filtering
-    }, [debouncedSearchTerm]);
-
-    useEffect(() => {
-        // Only load more if page is incremented and not the initial load (page 0)
-        if (page > 0) {
-            fetchItems(true);
-        }
-    }, [page]);
-
-    const fetchItems = async (isLoadMore = false, pageOverride?: number) => {
+    const fetchItems = useCallback(async (isLoadMore = false, pageOverride?: number) => {
         if (!shouldFetch()) {
             setIsInitialLoading(false);
             setIsMoreLoading(false);
+            setIsFetching(false);
             return;
         }
 
-        const currentPage = pageOverride ?? page;
+        const currentPage = pageOverride ?? pageRef.current;
 
         // Prevent double fetching on initial load since searchTerm effect runs too
         // If not loading more, and page is already > 0, it means a search term change
@@ -92,61 +247,50 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                 setIsMoreLoading(true);
             } else {
                 setError(null);
+                setIsFetching(true);
                 // Only show full loading on truly initial load (component mount), not on search changes
                 // This prevents the search input from being unmounted and losing focus
-                if (items.length === 0 && !debouncedSearchTerm) setIsInitialLoading(true);
+                if (itemsLengthRef.current === 0 && !debouncedSearchTerm) setIsInitialLoading(true);
             }
 
-            let url = `${API_BASE_URL}${config.apiEndpoint}`;
-
-            if (config.pagination) {
-                const skip = currentPage * PAGE_SIZE;
-                const params = new URLSearchParams();
-                params.append('skip', skip.toString());
-                params.append('take', PAGE_SIZE.toString());
-                if (debouncedSearchTerm) {
-                    params.append('search', debouncedSearchTerm);
-                }
-                // Add server-side filters (e.g., clubId)
-                if (config.serverFilters) {
-                    Object.entries(config.serverFilters).forEach(([key, value]) => {
-                        if (value) params.append(key, value);
-                    });
-                }
-                url += `?${params.toString()}`;
-            }
-
+            const url = buildFetchUrl({
+                apiEndpoint: config.apiEndpoint,
+                pagination: config.pagination,
+                page: currentPage,
+                pageSize: PAGE_SIZE,
+                searchTerm: debouncedSearchTerm,
+                serverFilters,
+            });
             const response = await fetch(url);
             const data = await response.json();
 
             if (config.pagination) {
                 // Expect { data: [], total: number }
-                if (data.data && Array.isArray(data.data)) {
+                const parsed = parsePaginatedResult<T>(data);
+                if (parsed.ok) {
                     if (isLoadMore) {
-                        setItems(prev => [...prev, ...data.data]);
+                        setItems((prev) => [...prev, ...parsed.items]);
                     } else {
-                        setItems(data.data);
+                        setItems(parsed.items);
                     }
-                    setTotalItems(data.total || 0);
+                    setTotalItems(parsed.total);
                 } else {
-                    // Fallback or error
                     console.error('Expected paginated result but got:', data);
                     setItems([]);
                     setTotalItems(0);
+                    if (parsed.error) setError(parsed.error);
                 }
             } else {
                 // Legacy behavior (no pagination)
-                if (Array.isArray(data)) {
-                    // Client-side filtering if search is active (legacy behavior was handled by client after fetch? 
-                    // No, existing code filtered client side in render via filteredItems.
-                    // So we just set items here.
-                    setItems(data);
-                    setTotalItems(data.length); // For non-paginated, total is just current items length
+                const parsed = parseArrayResult<T>(data);
+                if (parsed.ok) {
+                    setItems(parsed.items);
+                    setTotalItems(parsed.items.length);
                 } else {
                     console.error('Expected array but got:', data);
                     setItems([]);
                     setTotalItems(0);
-                    if (data.error) setError(data.error);
+                    if (parsed.error) setError(parsed.error);
                 }
             }
         } catch (err) {
@@ -157,8 +301,62 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
         } finally {
             setIsInitialLoading(false);
             setIsMoreLoading(false);
+            if (!isLoadMore) {
+                setIsFetching(false);
+                setHasFetchResolved(true);
+            }
         }
-    };
+    }, [
+        config.apiEndpoint,
+        config.entityNamePlural,
+        config.pagination,
+        debouncedSearchTerm,
+        serverFilters,
+        shouldFetch,
+    ]);
+
+    // Debounce search term
+    useEffect(() => {
+        setHasFetchResolved(false);
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        const filtersChanged = lastFiltersKeyRef.current !== serverFiltersKey;
+        if (filtersChanged) {
+            lastFiltersKeyRef.current = serverFiltersKey;
+        }
+
+        setPage(0); // Reset page on search term change
+        // Only fetch from server if we don't have all items already loaded
+        // If all items are loaded (serverFilters applied + totalItems <= items.length), filter client-side
+        if (!shouldFetch()) {
+            setItems([]);
+            setTotalItems(0);
+            setIsInitialLoading(false);
+            setIsFetching(false);
+            setHasFetchResolved(false);
+            return;
+        }
+        if (allItemsLoaded && !filtersChanged) {
+            setHasFetchResolved(true);
+            return;
+        }
+        setHasFetchResolved(false);
+        fetchItems(false, 0); // Fetch initial data or new search results with explicit page 0
+        // If allItemsLoaded, we skip fetch and filteredItems will handle client-side filtering
+    }, [allItemsLoaded, debouncedSearchTerm, fetchItems, serverFiltersKey, shouldFetch]);
+
+    useEffect(() => {
+        // Only load more if page is incremented and not the initial load (page 0)
+        if (page > 0) {
+            fetchItems(true);
+        }
+    }, [fetchItems, page]);
 
     const handleLoadMore = () => {
         setPage(prev => prev + 1);
@@ -247,30 +445,14 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
         // Default behavior: open modal
         setEditingItem(item);
 
-        const newFormData: Record<string, unknown> = {};
-
-        if (config.mapItemToForm) {
-            const mappedData = config.mapItemToForm(item);
-            Object.assign(newFormData, mappedData);
-        } else {
-            config.formFields.forEach((field: FormFieldConfig) => {
-                newFormData[field.name] = (item as Record<string, unknown>)[field.name] ?? '';
-            });
-        }
-
-        setFormData(newFormData);
+        setFormData(buildEditFormData(item, config));
         setIsFormOpen(true);
     };
 
     const handleCancel = () => {
         setIsFormOpen(false);
         setEditingItem(null);
-
-        const resetData: Record<string, unknown> = {};
-        config.formFields.forEach((field: FormFieldConfig) => {
-            resetData[field.name] = field.type === 'checkbox' ? false : '';
-        });
-        setFormData(resetData);
+        setFormData(buildEmptyFormData(config));
         setError(null);
     };
 
@@ -281,63 +463,12 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
     };
 
     // Determine if all items are loaded (for client-side search optimization)
-    const allItemsLoaded = config.pagination && config.serverFilters && items.length > 0 && items.length >= totalItems;
     const canFetchNow = shouldFetch();
+    const isSearchPending = searchTerm !== debouncedSearchTerm;
+    const isResultsReady = hasFetchResolved && !isFetching && !isSearchPending;
 
-    const filteredItems = items.filter((item: T) => {
-        const searchLower = searchTerm.toLowerCase();
-
-        // For pagination mode with all items loaded, apply text search client-side
-        if (config.pagination && allItemsLoaded && searchLower) {
-            // Apply text search to searchFields
-            const matchesSearch = config.searchFields.some((field: keyof T) => {
-                const value = item[field];
-                return value?.toString().toLowerCase().includes(searchLower);
-            });
-            return matchesSearch;
-        }
-
-        // For pagination mode without all items, server handles search
-        // But customFilter still applies client-side
-        if (config.pagination) {
-            if (config.customFilter) {
-                return config.customFilter(item, searchLower);
-            }
-            return true; // No additional filtering
-        }
-
-        // For non-paginated mode, apply text search client-side
-        if (config.customFilter) {
-            return config.customFilter(item, searchLower);
-        }
-
-        return config.searchFields.some((field: keyof T) => {
-            const value = item[field];
-            return value?.toString().toLowerCase().includes(searchLower);
-        });
-    });
-
-    const sortedItems = config.sortItems
-        ? config.sortItems([...filteredItems])
-        : config.defaultSort
-            ? [...filteredItems].sort((a, b) => {
-                const { key, direction } = config.defaultSort!;
-                const valA = a[key];
-                const valB = b[key];
-
-                if (typeof valA === 'string' && typeof valB === 'string') {
-                    return direction === 'asc'
-                        ? valA.localeCompare(valB)
-                        : valB.localeCompare(valA);
-                }
-
-                if (typeof valA === 'number' && typeof valB === 'number') {
-                    return direction === 'asc' ? valA - valB : valB - valA;
-                }
-
-                return 0;
-            })
-            : filteredItems;
+    const filteredItems = filterCrudItems(items, config, searchTerm, allItemsLoaded);
+    const sortedItems = sortCrudItems(filteredItems, config);
 
     const renderFormField = (field: FormFieldConfig) => {
         const value = formData[field.name] ?? '';
@@ -422,7 +553,7 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                 <h1 className="text-3xl font-bold text-gray-800">{config.entityNamePlural} Management</h1>
                 <div className="flex gap-3">
                     {typeof config.headerActions === 'function'
-                        ? config.headerActions({ searchTerm })
+                        ? config.headerActions({ searchTerm, canFetchNow, isResultsReady })
                         : config.headerActions
                     }
                     <button
@@ -433,9 +564,9 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                                 setIsFormOpen(true);
                             }
                         }}
-                        disabled={config.requireSearchToCreate && !searchTerm}
+                        disabled={Boolean(config.requireSearchToCreate) && (!canFetchNow || !isResultsReady)}
                         className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={config.requireSearchToCreate && !searchTerm ? "Search to enable creation" : "Create new"}
+                        title={config.requireSearchToCreate && !canFetchNow ? "Search to enable creation" : "Create new"}
                     >
                         <Plus size={20} />
                         New {config.entityName}
@@ -554,16 +685,19 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
                         ))}
                     </tbody>
                 </table>
-                {sortedItems.length === 0 && (
-                    <div className="text-center py-12 text-gray-500">
-                        {config.requireSearchBeforeFetch && !canFetchNow
-                            ? t('crud.emptySearchPrompt', { entityPlural: config.entityNamePlural.toLowerCase() })
-                            : t('crud.emptyCreatePrompt', {
-                                entityPlural: config.entityNamePlural.toLowerCase(),
-                                entity: config.entityName.toLowerCase(),
-                              })}
-                    </div>
-                )}
+                {sortedItems.length === 0 &&
+                    !isFetching &&
+                    !isSearchPending &&
+                    ((config.requireSearchBeforeFetch && !canFetchNow) || hasFetchResolved) && (
+                        <div className="text-center py-12 text-gray-500">
+                            {config.requireSearchBeforeFetch && !canFetchNow
+                                ? t('crud.emptySearchPrompt', { entityPlural: config.entityNamePlural.toLowerCase() })
+                                : t('crud.emptyCreatePrompt', {
+                                    entityPlural: config.entityNamePlural.toLowerCase(),
+                                    entity: config.entityName.toLowerCase(),
+                                  })}
+                        </div>
+                    )}
 
                 {config.pagination && sortedItems.length > 0 && items.length < totalItems && (
                     <div className="p-4 border-t border-gray-100 flex justify-center bg-gray-50">

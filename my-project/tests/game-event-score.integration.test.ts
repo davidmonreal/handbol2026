@@ -11,6 +11,7 @@ describe('Integration: game events mutate match score atomically', () => {
   const matchRepository = new MatchRepository();
   const gameEventService = new GameEventService(gameEventRepository, matchRepository);
   const matchService = new MatchService(matchRepository);
+  const testName = (label: string) => `test-${label}-${Date.now()}`;
 
   let seasonId: string;
   let clubId: string;
@@ -21,7 +22,7 @@ describe('Integration: game events mutate match score atomically', () => {
   beforeAll(async () => {
     const season = await prisma.season.create({
       data: {
-        name: `ScoreSeason-${timestampSuffix}`,
+        name: `test-score-season-${timestampSuffix}`,
         startDate: new Date(),
         endDate: new Date(Date.now() + 1000 * 60 * 60 * 24),
       },
@@ -29,7 +30,7 @@ describe('Integration: game events mutate match score atomically', () => {
 
     const club = await prisma.club.create({
       data: {
-        name: `ScoreClub-${timestampSuffix}`,
+        name: `test-score-club-${timestampSuffix}`,
       },
     });
 
@@ -62,7 +63,7 @@ describe('Integration: game events mutate match score atomically', () => {
     if (!clubExists) {
       const club = await prisma.club.create({
         data: {
-          name: `ScoreClub-${Date.now()}`,
+          name: testName('score-club'),
         },
       });
       clubId = club.id;
@@ -70,7 +71,7 @@ describe('Integration: game events mutate match score atomically', () => {
     if (!seasonExists) {
       const season = await prisma.season.create({
         data: {
-          name: `ScoreSeason-${Date.now()}`,
+          name: testName('score-season'),
           startDate: new Date(),
           endDate: new Date(Date.now() + 1000 * 60 * 60 * 24),
         },
@@ -84,14 +85,14 @@ describe('Integration: game events mutate match score atomically', () => {
     const now = Date.now();
     const homeTeam = await prisma.team.create({
       data: {
-        name: `ScoreHome-${now}`,
+        name: `test-score-home-${now}`,
         clubId,
         seasonId,
       },
     });
     const awayTeam = await prisma.team.create({
       data: {
-        name: `ScoreAway-${now}`,
+        name: `test-score-away-${now}`,
         clubId,
         seasonId,
       },

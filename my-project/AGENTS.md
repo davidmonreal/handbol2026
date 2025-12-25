@@ -52,6 +52,7 @@
 - Suggested stack: Vitest or Jest with `ts-jest`/ESM support.
 - Location: place tests under `tests/` mirroring `src/` structure; name as `*.spec.ts`.
 - Coverage: target 80%+ lines/branches for new or modified code.
+- Noms de dades de test: qualsevol club/equip/temporada/jugador creat des de tests ha de començar per `test-` per facilitar la neteja.
 - Commands example: add `"test": "vitest"`, `"test:watch": "vitest --watch"` to `package.json`.
 
 ## Commit & Pull Request Guidelines

@@ -16,18 +16,18 @@ describe('GameEvent Zone Derivation', () => {
     const suffix = Date.now();
 
     const season = await prisma.season.create({
-      data: { name: `ZoneSeason-${suffix}`, startDate: new Date(), endDate: new Date() },
+      data: { name: `test-zone-season-${suffix}`, startDate: new Date(), endDate: new Date() },
     });
     seasonId = season.id;
 
     const club = await prisma.club.create({
-      data: { name: `ZoneClub-${suffix}` },
+      data: { name: `test-zone-club-${suffix}` },
     });
     clubId = club.id;
 
     const homeTeam = await prisma.team.create({
       data: {
-        name: 'Home Team',
+        name: 'test-zone-home-team',
         clubId: club.id,
         seasonId: season.id,
       },
@@ -36,7 +36,7 @@ describe('GameEvent Zone Derivation', () => {
 
     const awayTeam = await prisma.team.create({
       data: {
-        name: 'Away Team',
+        name: 'test-zone-away-team',
         clubId: club.id,
         seasonId: season.id,
       },
