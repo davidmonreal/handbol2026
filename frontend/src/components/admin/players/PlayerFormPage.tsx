@@ -8,11 +8,13 @@ import { PlayerTeamManager } from './PlayerTeamManager';
 import { TEAM_CATEGORIES } from '../../../utils/teamUtils';
 import { DEFAULT_FIELD_POSITION, PLAYER_POSITIONS } from '../../../constants/playerPositions';
 import type { PlayerPositionId } from '../../../constants/playerPositions';
+import { useSafeTranslation } from '../../../context/LanguageContext';
 
 export const PlayerFormPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useSafeTranslation();
     const navigationState = (location.state || {}) as {
         from?: string;
         preselectClubId?: string | null;
@@ -82,7 +84,7 @@ export const PlayerFormPage = () => {
                     {error}
                 </div>
                 <button onClick={() => navigate('/players')} className="mt-4 text-indigo-600 hover:underline">
-                    Back to Players
+                    {t('playerForm.backToPlayers')}
                 </button>
             </div>
         );
@@ -100,7 +102,7 @@ export const PlayerFormPage = () => {
                         <ArrowLeft className="text-gray-600" size={24} />
                     </button>
                     <h1 className="text-3xl font-bold text-gray-900">
-                        {isEditMode ? 'Edit Player' : 'New Player'}
+                        {isEditMode ? t('playerForm.editTitle') : t('playerForm.newTitle')}
                     </h1>
                 </div>
                 <button
@@ -113,7 +115,7 @@ export const PlayerFormPage = () => {
                     className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium shadow-sm"
                 >
                     {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-                    {isSaving ? 'Saving...' : 'Save Player'}
+                    {isSaving ? t('playerForm.savingButton') : t('playerForm.saveButton')}
                 </button>
             </div>
 
@@ -122,7 +124,7 @@ export const PlayerFormPage = () => {
                     {/* Basic Info Section */}
                     <section>
                         <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                            Basic Information
+                            {t('playerForm.basicInfoTitle')}
                         </h2>
                         <PlayerBasicInfo
                             name={formData.name}
@@ -140,7 +142,7 @@ export const PlayerFormPage = () => {
                     {/* Attributes Section */}
                     <section>
                         <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                            Attributes
+                            {t('playerForm.attributesTitle')}
                         </h2>
                         <PlayerAttributes
                             handedness={formData.handedness}
@@ -153,7 +155,7 @@ export const PlayerFormPage = () => {
                     {/* Team Assignment Section */}
                     <section>
                         <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                            Team Assignment
+                            {t('playerForm.teamAssignmentTitle')}
                         </h2>
                         <PlayerTeamManager
                             clubs={data.clubs}

@@ -3,6 +3,7 @@ import { SearchableSelectWithCreate } from '../../common/SearchableSelectWithCre
 import { toTitleCase } from '../../../utils/textUtils';
 import { TEAM_CATEGORIES } from '../../../utils/teamUtils';
 import type { Club, Season } from '../../../types';
+import { useSafeTranslation } from '../../../context/LanguageContext';
 
 interface TeamCreationModalProps {
     isOpen: boolean;
@@ -25,6 +26,7 @@ export const TeamCreationModal: React.FC<TeamCreationModalProps> = ({
     onCreateClub,
     onCreateTeam
 }) => {
+    const { t } = useSafeTranslation();
     const [selectedClubId, setSelectedClubId] = useState<string | null>(initialClubId);
     const [category, setCategory] = useState(initialCategory || TEAM_CATEGORIES[0]);
     const [seasonId, setSeasonId] = useState<string>('');
@@ -52,8 +54,8 @@ export const TeamCreationModal: React.FC<TeamCreationModalProps> = ({
     }, [isOpen, initialClubId, initialCategory]);
 
     const handleSubmit = async () => {
-        if (!selectedClubId) return alert('Select a club');
-        if (!seasonId) return alert('Select a season');
+        if (!selectedClubId) return alert(t('teamModal.selectClubAlert'));
+        if (!seasonId) return alert(t('teamModal.selectSeasonAlert'));
 
         await onCreateTeam({
             clubId: selectedClubId,
@@ -76,21 +78,23 @@ export const TeamCreationModal: React.FC<TeamCreationModalProps> = ({
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl p-6 w-full max-w-md">
-                <h3 className="text-xl font-bold mb-4">Create New Team</h3>
+                <h3 className="text-xl font-bold mb-4">{t('teamModal.title')}</h3>
                 <div className="space-y-4">
                     {/* Club */}
                     <SearchableSelectWithCreate
-                        label="Club"
+                        label={t('teamModal.clubLabel')}
                         value={selectedClubId}
                         options={clubs.map(c => ({ value: c.id, label: c.name }))}
                         onChange={setSelectedClubId}
                         onCreate={handleCreateClub}
-                        placeholder="Select or create a club..."
+                        placeholder={t('teamModal.clubPlaceholder')}
                     />
 
                     {/* Category */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            {t('teamModal.categoryLabel')}
+                        </label>
                         <select
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
@@ -104,7 +108,9 @@ export const TeamCreationModal: React.FC<TeamCreationModalProps> = ({
 
                     {/* Season */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Season</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            {t('teamModal.seasonLabel')}
+                        </label>
                         <select
                             value={seasonId}
                             onChange={(e) => setSeasonId(e.target.value)}
@@ -118,13 +124,15 @@ export const TeamCreationModal: React.FC<TeamCreationModalProps> = ({
 
                     {/* Team Name */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Team Name</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            {t('teamModal.teamNameLabel')}
+                        </label>
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                            placeholder="e.g. A, Negre, 1"
+                            placeholder={t('teamModal.teamNamePlaceholder')}
                         />
                     </div>
 
@@ -133,13 +141,13 @@ export const TeamCreationModal: React.FC<TeamCreationModalProps> = ({
                             onClick={onClose}
                             className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                         >
-                            Cancel
+                            {t('teamModal.cancel')}
                         </button>
                         <button
                             onClick={handleSubmit}
                             className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
                         >
-                            Create Team
+                            {t('teamModal.createTeam')}
                         </button>
                     </div>
                 </div>

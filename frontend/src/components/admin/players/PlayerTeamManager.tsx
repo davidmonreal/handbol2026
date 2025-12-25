@@ -122,7 +122,9 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
             {/* Current Teams List - Badge Style */}
             {isEditMode && playerTeams && playerTeams.length > 0 && (
                 <div className="mb-6">
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">Current Teams</h3>
+                    <h3 className="text-sm font-medium text-gray-700 mb-3">
+                        {t('playerTeam.currentTeamsTitle')}
+                    </h3>
                     <div className="flex flex-wrap gap-2">
                         {playerTeams.map((pt) => {
                             if (!pt.team) return null;
@@ -157,7 +159,7 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                                     <button
                                         onClick={() => setRemoveTeamConfirmation({ isOpen: true, teamId: pt.team.id })}
                                         className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                                        title="Remove from team"
+                                        title={t('playerTeam.removeFromTeamTitle')}
                                     >
                                         <Trash2 size={14} />
                                     </button>
@@ -168,10 +170,12 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                 </div>
             )}
 
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Add to Team</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">
+                {t('playerTeam.addToTeamTitle')}
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <SearchableSelectWithCreate
-                    label="Club"
+                    label={t('playerTeam.clubLabel')}
                     value={selectedClubId}
                     options={clubs.map(c => ({ value: c.id, label: c.name }))}
                     onChange={(val) => {
@@ -179,11 +183,11 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                         onSelectedTeamChange(null);
                     }}
                     onCreate={handleCreateClubRequest}
-                    placeholder="Select or create..."
+                    placeholder={t('playerTeam.selectOrCreatePlaceholder')}
                 />
 
                 <SearchableSelectWithCreate
-                    label="Category"
+                    label={t('playerTeam.categoryLabel')}
                     value={selectedCategory}
                     options={Array.from(new Set([
                         ...TEAM_CATEGORIES,
@@ -200,11 +204,11 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                         onSelectedCategoryChange(val);
                         onSelectedTeamChange(null);
                     }}
-                    placeholder="Select category..."
+                    placeholder={t('playerTeam.selectCategoryPlaceholder')}
                 />
 
                 <SearchableSelectWithCreate
-                    label="Team"
+                    label={t('playerTeam.teamLabel')}
                     value={selectedTeamId}
                     options={filteredTeams.map(t => ({
                         value: t.id,
@@ -212,7 +216,9 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                     }))}
                     onChange={onSelectedTeamChange}
                     onCreate={handleCreateTeamRequest}
-                    placeholder={selectedClubId ? "Select or create..." : "Select club first"}
+                    placeholder={selectedClubId
+                        ? t('playerTeam.selectOrCreatePlaceholder')
+                        : t('playerTeam.selectClubFirstPlaceholder')}
                     disabled={!selectedClubId}
                 />
             </div>
@@ -226,27 +232,31 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                 />
             </div>
             <p className="text-sm text-gray-500 mt-2">
-                Select club and category to see available teams. You can create new clubs and teams directly from the dropdowns.
+                {t('playerTeam.helperText')}
             </p>
 
             {collision && collision.player && selectedTeamId && (
                 <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800 flex items-start gap-2 animate-fadeIn">
-                    <span className="font-bold flex-shrink-0">⚠️ Number Conflict:</span>
+                    <span className="font-bold flex-shrink-0">{t('playerTeam.numberConflictLabel')}</span>
                     <div>
-                        Player <strong>{collision.player.name}</strong> already holds number <strong>{collision.player.number}</strong> in this team.
+                        <div>
+                            {t('playerTeam.numberConflictPrefix')}{' '}
+                            <strong>{collision.player.name}</strong>{' '}
+                            {t('playerTeam.numberConflictMiddle')}{' '}
+                            <strong>{collision.player.number}</strong>{' '}
+                            {t('playerTeam.numberConflictSuffix')}
+                        </div>
+                        <label className="mt-2 inline-flex items-center gap-2 text-sm text-red-800">
+                            <input
+                                type="checkbox"
+                                checked={acceptNumberConflict}
+                                onChange={(event) => onAcceptNumberConflictChange(event.target.checked)}
+                                className="h-4 w-4 rounded border-red-300 text-red-600 focus:ring-red-400"
+                            />
+                            <span>{t('playerTeam.acceptNumberConflict')}</span>
+                        </label>
                     </div>
                 </div>
-            )}
-            {collision && collision.player && selectedTeamId && (
-                <label className="mt-2 inline-flex items-center gap-2 text-sm text-gray-700">
-                    <input
-                        type="checkbox"
-                        checked={acceptNumberConflict}
-                        onChange={(event) => onAcceptNumberConflictChange(event.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <span>{t('playerTeam.acceptNumberConflict')}</span>
-                </label>
             )}
 
             {/* Modals */}
@@ -266,10 +276,10 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
 
             <ConfirmationModal
                 isOpen={removeTeamConfirmation.isOpen}
-                title="Remove from Team"
-                message="Are you sure you want to remove this player from the team?"
-                confirmLabel="Remove"
-                cancelLabel="Cancel"
+                title={t('playerTeam.removeFromTeamTitle')}
+                message={t('playerTeam.removeFromTeamMessage')}
+                confirmLabel={t('playerTeam.removeFromTeamConfirm')}
+                cancelLabel={t('playerTeam.removeFromTeamCancel')}
                 variant="danger"
                 onConfirm={confirmRemoveTeam}
                 onCancel={() => setRemoveTeamConfirmation({ isOpen: false, teamId: null })}
@@ -277,10 +287,12 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
 
             <ConfirmationModal
                 isOpen={createClubConfirmation.isOpen}
-                title="Create New Club"
-                message={`Create new club "${createClubConfirmation.clubName}"?`}
-                confirmLabel="Create"
-                cancelLabel="Cancel"
+                title={t('playerTeam.createClubTitle')}
+                message={t('playerTeam.createClubMessage', {
+                    clubName: createClubConfirmation.clubName ?? '',
+                })}
+                confirmLabel={t('playerTeam.createClubConfirm')}
+                cancelLabel={t('playerTeam.createClubCancel')}
                 variant="info"
                 onConfirm={confirmCreateClub}
                 onCancel={() => setCreateClubConfirmation({ isOpen: false, clubName: null })}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Hand } from 'lucide-react';
+import { useSafeTranslation } from '../../../context/LanguageContext';
 
 interface PlayerAttributesProps {
     handedness: 'RIGHT' | 'LEFT';
@@ -10,11 +11,15 @@ export const PlayerAttributes: React.FC<PlayerAttributesProps> = ({
     handedness,
     onHandednessChange
 }) => {
+    const { t } = useSafeTranslation();
+
     return (
         <div>
             {/* Handedness Selector */}
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">Handedness</label>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                    {t('playerForm.handednessLabel')}
+                </label>
                 <div className="grid grid-cols-2 gap-4">
                     <button
                         type="button"
@@ -27,7 +32,7 @@ export const PlayerAttributes: React.FC<PlayerAttributesProps> = ({
                         `}
                     >
                         <Hand size={32} strokeWidth={1.5} className="transform scale-x-[-1]" />
-                        <span className="font-medium">Left Handed</span>
+                        <span className="font-medium">{t('playerForm.handednessLeft')}</span>
                     </button>
                     <button
                         type="button"
@@ -40,7 +45,7 @@ export const PlayerAttributes: React.FC<PlayerAttributesProps> = ({
                         `}
                     >
                         <Hand size={32} strokeWidth={1.5} />
-                        <span className="font-medium">Right Handed</span>
+                        <span className="font-medium">{t('playerForm.handednessRight')}</span>
                     </button>
                 </div>
             </div>
