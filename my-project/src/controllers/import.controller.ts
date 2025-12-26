@@ -2,14 +2,14 @@ import { Request, Response } from 'express';
 import { extractPlayersFromImage } from '../services/openai.service';
 
 // Middleware to check if request is from localhost
-export function isLocalhost(req: Request): boolean {
+export const isLocalhost = (req: Request): boolean => {
   const ip = req.ip || req.connection.remoteAddress || '';
   return (
     ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1' || ip.includes('localhost')
   );
-}
+};
 
-export async function importPlayersFromImage(req: Request, res: Response) {
+export const importPlayersFromImage = async (req: Request, res: Response) => {
   try {
     // Security check: only allow from localhost
     if (!isLocalhost(req)) {
@@ -45,4 +45,4 @@ export async function importPlayersFromImage(req: Request, res: Response) {
       details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
-}
+};

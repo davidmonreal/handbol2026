@@ -7,32 +7,18 @@ import { assignPlayerSchema, updatePlayerPositionSchema } from '../schemas/team'
 export class TeamController extends BaseController<Team> {
   constructor(private teamService: TeamService) {
     super(teamService, 'Team');
-    this.getTeamPlayers = this.getTeamPlayers.bind(this);
-    this.assignPlayer = this.assignPlayer.bind(this);
-    this.unassignPlayer = this.unassignPlayer.bind(this);
-    this.updatePlayerPosition = this.updatePlayerPosition.bind(this);
   }
 
-  async create(req: Request, res: Response) {
-    // Custom validation or transformation if needed
-    return super.create(req, res);
-  }
-
-  async update(req: Request, res: Response) {
-    // Custom validation or transformation if needed
-    return super.update(req, res);
-  }
-
-  async getTeamPlayers(req: Request, res: Response) {
+  getTeamPlayers = async (req: Request, res: Response) => {
     try {
       const players = await this.teamService.getTeamPlayers(req.params.id);
       res.json(players);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch team players' });
     }
-  }
+  };
 
-  async assignPlayer(req: Request, res: Response) {
+  assignPlayer = async (req: Request, res: Response) => {
     try {
       const parsed = assignPlayerSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -53,9 +39,9 @@ export class TeamController extends BaseController<Team> {
       }
       res.status(500).json({ error: 'Failed to assign player' });
     }
-  }
+  };
 
-  async unassignPlayer(req: Request, res: Response) {
+  unassignPlayer = async (req: Request, res: Response) => {
     try {
       await this.teamService.unassignPlayer(req.params.id, req.params.playerId);
       res.status(204).send();
@@ -65,9 +51,9 @@ export class TeamController extends BaseController<Team> {
       }
       res.status(500).json({ error: 'Failed to unassign player' });
     }
-  }
+  };
 
-  async updatePlayerPosition(req: Request, res: Response) {
+  updatePlayerPosition = async (req: Request, res: Response) => {
     try {
       const parsed = updatePlayerPositionSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -90,5 +76,5 @@ export class TeamController extends BaseController<Team> {
       }
       res.status(500).json({ error: 'Failed to update player position' });
     }
-  }
+  };
 }

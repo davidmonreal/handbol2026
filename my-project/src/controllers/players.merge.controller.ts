@@ -23,7 +23,7 @@ interface MergePlayerRequest {
   teamId?: string;
 }
 
-export async function mergePlayer(req: Request, res: Response) {
+export const mergePlayer = async (req: Request, res: Response) => {
   try {
     const parsed = mergePlayerSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -142,4 +142,4 @@ export async function mergePlayer(req: Request, res: Response) {
       details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
-}
+};

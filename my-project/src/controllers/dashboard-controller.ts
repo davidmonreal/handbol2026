@@ -23,11 +23,9 @@ export class DashboardController {
   constructor(
     private service: DashboardService,
     private logger: Logger = console,
-  ) {
-    this.getSnapshot = this.getSnapshot.bind(this);
-  }
+  ) {}
 
-  async getSnapshot(req: Request, res: Response, next: NextFunction) {
+  getSnapshot = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const snapshot = await this.service.getSnapshot();
       res.set('Cache-Control', buildDashboardCacheControl(CACHE_SECONDS, STALE_SECONDS));
@@ -36,5 +34,5 @@ export class DashboardController {
       this.logger.error('Error building dashboard snapshot', error);
       next(error);
     }
-  }
+  };
 }

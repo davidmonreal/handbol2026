@@ -8,7 +8,7 @@ import { batchPlayersSchema, batchPlayersWithTeamSchema } from '../schemas/playe
 const playerRepository = new PlayerRepository();
 const playerService = new PlayerService(playerRepository);
 
-export async function batchCreatePlayers(req: Request, res: Response) {
+export const batchCreatePlayers = async (req: Request, res: Response) => {
   try {
     const parsed = batchPlayersSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -56,9 +56,9 @@ export async function batchCreatePlayers(req: Request, res: Response) {
       details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
-}
+};
 
-export async function batchCreateWithTeam(req: Request, res: Response) {
+export const batchCreateWithTeam = async (req: Request, res: Response) => {
   try {
     const parsed = batchPlayersWithTeamSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -126,4 +126,4 @@ export async function batchCreateWithTeam(req: Request, res: Response) {
       details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
-}
+};

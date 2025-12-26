@@ -24,6 +24,7 @@
 - Imports: relative within `src/`; avoid deep relative chains by reorganising modules rather than path aliases.
 - Prefer `const`; use `let` only when you need to reassign the reference (even if you mutate properties).
 - All the code, all comments, all variables, etc. must be written in British English.
+- **Controllers**: Use Arrow Functions for all methods to avoid `this` context issues and eliminate `.bind(this)` boilerplate.
 
 ## Validation, Typing, and Routing
 

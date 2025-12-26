@@ -9,11 +9,11 @@ export class ClubController extends BaseController<Club> {
   }
 
   // Override create to add specific validation
-  async create(req: Request, res: Response) {
+  create = async (req: Request, res: Response) => {
     const { name } = req.body;
     if (!name) {
       return res.status(400).json({ error: 'Name is required' });
     }
-    return super.create(req, res);
-  }
+    return this._create(req, res);
+  };
 }

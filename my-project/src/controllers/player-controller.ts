@@ -36,10 +36,17 @@ export class PlayerController extends BaseController<Player> {
     return issue?.message ?? 'Invalid player payload';
   }
 
-  async getAll(req: Request, res: Response) {
+  getAll = async (req: Request, res: Response) => {
     try {
       if (this.useLegacyList(req.query)) {
-        return super.getAll(req, res);
+        // BaseController getAll logic but we can't call super.getAll if it's an arrow func on class?
+        // Actually BaseController defines `getAll` property.
+        // If I define `getAll` here, I overwrite it. I can't access "super" property.
+        // So I must reimplement legacy logic or call service directly.
+        // BaseController.getAll just calls service.getAll().
+        const items = await this.service.getAll();
+        res.json(items);
+        return;
       }
 
       const { skip, take, search, clubId } = this.parsePagination(req.query);
@@ -57,9 +64,9 @@ export class PlayerController extends BaseController<Player> {
         details: error instanceof Error ? error.message : String(error),
       });
     }
-  }
+  };
 
-  async create(req: Request, res: Response) {
+  create = async (req: Request, res: Response) => {
     const parsed = createPlayerSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
@@ -67,10 +74,10 @@ export class PlayerController extends BaseController<Player> {
       });
     }
     req.body = parsed.data;
-    return super.create(req, res);
-  }
+    return this._create(req, res);
+  };
 
-  async update(req: Request, res: Response) {
+  update = async (req: Request, res: Response) => {
     const parsed = updatePlayerSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
@@ -78,6 +85,6 @@ export class PlayerController extends BaseController<Player> {
       });
     }
     req.body = parsed.data;
-    return super.update(req, res);
-  }
+    return this._update(req, res);
+  };
 }

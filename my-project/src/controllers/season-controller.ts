@@ -8,15 +8,15 @@ export class SeasonController extends BaseController<Season> {
     super(service, 'Season');
   }
 
-  async create(req: Request, res: Response) {
+  create = async (req: Request, res: Response) => {
     if (req.body.startDate) req.body.startDate = new Date(req.body.startDate);
     if (req.body.endDate) req.body.endDate = new Date(req.body.endDate);
-    return super.create(req, res);
-  }
+    return this._create(req, res);
+  };
 
-  async update(req: Request, res: Response) {
+  update = async (req: Request, res: Response) => {
     if (req.body.startDate) req.body.startDate = new Date(req.body.startDate);
     if (req.body.endDate) req.body.endDate = new Date(req.body.endDate);
-    return super.update(req, res);
-  }
+    return this._update(req, res);
+  };
 }

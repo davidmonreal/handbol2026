@@ -4,7 +4,7 @@ import { findSimilarPlayers } from '../services/levenshtein.service';
 /**
  * Check for duplicate players based on name similarity
  */
-export async function checkDuplicates(req: Request, res: Response): Promise<void> {
+export const checkDuplicates = async (req: Request, res: Response): Promise<void> => {
   try {
     const { names, threshold = 3 } = req.body;
 
@@ -32,4 +32,4 @@ export async function checkDuplicates(req: Request, res: Response): Promise<void
       details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
-}
+};
