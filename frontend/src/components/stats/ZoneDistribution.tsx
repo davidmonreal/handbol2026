@@ -14,7 +14,7 @@ export function ZoneDistribution({
   foulZoneStats,
   foulReceivedZoneStats,
   dangerZoneStats,
-  summaryBaselines,
+  zoneBaselines,
   disableFoulToggle,
   onZoneClick,
   selectedZone,
@@ -76,10 +76,11 @@ export function ZoneDistribution({
     const denominator = stats.shots;
     const ratio = denominator > 0 ? numerator / denominator : null;
     const baseline = (() => {
-      if (!summaryBaselines || isGoalkeeper) return null;
-      if (mode === 'flow') return summaryBaselines.goalsVsPlays;
-      if (mode === 'fouls') return summaryBaselines.foulsVsPlays;
-      return summaryBaselines.goalsVsShots;
+      if (!zoneBaselines || isGoalkeeper) return null;
+      if (mode === 'flow') return zoneBaselines.goalsVsPlays.get(zone) ?? null;
+      if (mode === 'fouls') return zoneBaselines.foulsVsPlays.get(zone) ?? null;
+      if (mode === 'defense') return zoneBaselines.defenseFoulsVsPlays.get(zone) ?? null;
+      return zoneBaselines.goalsVsShots.get(zone) ?? null;
     })();
     const trend = ratio != null && baseline != null
       ? Math.abs(ratio - baseline) < 0.0001

@@ -49,6 +49,7 @@ export function StatisticsPanel({
   const filteredStats = useStatisticsCalculator(filteredEvents, comparison, data.isGoalkeeper, data.foulEvents);
   const summaryRatios = buildSummaryRatios(filteredStats);
   const summaryBaselines = comparison?.summaryBaselines;
+  const zoneBaselines = comparison?.zoneBaselines;
 
   const getTrendIndicator = (current: number | null, baseline: number | null) => {
     if (current == null || baseline == null) return null;
@@ -237,7 +238,7 @@ export function StatisticsPanel({
           foulReceivedZoneStats={data.isGoalkeeper ? undefined : stats.foulReceivedZoneStats}
           turnoverZoneStats={data.isGoalkeeper ? undefined : stats.turnoverZoneStats}
           dangerZoneStats={data.isGoalkeeper ? undefined : stats.dangerZoneStats}
-          summaryBaselines={summaryBaselines}
+          zoneBaselines={zoneBaselines}
           disableFoulToggle={disableFoulToggle}
           onZoneClick={handleZoneClick}
           selectedZone={selectedZone}

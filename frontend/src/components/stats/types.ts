@@ -31,6 +31,8 @@ export interface ComparisonData {
     playerAverages?: Map<string, number>;
     /** Summary card baselines for player comparisons */
     summaryBaselines?: SummaryBaselineRatios;
+    /** Zone-level baselines for per-zone comparisons */
+    zoneBaselines?: ZoneBaselineRatios;
 }
 
 /**
@@ -77,6 +79,13 @@ export interface SummaryBaselineRatios {
     missesVsPlays: number | null;
     turnoversVsPlays: number | null;
     foulsVsPlays: number | null;
+}
+
+export interface ZoneBaselineRatios {
+    goalsVsShots: Map<ZoneType | '7m', number | null>;
+    goalsVsPlays: Map<ZoneType | '7m', number | null>;
+    foulsVsPlays: Map<ZoneType | '7m', number | null>;
+    defenseFoulsVsPlays: Map<ZoneType | '7m', number | null>;
 }
 
 /**
@@ -173,7 +182,7 @@ export interface ZoneDistributionProps {
     foulReceivedZoneStats?: Map<ZoneType | '7m', ZoneStatistics>;
     turnoverZoneStats?: Map<ZoneType | '7m', ZoneStatistics>;
     dangerZoneStats?: Map<ZoneType | '7m', ZoneStatistics>;
-    summaryBaselines?: SummaryBaselineRatios;
+    zoneBaselines?: ZoneBaselineRatios;
     disableFoulToggle?: boolean;
     onZoneClick?: (zone: ZoneType | '7m' | null) => void;
     selectedZone?: ZoneType | '7m' | null;

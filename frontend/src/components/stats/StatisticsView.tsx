@@ -12,6 +12,7 @@ import { useStatisticsCalculator } from './hooks/useStatisticsCalculator';
 import { downloadTeamEventsCSV } from '../../utils/csvExport';
 import { useSafeTranslation } from '../../context/LanguageContext';
 import { buildSummaryRatios } from './utils/summaryRatios';
+import { buildZoneBaselineRatios } from './utils/zoneBaselineRatios';
 
 export function StatisticsView({
   events,
@@ -315,13 +316,20 @@ export function StatisticsView({
     return buildSummaryRatios(baselineStats);
   }, [baselineStats, context, isGoalkeeperView, playWindowMatchId]);
 
+  const zoneBaselines = useMemo(() => {
+    if ((context !== 'player' && context !== 'team') || isGoalkeeperView) return undefined;
+    if (!playWindowMatchId) return undefined;
+    return buildZoneBaselineRatios(baselineStats);
+  }, [baselineStats, context, isGoalkeeperView, playWindowMatchId]);
+
   const comparisonData = useMemo(() => {
-    if (!showComparison && !summaryBaselines) return undefined;
+    if (!showComparison && !summaryBaselines && !zoneBaselines) return undefined;
     return {
       playerAverages: showComparison ? playerBaselines : undefined,
       summaryBaselines,
+      zoneBaselines,
     };
-  }, [playerBaselines, showComparison, summaryBaselines]);
+  }, [playerBaselines, showComparison, summaryBaselines, zoneBaselines]);
 
   const playWindowPlaceholder = playWindowConfig?.mode === 'matches'
     ? t('stats.allMatches')
