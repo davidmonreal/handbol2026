@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMatch } from '../context/MatchContext';
 import { VideoSyncProvider, useVideoSync } from '../context/VideoSyncContext';
@@ -6,20 +6,23 @@ import type { MatchEvent } from '../types';
 import { API_BASE_URL } from '../config/api';
 import { Scoreboard } from './match/Scoreboard';
 import { EventList } from './match/events/EventList';
-import { EventForm } from './match/events/EventForm';
 import { YouTubePlayer } from './video/YouTubePlayer';
 import { VideoUrlInput } from './video/VideoUrlInput';
 import { VideoCalibration } from './video/VideoCalibration';
 import { useSafeTranslation } from '../context/LanguageContext';
-import { resolvePlayerPositionId, resolvePlayerPositionLabel } from '../constants/playerPositions';
+import {
+    useMatchTrackerCore,
+    MatchTrackerLayout,
+    EventFormSection,
+    type MatchDataOptions,
+} from './match/shared';
+
 
 const VideoMatchTrackerContent = () => {
     const { matchId } = useParams<{ matchId: string }>();
     const navigate = useNavigate();
-    const [loadError, setLoadError] = useState<string | null>(null);
     const { t } = useSafeTranslation();
-    const [saveBanner, setSaveBanner] = useState<{ message: string; variant?: 'success' | 'error' } | null>(null);
-    const bannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     // Video Sync Context
     const {
@@ -32,43 +35,63 @@ const VideoMatchTrackerContent = () => {
         seekToTime,
     } = useVideoSync();
 
-    // Use Match Context
-    const {
-        homeScore, setHomeScore,
-        visitorScore, setVisitorScore,
-        time, setTime,
-        activeTeamId, setActiveTeamId,
-        defenseFormation,
-        addEvent,
-        updateEvent,
-        deleteEvent,
-        homeTeam, visitorTeam, setMatchData,
-        selectedOpponentGoalkeeper, setSelectedOpponentGoalkeeper,
-        matchId: contextMatchId
-    } = useMatch();
-
     // Refs for scrolling
     const eventFormRef = useRef<HTMLDivElement>(null);
     const videoPlayerRef = useRef<HTMLDivElement>(null);
-    useEffect(() => {
-        return () => {
-            if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
-        };
-    }, []);
 
-    // Ref to track context match ID without triggering effect re-runs
-    const contextMatchIdRef = useRef(contextMatchId);
-    useEffect(() => {
-        contextMatchIdRef.current = contextMatchId;
-    }, [contextMatchId]);
+    // Video-mode specific: deleteEvent from context
+    const { deleteEvent, setTime } = useMatch();
 
-    useEffect(() => {
-        return () => {
-            if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
-        };
-    }, []);
+    // Shared core logic
+    const {
+        matchLoaded,
+        editingEvent,
+        saveBanner,
+        activeTeam,
+        opponentTeam,
+        eventFormInitialState,
+        homeTeam,
+        visitorTeam,
+        homeScore,
+        visitorScore,
+        time,
+        activeTeamId,
+        handleTeamSelect,
+        handleEditEvent: baseHandleEditEvent,
+        handleCancelEdit,
+        handleSaveEvent,
+        setSaveBanner,
+        setHomeScore,
+        setVisitorScore,
+        bannerTimeoutRef,
+    } = useMatchTrackerCore({
+        matchId,
+        getMatchDataOptions: (data): MatchDataOptions => ({
+            isFinished: data.isFinished as boolean,
+            homeScore: data.homeScore as number,
+            awayScore: data.awayScore as number,
+            homeEventsLocked: data.homeEventsLocked as boolean,
+            awayEventsLocked: data.awayEventsLocked as boolean,
+            firstHalfVideoStart: (data.firstHalfVideoStart as number) ?? null,
+            secondHalfVideoStart: (data.secondHalfVideoStart as number) ?? null,
+            realTimeFirstHalfStart: data.realTimeFirstHalfStart as number | null,
+            realTimeSecondHalfStart: data.realTimeSecondHalfStart as number | null,
+            realTimeFirstHalfEnd: data.realTimeFirstHalfEnd as number | null,
+            realTimeSecondHalfEnd: data.realTimeSecondHalfEnd as number | null,
+        }),
+        getEventTimestamp: () => time,
+        getVideoTimestamp: () => (isVideoLoaded ? currentVideoTime : undefined),
+        onEventSaved: () => {
+            if (videoPlayerRef.current) {
+                videoPlayerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        },
+        onLoadError: (error) => {
+            setLoadError(error.message);
+        },
+    });
 
-    // Sync match time with video time when calibrated
+    // Video-mode specific: Sync match time with video time
     useEffect(() => {
         if (isCalibrated && isVideoLoaded) {
             const matchTime = getMatchTimeFromVideo(currentVideoTime);
@@ -76,182 +99,42 @@ const VideoMatchTrackerContent = () => {
         }
     }, [currentVideoTime, isCalibrated, isVideoLoaded, getMatchTimeFromVideo, setTime]);
 
-    // Fetch Match Data
-    useEffect(() => {
-        if (!matchId) return;
-
-        if (contextMatchIdRef.current === matchId && homeTeam && visitorTeam) {
-            return;
-        }
-
-        const loadMatchData = async () => {
-            try {
-                setLoadError(null);
-                const response = await fetch(`${API_BASE_URL}/api/matches/${matchId}`);
-                if (response.status === 404) {
-                    throw new Error(t('video.matchNotFound'));
-                }
-                if (!response.ok) {
-                    const body = await response.text();
-                    throw new Error(`Failed to load match (${response.status}): ${body || t('dashboard.errorLoadMatches')}`);
-                }
-
-                const data = await response.json();
-
-                if (!data.homeTeam || !data.awayTeam) {
-                    throw new Error(t('dashboard.errorLoadMatches'));
-                }
-
-                const GOALKEEPER_POSITION_ID = 1;
-                const transformTeam = (teamData: any, color: string) => ({
-                    id: teamData.id,
-                    name: teamData.name,
-                    category: teamData.category,
-                    club: teamData.club,
-                    color: color,
-                    players: (teamData.players || []).map((p: any) => {
-                        const positionId = resolvePlayerPositionId(p.position, p.player?.isGoalkeeper);
-                        const positionLabel = resolvePlayerPositionLabel(p.position, p.player?.isGoalkeeper);
-                        return {
-                            id: p.player.id,
-                            number: p.player.number,
-                            name: p.player.name,
-                            position: positionLabel,
-                            isGoalkeeper: positionId === GOALKEEPER_POSITION_ID || p.player?.isGoalkeeper,
-                        };
-                    })
-                });
-
-                const home = transformTeam(data.homeTeam, 'bg-yellow-400');
-                const visitor = transformTeam(data.awayTeam, 'bg-white');
-
-                const shouldPreserveState = contextMatchIdRef.current === data.id;
-                setMatchData(data.id, home, visitor, shouldPreserveState, {
-                    isFinished: data.isFinished,
-                    homeScore: data.homeScore,
-                    awayScore: data.awayScore,
-                    homeEventsLocked: data.homeEventsLocked,
-                    awayEventsLocked: data.awayEventsLocked,
-                    firstHalfVideoStart: data.firstHalfVideoStart ?? null,
-                    secondHalfVideoStart: data.secondHalfVideoStart ?? null,
-                    realTimeFirstHalfStart: data.realTimeFirstHalfStart,
-                    realTimeSecondHalfStart: data.realTimeSecondHalfStart,
-                    realTimeFirstHalfEnd: data.realTimeFirstHalfEnd,
-                    realTimeSecondHalfEnd: data.realTimeSecondHalfEnd,
-                });
-            } catch (error) {
-                console.error('Error loading match:', error);
-                setLoadError(error instanceof Error ? error.message : t('dashboard.errorLoadMatches'));
+    // Video-mode specific: Extended edit handler with scroll
+    const handleEditEvent = useCallback(
+        (event: MatchEvent) => {
+            baseHandleEditEvent(event);
+            if (eventFormRef.current) {
+                eventFormRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
-        };
+        },
+        [baseHandleEditEvent]
+    );
 
-        loadMatchData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [matchId]);
-
-    // Load goalkeeper from localStorage on mount
-    useEffect(() => {
-        if (!matchId || !visitorTeam?.players) return;
-        // Logic handled by unified effect below or EventForm, but we need to ensure global state is hydrated
-        // We defer to active team logic below
-    }, [matchId, visitorTeam?.players]);
-
-    // Editing State
-    const [editingEvent, setEditingEvent] = useState<MatchEvent | null>(null);
-
-    const handleTeamSelect = (teamId: string) => {
-        setActiveTeamId(teamId);
-        setEditingEvent(null);
-    };
-
-    const handleEditEvent = (event: MatchEvent) => {
-        // Switch active team to event's team if different, to ensure correct context
-        if (event.teamId !== activeTeamId) {
-            setActiveTeamId(event.teamId);
-        }
-        setEditingEvent(event);
-        // Scroll to Event Form instead of top
-        if (eventFormRef.current) {
-            eventFormRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    };
-
-    const handleSeekToVideo = (time: number) => {
-        seekToTime(time);
-        // Scroll to Video Player
-        if (videoPlayerRef.current) {
-            videoPlayerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    };
-
-    const getActiveTeam = () => {
-        if (activeTeamId === homeTeam?.id) return homeTeam;
-        if (activeTeamId === visitorTeam?.id) return visitorTeam;
-        return null;
-    };
-
-    const getOpponentTeam = () => {
-        if (activeTeamId === homeTeam?.id) return visitorTeam;
-        if (activeTeamId === visitorTeam?.id) return homeTeam;
-        return null;
-    };
-
-    const activeTeam = getActiveTeam();
-    const opponentTeam = getOpponentTeam();
-    const eventFormInitialState = useMemo(() => ({
-        opponentGoalkeeperId: selectedOpponentGoalkeeper?.id,
-        playerId: undefined as string | undefined,
-    }), [selectedOpponentGoalkeeper?.id]);
-
-    const handleSaveEvent = async (event: MatchEvent, opponentGkId?: string) => {
-        // 1. Handle Goalkeeper Persistence/Update
-        if (opponentGkId && opponentTeam && matchId) { // Check matchId is defined
-            const gk = opponentTeam.players.find(p => p.id === opponentGkId);
-            if (gk) {
-                setSelectedOpponentGoalkeeper(gk);
-                // Save specific to match AND active team perspective
-                localStorage.setItem(`goalkeeper-${matchId}-${activeTeamId}`, gk.id);
+    // Video-mode specific: Seek to video timestamp
+    const handleSeekToVideo = useCallback(
+        (videoTime: number) => {
+            seekToTime(videoTime);
+            if (videoPlayerRef.current) {
+                videoPlayerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
-        }
+        },
+        [seekToTime]
+    );
 
-        // 2. Add or Update Event
-        if (editingEvent) {
-            // Update
-            await updateEvent(editingEvent.id, event);
-            setEditingEvent(null);
-        } else {
-            // Create
-            const newEvent: MatchEvent = {
-                ...event,
-                timestamp: time,
-                videoTimestamp: isVideoLoaded ? currentVideoTime : undefined,
-                defenseFormation,
-            };
-            addEvent(newEvent);
-        }
-    };
+    // Navigate handlers
+    const handleBack = useCallback(() => navigate('/'), [navigate]);
+    const handleStatistics = useCallback(() => {
+        navigate(`/statistics?matchId=${matchId}${activeTeamId ? `&activeTeamId=${activeTeamId}` : ''}`);
+    }, [navigate, matchId, activeTeamId]);
 
-    const handleCancelEdit = () => {
-        setEditingEvent(null);
-    };
-
-    // Resume GK from localStorage whenever active/opponent team changes
-    useEffect(() => {
-        if (!opponentTeam || !matchId || !activeTeamId) return;
-        const savedGkId = localStorage.getItem(`goalkeeper-${matchId}-${activeTeamId}`);
-        if (savedGkId) {
-            const gk = opponentTeam.players.find(p => p.id === savedGkId);
-            if (gk) setSelectedOpponentGoalkeeper(gk);
-        } else {
-            setSelectedOpponentGoalkeeper(null);
-        }
-    }, [activeTeamId, opponentTeam, matchId, setSelectedOpponentGoalkeeper]);
-
+    // Error state
     if (loadError) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
                 <div className="max-w-lg w-full bg-white border border-red-200 rounded-xl shadow-sm p-6 space-y-3">
-                    <div className="text-red-600 font-semibold text-lg">{t('dashboard.errorLoadMatches')}</div>
+                    <div className="text-red-600 font-semibold text-lg">
+                        {t('dashboard.errorLoadMatches')}
+                    </div>
                     <p className="text-gray-700">{loadError}</p>
                     <div className="flex items-center justify-between">
                         <button
@@ -276,154 +159,82 @@ const VideoMatchTrackerContent = () => {
         );
     }
 
-    if (!homeTeam || !visitorTeam) {
+    // Loading state
+    if (!homeTeam || !visitorTeam || !matchLoaded) {
         return <div className="p-8 text-center">Loading match data...</div>;
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Header Navigation */}
-            <nav className="bg-white shadow-sm border-b border-gray-200 mb-4">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-16 items-center">
-                        <button
-                            onClick={() => navigate('/')}
-                            className="flex items-center text-gray-600 hover:text-indigo-600 font-medium"
-                        >
-                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                            </svg>
-                            {t('video.back')}
-                        </button>
-                        <h1 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                            <span className="hidden md:inline">{t('video.title')}:</span> {homeTeam.name} vs {visitorTeam.name}
-                        </h1>
-                        <button
-                            onClick={() => navigate(`/statistics?matchId=${matchId}${activeTeamId ? `&activeTeamId=${activeTeamId}` : ''}`)}
-                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                            {t('video.statistics')}
-                        </button>
-                    </div>
+        <MatchTrackerLayout
+            homeTeamName={homeTeam.name}
+            visitorTeamName={visitorTeam.name}
+            matchId={matchId!}
+            activeTeamId={activeTeamId}
+            backLabel={t('video.back')}
+            onBack={handleBack}
+            onStatistics={handleStatistics}
+            showVideoPrefix={true}
+        >
+            {/* 1. SCOREBOARD */}
+            <Scoreboard
+                homeTeam={homeTeam}
+                visitorTeam={visitorTeam}
+                homeScore={homeScore}
+                visitorScore={visitorScore}
+                time={time}
+                activeTeamId={activeTeamId}
+                onHomeScoreChange={setHomeScore}
+                onVisitorScoreChange={setVisitorScore}
+                onTeamSelect={handleTeamSelect}
+                showCalibration={false}
+            />
+
+            {/* 2. VIDEO SECTION */}
+            {!isVideoLoaded ? (
+                <VideoUrlInput matchId={matchId!} />
+            ) : (
+                <div className="space-y-4" ref={videoPlayerRef}>
+                    <YouTubePlayer />
+                    <VideoCalibration />
                 </div>
-            </nav>
+            )}
 
-            <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
-                {/* 1. SCOREBOARD */}
-                <Scoreboard
-                    homeTeam={homeTeam}
-                    visitorTeam={visitorTeam}
-                    homeScore={homeScore}
-                    visitorScore={visitorScore}
-                    time={time}
-                    activeTeamId={activeTeamId}
-                    onHomeScoreChange={setHomeScore}
-                    onVisitorScoreChange={setVisitorScore}
-                    onTeamSelect={handleTeamSelect}
-                    showCalibration={false}
-                />
+            {/* 3. EVENT FORM */}
+            <EventFormSection
+                editingEvent={editingEvent}
+                activeTeam={activeTeam}
+                opponentTeam={opponentTeam}
+                activeTeamId={activeTeamId}
+                eventFormInitialState={eventFormInitialState}
+                saveBanner={saveBanner}
+                onSave={handleSaveEvent}
+                onSaveMessage={(message, variant) => {
+                    setSaveBanner({ message, variant });
+                    if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
+                    bannerTimeoutRef.current = setTimeout(() => setSaveBanner(null), 3000);
+                }}
+                onSaved={() => {
+                    if (videoPlayerRef.current) {
+                        videoPlayerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }}
+                onCancel={handleCancelEdit}
+                onDelete={(eventId) => deleteEvent(eventId, true)}
+                translationPrefix="video"
+                formRef={eventFormRef as React.RefObject<HTMLDivElement>}
+            />
 
-                {/* 2. VIDEO SECTION */}
-                {!isVideoLoaded ? (
-                    <VideoUrlInput matchId={matchId!} />
-                ) : (
-                    <div className="space-y-4" ref={videoPlayerRef}>
-                        <YouTubePlayer />
-                        <VideoCalibration />
-                    </div>
-                )}
-
-                {/* 3. EVENT FORM */}
-                <div className="animate-fade-in" ref={eventFormRef}>
-                    {activeTeam ? (
-                        <div className="mb-8">
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                    {editingEvent ? (
-                                        <>
-                                            <span className="text-indigo-600">{t('video.editEvent')}</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <span className="text-green-600">{t('video.newEvent')}</span>
-                                            <span className="text-sm font-normal text-gray-500 ml-2">
-                                                {t('video.newEventHint')}
-                                            </span>
-                                        </>
-                                    )}
-                                </h2>
-                                {saveBanner && (
-                                    <div
-                                        className={`flex items-center gap-2 text-sm font-semibold px-3 py-2 rounded-lg border ${
-                                            saveBanner.variant === 'error'
-                                                ? 'bg-red-50 text-red-700 border-red-200'
-                                                : 'bg-green-50 text-green-700 border-green-200'
-                                        }`}
-                                        role="status"
-                                        aria-live="polite"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d={
-                                                    saveBanner.variant === 'error'
-                                                        ? 'M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
-                                                        : 'M5 13l4 4L19 7'
-                                                }
-                                            />
-                                        </svg>
-                                        {saveBanner.message}
-                                    </div>
-                                )}
-                            </div>
-
-                            <EventForm
-                                key={editingEvent
-                                    ? editingEvent.id
-                                    : `new-event-${activeTeamId}-${eventFormInitialState.playerId ?? 'none'}-${eventFormInitialState.opponentGoalkeeperId ?? 'none'}`}
-                                event={editingEvent}
-                                team={activeTeam}
-                                opponentTeam={opponentTeam || undefined}
-                                initialState={eventFormInitialState}
-                                onSave={handleSaveEvent}
-                                onSaveMessage={(message, variant) => {
-                                    setSaveBanner({ message, variant });
-                                    if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
-                                    bannerTimeoutRef.current = setTimeout(() => setSaveBanner(null), 3000);
-                                }}
-                                onSaved={() => {
-                                    if (videoPlayerRef.current) {
-                                        videoPlayerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                    }
-                                }}
-                                onCancel={handleCancelEdit}
-                                onDelete={(eventId) => deleteEvent(eventId, true)}
-                            />
-                        </div>
-                    ) : (
-                        <div className="bg-gray-50 rounded-xl p-8 text-center text-gray-500 border-2 border-dashed mb-8">
-                            {t('video.selectTeamPrompt')}
-                        </div>
-                    )}
-                </div>
-
-                {/* 4. RECENT EVENTS */}
-                <EventList
-                    initialEventsToShow={10}
-                    onEditEvent={handleEditEvent}
-                    onSeekToVideo={handleSeekToVideo}
-                    isVideoLoaded={isVideoLoaded}
-                    getVideoTimeFromMatch={getVideoTimeFromMatch}
-                    filterTeamId={activeTeamId}
-                    secondHalfStart={secondHalfStart}
-                />
-            </div>
-        </div>
+            {/* 4. RECENT EVENTS */}
+            <EventList
+                initialEventsToShow={10}
+                onEditEvent={handleEditEvent}
+                onSeekToVideo={handleSeekToVideo}
+                isVideoLoaded={isVideoLoaded}
+                getVideoTimeFromMatch={getVideoTimeFromMatch}
+                filterTeamId={activeTeamId}
+                secondHalfStart={secondHalfStart}
+            />
+        </MatchTrackerLayout>
     );
 };
 

@@ -2,24 +2,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MatchService } from '../src/services/match-service';
 import { MatchRepository } from '../src/repositories/match-repository';
-import prisma from '../src/lib/prisma';
+import { TeamRepository } from '../src/repositories/team-repository';
+import { GameEventRepository } from '../src/repositories/game-event-repository';
 
 vi.mock('../src/repositories/match-repository');
-vi.mock('../src/lib/prisma', () => ({
-  default: {
-    team: {
-      findUnique: vi.fn(),
-    },
-  },
-}));
+vi.mock('../src/repositories/team-repository');
+vi.mock('../src/repositories/game-event-repository');
 
 describe('MatchService', () => {
   let service: MatchService;
-  let repository: MatchRepository;
+  let matchRepository: MatchRepository;
+  let teamRepository: TeamRepository;
+  let gameEventRepository: GameEventRepository;
 
   beforeEach(() => {
-    repository = new MatchRepository();
-    service = new MatchService(repository);
+    matchRepository = new MatchRepository();
+    teamRepository = new TeamRepository();
+    gameEventRepository = new GameEventRepository();
+    service = new MatchService(matchRepository, teamRepository, gameEventRepository);
     vi.clearAllMocks();
   });
 
@@ -37,16 +37,16 @@ describe('MatchService', () => {
 
   it('create validates home team exists', async () => {
     const data = { date: '2024-10-10', homeTeamId: 'h1', awayTeamId: 'a1' };
-    vi.mocked(prisma.team.findUnique).mockResolvedValueOnce(null); // Home team not found
+    vi.mocked(teamRepository.exists).mockResolvedValueOnce(false); // Home team not found
 
     await expect(service.create(data)).rejects.toThrow('Home team not found');
   });
 
   it('create validates away team exists', async () => {
     const data = { date: '2024-10-10', homeTeamId: 'h1', awayTeamId: 'a1' };
-    vi.mocked(prisma.team.findUnique)
-      .mockResolvedValueOnce({ id: 'h1' }) // Home team found
-      .mockResolvedValueOnce(null); // Away team not found
+    vi.mocked(teamRepository.exists)
+      .mockResolvedValueOnce(true) // Home team found
+      .mockResolvedValueOnce(false); // Away team not found
 
     await expect(service.create(data)).rejects.toThrow('Away team not found');
   });
@@ -55,12 +55,12 @@ describe('MatchService', () => {
     const data = { date: '2024-10-10', homeTeamId: 'h1', awayTeamId: 'a1' };
     const createdMatch = { id: '1', ...data, date: new Date(data.date) };
 
-    vi.mocked(prisma.team.findUnique).mockResolvedValue({ id: 'team' } as unknown as any);
-    vi.mocked(repository.create).mockResolvedValue(createdMatch);
+    vi.mocked(teamRepository.exists).mockResolvedValue(true);
+    vi.mocked(matchRepository.create).mockResolvedValue(createdMatch);
 
     const result = await service.create(data);
 
-    expect(repository.create).toHaveBeenCalledWith({
+    expect(matchRepository.create).toHaveBeenCalledWith({
       ...data,
       date: new Date(data.date),
     });
@@ -94,11 +94,11 @@ describe('MatchService', () => {
         },
       ];
 
-      vi.mocked(repository.findAll).mockResolvedValue(mockMatches as any);
+      vi.mocked(matchRepository.findAll).mockResolvedValue(mockMatches as any);
 
       const result = await service.getAll();
 
-      expect(repository.findAll).toHaveBeenCalled();
+      expect(matchRepository.findAll).toHaveBeenCalled();
       expect(result).toHaveLength(2);
 
       // Verify scores come directly from DB columns
@@ -113,7 +113,7 @@ describe('MatchService', () => {
     });
 
     it('returns empty array when no matches exist', async () => {
-      vi.mocked(repository.findAll).mockResolvedValue([]);
+      vi.mocked(matchRepository.findAll).mockResolvedValue([]);
 
       const result = await service.getAll();
 
@@ -135,8 +135,8 @@ describe('MatchService', () => {
         },
       };
 
-      vi.mocked(repository.findById).mockResolvedValue(match as any);
-      vi.mocked(prisma.team.findUnique)
+      vi.mocked(matchRepository.findById).mockResolvedValue(match as any);
+      vi.mocked(teamRepository.findTeamWithPlayerPositions)
         .mockResolvedValueOnce({
           players: [{ position: 2, player: { id: 'p1' } }],
         } as any)
@@ -146,9 +146,9 @@ describe('MatchService', () => {
 
       const result = await service.findById('m1');
 
-      expect(prisma.team.findUnique).toHaveBeenCalledTimes(2);
-      expect(result?.homeTeam.players[0].position).toBe(2);
-      expect(result?.awayTeam.players[0].position).toBe(6);
+      expect(teamRepository.findTeamWithPlayerPositions).toHaveBeenCalledTimes(2);
+      expect((result as any)?.homeTeam.players[0].position).toBe(2);
+      expect((result as any)?.awayTeam.players[0].position).toBe(6);
     });
 
     it('skips lookup when positions are already present', async () => {
@@ -164,13 +164,25 @@ describe('MatchService', () => {
         },
       };
 
-      vi.mocked(repository.findById).mockResolvedValue(match as any);
+      vi.mocked(matchRepository.findById).mockResolvedValue(match as any);
 
       const result = await service.findById('m1');
 
-      expect(prisma.team.findUnique).not.toHaveBeenCalled();
-      expect(result?.homeTeam.players[0].position).toBe(3);
-      expect(result?.awayTeam.players[0].position).toBe(7);
+      expect(teamRepository.findTeamWithPlayerPositions).not.toHaveBeenCalled();
+      expect((result as any)?.homeTeam.players[0].position).toBe(3);
+      expect((result as any)?.awayTeam.players[0].position).toBe(7);
+    });
+  });
+
+  describe('delete', () => {
+    it('deletes game events before match', async () => {
+      vi.mocked(gameEventRepository.deleteByMatchId).mockResolvedValue(5);
+      vi.mocked(matchRepository.delete).mockResolvedValue({ id: 'm1' } as any);
+
+      await service.delete('m1');
+
+      expect(gameEventRepository.deleteByMatchId).toHaveBeenCalledWith('m1');
+      expect(matchRepository.delete).toHaveBeenCalledWith('m1');
     });
   });
 });

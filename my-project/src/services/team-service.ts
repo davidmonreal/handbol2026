@@ -2,23 +2,24 @@
 import { Team, PlayerTeamSeason } from '@prisma/client';
 import { BaseService } from './base-service';
 import { TeamRepository } from '../repositories/team-repository';
-import prisma from '../lib/prisma'; // Keep prisma import for custom validation in create/update
-import { isValidPlayerPosition, PLAYER_POSITION } from '../types/player-position';
+import { ClubRepository } from '../repositories/club-repository';
+import { SeasonRepository } from '../repositories/season-repository';
+import { PlayerRepository } from '../repositories/player-repository';
+import { isValidPlayerPosition } from '../types/player-position';
 
 export class TeamService extends BaseService<Team> {
-  constructor(private teamRepository: TeamRepository) {
+  constructor(
+    private teamRepository: TeamRepository,
+    private clubRepository: ClubRepository,
+    private seasonRepository: SeasonRepository,
+    private playerRepository: PlayerRepository,
+  ) {
     super(teamRepository);
   }
 
   private async syncPlayerGoalkeeperStatus(playerId: string): Promise<void> {
-    const hasGoalkeeperAssignment = await prisma.playerTeamSeason.findFirst({
-      where: { playerId, position: PLAYER_POSITION.GOALKEEPER },
-      select: { id: true },
-    });
-    await prisma.player.update({
-      where: { id: playerId },
-      data: { isGoalkeeper: Boolean(hasGoalkeeperAssignment) },
-    });
+    const hasGoalkeeperAssignment = await this.teamRepository.hasGoalkeeperAssignment(playerId);
+    await this.playerRepository.update(playerId, { isGoalkeeper: hasGoalkeeperAssignment });
   }
 
   // Override create to include custom validation and logic
@@ -35,10 +36,10 @@ export class TeamService extends BaseService<Team> {
     // 1. Handle Club (Find or Create)
     if (!clubId && data.clubName) {
       // Check if club exists by name
-      let club = await prisma.club.findFirst({ where: { name: data.clubName } });
+      let club = await this.clubRepository.findByName(data.clubName);
       if (!club) {
         // Create new club
-        club = await prisma.club.create({ data: { name: data.clubName } });
+        club = await this.clubRepository.create({ name: data.clubName });
       }
       clubId = club.id;
     }
@@ -51,31 +52,22 @@ export class TeamService extends BaseService<Team> {
     let seasonId = data.seasonId;
     if (!seasonId) {
       // Try to find a season that covers today
-      const now = new Date();
-      const currentSeason = await prisma.season.findFirst({
-        where: {
-          startDate: { lte: now },
-          endDate: { gte: now },
-        },
-      });
+      const currentSeason = await this.seasonRepository.findCurrent();
 
       if (currentSeason) {
         seasonId = currentSeason.id;
       } else {
         // Fallback: find the latest season created
-        const latestSeason = await prisma.season.findFirst({
-          orderBy: { endDate: 'desc' },
-        });
+        const latestSeason = await this.seasonRepository.findLatest();
         if (latestSeason) {
           seasonId = latestSeason.id;
         } else {
           // Fallback: Create a default season
-          const defaultSeason = await prisma.season.create({
-            data: {
-              name: `${now.getFullYear()}-${now.getFullYear() + 1}`,
-              startDate: now,
-              endDate: new Date(now.getFullYear() + 1, 5, 30), // June 30th next year
-            },
+          const now = new Date();
+          const defaultSeason = await this.seasonRepository.create({
+            name: `${now.getFullYear()}-${now.getFullYear() + 1}`,
+            startDate: now,
+            endDate: new Date(now.getFullYear() + 1, 5, 30), // June 30th next year
           });
           seasonId = defaultSeason.id;
         }
@@ -84,7 +76,7 @@ export class TeamService extends BaseService<Team> {
 
     // Validate season exists (if passed explicitly)
     if (data.seasonId) {
-      const season = await prisma.season.findUnique({ where: { id: data.seasonId } });
+      const season = await this.seasonRepository.findById(data.seasonId);
       if (!season) throw new Error('Season not found');
     }
 
@@ -110,7 +102,7 @@ export class TeamService extends BaseService<Team> {
   ): Promise<Team> {
     // Validate club if provided
     if (data.clubId) {
-      const club = await prisma.club.findUnique({ where: { id: data.clubId } });
+      const club = await this.clubRepository.findById(data.clubId);
       if (!club) {
         throw new Error('Club not found');
       }
@@ -118,7 +110,7 @@ export class TeamService extends BaseService<Team> {
 
     // Validate season if provided
     if (data.seasonId) {
-      const season = await prisma.season.findUnique({ where: { id: data.seasonId } });
+      const season = await this.seasonRepository.findById(data.seasonId);
       if (!season) {
         throw new Error('Season not found');
       }
@@ -145,16 +137,14 @@ export class TeamService extends BaseService<Team> {
     }
 
     // Check if player exists
-    const player = await prisma.player.findUnique({ where: { id: playerId } });
+    const player = await this.playerRepository.findById(playerId);
     if (!player) {
       throw new Error('Player not found');
     }
 
     // Check if player already assigned to this team
-    const existing = await prisma.playerTeamSeason.findFirst({
-      where: { teamId, playerId },
-    });
-    if (existing) {
+    const isAssigned = await this.teamRepository.isPlayerAssigned(teamId, playerId);
+    if (isAssigned) {
       throw new Error('Player already assigned to this team');
     }
 

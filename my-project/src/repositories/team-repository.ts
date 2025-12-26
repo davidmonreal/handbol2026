@@ -40,6 +40,46 @@ export class TeamRepository {
     });
   }
 
+  async exists(id: string): Promise<boolean> {
+    const team = await prisma.team.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    return team !== null;
+  }
+
+  async findTeamWithPlayerPositions(
+    id: string,
+  ): Promise<{ players: { position: number | null; player: { id: string } }[] } | null> {
+    return prisma.team.findUnique({
+      where: { id },
+      select: {
+        players: {
+          select: {
+            position: true,
+            player: { select: { id: true } },
+          },
+        },
+      },
+    });
+  }
+
+  async hasGoalkeeperAssignment(playerId: string): Promise<boolean> {
+    const assignment = await prisma.playerTeamSeason.findFirst({
+      where: { playerId, position: 1 }, // GOALKEEPER position
+      select: { id: true },
+    });
+    return assignment !== null;
+  }
+
+  async isPlayerAssigned(teamId: string, playerId: string): Promise<boolean> {
+    const assignment = await prisma.playerTeamSeason.findFirst({
+      where: { teamId, playerId },
+      select: { id: true },
+    });
+    return assignment !== null;
+  }
+
   async create(data: {
     name: string;
     category: string;

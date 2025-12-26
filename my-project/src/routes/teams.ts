@@ -1,20 +1,33 @@
 import { Router } from 'express';
 import { TeamRepository } from '../repositories/team-repository';
+import { ClubRepository } from '../repositories/club-repository';
+import { SeasonRepository } from '../repositories/season-repository';
+import { PlayerRepository } from '../repositories/player-repository';
 import { TeamService } from '../services/team-service';
 import { TeamController } from '../controllers/team-controller';
 
 type TeamRouterDeps = {
   controller?: TeamController;
   service?: TeamService;
-  repository?: TeamRepository;
+  teamRepository?: TeamRepository;
+  clubRepository?: ClubRepository;
+  seasonRepository?: SeasonRepository;
+  playerRepository?: PlayerRepository;
 };
 
 export function createTeamRouter(deps: TeamRouterDeps = {}): Router {
   const router = Router();
 
-  const controller =
-    deps.controller ??
-    new TeamController(deps.service ?? new TeamService(deps.repository ?? new TeamRepository()));
+  const teamRepository = deps.teamRepository ?? new TeamRepository();
+  const clubRepository = deps.clubRepository ?? new ClubRepository();
+  const seasonRepository = deps.seasonRepository ?? new SeasonRepository();
+  const playerRepository = deps.playerRepository ?? new PlayerRepository();
+
+  const service =
+    deps.service ??
+    new TeamService(teamRepository, clubRepository, seasonRepository, playerRepository);
+
+  const controller = deps.controller ?? new TeamController(service);
 
   // Team CRUD
   router.get('/', controller.getAll);

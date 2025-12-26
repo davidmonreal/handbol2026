@@ -1,12 +1,16 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import prisma from '../src/lib/prisma';
 import { MatchRepository } from '../src/repositories/match-repository';
+import { TeamRepository } from '../src/repositories/team-repository';
+import { GameEventRepository } from '../src/repositories/game-event-repository';
 import { MatchService } from '../src/services/match-service';
 import { testClubName, testSeasonName, testTeamName } from './utils/test-name';
 
 describe('Integration: Match Timer Persistence', () => {
   const matchRepository = new MatchRepository();
-  const matchService = new MatchService(matchRepository);
+  const teamRepository = new TeamRepository();
+  const gameEventRepository = new GameEventRepository();
+  const matchService = new MatchService(matchRepository, teamRepository, gameEventRepository);
 
   let seasonId: string;
   let clubId: string;

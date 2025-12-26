@@ -18,6 +18,10 @@ export class ClubRepository implements IClubRepository {
     return prisma.club.findUnique({ where: { id } });
   }
 
+  async findByName(name: string): Promise<Club | null> {
+    return prisma.club.findFirst({ where: { name } });
+  }
+
   async create(data: Prisma.ClubCreateInput): Promise<Club> {
     return prisma.club.create({ data });
   }

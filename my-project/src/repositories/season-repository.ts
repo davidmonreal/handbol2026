@@ -14,6 +14,22 @@ export class SeasonRepository {
     });
   }
 
+  async findCurrent(): Promise<Season | null> {
+    const now = new Date();
+    return prisma.season.findFirst({
+      where: {
+        startDate: { lte: now },
+        endDate: { gte: now },
+      },
+    });
+  }
+
+  async findLatest(): Promise<Season | null> {
+    return prisma.season.findFirst({
+      orderBy: { endDate: 'desc' },
+    });
+  }
+
   async create(data: Omit<Season, 'id'>): Promise<Season> {
     return prisma.season.create({
       data,

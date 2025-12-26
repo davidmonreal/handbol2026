@@ -48,6 +48,50 @@
 - When using discriminated unions (front or back), build/merge state via category-specific helpers so each branch matches its discriminator (e.g., `selectedCategory: 'Shot'` → `selectedAction: ShotResult`). Avoid “loose” object spreads that break the union and surface TS errors later.
 - Apply Kent Beck/Fowler’s “Composed Method” with intention-revealing names: keep functions small and at a single level of abstraction so the main flow reads like prose. When a step drops abstraction, extract it to a helper with a “what, not how” name.
 
+## Service and Repository Pattern (DIP)
+
+Services MUST NOT import `prisma` directly. All database access goes through injected repositories.
+
+### Service Constructor Pattern
+
+```typescript
+// ✅ CORRECT: Inject all required repositories
+export class MatchService extends BaseService<Match> {
+  constructor(
+    private matchRepository: MatchRepository,
+    private teamRepository: TeamRepository,
+    private gameEventRepository: GameEventRepository,
+  ) {
+    super(matchRepository);
+  }
+}
+
+// ❌ WRONG: Direct prisma import in service
+import prisma from '../lib/prisma';
+```
+
+### Router Instantiation
+
+Routes create services with all required repositories:
+
+```typescript
+const matchRepository = new MatchRepository();
+const teamRepository = new TeamRepository();
+const gameEventRepository = new GameEventRepository();
+
+const service = new MatchService(matchRepository, teamRepository, gameEventRepository);
+```
+
+### Current Service Dependencies
+
+| Service            | Required Repositories                                                      |
+| ------------------ | -------------------------------------------------------------------------- |
+| `MatchService`     | `MatchRepository`, `TeamRepository`, `GameEventRepository`                 |
+| `TeamService`      | `TeamRepository`, `ClubRepository`, `SeasonRepository`, `PlayerRepository` |
+| `GameEventService` | `GameEventRepository`, `MatchRepository`                                   |
+| `ClubService`      | `ClubRepository`                                                           |
+| `PlayerService`    | `PlayerRepository`                                                         |
+
 ## Testing Guidelines
 
 - Suggested stack: Vitest or Jest with `ts-jest`/ESM support.

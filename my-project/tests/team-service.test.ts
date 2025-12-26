@@ -2,36 +2,30 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TeamService } from '../src/services/team-service';
 import { TeamRepository } from '../src/repositories/team-repository';
-import prisma from '../src/lib/prisma';
+import { ClubRepository } from '../src/repositories/club-repository';
+import { SeasonRepository } from '../src/repositories/season-repository';
+import { PlayerRepository } from '../src/repositories/player-repository';
 import { PLAYER_POSITION } from '../src/types/player-position';
 import { Handedness } from '@prisma/client';
 
 vi.mock('../src/repositories/team-repository');
-vi.mock('../src/lib/prisma', () => ({
-  default: {
-    club: {
-      findUnique: vi.fn(),
-    },
-    season: {
-      findUnique: vi.fn(),
-    },
-    player: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-    },
-    playerTeamSeason: {
-      findFirst: vi.fn(),
-    },
-  },
-}));
+vi.mock('../src/repositories/club-repository');
+vi.mock('../src/repositories/season-repository');
+vi.mock('../src/repositories/player-repository');
 
 describe('TeamService', () => {
   let service: TeamService;
-  let repository: TeamRepository;
+  let teamRepository: TeamRepository;
+  let clubRepository: ClubRepository;
+  let seasonRepository: SeasonRepository;
+  let playerRepository: PlayerRepository;
 
   beforeEach(() => {
-    repository = new TeamRepository();
-    service = new TeamService(repository);
+    teamRepository = new TeamRepository();
+    clubRepository = new ClubRepository();
+    seasonRepository = new SeasonRepository();
+    playerRepository = new PlayerRepository();
+    service = new TeamService(teamRepository, clubRepository, seasonRepository, playerRepository);
     vi.clearAllMocks();
   });
 
@@ -46,11 +40,11 @@ describe('TeamService', () => {
         seasonId: 's1',
       },
     ];
-    vi.mocked(repository.findAll).mockResolvedValue(mockTeams);
+    vi.mocked(teamRepository.findAll).mockResolvedValue(mockTeams);
 
     const result = await service.getAll();
 
-    expect(repository.findAll).toHaveBeenCalled();
+    expect(teamRepository.findAll).toHaveBeenCalled();
     expect(result).toEqual(mockTeams);
   });
 
@@ -64,13 +58,13 @@ describe('TeamService', () => {
     };
     const createdTeam = { id: '1', ...data };
 
-    vi.mocked(prisma.season.findUnique).mockResolvedValue({ id: 's1' } as any);
-    vi.mocked(repository.create).mockResolvedValue(createdTeam as any);
+    vi.mocked(seasonRepository.findById).mockResolvedValue({ id: 's1' } as any);
+    vi.mocked(teamRepository.create).mockResolvedValue(createdTeam as any);
 
     const result = await service.create(data);
 
-    expect(prisma.season.findUnique).toHaveBeenCalledWith({ where: { id: 's1' } });
-    expect(repository.create).toHaveBeenCalled();
+    expect(seasonRepository.findById).toHaveBeenCalledWith('s1');
+    expect(teamRepository.create).toHaveBeenCalled();
     expect(result).toEqual(createdTeam);
   });
 
@@ -81,10 +75,10 @@ describe('TeamService', () => {
       clubId: 'c1',
       seasonId: 'invalid',
     };
-    vi.mocked(prisma.season.findUnique).mockResolvedValue(null);
+    vi.mocked(seasonRepository.findById).mockResolvedValue(null);
 
     await expect(service.create(newTeamData)).rejects.toThrow('Season not found');
-    expect(repository.create).not.toHaveBeenCalled();
+    expect(teamRepository.create).not.toHaveBeenCalled();
   });
 
   it('assignPlayer validates player exists', async () => {
@@ -102,30 +96,27 @@ describe('TeamService', () => {
       position: PLAYER_POSITION.CENTRAL,
     };
 
-    vi.mocked(prisma.player.findUnique).mockResolvedValue(mockPlayer);
-    vi.mocked(prisma.playerTeamSeason.findFirst)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null);
-    vi.mocked(repository.assignPlayer).mockResolvedValue(mockAssignment);
+    vi.mocked(playerRepository.findById).mockResolvedValue(mockPlayer);
+    vi.mocked(teamRepository.isPlayerAssigned).mockResolvedValue(false);
+    vi.mocked(teamRepository.hasGoalkeeperAssignment).mockResolvedValue(false);
+    vi.mocked(teamRepository.assignPlayer).mockResolvedValue(mockAssignment);
+    vi.mocked(playerRepository.update).mockResolvedValue(mockPlayer);
 
     const result = await service.assignPlayer('t1', 'p1', PLAYER_POSITION.CENTRAL);
 
-    expect(prisma.player.findUnique).toHaveBeenCalledWith({ where: { id: 'p1' } });
-    expect(prisma.player.update).toHaveBeenCalledWith({
-      where: { id: 'p1' },
-      data: { isGoalkeeper: false },
-    });
+    expect(playerRepository.findById).toHaveBeenCalledWith('p1');
+    expect(playerRepository.update).toHaveBeenCalledWith('p1', { isGoalkeeper: false });
     expect(result).toEqual(mockAssignment);
   });
 
   it('assignPlayer throws error if player not found', async () => {
-    vi.mocked(prisma.player.findUnique).mockResolvedValue(null);
+    vi.mocked(playerRepository.findById).mockResolvedValue(null);
 
     await expect(service.assignPlayer('t1', 'p1', PLAYER_POSITION.CENTRAL)).rejects.toThrow(
       'Player not found',
     );
-    expect(repository.assignPlayer).not.toHaveBeenCalled();
-    expect(prisma.player.update).not.toHaveBeenCalled();
+    expect(teamRepository.assignPlayer).not.toHaveBeenCalled();
+    expect(playerRepository.update).not.toHaveBeenCalled();
   });
 
   it('assignPlayer throws error if player already assigned', async () => {
@@ -136,28 +127,22 @@ describe('TeamService', () => {
       handedness: Handedness.RIGHT,
       isGoalkeeper: false,
     };
-    const existingAssignment = {
-      id: 'a1',
-      teamId: 't1',
-      playerId: 'p1',
-      position: PLAYER_POSITION.CENTRAL,
-    };
 
-    vi.mocked(prisma.player.findUnique).mockResolvedValue(mockPlayer);
-    vi.mocked(prisma.playerTeamSeason.findFirst).mockResolvedValue(existingAssignment);
+    vi.mocked(playerRepository.findById).mockResolvedValue(mockPlayer);
+    vi.mocked(teamRepository.isPlayerAssigned).mockResolvedValue(true);
 
     await expect(service.assignPlayer('t1', 'p1', PLAYER_POSITION.CENTRAL)).rejects.toThrow(
       'Player already assigned to this team',
     );
-    expect(repository.assignPlayer).not.toHaveBeenCalled();
-    expect(prisma.player.update).not.toHaveBeenCalled();
+    expect(teamRepository.assignPlayer).not.toHaveBeenCalled();
+    expect(playerRepository.update).not.toHaveBeenCalled();
   });
 
   it('assignPlayer rejects invalid position', async () => {
     await expect(service.assignPlayer('t1', 'p1', 999)).rejects.toThrow('Invalid position');
-    expect(prisma.player.findUnique).not.toHaveBeenCalled();
-    expect(repository.assignPlayer).not.toHaveBeenCalled();
-    expect(prisma.player.update).not.toHaveBeenCalled();
+    expect(playerRepository.findById).not.toHaveBeenCalled();
+    expect(teamRepository.assignPlayer).not.toHaveBeenCalled();
+    expect(playerRepository.update).not.toHaveBeenCalled();
   });
 
   it('assignPlayer marks goalkeeper when assignment position is goalkeeper', async () => {
@@ -175,67 +160,74 @@ describe('TeamService', () => {
       position: PLAYER_POSITION.GOALKEEPER,
     };
 
-    vi.mocked(prisma.player.findUnique).mockResolvedValue(mockPlayer);
-    vi.mocked(prisma.playerTeamSeason.findFirst)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: 'a1' } as any);
-    vi.mocked(repository.assignPlayer).mockResolvedValue(mockAssignment);
+    vi.mocked(playerRepository.findById).mockResolvedValue(mockPlayer);
+    vi.mocked(teamRepository.isPlayerAssigned).mockResolvedValue(false);
+    vi.mocked(teamRepository.hasGoalkeeperAssignment).mockResolvedValue(true);
+    vi.mocked(teamRepository.assignPlayer).mockResolvedValue(mockAssignment);
+    vi.mocked(playerRepository.update).mockResolvedValue({ ...mockPlayer, isGoalkeeper: true });
 
     await service.assignPlayer('t1', 'p1', PLAYER_POSITION.GOALKEEPER);
 
-    expect(prisma.player.update).toHaveBeenCalledWith({
-      where: { id: 'p1' },
-      data: { isGoalkeeper: true },
-    });
+    expect(playerRepository.update).toHaveBeenCalledWith('p1', { isGoalkeeper: true });
   });
 
   it('updatePlayerPosition validates position and delegates', async () => {
+    const mockPlayer = {
+      id: 'p1',
+      name: 'test-Marc',
+      number: 7,
+      handedness: Handedness.RIGHT,
+      isGoalkeeper: false,
+    };
     const updatedAssignment = {
       id: 'a1',
       teamId: 't1',
       playerId: 'p1',
       position: PLAYER_POSITION.CENTRAL,
     };
-    vi.mocked(repository.updatePlayerPosition).mockResolvedValue(updatedAssignment as any);
-    vi.mocked(prisma.playerTeamSeason.findFirst).mockResolvedValue(null);
+    vi.mocked(teamRepository.updatePlayerPosition).mockResolvedValue(updatedAssignment as any);
+    vi.mocked(teamRepository.hasGoalkeeperAssignment).mockResolvedValue(false);
+    vi.mocked(playerRepository.update).mockResolvedValue(mockPlayer);
 
     const result = await service.updatePlayerPosition('t1', 'p1', PLAYER_POSITION.CENTRAL);
 
-    expect(repository.updatePlayerPosition).toHaveBeenCalledWith(
+    expect(teamRepository.updatePlayerPosition).toHaveBeenCalledWith(
       't1',
       'p1',
       PLAYER_POSITION.CENTRAL,
     );
-    expect(prisma.player.update).toHaveBeenCalledWith({
-      where: { id: 'p1' },
-      data: { isGoalkeeper: false },
-    });
+    expect(playerRepository.update).toHaveBeenCalledWith('p1', { isGoalkeeper: false });
     expect(result).toEqual(updatedAssignment);
   });
 
   it('updatePlayerPosition rejects invalid position', async () => {
     await expect(service.updatePlayerPosition('t1', 'p1', 999)).rejects.toThrow('Invalid position');
-    expect(repository.updatePlayerPosition).not.toHaveBeenCalled();
-    expect(prisma.player.update).not.toHaveBeenCalled();
+    expect(teamRepository.updatePlayerPosition).not.toHaveBeenCalled();
+    expect(playerRepository.update).not.toHaveBeenCalled();
   });
 
   it('unassignPlayer syncs goalkeeper flag', async () => {
+    const mockPlayer = {
+      id: 'p1',
+      name: 'test-Marc',
+      number: 7,
+      handedness: Handedness.RIGHT,
+      isGoalkeeper: false,
+    };
     const mockAssignment = {
       id: 'a1',
       teamId: 't1',
       playerId: 'p1',
       position: PLAYER_POSITION.GOALKEEPER,
     };
-    vi.mocked(repository.unassignPlayer).mockResolvedValue(mockAssignment as any);
-    vi.mocked(prisma.playerTeamSeason.findFirst).mockResolvedValue(null);
+    vi.mocked(teamRepository.unassignPlayer).mockResolvedValue(mockAssignment as any);
+    vi.mocked(teamRepository.hasGoalkeeperAssignment).mockResolvedValue(false);
+    vi.mocked(playerRepository.update).mockResolvedValue(mockPlayer);
 
     const result = await service.unassignPlayer('t1', 'p1');
 
-    expect(repository.unassignPlayer).toHaveBeenCalledWith('t1', 'p1');
-    expect(prisma.player.update).toHaveBeenCalledWith({
-      where: { id: 'p1' },
-      data: { isGoalkeeper: false },
-    });
+    expect(teamRepository.unassignPlayer).toHaveBeenCalledWith('t1', 'p1');
+    expect(playerRepository.update).toHaveBeenCalledWith('p1', { isGoalkeeper: false });
     expect(result).toEqual(mockAssignment);
   });
 });

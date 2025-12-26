@@ -18,8 +18,22 @@ export class GameEventRepository {
           select: {
             id: true,
             date: true,
-            homeTeam: { select: { id: true, name: true, category: true, club: { select: { id: true, name: true } } } },
-            awayTeam: { select: { id: true, name: true, category: true, club: { select: { id: true, name: true } } } },
+            homeTeam: {
+              select: {
+                id: true,
+                name: true,
+                category: true,
+                club: { select: { id: true, name: true } },
+              },
+            },
+            awayTeam: {
+              select: {
+                id: true,
+                name: true,
+                category: true,
+                club: { select: { id: true, name: true } },
+              },
+            },
           },
         },
       },
@@ -147,5 +161,12 @@ export class GameEventRepository {
     return prisma.gameEvent.delete({
       where: { id },
     });
+  }
+
+  async deleteByMatchId(matchId: string): Promise<number> {
+    const result = await prisma.gameEvent.deleteMany({
+      where: { matchId },
+    });
+    return result.count;
   }
 }

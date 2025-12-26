@@ -2,7 +2,8 @@
 import { Match } from '@prisma/client';
 import { BaseService } from './base-service';
 import { MatchRepository } from '../repositories/match-repository';
-import prisma from '../lib/prisma';
+import { TeamRepository } from '../repositories/team-repository';
+import { GameEventRepository } from '../repositories/game-event-repository';
 import {
   createMatchSchema,
   updateMatchSchema,
@@ -20,7 +21,11 @@ function mapMatchIssue(issue: ZodIssue | undefined) {
 }
 
 export class MatchService extends BaseService<Match> {
-  constructor(private matchRepository: MatchRepository) {
+  constructor(
+    private matchRepository: MatchRepository,
+    private teamRepository: TeamRepository,
+    private gameEventRepository: GameEventRepository,
+  ) {
     super(matchRepository);
   }
 
@@ -39,17 +44,7 @@ export class MatchService extends BaseService<Match> {
       const hasMissingPositions = team.players.some((entry: any) => entry.position == null);
       if (!hasMissingPositions) return team;
 
-      const teamWithPositions = await prisma.team.findUnique({
-        where: { id: team.id },
-        select: {
-          players: {
-            select: {
-              position: true,
-              player: { select: { id: true } },
-            },
-          },
-        },
-      });
+      const teamWithPositions = await this.teamRepository.findTeamWithPlayerPositions(team.id);
 
       if (!teamWithPositions?.players?.length) return team;
 
@@ -100,14 +95,14 @@ export class MatchService extends BaseService<Match> {
     }
 
     // Validate home team exists
-    const homeTeam = await prisma.team.findUnique({ where: { id: validated.homeTeamId } });
-    if (!homeTeam) {
+    const homeTeamExists = await this.teamRepository.exists(validated.homeTeamId);
+    if (!homeTeamExists) {
       throw new Error('Home team not found');
     }
 
     // Validate away team exists
-    const awayTeam = await prisma.team.findUnique({ where: { id: validated.awayTeamId } });
-    if (!awayTeam) {
+    const awayTeamExists = await this.teamRepository.exists(validated.awayTeamId);
+    if (!awayTeamExists) {
       throw new Error('Away team not found');
     }
 
@@ -135,7 +130,7 @@ export class MatchService extends BaseService<Match> {
 
     // If updating teams, we need to check constraints
     if (updateData.homeTeamId || updateData.awayTeamId) {
-      const currentMatch = await this.matchRepository.findById(id); // Use this.matchRepository
+      const currentMatch = await this.matchRepository.findById(id);
       if (!currentMatch) {
         throw new Error('Match not found');
       }
@@ -148,13 +143,13 @@ export class MatchService extends BaseService<Match> {
       }
 
       if (updateData.homeTeamId) {
-        const homeTeam = await prisma.team.findUnique({ where: { id: updateData.homeTeamId } });
-        if (!homeTeam) throw new Error('Home team not found');
+        const homeTeamExists = await this.teamRepository.exists(updateData.homeTeamId);
+        if (!homeTeamExists) throw new Error('Home team not found');
       }
 
       if (updateData.awayTeamId) {
-        const awayTeam = await prisma.team.findUnique({ where: { id: updateData.awayTeamId } });
-        if (!awayTeam) throw new Error('Away team not found');
+        const awayTeamExists = await this.teamRepository.exists(updateData.awayTeamId);
+        if (!awayTeamExists) throw new Error('Away team not found');
       }
     }
 
@@ -162,10 +157,8 @@ export class MatchService extends BaseService<Match> {
   }
 
   async delete(id: string): Promise<Match> {
-    // Manually delete related events first since we don't have cascade delete in schema
-    await prisma.gameEvent.deleteMany({
-      where: { matchId: id },
-    });
+    // Delete related events first since we don't have cascade delete in schema
+    await this.gameEventRepository.deleteByMatchId(id);
     return this.repository.delete(id);
   }
 }
