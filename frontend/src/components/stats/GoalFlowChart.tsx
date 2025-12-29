@@ -15,6 +15,7 @@ import {
     PADDING_TOP,
 } from './goalFlowData';
 import type { SeriesPoint } from './goalFlowData';
+import { buildLinePath } from './utils/chartPaths';
 
 interface GoalFlowChartProps {
     events: MatchEvent[];
@@ -27,16 +28,6 @@ interface GoalFlowChartProps {
 }
 
 const FOUL_RADIUS_MULTIPLIER = 2;
-function buildSmoothPath(points: { x: number; y: number }[]): string {
-    if (points.length === 0) return '';
-    if (points.length === 1) {
-        const { x, y } = points[0];
-        return `M ${x},${y} L ${x},${y}`;
-    }
-    const [first, ...rest] = points;
-    const commands = [`M ${first.x},${first.y}`, ...rest.map(p => `L ${p.x},${p.y}`)];
-    return commands.join(' ');
-}
 
 export function GoalFlowChart({
     events,
@@ -72,8 +63,8 @@ export function GoalFlowChart({
     const toX = (position: number) => PADDING_LEFT + position * width;
     const toY = (goals: number) => PADDING_TOP + height - (goals / (maxGoals || 1)) * height;
 
-    const teamPath = buildSmoothPath(teamSeries.map(p => ({ x: toX(p.position), y: toY(p.value) })));
-    const opponentPath = buildSmoothPath(opponentSeries.map(p => ({ x: toX(p.position), y: toY(p.value) })));
+    const teamPath = buildLinePath(teamSeries.map(p => ({ x: toX(p.position), y: toY(p.value) })));
+    const opponentPath = buildLinePath(opponentSeries.map(p => ({ x: toX(p.position), y: toY(p.value) })));
 
     const yTicks = useMemo(() => {
         const step = 5;

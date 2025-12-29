@@ -111,4 +111,29 @@ describe('useEventFormState', () => {
         expect(result.current.state.selectedCategory).toBe('Shot');
         expect(result.current.state.selectedAction).toBeNull();
     });
+
+    it('prefers event opponent GK over initial state when editing', () => {
+        const event = {
+            id: 'event-1',
+            timestamp: 10,
+            playerId: 'player-1',
+            teamId: 'team-1',
+            category: 'Shot',
+            action: 'Goal',
+            opponentGoalkeeperId: 'gk-event',
+        };
+
+        const { result } = renderHook(() =>
+            useEventFormState({
+                teamId: 'team-1',
+                event,
+                initialState: { opponentGoalkeeperId: 'gk-initial' },
+                onSave: vi.fn(),
+                onCancel: vi.fn(),
+                t,
+            }),
+        );
+
+        expect(result.current.state.selectedOpponentGkId).toBe('gk-event');
+    });
 });

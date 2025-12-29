@@ -194,7 +194,7 @@ export const initializeState = ({ event, initialState }: InitializeParams): Even
     const category = (event?.category as EventCategory) || 'Shot';
     const baseInput: BuildInput = {
         selectedPlayerId: event?.playerId || initialState?.playerId || '',
-        selectedOpponentGkId: initialState?.opponentGoalkeeperId || '',
+        selectedOpponentGkId: event?.opponentGoalkeeperId || initialState?.opponentGoalkeeperId || '',
         selectedCategory: category,
         selectedAction:
             (event?.action as ShotResult | TurnoverType | SanctionType | null) || null,

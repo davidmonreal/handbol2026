@@ -6,7 +6,7 @@ import { RemoveIconButton, AddIconButton, EditIconButton } from '../../common';
 import { TEAM_CATEGORIES } from '../../../utils/teamUtils';
 import type { Team, Player } from '../../../types';
 import { useSafeTranslation } from '../../../context/LanguageContext';
-import { DEFAULT_FIELD_POSITION, PLAYER_POSITIONS, PLAYER_POSITION_ABBR } from '../../../constants/playerPositions';
+import { DEFAULT_FIELD_POSITION, PLAYER_POSITIONS, resolvePlayerPositionLabel } from '../../../constants/playerPositions';
 import type { PlayerPositionId } from '../../../constants/playerPositions';
 import { DropdownSelect } from '../../common/DropdownSelect';
 
@@ -35,19 +35,22 @@ export const TeamPlayersPage = () => {
             setIsTeamLoading(true);
             try {
                 const teamRes = await fetch(`${API_BASE_URL}/api/teams/${id}`);
-                if (!teamRes.ok) throw new Error('Team not found');
+                if (!teamRes.ok) {
+                    setError(teamRes.status === 404 ? t('teamPlayers.teamNotFound') : t('teamPlayers.loadTeamError'));
+                    return;
+                }
                 const teamData = await teamRes.json();
                 setTeam(teamData);
             } catch (err) {
                 console.error('Error loading team data:', err);
-                setError('Failed to load team data');
+                setError(t('teamPlayers.loadTeamError'));
             } finally {
                 setIsTeamLoading(false);
             }
         };
 
         loadTeam();
-    }, [id]);
+    }, [id, t]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -89,7 +92,7 @@ export const TeamPlayersPage = () => {
             } catch (err) {
                 if ((err as { name?: string }).name === 'AbortError') return;
                 console.error('Error loading players:', err);
-                setPlayerLoadError('No s\'han pogut carregar els jugadors. Torna-ho a provar.');
+                setPlayerLoadError(t('teamPlayers.loadError'));
             } finally {
                 setIsPlayersLoading(false);
             }
@@ -97,7 +100,7 @@ export const TeamPlayersPage = () => {
 
         fetchPlayers();
         return () => controller.abort();
-    }, [debouncedPlayerSearch, id]);
+    }, [debouncedPlayerSearch, id, t]);
 
     const getDefaultPosition = (player: Player) =>
         (player.isGoalkeeper ? PLAYER_POSITIONS.find((p) => p.id === 1)?.id : undefined) ??
@@ -120,12 +123,12 @@ export const TeamPlayersPage = () => {
 
     const renderPositionBadges = (positions: number[]) => (
         positions.map((positionId) => {
-            const abbr = PLAYER_POSITION_ABBR[positionId as PlayerPositionId] ?? PLAYER_POSITION_ABBR[DEFAULT_FIELD_POSITION];
+            const abbr = t(resolvePlayerPositionLabel(positionId as PlayerPositionId));
             return (
             <span
-                key={abbr}
+                key={positionId}
                 className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
-                    abbr === 'GK'
+                    positionId === 1
                         ? 'bg-purple-100 text-purple-700 border border-purple-200'
                         : 'bg-indigo-100 text-indigo-800'
                 }`}
@@ -153,7 +156,7 @@ export const TeamPlayersPage = () => {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to assign player');
+                throw new Error(errorData.error || t('teamPlayers.assignError'));
             }
 
             // Refresh team state
@@ -162,7 +165,7 @@ export const TeamPlayersPage = () => {
             setTeam(updatedTeam);
         } catch (err) {
             console.error('Error assigning player:', err);
-            alert(err instanceof Error ? err.message : 'Failed to assign player');
+            alert(err instanceof Error ? err.message : t('teamPlayers.assignError'));
         }
     };
 
@@ -173,7 +176,7 @@ export const TeamPlayersPage = () => {
                 method: 'DELETE',
             });
 
-            if (!response.ok) throw new Error('Failed to unassign player');
+            if (!response.ok) throw new Error(t('teamPlayers.unassignError'));
 
             // Refresh team state
             const updatedTeamRes = await fetch(`${API_BASE_URL}/api/teams/${id}`);
@@ -181,7 +184,7 @@ export const TeamPlayersPage = () => {
             setTeam(updatedTeam);
         } catch (err) {
             console.error('Error unassigning player:', err);
-            alert('Failed to unassign player');
+            alert(t('teamPlayers.unassignError'));
         }
     };
 
@@ -204,7 +207,7 @@ export const TeamPlayersPage = () => {
             <div className="flex justify-center items-center min-h-screen">
                 <div className="flex items-center gap-3">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
-                    <span className="text-lg text-gray-600">Loading team data...</span>
+                    <span className="text-lg text-gray-600">{t('teamPlayers.loadingTeam')}</span>
                 </div>
             </div>
         );
@@ -214,13 +217,13 @@ export const TeamPlayersPage = () => {
         return (
             <div className="max-w-4xl mx-auto p-6">
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                    {error || 'Team not found'}
+                    {error || t('teamPlayers.teamNotFound')}
                 </div>
                 <button
                     onClick={() => navigate('/teams')}
                     className="mt-4 text-indigo-600 hover:text-indigo-800"
                 >
-                    ← Back to Teams
+                    ← {t('teamPlayers.backToTeams')}
                 </button>
             </div>
         );
@@ -252,13 +255,13 @@ export const TeamPlayersPage = () => {
                     <button
                         onClick={() => navigate('/teams')}
                         className="text-gray-600 hover:text-gray-900 transition-colors"
-                        title="Back to Teams"
+                        title={t('teamPlayers.backToTeams')}
                     >
                         <ArrowLeft size={24} />
                     </button>
                     <div>
                         <h1 className="text-3xl font-bold text-gray-800">
-                            Gestionar Plantilla
+                            {t('teamPlayers.title')}
                         </h1>
                         <p className="text-gray-600 mt-1">
                             {team.club?.name} · {team.category} · {team.name}
@@ -272,7 +275,7 @@ export const TeamPlayersPage = () => {
                         className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
                     >
                         <Upload size={20} />
-                        Import Players
+                        {t('teamPlayers.importPlayers')}
                     </button>
 
                     <button
@@ -286,7 +289,7 @@ export const TeamPlayersPage = () => {
                         })}
                         className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm"
                     >
-                        Create a player
+                        {t('teamPlayers.createPlayer')}
                     </button>
                 </div>
             </div>
@@ -295,14 +298,14 @@ export const TeamPlayersPage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Available Players */}
                 <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h2 className="text-xl font-semibold mb-4">Available Players</h2>
+                    <h2 className="text-xl font-semibold mb-4">{t('teamPlayers.availablePlayers')}</h2>
                     <div className="relative mb-4">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                         <input
                             type="text"
                             value={playerSearch}
                             onChange={(e) => setPlayerSearch(e.target.value)}
-                            placeholder="Search by name or number..."
+                            placeholder={t('teamPlayers.searchPlaceholder')}
                             className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                         />
                     </div>
@@ -339,7 +342,7 @@ export const TeamPlayersPage = () => {
                                                         position: pendingPositions[player.id] ?? getDefaultPosition(player),
                                                     })
                                                 }
-                                                title="Afegir a l'equip"
+                                                title={t('teamPlayers.addToTeam')}
                                             />
                                         </div>
                                     </div>
@@ -352,7 +355,7 @@ export const TeamPlayersPage = () => {
                 {/* Assigned Players */}
                 <div className="bg-white rounded-xl shadow-lg p-6">
                     <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                        Assigned Players
+                        {t('teamPlayers.assignedPlayers')}
                         <span className="px-2.5 py-0.5 text-sm font-medium bg-indigo-100 text-indigo-800 rounded-full">
                             {assignedPlayersSorted.length}
                         </span>
@@ -361,8 +364,8 @@ export const TeamPlayersPage = () => {
                     <div className="max-h-[60vh] overflow-y-auto border border-gray-200 rounded-lg bg-gray-50">
                         {assignedPlayersSorted.length === 0 ? (
                             <div className="p-8 text-center text-gray-500">
-                                <p>No players assigned yet.</p>
-                                <p className="text-sm mt-1">Use the buttons above or the list on the left to add players.</p>
+                                <p>{t('teamPlayers.noAssignedTitle')}</p>
+                                <p className="text-sm mt-1">{t('teamPlayers.noAssignedHint')}</p>
                             </div>
                         ) : (
                             <div className="divide-y divide-gray-200">
@@ -384,11 +387,11 @@ export const TeamPlayersPage = () => {
                                                         state: { from: `/teams/${id}/players` },
                                                     })
                                                 }
-                                                title="Editar jugador"
+                                                title={t('teamPlayers.editPlayer')}
                                             />
                                             <RemoveIconButton
                                                 onClick={() => handleUnassignPlayer(player.id)}
-                                                title="Treure de l'equip"
+                                                title={t('teamPlayers.removeFromTeam')}
                                             />
                                         </div>
                                     </div>

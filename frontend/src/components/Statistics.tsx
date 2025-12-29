@@ -3,14 +3,15 @@ import { useSearchParams, useLocation } from 'react-router-dom';
 import { useBackNavigation } from '../hooks/useBackNavigation';
 import { useMatch } from '../context/MatchContext';
 import { useSafeTranslation } from '../context/LanguageContext';
-import type { MatchEvent } from '../types';
+import type { MatchEvent, Season } from '../types';
 import { transformBackendEvents } from '../utils/eventTransformers';
 import type { BackendEvent as TransformerBackendEvent } from '../utils/eventTransformers';
 import { StatisticsView } from './stats';
 import { API_BASE_URL } from '../config/api';
 import { formatCategoryLabel } from '../utils/categoryLabels';
-import { DEFAULT_FIELD_POSITION, PLAYER_POSITION_ABBR, PLAYER_POSITIONS } from '../constants/playerPositions';
+import { DEFAULT_FIELD_POSITION, PLAYER_POSITIONS, resolvePlayerPositionLabel } from '../constants/playerPositions';
 import type { PlayerPositionId } from '../constants/playerPositions';
+import type { MatchMeta, MetricsTrendMeta } from './stats/types';
 
 type BackendTeamRef = {
   id?: string;
@@ -63,6 +64,7 @@ type PlayerData = {
 };
 
 type MatchFilterOption = { matchId: string; label: string };
+type MatchMetaMap = Map<string, MatchMeta>;
 
 const formatMatchDate = (raw?: string, locale = 'ca-ES') => {
   if (!raw) return null;
@@ -75,6 +77,126 @@ const resolveMatchDateLocale = (language: string) => {
   if (language === 'en') return 'en-GB';
   if (language === 'es') return 'es-ES';
   return 'ca-ES';
+};
+
+const resolveSeasonForDate = (seasons: Season[], rawDate?: string) => {
+  if (!rawDate) return null;
+  const matchDate = new Date(rawDate);
+  if (Number.isNaN(matchDate.getTime())) return null;
+  return seasons.find((season) => {
+    const start = new Date(season.startDate);
+    const end = new Date(season.endDate);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false;
+    return matchDate >= start && matchDate <= end;
+  }) ?? null;
+};
+
+const resolveCurrentSeason = (seasons: Season[]) => {
+  if (seasons.length === 0) return null;
+  const now = Date.now();
+  const active = seasons.find((season) => {
+    const start = new Date(season.startDate).getTime();
+    const end = new Date(season.endDate).getTime();
+    if (Number.isNaN(start) || Number.isNaN(end)) return false;
+    return now >= start && now <= end;
+  });
+  if (active) return active;
+  const past = seasons
+    .filter((season) => {
+      const start = new Date(season.startDate).getTime();
+      return !Number.isNaN(start) && start <= now;
+    })
+    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+  return past[0] ?? seasons[0] ?? null;
+};
+
+const buildTeamMatchMeta = (
+  eventsData: ApiEvent[],
+  teamId: string,
+  fallbackOpponentLabel: string,
+  dateLocale: string,
+  seasons: Season[]
+): MatchMetaMap => {
+  const matches = new Map<string, MatchMeta>();
+
+  eventsData.forEach((event) => {
+    const match = event.match;
+    const matchId = event.matchId ?? match?.id;
+    if (!match || !matchId) return;
+
+    const homeId = match.homeTeamId ?? match.homeTeam?.id;
+    const awayId = match.awayTeamId ?? match.awayTeam?.id;
+    if (homeId !== teamId && awayId !== teamId) return;
+
+    const opponent = homeId === teamId ? match.awayTeam : match.homeTeam;
+    const opponentName = opponent?.club?.name ?? opponent?.name ?? fallbackOpponentLabel;
+    const dateLabel = formatMatchDate(match.date, dateLocale);
+    const label = dateLabel ? `${opponentName} • ${dateLabel}` : opponentName;
+    const sortKey = match.date ? new Date(match.date).getTime() : 0;
+    const season = resolveSeasonForDate(seasons, match.date);
+
+    if (!matches.has(matchId)) {
+      matches.set(matchId, {
+        matchId,
+        label,
+        sortKey,
+        seasonId: season?.id,
+        seasonName: season?.name,
+        seasonStart: season?.startDate,
+      });
+    }
+  });
+
+  return matches;
+};
+
+const buildPlayerMatchMeta = (
+  eventsData: ApiEvent[],
+  playerId: string,
+  fallbackOpponentLabel: string,
+  dateLocale: string,
+  seasons: Season[]
+): MatchMetaMap => {
+  const matches = new Map<string, MatchMeta>();
+
+  eventsData.forEach((event) => {
+    const match = event.match;
+    const matchId = event.matchId ?? match?.id;
+    if (!match || !matchId) return;
+
+    const homeId = match.homeTeamId ?? match.homeTeam?.id;
+    const awayId = match.awayTeamId ?? match.awayTeam?.id;
+    if (!homeId || !awayId) return;
+
+    let playerTeamId: string | undefined;
+    if (event.playerId === playerId) {
+      playerTeamId = event.teamId;
+    } else if (event.activeGoalkeeperId === playerId) {
+      playerTeamId = event.teamId === homeId ? awayId : homeId;
+    }
+
+    const opponent = playerTeamId
+      ? (playerTeamId === homeId ? match.awayTeam : match.homeTeam)
+      : (event.teamId === homeId ? match.awayTeam : match.homeTeam);
+    const opponentName = opponent?.club?.name ?? opponent?.name ?? fallbackOpponentLabel;
+    const dateLabel = formatMatchDate(match.date, dateLocale);
+    const label = dateLabel ? `${opponentName} • ${dateLabel}` : opponentName;
+    const sortKey = match.date ? new Date(match.date).getTime() : 0;
+    const season = resolveSeasonForDate(seasons, match.date);
+
+    if (!matches.has(matchId)) {
+      matches.set(matchId, {
+        matchId,
+        label,
+        sortKey,
+        seasonId: season?.id,
+        seasonName: season?.name,
+        seasonStart: season?.startDate,
+      });
+    }
+  });
+
+  return matches;
 };
 
 const buildTeamMatchFilters = (
@@ -239,6 +361,7 @@ const Statistics = () => {
   const [teamMatchFilters, setTeamMatchFilters] = useState<MatchFilterOption[]>([]);
   const [playerMatchFilters, setPlayerMatchFilters] = useState<MatchFilterOption[]>([]);
   const [loading, setLoading] = useState(false);
+  const [metricsTrendMeta, setMetricsTrendMeta] = useState<MetricsTrendMeta | null>(null);
 
   const playerPositionIds = useMemo(() => {
     const ids = new Set<number>();
@@ -255,6 +378,7 @@ const Statistics = () => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
+      setMetricsTrendMeta(null);
       try {
         if (matchId) {
           setTeamMatchFilters([]);
@@ -279,6 +403,8 @@ const Statistics = () => {
         } else if (playerId) {
           setTeamMatchFilters([]);
           setPlayerMatchFilters([]);
+          const seasonsRes = await fetch(`${API_BASE_URL}/api/seasons`);
+          const seasonsData: Season[] = await seasonsRes.json();
           // Load player details
           const playerRes = await fetch(`${API_BASE_URL}/api/players/${playerId}`);
           const playerData = await playerRes.json();
@@ -302,9 +428,25 @@ const Statistics = () => {
 
           const dateLocale = resolveMatchDateLocale(language);
           setPlayerMatchFilters(buildPlayerMatchFilters(playerEvents, playerId, t('stats.opponentFallback'), dateLocale));
-          setStatsEvents(transformBackendEvents(playerEvents));
+          const transformedPlayerEvents = transformBackendEvents(playerEvents);
+          setStatsEvents(transformedPlayerEvents);
+          const currentSeason = resolveCurrentSeason(seasonsData);
+          const matchMeta = buildPlayerMatchMeta(
+            playerEvents,
+            playerId,
+            t('stats.opponentFallback'),
+            dateLocale,
+            seasonsData
+          );
+          setMetricsTrendMeta({
+            matchMeta,
+            currentSeasonId: currentSeason?.id,
+            currentSeasonName: currentSeason?.name,
+          });
         } else if (teamId) {
           setPlayerMatchFilters([]);
+          const seasonsRes = await fetch(`${API_BASE_URL}/api/seasons`);
+          const seasonsData: Season[] = await seasonsRes.json();
           // Load team details
           const teamRes = await fetch(`${API_BASE_URL}/api/teams/${teamId}`);
           const teamData = await teamRes.json();
@@ -339,6 +481,19 @@ const Statistics = () => {
 
           setStatsEvents(teamEvents);
           setFoulStatsEvents(opponentEvents);
+          const currentSeason = resolveCurrentSeason(seasonsData);
+          const matchMeta = buildTeamMatchMeta(
+            eventsData,
+            teamId,
+            t('stats.opponentFallback'),
+            dateLocale,
+            seasonsData
+          );
+          setMetricsTrendMeta({
+            matchMeta,
+            currentSeasonId: currentSeason?.id,
+            currentSeasonName: currentSeason?.name,
+          });
         }
       } catch (error) {
         console.error('Error loading statistics:', error);
@@ -377,20 +532,17 @@ const Statistics = () => {
     if (playerId && playerData) {
       const renderPositionBadges = () =>
         playerPositionIds.map((positionId) => {
-          const abbr =
-            PLAYER_POSITION_ABBR[positionId as PlayerPositionId] ??
-            PLAYER_POSITION_ABBR[DEFAULT_FIELD_POSITION];
           const isGoalkeeper = positionId === GOALKEEPER_POSITION_ID;
           return (
             <span
-              key={abbr}
+              key={positionId}
               className={`px-2 py-1 text-xs font-semibold rounded-full ${
                 isGoalkeeper
                   ? 'bg-purple-100 text-purple-800 border border-purple-200'
                   : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
               }`}
             >
-              {abbr}
+              {t(resolvePlayerPositionLabel(positionId as PlayerPositionId))}
             </span>
           );
         });
@@ -460,6 +612,7 @@ const Statistics = () => {
         onTeamChange={setSelectedTeamId}
         onBack={handleBack}
         showComparison={!!matchId}
+        metricsTrendMeta={metricsTrendMeta}
       />
     </div>
   );

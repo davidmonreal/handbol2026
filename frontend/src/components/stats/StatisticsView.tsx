@@ -7,12 +7,14 @@ import { PlayerStatisticsTable } from './PlayerStatisticsTable';
 import { FiltersBar } from './FiltersBar';
 import { usePlayerBaselines } from './hooks/usePlayerBaselines';
 import { GoalFlowChart } from './GoalFlowChart';
+import { MetricsTrendChart } from './MetricsTrendChart';
 import { usePlayWindow } from './hooks/usePlayWindow';
 import { useStatisticsCalculator } from './hooks/useStatisticsCalculator';
 import { downloadTeamEventsCSV } from '../../utils/csvExport';
 import { useSafeTranslation } from '../../context/LanguageContext';
 import { buildSummaryRatios } from './utils/summaryRatios';
 import { buildZoneBaselineRatios } from './utils/zoneBaselineRatios';
+import { buildMetricsTrendData } from './utils/metricsTrend';
 
 export function StatisticsView({
   events,
@@ -31,6 +33,7 @@ export function StatisticsView({
   playerData,
   onTeamChange,
   onBack,
+  metricsTrendMeta,
 }: StatisticsViewProps) {
   const GOALKEEPER_POSITION_ID = 1;
   const { t } = useSafeTranslation();
@@ -339,6 +342,65 @@ export function StatisticsView({
     ? t('stats.allMatches')
     : t('stats.allPlays');
 
+  const metricsTrendData = useMemo(() => {
+    if (!metricsTrendMeta) return null;
+    if (context !== 'team' && context !== 'player') return null;
+
+    const allowedMatchIds = metricsTrendMeta.currentSeasonId && context === 'team'
+      ? new Set(
+          Array.from(metricsTrendMeta.matchMeta.values())
+            .filter((meta) => meta.seasonId === metricsTrendMeta.currentSeasonId)
+            .map((meta) => meta.matchId)
+        )
+      : null;
+    const trendEvents = allowedMatchIds
+      ? events.filter((event) => event.matchId && allowedMatchIds.has(event.matchId))
+      : events;
+
+    if (context === 'team' && filterPlayer) {
+      const playerInfo = getPlayerInfo(filterPlayer);
+      const hasPositionData = (playerInfo.positionIds ?? []).length > 0;
+      const isGoalkeeperFilter = hasPositionData
+        ? playerInfo.isGoalkeeper
+        : (playerInfo.isGoalkeeper || events.some((e) => e.activeGoalkeeperId === filterPlayer));
+      const filtered = trendEvents.filter((event) => {
+        if (isGoalkeeperFilter) {
+          if (event.activeGoalkeeperId !== filterPlayer) return false;
+          if (event.category === 'Shot' && !['Goal', 'Save'].includes(event.action)) return false;
+          return true;
+        }
+        return event.playerId === filterPlayer;
+      });
+      return buildMetricsTrendData(
+        filtered,
+        metricsTrendMeta.matchMeta,
+        metricsTrendMeta.currentSeasonId,
+        metricsTrendMeta.currentSeasonName
+      );
+    }
+
+    return buildMetricsTrendData(
+      trendEvents,
+      metricsTrendMeta.matchMeta,
+      metricsTrendMeta.currentSeasonId,
+      metricsTrendMeta.currentSeasonName
+    );
+  }, [context, events, filterPlayer, getPlayerInfo, metricsTrendMeta]);
+
+  const metricsTrendLabel = useMemo(() => {
+    if (!metricsTrendData) return undefined;
+    if (context === 'player' && playerData?.name) return playerData.name;
+    if (context === 'team' && filterPlayer) {
+      const info = getPlayerInfo(filterPlayer);
+      return info?.name ? info.name : undefined;
+    }
+    return undefined;
+  }, [context, filterPlayer, getPlayerInfo, metricsTrendData, playerData]);
+
+  const metricsTrendSubtitle = context === 'team'
+    ? 'Current season per match'
+    : 'Current season per match, previous seasons aggregated';
+
   return (
     <div className="space-y-6">
       {/* Title */}
@@ -443,6 +505,15 @@ export function StatisticsView({
         comparison={comparisonData}
         onZoneFilter={handleZoneFilter}
       />
+
+      {metricsTrendData && !isGoalkeeperView && (context === 'player' || context === 'team') && (
+        <MetricsTrendChart
+          data={metricsTrendData}
+          highlightMatchId={playWindowMatchId}
+          contextLabel={metricsTrendLabel}
+          subtitle={metricsTrendSubtitle}
+        />
+      )}
 
       {/* Player Statistics Table */}
       <div className="hidden md:block">

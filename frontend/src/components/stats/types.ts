@@ -240,4 +240,43 @@ export interface StatisticsViewProps {
     teamData?: { players: any[] };
     onTeamChange?: (teamId: string) => void;
     onBack?: () => void;
+    metricsTrendMeta?: MetricsTrendMeta | null;
+}
+
+export interface MetricsTrendPoint {
+    id: string;
+    label: string;
+    kind: 'match' | 'season';
+    sortKey: number;
+    seasonId?: string;
+    seasonName?: string;
+    metrics: {
+        goalsVsShots: number | null;
+        goalsVsPlays: number | null;
+        missesVsPlays: number | null;
+        turnoversVsPlays: number | null;
+        foulsVsPlays: number | null;
+        plays: number;
+    };
+}
+
+export interface MetricsTrendData {
+    points: MetricsTrendPoint[];
+    currentSeasonId?: string;
+    currentSeasonName?: string;
+}
+
+export interface MetricsTrendMeta {
+    matchMeta: Map<string, MatchMeta>;
+    currentSeasonId?: string;
+    currentSeasonName?: string;
+}
+
+export interface MatchMeta {
+    matchId: string;
+    label: string;
+    sortKey: number;
+    seasonId?: string;
+    seasonName?: string;
+    seasonStart?: string;
 }

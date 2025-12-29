@@ -204,12 +204,10 @@ export const MatchesManagement = () => {
             const dateStr = data.date as string;
             const timeStr = (data.time as string) || '12:00';
 
-            let dateTime: Date;
-            try {
-                dateTime = new Date(`${dateStr}T${timeStr}`);
-            } catch (e) {
-                dateTime = new Date();
-            }
+            const parsedDateTime = new Date(`${dateStr}T${timeStr}`);
+            const dateTime = Number.isNaN(parsedDateTime.getTime())
+                ? new Date()
+                : parsedDateTime;
 
             return {
                 date: dateTime.toISOString(),

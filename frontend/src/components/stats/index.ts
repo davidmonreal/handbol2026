@@ -30,4 +30,8 @@ export type {
 
     StatCardProps,
     StatisticsPanelProps,
+    MetricsTrendPoint,
+    MetricsTrendData,
+    MetricsTrendMeta,
+    MatchMeta,
 } from './types';
