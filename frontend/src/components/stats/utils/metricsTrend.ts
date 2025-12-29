@@ -10,15 +10,6 @@ type Totals = {
   plays: number;
 };
 
-const buildEmptyTotals = (): Totals => ({
-  shots: 0,
-  goals: 0,
-  misses: 0,
-  turnovers: 0,
-  fouls: 0,
-  plays: 0,
-});
-
 const calculateTotals = (events: MatchEvent[]): Totals => {
   const shots = events.filter(e => e.category === 'Shot');
   const goals = shots.filter(e => e.action === 'Goal');
@@ -79,7 +70,7 @@ export const buildMetricsTrendData = (
     const metrics = buildMetrics(totals);
 
     const isPastSeason = currentSeasonId && meta.seasonId && meta.seasonId !== currentSeasonId;
-    if (isPastSeason) {
+    if (isPastSeason && meta.seasonId) {
       const existing = seasonTotals.get(meta.seasonId);
       if (existing) {
         existing.totals.shots += totals.shots;
@@ -107,8 +98,9 @@ export const buildMetricsTrendData = (
 
   const seasonPoints: MetricsTrendPoint[] = [];
   seasonTotals.forEach(({ totals, meta }) => {
+    if (!meta.seasonId) return;
     seasonPoints.push({
-      id: meta.seasonId ?? meta.matchId,
+      id: meta.seasonId,
       label: meta.seasonName ?? 'Season',
       kind: 'season',
       sortKey: meta.seasonStart ? new Date(meta.seasonStart).getTime() : meta.sortKey,

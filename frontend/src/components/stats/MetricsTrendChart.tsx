@@ -331,7 +331,7 @@ export function MetricsTrendChart({
 
           {hoveredPoint && hoveredSeries.length > 0 && (
             <g>
-              {hoveredSeries.map(({ series, value, y }) => (
+              {hoveredSeries.map(({ series, y }) => (
                 <circle
                   key={`hover-${series.key}`}
                   cx={toX(hoveredIndex ?? 0)}
