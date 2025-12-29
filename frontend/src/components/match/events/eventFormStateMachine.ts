@@ -197,7 +197,8 @@ export const initializeState = ({ event, initialState }: InitializeParams): Even
         selectedOpponentGkId: event?.opponentGoalkeeperId || initialState?.opponentGoalkeeperId || '',
         selectedCategory: category,
         selectedAction:
-            (event?.action as ShotResult | TurnoverType | SanctionType | null) || null,
+            (event?.action as ShotResult | TurnoverType | SanctionType | null) ||
+            (category === 'Shot' ? 'Goal' : category === 'Sanction' ? 'Foul' : null),
         selectedZone: event?.zone || null,
         selectedTarget: event?.goalTarget,
         isCollective: event?.isCollective ?? true,
@@ -218,7 +219,12 @@ export const eventFormReducer = (state: EventFormState, action: EventFormAction)
         case 'selectCategory': {
             const next = mergeState(state, {
                 selectedCategory: action.category,
-                selectedAction: action.category === 'Sanction' ? 'Foul' : null,
+                selectedAction:
+                    action.category === 'Sanction'
+                        ? 'Foul'
+                        : action.category === 'Shot'
+                            ? 'Goal'
+                            : null,
                 selectedTarget: undefined,
                 hasOpposition: action.category === 'Sanction' ? true : state.hasOpposition,
             });
