@@ -7,7 +7,7 @@ import {
   isGoalkeeperPosition,
   resolvePlayerPosition,
 } from '../types/player-position';
-import { mergePlayerSchema } from '../schemas/player-merge';
+import { mergePlayerSchema } from '../schemas';
 
 const playerRepository = new PlayerRepository();
 

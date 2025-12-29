@@ -4,7 +4,7 @@ import { batchCreatePlayers, batchCreateWithTeam } from '../controllers/players.
 import { checkDuplicates } from '../controllers/players.duplicates.controller';
 import { mergePlayer } from '../controllers/players.merge.controller';
 import { validateRequest } from '../middleware/validate';
-import { importPlayersImageSchema } from '../schemas/import';
+import { importPlayersImageSchema } from '../schemas';
 
 type ImportRouterDeps = {
   importPlayersFromImage?: typeof importPlayersFromImage;

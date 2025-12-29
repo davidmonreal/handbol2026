@@ -3,7 +3,7 @@ import { PlayerService } from '../services/player-service';
 import { PlayerRepository } from '../repositories/player-repository';
 import prisma from '../lib/prisma';
 import { isGoalkeeperPosition, resolvePlayerPosition } from '../types/player-position';
-import { batchPlayersSchema, batchPlayersWithTeamSchema } from '../schemas/player-batch';
+import { batchPlayersSchema, batchPlayersWithTeamSchema } from '../schemas';
 
 const playerRepository = new PlayerRepository();
 const playerService = new PlayerService(playerRepository);

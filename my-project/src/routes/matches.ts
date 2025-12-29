@@ -5,7 +5,7 @@ import { GameEventRepository } from '../repositories/game-event-repository';
 import { MatchService } from '../services/match-service';
 import { MatchController } from '../controllers/match-controller';
 import { validateRequest } from '../middleware/validate';
-import { createMatchSchema, updateMatchSchema } from '../schemas/match';
+import { createMatchSchema, updateMatchSchema } from '../schemas';
 
 type MatchRouterDeps = {
   controller?: MatchController;

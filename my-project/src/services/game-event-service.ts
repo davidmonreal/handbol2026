@@ -1,7 +1,7 @@
 import { GameEvent, Match } from '@prisma/client';
 import { GameEventRepository } from '../repositories/game-event-repository';
 import { MatchRepository } from '../repositories/match-repository';
-import { CreateGameEventInput, UpdateGameEventInput } from '../schemas/game-event';
+import { CreateGameEventInput, UpdateGameEventInput } from '../schemas';
 import {
   assertMatchStarted,
   assertSecondHalfStartedIfNeeded,

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { GameEventService } from '../src/services/game-event-service';
 import { getScorePatchForGoal } from '../src/services/game-event-rules';
-import type { CreateGameEventInput } from '../src/schemas/game-event';
+import type { CreateGameEventInput } from '../src/schemas';
 import type { GameEvent, Match } from '@prisma/client';
 import type { GameEventRepository } from '../src/repositories/game-event-repository';
 import type { MatchRepository } from '../src/repositories/match-repository';

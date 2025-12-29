@@ -393,4 +393,71 @@ describe('StatisticsView', () => {
     expect(screen.queryByRole('button', { name: 'Flow' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Fouls' })).not.toBeInTheDocument();
   });
+
+  it('shows shot summary cards for field players', () => {
+    const events: MatchEvent[] = [
+      {
+        id: 'p2-shot',
+        timestamp: 12,
+        teamId: 'team1',
+        playerId: 'p2',
+        category: 'Shot',
+        action: 'Goal',
+        zone: '6m-CB',
+      },
+    ];
+
+    const playerData = {
+      id: 'p2',
+      name: 'Field Player',
+      number: 11,
+      teams: [{ position: 2 }],
+    };
+
+    render(
+      <StatisticsView
+        events={events}
+        context="player"
+        selectedPlayerId="p2"
+        playerData={playerData}
+      />
+    );
+
+    expect(screen.getByText('Goals vs shots')).toBeInTheDocument();
+    expect(screen.queryByText('Saves vs. regular shots')).not.toBeInTheDocument();
+  });
+
+  it('keeps field player view when position data exists, even if events reference the player as goalkeeper', () => {
+    const events: MatchEvent[] = [
+      {
+        id: 'p1-shot',
+        timestamp: 10,
+        teamId: 'team1',
+        playerId: 'p1',
+        category: 'Shot',
+        action: 'Goal',
+        zone: '6m-CB',
+        activeGoalkeeperId: 'p1',
+      },
+    ];
+
+    const playerData = {
+      id: 'p1',
+      name: 'Field Player',
+      number: 7,
+      teams: [{ position: 2 }],
+    };
+
+    render(
+      <StatisticsView
+        events={events}
+        context="player"
+        selectedPlayerId="p1"
+        playerData={playerData}
+      />
+    );
+
+    expect(screen.queryByText('Saves vs. regular shots')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Flow' })).toBeInTheDocument();
+  });
 });

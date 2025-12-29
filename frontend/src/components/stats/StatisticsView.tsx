@@ -196,8 +196,10 @@ export function StatisticsView({
       // Player filter with goalkeeper support
       if (filterPlayer) {
         const playerInfo = getPlayerInfo(filterPlayer);
-        const isGoalkeeperFilter =
-          playerInfo.isGoalkeeper || events.some((e) => e.activeGoalkeeperId === filterPlayer);
+        const hasPositionData = (playerInfo.positionIds ?? []).length > 0;
+        const isGoalkeeperFilter = hasPositionData
+          ? playerInfo.isGoalkeeper
+          : (playerInfo.isGoalkeeper || events.some((e) => e.activeGoalkeeperId === filterPlayer));
 
         if (isGoalkeeperFilter) {
           if (e.activeGoalkeeperId !== filterPlayer) return false;
@@ -231,6 +233,8 @@ export function StatisticsView({
     if (filterPlayer) {
       // First check official data source
       const info = getPlayerInfo(filterPlayer);
+      const hasPositionData = (info.positionIds ?? []).length > 0;
+      if (hasPositionData) return !!info.isGoalkeeper;
       if (info.isGoalkeeper) return true;
 
       // Fallback: Check if this player appears as an active goalkeeper in the events

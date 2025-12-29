@@ -1,9 +1,6 @@
 import type { SanctionType, TurnoverType, ShotResult } from '../../../types';
-import type {
-    ShotResultOption,
-    TurnoverOption,
-    SanctionOption,
-} from './actionOptions';
+import type { ShotResultOption, TurnoverOption, SanctionOption } from './actionOptions';
+import type { EventCategory } from './eventFormStateMachine';
 
 interface ShotResultSelectorProps {
     selectedAction: ShotResult | null;
@@ -11,7 +8,7 @@ interface ShotResultSelectorProps {
     onSelect: (value: ShotResult) => void;
 }
 
-export const ShotResultSelector = ({ selectedAction, results, onSelect }: ShotResultSelectorProps) => (
+const ShotResultSelector = ({ selectedAction, results, onSelect }: ShotResultSelectorProps) => (
     <div className="grid grid-cols-5 gap-2">
         {results.map(result => {
             const Icon = result.icon;
@@ -40,7 +37,7 @@ interface TurnoverSelectorProps {
     onForceOpposition: () => void;
 }
 
-export const TurnoverSelector = ({
+const TurnoverSelector = ({
     selectedAction,
     types,
     onSelect,
@@ -78,7 +75,7 @@ interface SanctionSelectorProps {
     onForceOpposition: () => void;
 }
 
-export const SanctionSelector = ({
+const SanctionSelector = ({
     selectedAction,
     sanctions,
     onSelect,
@@ -104,4 +101,55 @@ export const SanctionSelector = ({
             );
         })}
     </div>
+);
+
+interface ActionSelectorsProps {
+    selectedCategory: EventCategory;
+    selectedAction: ShotResult | TurnoverType | SanctionType | null;
+    shotResults: ShotResultOption[];
+    turnoverTypes: TurnoverOption[];
+    sanctionTypes: SanctionOption[];
+    onSelectAction: (action: ShotResult | TurnoverType | SanctionType | null) => void;
+    onForceCollective: () => void;
+    onForceOpposition: () => void;
+}
+
+export const ActionSelectors = ({
+    selectedCategory,
+    selectedAction,
+    shotResults,
+    turnoverTypes,
+    sanctionTypes,
+    onSelectAction,
+    onForceCollective,
+    onForceOpposition,
+}: ActionSelectorsProps) => (
+    <>
+        {selectedCategory === 'Shot' && (
+            <ShotResultSelector
+                selectedAction={selectedAction as ShotResult | null}
+                results={shotResults}
+                onSelect={(value: ShotResult) => onSelectAction(value)}
+            />
+        )}
+
+        {selectedCategory === 'Turnover' && (
+            <TurnoverSelector
+                selectedAction={selectedAction}
+                types={turnoverTypes}
+                onSelect={(value: TurnoverType) => onSelectAction(value)}
+                onForceCollective={onForceCollective}
+                onForceOpposition={onForceOpposition}
+            />
+        )}
+
+        {selectedCategory === 'Sanction' && (
+            <SanctionSelector
+                selectedAction={selectedAction}
+                sanctions={sanctionTypes}
+                onSelect={(value: SanctionType) => onSelectAction(value)}
+                onForceOpposition={onForceOpposition}
+            />
+        )}
+    </>
 );

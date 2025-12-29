@@ -3,7 +3,7 @@ import { PlayerRepository } from '../repositories/player-repository';
 import { PlayerService } from '../services/player-service';
 import { PlayerController } from '../controllers/player-controller';
 import { validateRequest } from '../middleware/validate';
-import { createPlayerSchema, updatePlayerSchema } from '../schemas/player';
+import { createPlayerSchema, updatePlayerSchema } from '../schemas';
 
 type PlayerRouterDeps = {
   controller?: PlayerController;

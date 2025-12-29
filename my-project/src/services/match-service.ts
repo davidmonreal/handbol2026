@@ -9,7 +9,7 @@ import {
   updateMatchSchema,
   CreateMatchInput,
   UpdateMatchInput,
-} from '../schemas/match';
+} from '../schemas';
 import { ZodError, ZodIssue } from 'zod';
 
 function mapMatchIssue(issue: ZodIssue | undefined) {

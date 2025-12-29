@@ -6,7 +6,7 @@ import {
   updatePlayerSchema,
   CreatePlayerInput,
   UpdatePlayerInput,
-} from '../schemas/player';
+} from '../schemas';
 import { ZodError, ZodIssue } from 'zod';
 
 const HAND_MESSAGE = 'Handedness must be LEFT or RIGHT';

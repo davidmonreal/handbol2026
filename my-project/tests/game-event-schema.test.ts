@@ -5,7 +5,7 @@ import {
   SHOT_SUBTYPES,
   TURNOVER_SUBTYPES,
   SANCTION_TYPES,
-} from '../src/schemas/game-event';
+} from '../src/schemas';
 
 const basePayload = {
   matchId: 'm1',
@@ -36,6 +36,11 @@ describe('game-event schema', () => {
 
   it('rejects invalid event types', () => {
     const result = createGameEventSchema.safeParse({ ...basePayload, type: 'Invalid' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects missing match identifiers', () => {
+    const result = createGameEventSchema.safeParse({ ...basePayload, matchId: '' });
     expect(result.success).toBe(false);
   });
 

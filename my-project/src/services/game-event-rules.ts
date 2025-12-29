@@ -1,5 +1,5 @@
 import type { Match } from '@prisma/client';
-import type { CreateGameEventInput } from '../schemas/game-event';
+import type { CreateGameEventInput } from '../schemas';
 
 export const assertTeamUnlocked = (match: Match, teamId: string) => {
   const isHome = teamId === match.homeTeamId;

@@ -3,7 +3,7 @@ import type { MatchEvent, TurnoverType, SanctionType, ShotResult, ZoneType } fro
 import { ZoneSelector } from '../shared/ZoneSelector';
 import { ConfirmationModal } from '../../common';
 import { useSafeTranslation } from '../../../context/LanguageContext';
-import { ShotResultSelector, TurnoverSelector, SanctionSelector } from './ActionSelectors';
+import { ActionSelectors } from './ActionSelectors';
 import { useEventFormState } from './useEventFormState';
 import { CategorySelector } from './components/CategorySelector';
 import { OpponentGoalkeeperSelector, PlayerGrid } from './components/ParticipantSelectors';
@@ -129,32 +129,16 @@ const ActionSelectionSection = ({
                     : t('eventForm.severityLabel')}
         </div>
 
-        {selectedCategory === 'Shot' && (
-            <ShotResultSelector
-                selectedAction={selectedAction as ShotResult | null}
-                results={shotResults}
-                onSelect={(value: ShotResult) => onSelectAction(value)}
-            />
-        )}
-
-        {selectedCategory === 'Turnover' && (
-            <TurnoverSelector
-                selectedAction={selectedAction}
-                types={turnoverTypes}
-                onSelect={(value: TurnoverType) => onSelectAction(value)}
-                onForceCollective={onForceCollective}
-                onForceOpposition={onForceOpposition}
-            />
-        )}
-
-        {selectedCategory === 'Sanction' && (
-            <SanctionSelector
-                selectedAction={selectedAction}
-                sanctions={sanctionTypes}
-                onSelect={(value: SanctionType) => onSelectAction(value)}
-                onForceOpposition={onForceOpposition}
-            />
-        )}
+        <ActionSelectors
+            selectedCategory={selectedCategory}
+            selectedAction={selectedAction}
+            shotResults={shotResults}
+            turnoverTypes={turnoverTypes}
+            sanctionTypes={sanctionTypes}
+            onSelectAction={onSelectAction}
+            onForceCollective={onForceCollective}
+            onForceOpposition={onForceOpposition}
+        />
     </div>
 );
 

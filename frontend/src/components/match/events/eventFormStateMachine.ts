@@ -5,19 +5,17 @@ import type {
     TurnoverType,
     SanctionType,
 } from '../../../types';
+import {
+    sanctionActionValues,
+    shotActionValues,
+    turnoverActionValues,
+} from './actionCatalog';
 
 export type EventCategory = 'Shot' | 'Sanction' | 'Turnover';
 
-const SHOT_ACTIONS: ShotResult[] = ['Goal', 'Save', 'Miss', 'Post', 'Block'];
-const TURNOVER_ACTIONS: TurnoverType[] = [
-    'Pass',
-    'Catch',
-    'Dribble',
-    'Steps',
-    'Area',
-    'Offensive Foul',
-];
-const SANCTION_ACTIONS: SanctionType[] = ['Foul', 'Yellow', '2min', 'Red', 'Blue Card'];
+const SHOT_ACTIONS: ShotResult[] = [...shotActionValues];
+const TURNOVER_ACTIONS: TurnoverType[] = [...turnoverActionValues];
+const SANCTION_ACTIONS: SanctionType[] = [...sanctionActionValues];
 
 type BaseEventState = {
     selectedPlayerId: string;

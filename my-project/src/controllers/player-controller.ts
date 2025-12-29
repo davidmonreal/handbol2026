@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { Player } from '@prisma/client';
 import { BaseController } from './base-controller';
 import { PlayerService } from '../services/player-service';
-import { createPlayerSchema, updatePlayerSchema } from '../schemas/player';
+import { createPlayerSchema, updatePlayerSchema } from '../schemas';
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;

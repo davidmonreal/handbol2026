@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { GameEventService } from '../services/game-event-service';
-import type { CreateGameEventInput, UpdateGameEventInput } from '../schemas/game-event';
+import type { CreateGameEventInput, UpdateGameEventInput } from '../schemas';
 
 export class GameEventController {
   constructor(private gameEventService: GameEventService) {}

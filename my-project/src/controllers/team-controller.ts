@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { Team } from '@prisma/client';
 import { BaseController } from './base-controller';
 import { TeamService } from '../services/team-service';
-import { assignPlayerSchema, updatePlayerPositionSchema } from '../schemas/team';
+import { assignPlayerSchema, updatePlayerPositionSchema } from '../schemas';
 
 export class TeamController extends BaseController<Team> {
   constructor(private teamService: TeamService) {

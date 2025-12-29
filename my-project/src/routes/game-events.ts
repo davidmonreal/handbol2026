@@ -4,7 +4,7 @@ import { GameEventService } from '../services/game-event-service';
 import { GameEventRepository } from '../repositories/game-event-repository';
 import { MatchRepository } from '../repositories/match-repository';
 import { validateRequest } from '../middleware/validate';
-import { createGameEventSchema, updateGameEventSchema } from '../schemas/game-event';
+import { createGameEventSchema, updateGameEventSchema } from '../schemas';
 
 type GameEventRouterDeps = {
   controller?: GameEventController;
