@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { usePlayerForm } from '../../../hooks/usePlayerForm';
 import { PlayerBasicInfo } from './PlayerBasicInfo';
@@ -9,10 +9,10 @@ import { TEAM_CATEGORIES } from '../../../utils/teamUtils';
 import { DEFAULT_FIELD_POSITION, PLAYER_POSITIONS } from '../../../constants/playerPositions';
 import type { PlayerPositionId } from '../../../constants/playerPositions';
 import { useSafeTranslation } from '../../../context/LanguageContext';
+import { useBackNavigation } from '../../../hooks/useBackNavigation';
 
 export const PlayerFormPage = () => {
     const { id } = useParams();
-    const navigate = useNavigate();
     const location = useLocation();
     const { t } = useSafeTranslation();
     const navigationState = (location.state || {}) as {
@@ -21,7 +21,10 @@ export const PlayerFormPage = () => {
         preselectCategory?: string;
         preselectTeamId?: string | null;
     };
-    const backTo = navigationState.from || '/players';
+    const handleBack = useBackNavigation({
+        fromPath: navigationState.from,
+        fallbackPath: '/players',
+    });
     const isEditMode = !!id;
 
     const {
@@ -43,7 +46,7 @@ export const PlayerFormPage = () => {
     const [selectedPosition, setSelectedPosition] = useState<PlayerPositionId>(
         formData.isGoalkeeper ? PLAYER_POSITIONS[0].id : DEFAULT_FIELD_POSITION
     );
-    const [acceptNumberConflict, setAcceptNumberConflict] = useState(false);
+    const [acceptedConflictKey, setAcceptedConflictKey] = useState<string | null>(null);
 
     // Fetch team players when selection changes to check for number collisions
     useEffect(() => {
@@ -55,14 +58,18 @@ export const PlayerFormPage = () => {
     const teamCollision = formData.number !== '' && data.currentTeamPlayers
         ? data.currentTeamPlayers.find((p) => p?.player?.number === Number(formData.number)) ?? null
         : null;
-    useEffect(() => {
-        setAcceptNumberConflict(false);
-    }, [teamCollision?.player?.id, teamCollision?.player?.number, selectedTeamId]);
+    const collisionKey = teamCollision?.player
+        ? `${teamCollision.player.id}:${teamCollision.player.number}:${selectedTeamId ?? ''}`
+        : null;
+    const acceptNumberConflict = Boolean(collisionKey && acceptedConflictKey === collisionKey);
+    const handleAcceptNumberConflictChange = (checked: boolean) => {
+        setAcceptedConflictKey(checked ? collisionKey : null);
+    };
 
     const handleSave = async () => {
         try {
             await handlers.savePlayer(selectedTeamId, selectedPosition);
-            navigate(backTo);
+            handleBack();
         } catch (err) {
             console.error(err);
             // Error is handled in hook state usually, but validaton errors might throw
@@ -83,7 +90,7 @@ export const PlayerFormPage = () => {
                 <div className="bg-red-50 text-red-600 p-4 rounded-lg">
                     {error}
                 </div>
-                <button onClick={() => navigate('/players')} className="mt-4 text-indigo-600 hover:underline">
+                <button onClick={handleBack} className="mt-4 text-indigo-600 hover:underline">
                     {t('playerForm.backToPlayers')}
                 </button>
             </div>
@@ -96,7 +103,7 @@ export const PlayerFormPage = () => {
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => navigate(backTo)}
+                        onClick={handleBack}
                         className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                     >
                         <ArrowLeft className="text-gray-600" size={24} />
@@ -177,7 +184,7 @@ export const PlayerFormPage = () => {
                             onUpdateTeamPosition={handlers.updateTeamPosition}
                             collision={teamCollision}
                             acceptNumberConflict={acceptNumberConflict}
-                            onAcceptNumberConflictChange={setAcceptNumberConflict}
+                            onAcceptNumberConflictChange={handleAcceptNumberConflictChange}
                         />
                     </section>
                 </div>

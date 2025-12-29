@@ -4,22 +4,31 @@ import { MatchService } from '../src/services/match-service';
 import { MatchRepository } from '../src/repositories/match-repository';
 import { TeamRepository } from '../src/repositories/team-repository';
 import { GameEventRepository } from '../src/repositories/game-event-repository';
+import { PlayerRepository } from '../src/repositories/player-repository';
 
 vi.mock('../src/repositories/match-repository');
 vi.mock('../src/repositories/team-repository');
 vi.mock('../src/repositories/game-event-repository');
+vi.mock('../src/repositories/player-repository');
 
 describe('MatchService', () => {
   let service: MatchService;
   let matchRepository: MatchRepository;
   let teamRepository: TeamRepository;
   let gameEventRepository: GameEventRepository;
+  let playerRepository: PlayerRepository;
 
   beforeEach(() => {
     matchRepository = new MatchRepository();
     teamRepository = new TeamRepository();
     gameEventRepository = new GameEventRepository();
-    service = new MatchService(matchRepository, teamRepository, gameEventRepository);
+    playerRepository = new PlayerRepository();
+    service = new MatchService(
+      matchRepository,
+      teamRepository,
+      gameEventRepository,
+      playerRepository,
+    );
     vi.clearAllMocks();
   });
 
@@ -183,6 +192,67 @@ describe('MatchService', () => {
 
       expect(gameEventRepository.deleteByMatchId).toHaveBeenCalledWith('m1');
       expect(matchRepository.delete).toHaveBeenCalledWith('m1');
+    });
+  });
+
+  describe('team migration', () => {
+    it('previews migration with event and player counts', async () => {
+      vi.mocked(matchRepository.findById).mockResolvedValue({
+        id: 'm1',
+        isFinished: true,
+        homeTeamId: 'home-1',
+        awayTeamId: 'away-1',
+        homeTeam: { id: 'home-1', name: 'test-Home' },
+        awayTeam: { id: 'away-1', name: 'test-Away' },
+      } as any);
+      vi.mocked(teamRepository.findById).mockResolvedValue({
+        id: 'away-2',
+        name: 'test-Away B',
+      } as any);
+      vi.mocked(gameEventRepository.countByMatchAndTeam).mockResolvedValue(3);
+      vi.mocked(gameEventRepository.findPlayerIdsByMatchAndTeam).mockResolvedValue(['p1', 'p2']);
+      vi.mocked(playerRepository.findByIds).mockResolvedValue([
+        { id: 'p1', name: 'test-Player 1', number: 10 },
+      ] as any);
+      vi.mocked(gameEventRepository.countOpponentGoalkeeperEvents).mockResolvedValue(2);
+
+      const preview = await service.previewTeamMigration('m1', { awayTeamId: 'away-2' });
+
+      expect(preview.changes).toHaveLength(1);
+      expect(preview.changes[0].eventCount).toBe(3);
+      expect(preview.changes[0].players).toEqual([{ id: 'p1', name: 'test-Player 1', number: 10 }]);
+      expect(preview.changes[0].requiresGoalkeeper).toBe(true);
+    });
+
+    it('applies migration with goalkeeper update', async () => {
+      vi.mocked(matchRepository.findById).mockResolvedValue({
+        id: 'm1',
+        isFinished: true,
+        homeTeamId: 'home-1',
+        awayTeamId: 'away-1',
+      } as any);
+      vi.mocked(teamRepository.findById).mockResolvedValue({
+        id: 'away-2',
+        name: 'test-Away B',
+      } as any);
+      vi.mocked(gameEventRepository.countOpponentGoalkeeperEvents).mockResolvedValue(1);
+      vi.mocked(playerRepository.findById).mockResolvedValue({ id: 'gk-1' } as any);
+      vi.mocked(gameEventRepository.findPlayerIdsByMatchAndTeam).mockResolvedValue(['p1']);
+      vi.mocked(matchRepository.applyTeamMigration).mockResolvedValue({ id: 'm1' } as any);
+
+      const result = await service.applyTeamMigration('m1', {
+        awayTeamId: 'away-2',
+        awayGoalkeeperId: 'gk-1',
+      });
+
+      expect(matchRepository.applyTeamMigration).toHaveBeenCalledWith(
+        expect.objectContaining({
+          matchId: 'm1',
+          teamEventUpdates: [{ fromTeamId: 'away-1', toTeamId: 'away-2' }],
+          opponentGoalkeeperUpdates: [{ attackingTeamId: 'home-1', goalkeeperId: 'gk-1' }],
+        }),
+      );
+      expect(result).toEqual({ id: 'm1' });
     });
   });
 });

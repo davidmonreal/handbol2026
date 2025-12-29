@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 import { useMatch } from '../context/MatchContext';
 import { VideoSyncProvider, useVideoSync } from '../context/VideoSyncContext';
 import type { MatchEvent } from '../types';
@@ -122,7 +123,7 @@ const VideoMatchTrackerContent = () => {
     );
 
     // Navigate handlers
-    const handleBack = useCallback(() => navigate('/'), [navigate]);
+    const handleBack = useBackNavigation({ fallbackPath: '/' });
     const handleStatistics = useCallback(() => {
         navigate(`/statistics?matchId=${matchId}${activeTeamId ? `&activeTeamId=${activeTeamId}` : ''}`);
     }, [navigate, matchId, activeTeamId]);

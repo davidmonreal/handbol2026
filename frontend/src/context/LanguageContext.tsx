@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { availableLanguages, fallbackLanguage, getTranslation } from '../i18n/translations';
 import type { LanguageCode } from '../i18n/translations';
@@ -73,9 +73,11 @@ export const useTranslation = () => {
 
 export const useSafeTranslation = () => {
   const context = useContext(LanguageContext);
+  const fallbackTranslator = useCallback(
+    (key: string, params?: TranslationParams) => getTranslation(fallbackLanguage, key, params),
+    [],
+  );
   if (!context) {
-    const fallbackTranslator = (key: string, params?: TranslationParams) =>
-      getTranslation(fallbackLanguage, key, params);
     return { t: fallbackTranslator, language: fallbackLanguage };
   }
   return { t: context.t, language: context.language };

@@ -3,6 +3,7 @@ import prisma from '../src/lib/prisma';
 import { MatchRepository } from '../src/repositories/match-repository';
 import { TeamRepository } from '../src/repositories/team-repository';
 import { GameEventRepository } from '../src/repositories/game-event-repository';
+import { PlayerRepository } from '../src/repositories/player-repository';
 import { MatchService } from '../src/services/match-service';
 import { testClubName, testSeasonName, testTeamName } from './utils/test-name';
 
@@ -10,7 +11,13 @@ describe('Integration: Match Timer Persistence', () => {
   const matchRepository = new MatchRepository();
   const teamRepository = new TeamRepository();
   const gameEventRepository = new GameEventRepository();
-  const matchService = new MatchService(matchRepository, teamRepository, gameEventRepository);
+  const playerRepository = new PlayerRepository();
+  const matchService = new MatchService(
+    matchRepository,
+    teamRepository,
+    gameEventRepository,
+    playerRepository,
+  );
 
   let seasonId: string;
   let clubId: string;

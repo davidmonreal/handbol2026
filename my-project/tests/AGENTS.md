@@ -31,15 +31,17 @@ describe('MatchService', () => {
   let matchRepository: MatchRepository;
   let teamRepository: TeamRepository;
   let gameEventRepository: GameEventRepository;
+  let playerRepository: PlayerRepository;
 
   beforeEach(() => {
     // 2. Instancia els mocks
     matchRepository = new MatchRepository();
     teamRepository = new TeamRepository();
     gameEventRepository = new GameEventRepository();
+    playerRepository = new PlayerRepository();
 
     // 3. Injecta'ls al servei
-    service = new MatchService(matchRepository, teamRepository, gameEventRepository);
+    service = new MatchService(matchRepository, teamRepository, gameEventRepository, playerRepository);
     vi.clearAllMocks();
   });
 

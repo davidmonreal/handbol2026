@@ -6,6 +6,7 @@ import { SearchableSelectWithCreate } from '../../common/SearchableSelectWithCre
 import { TEAM_CATEGORIES } from '../../../utils/teamUtils';
 import { toTitleCase } from '../../../utils/textUtils';
 import type { Team, Club, Season } from '../../../types';
+import { useBackNavigation } from '../../../hooks/useBackNavigation';
 
 export const TeamFormPage = () => {
     const { id } = useParams();
@@ -13,6 +14,10 @@ export const TeamFormPage = () => {
     const location = useLocation();
     const fromState = location.state as { from?: string; prefillClubId?: string; next?: string } | null;
     const isEditMode = !!id;
+    const handleBack = useBackNavigation({
+        fromPath: fromState?.from,
+        fallbackPath: '/teams',
+    });
 
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -81,7 +86,7 @@ export const TeamFormPage = () => {
         };
 
         loadData();
-    }, [id, isEditMode]);
+    }, [id, isEditMode, fromState?.prefillClubId]);
 
     const handleCreateClub = async (clubName: string) => {
         if (!confirm(`Create new club "${clubName}"?`)) return;
@@ -95,7 +100,7 @@ export const TeamFormPage = () => {
             const newClub: Club = await res.json();
             setClubs(prev => [...prev, newClub]);
             setSelectedClubId(newClub.id);
-        } catch (err) {
+        } catch {
             alert('Error creating club');
         }
     };
@@ -166,13 +171,7 @@ export const TeamFormPage = () => {
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
                 <button
-                    onClick={() => {
-                        if (fromState?.from) {
-                            navigate(fromState.from);
-                        } else {
-                            navigate('/teams');
-                        }
-                    }}
+                    onClick={handleBack}
                     className="text-gray-600 hover:text-gray-900 transition-colors"
                 >
                     <ArrowLeft size={24} />

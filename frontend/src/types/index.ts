@@ -77,6 +77,22 @@ export interface Match {
     realTimeSecondHalfEnd?: number;
 }
 
+export type MatchMigrationPlayer = { id: string; name: string; number: number };
+export type MatchMigrationTeamSummary = { id: string; name: string; category?: string; clubName?: string };
+export type MatchMigrationChange = {
+    side: 'home' | 'away';
+    fromTeam: MatchMigrationTeamSummary;
+    toTeam: MatchMigrationTeamSummary;
+    eventCount: number;
+    players: MatchMigrationPlayer[];
+    requiresGoalkeeper: boolean;
+    goalkeeperEventCount: number;
+};
+export type MatchMigrationPreview = {
+    matchId: string;
+    changes: MatchMigrationChange[];
+};
+
 export interface MatchEvent {
     id: string;
     timestamp: number;

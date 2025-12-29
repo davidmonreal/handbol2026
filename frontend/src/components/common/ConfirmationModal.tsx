@@ -47,7 +47,7 @@ export const ConfirmationModal = ({
             data-testid="confirmation-modal-overlay"
         >
             <div
-                className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl animate-fade-in"
+                className="bg-white rounded-xl p-6 w-full max-w-lg shadow-xl animate-fade-in"
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-modal="true"

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 import { useMatch } from '../context/MatchContext';
 import { useSafeTranslation } from '../context/LanguageContext';
 import type { MatchEvent } from '../types';
@@ -420,27 +421,11 @@ const Statistics = () => {
   // Handle back navigation
   const fromPath = (location.state as { fromPath?: string } | null)?.fromPath;
 
-  const handleBack = () => {
-    if (fromPath) {
-      navigate(fromPath);
-      return;
-    }
-    if (matchId) {
-      // If coming from MatchTracker (live), go back there. 
-      // But we don't know if we came from MatchTracker or MatchesManagement.
-      // We can check history or just default to MatchesManagement if not in live mode?
-      // For now, let's assume if we are in "admin" layout (which this component is part of), we go back to matches list.
-      // BUT, MatchTracker also links here.
-      // Let's use window.history.length > 1 ? navigate(-1) : navigate('/matches')
-      navigate(-1);
-    } else if (playerId) {
-      navigate('/players');
-    } else if (teamId) {
-      navigate('/teams');
-    } else {
-      navigate('/');
-    }
-  };
+  const handleBack = useBackNavigation({
+    fromPath,
+    fallbackPath: matchId ? '/matches' : playerId ? '/players' : teamId ? '/teams' : '/',
+    allowHistoryBack: !!matchId,
+  });
 
   if (loading) {
     return <div className="p-8 text-center text-gray-500">Loading statistics...</div>;

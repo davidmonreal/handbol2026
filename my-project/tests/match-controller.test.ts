@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MatchController } from '../src/controllers/match-controller';
 import { MatchService } from '../src/services/match-service';
 import { MatchRepository } from '../src/repositories/match-repository';
+import { TeamRepository } from '../src/repositories/team-repository';
+import { GameEventRepository } from '../src/repositories/game-event-repository';
+import { PlayerRepository } from '../src/repositories/player-repository';
 import { Request, Response } from 'express';
 
 vi.mock('../src/services/match-service');
@@ -15,7 +18,12 @@ describe('MatchController', () => {
   let status: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    service = new MatchService({} as MatchRepository);
+    service = new MatchService(
+      {} as MatchRepository,
+      {} as TeamRepository,
+      {} as GameEventRepository,
+      {} as PlayerRepository,
+    );
     controller = new MatchController(service);
     json = vi.fn();
     status = vi.fn().mockReturnValue({ json });

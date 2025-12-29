@@ -4,6 +4,7 @@ import prisma from '../src/lib/prisma';
 import { GameEventRepository } from '../src/repositories/game-event-repository';
 import { MatchRepository } from '../src/repositories/match-repository';
 import { TeamRepository } from '../src/repositories/team-repository';
+import { PlayerRepository } from '../src/repositories/player-repository';
 import { GameEventService } from '../src/services/game-event-service';
 import { MatchService } from '../src/services/match-service';
 import { testClubName, testSeasonName, testTeamName } from './utils/test-name';
@@ -12,8 +13,14 @@ describe('Integration: game events mutate match score atomically', () => {
   const gameEventRepository = new GameEventRepository();
   const matchRepository = new MatchRepository();
   const teamRepository = new TeamRepository();
+  const playerRepository = new PlayerRepository();
   const gameEventService = new GameEventService(gameEventRepository, matchRepository);
-  const matchService = new MatchService(matchRepository, teamRepository, gameEventRepository);
+  const matchService = new MatchService(
+    matchRepository,
+    teamRepository,
+    gameEventRepository,
+    playerRepository,
+  );
 
   let seasonId: string;
   let clubId: string;

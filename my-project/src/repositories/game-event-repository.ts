@@ -169,4 +169,30 @@ export class GameEventRepository {
     });
     return result.count;
   }
+
+  async countByMatchAndTeam(matchId: string, teamId: string): Promise<number> {
+    return prisma.gameEvent.count({
+      where: { matchId, teamId },
+    });
+  }
+
+  async findPlayerIdsByMatchAndTeam(matchId: string, teamId: string): Promise<string[]> {
+    const events = await prisma.gameEvent.findMany({
+      where: { matchId, teamId, playerId: { not: null } },
+      select: { playerId: true },
+    });
+    return events
+      .map((event) => event.playerId)
+      .filter((playerId): playerId is string => Boolean(playerId));
+  }
+
+  async countOpponentGoalkeeperEvents(matchId: string, attackingTeamId: string): Promise<number> {
+    return prisma.gameEvent.count({
+      where: {
+        matchId,
+        teamId: attackingTeamId,
+        activeGoalkeeperId: { not: null },
+      },
+    });
+  }
 }

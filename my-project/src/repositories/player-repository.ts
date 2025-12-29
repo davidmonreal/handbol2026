@@ -133,6 +133,21 @@ export class PlayerRepository {
     });
   }
 
+  async findByIds(ids: string[]): Promise<Player[]> {
+    if (ids.length === 0) return [];
+    return prisma.player.findMany({
+      where: { id: { in: ids } },
+      select: {
+        id: true,
+        name: true,
+        number: true,
+        handedness: true,
+        isGoalkeeper: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   async create(data: Omit<Player, 'id'>): Promise<Player> {
     return prisma.player.create({
       data,

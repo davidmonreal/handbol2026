@@ -160,6 +160,58 @@ export class MatchRepository {
     });
   }
 
+  async applyTeamMigration(params: {
+    matchId: string;
+    matchPatch: Partial<{ homeTeamId: string; awayTeamId: string }>;
+    teamEventUpdates: Array<{ fromTeamId: string; toTeamId: string }>;
+    opponentGoalkeeperUpdates: Array<{ attackingTeamId: string; goalkeeperId: string }>;
+    playerAssignments: Array<{ teamId: string; playerIds: string[] }>;
+  }): Promise<Match> {
+    const { matchId, matchPatch, teamEventUpdates, opponentGoalkeeperUpdates, playerAssignments } =
+      params;
+
+    return prisma.$transaction(async (tx) => {
+      const updatedMatch = await tx.match.update({
+        where: { id: matchId },
+        data: matchPatch,
+        select: {
+          ...MATCH_BASE_SELECT,
+        },
+      });
+
+      for (const update of teamEventUpdates) {
+        await tx.gameEvent.updateMany({
+          where: { matchId, teamId: update.fromTeamId },
+          data: { teamId: update.toTeamId },
+        });
+      }
+
+      for (const update of opponentGoalkeeperUpdates) {
+        await tx.gameEvent.updateMany({
+          where: {
+            matchId,
+            teamId: update.attackingTeamId,
+            activeGoalkeeperId: { not: null },
+          },
+          data: { activeGoalkeeperId: update.goalkeeperId },
+        });
+      }
+
+      for (const assignment of playerAssignments) {
+        if (assignment.playerIds.length === 0) continue;
+        await tx.playerTeamSeason.createMany({
+          data: assignment.playerIds.map((playerId) => ({
+            playerId,
+            teamId: assignment.teamId,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      return updatedMatch;
+    });
+  }
+
   async delete(id: string): Promise<Match> {
     return prisma.match.delete({
       where: { id },

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 import { useMatch } from '../context/MatchContext';
 import { useSafeTranslation } from '../context/LanguageContext';
 import { API_BASE_URL } from '../config/api';
@@ -112,7 +113,7 @@ const MatchTracker = () => {
   const formLocked = activeTeamLocked || Boolean(clockBlockKey);
 
   // Navigate handlers
-  const handleBack = useCallback(() => navigate('/'), [navigate]);
+  const handleBack = useBackNavigation({ fallbackPath: '/' });
   const handleStatistics = useCallback(() => {
     navigate(`/statistics?matchId=${matchId}${activeTeamId ? `&activeTeamId=${activeTeamId}` : ''}`);
   }, [navigate, matchId, activeTeamId]);

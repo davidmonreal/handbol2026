@@ -4,11 +4,14 @@ import { BaseService } from './base-service';
 import { MatchRepository } from '../repositories/match-repository';
 import { TeamRepository } from '../repositories/team-repository';
 import { GameEventRepository } from '../repositories/game-event-repository';
+import { PlayerRepository } from '../repositories/player-repository';
 import {
   createMatchSchema,
   updateMatchSchema,
   CreateMatchInput,
   UpdateMatchInput,
+  PreviewMatchTeamMigrationInput,
+  ApplyMatchTeamMigrationInput,
 } from '../schemas';
 import { ZodError, ZodIssue } from 'zod';
 
@@ -25,6 +28,7 @@ export class MatchService extends BaseService<Match> {
     private matchRepository: MatchRepository,
     private teamRepository: TeamRepository,
     private gameEventRepository: GameEventRepository,
+    private playerRepository: PlayerRepository,
   ) {
     super(matchRepository);
   }
@@ -154,6 +158,221 @@ export class MatchService extends BaseService<Match> {
     }
 
     return super.update(id, updateData);
+  }
+
+  private assertFinishedMatch(match: Match) {
+    if (!match.isFinished) {
+      throw new Error('Match must be finished to migrate teams');
+    }
+  }
+
+  private buildTeamSummary(team: {
+    id: string;
+    name: string;
+    category?: string;
+    club?: { name: string };
+  }) {
+    return {
+      id: team.id,
+      name: team.name,
+      category: team.category,
+      clubName: team.club?.name,
+    };
+  }
+
+  private async resolveTeamChange(match: Match, side: 'home' | 'away', newTeamId: string) {
+    const fromTeam = side === 'home' ? (match as any).homeTeam : (match as any).awayTeam;
+    const toTeam = await this.teamRepository.findById(newTeamId);
+    if (!toTeam) {
+      throw new Error(`${side === 'home' ? 'Home' : 'Away'} team not found`);
+    }
+    return { fromTeam, toTeam };
+  }
+
+  async previewTeamMigration(matchId: string, data: PreviewMatchTeamMigrationInput) {
+    const match = await this.matchRepository.findById(matchId);
+    if (!match) throw new Error('Match not found');
+    this.assertFinishedMatch(match);
+
+    const nextHomeId = data.homeTeamId ?? match.homeTeamId;
+    const nextAwayId = data.awayTeamId ?? match.awayTeamId;
+
+    if (nextHomeId === nextAwayId) {
+      throw new Error('Home and Away teams must be different');
+    }
+
+    const changes: Array<{
+      side: 'home' | 'away';
+      fromTeam: ReturnType<MatchService['buildTeamSummary']>;
+      toTeam: ReturnType<MatchService['buildTeamSummary']>;
+      eventCount: number;
+      players: Array<{ id: string; name: string; number: number }>;
+      requiresGoalkeeper: boolean;
+      goalkeeperEventCount: number;
+    }> = [];
+
+    if (data.homeTeamId && data.homeTeamId !== match.homeTeamId) {
+      const { fromTeam, toTeam } = await this.resolveTeamChange(match, 'home', data.homeTeamId);
+      const eventCount = await this.gameEventRepository.countByMatchAndTeam(matchId, fromTeam.id);
+      const playerIds = await this.gameEventRepository.findPlayerIdsByMatchAndTeam(
+        matchId,
+        fromTeam.id,
+      );
+      const players = await this.playerRepository.findByIds([...new Set(playerIds)]);
+      const goalkeeperEventCount = await this.gameEventRepository.countOpponentGoalkeeperEvents(
+        matchId,
+        nextAwayId,
+      );
+      changes.push({
+        side: 'home',
+        fromTeam: this.buildTeamSummary(fromTeam),
+        toTeam: this.buildTeamSummary(toTeam),
+        eventCount,
+        players: players.map((player) => ({
+          id: player.id,
+          name: player.name,
+          number: player.number,
+        })),
+        requiresGoalkeeper: goalkeeperEventCount > 0,
+        goalkeeperEventCount,
+      });
+    }
+
+    if (data.awayTeamId && data.awayTeamId !== match.awayTeamId) {
+      const { fromTeam, toTeam } = await this.resolveTeamChange(match, 'away', data.awayTeamId);
+      const eventCount = await this.gameEventRepository.countByMatchAndTeam(matchId, fromTeam.id);
+      const playerIds = await this.gameEventRepository.findPlayerIdsByMatchAndTeam(
+        matchId,
+        fromTeam.id,
+      );
+      const players = await this.playerRepository.findByIds([...new Set(playerIds)]);
+      const goalkeeperEventCount = await this.gameEventRepository.countOpponentGoalkeeperEvents(
+        matchId,
+        nextHomeId,
+      );
+      changes.push({
+        side: 'away',
+        fromTeam: this.buildTeamSummary(fromTeam),
+        toTeam: this.buildTeamSummary(toTeam),
+        eventCount,
+        players: players.map((player) => ({
+          id: player.id,
+          name: player.name,
+          number: player.number,
+        })),
+        requiresGoalkeeper: goalkeeperEventCount > 0,
+        goalkeeperEventCount,
+      });
+    }
+
+    if (changes.length === 0) {
+      throw new Error('No team changes detected');
+    }
+
+    return {
+      matchId,
+      isFinished: match.isFinished,
+      changes,
+    };
+  }
+
+  async applyTeamMigration(matchId: string, data: ApplyMatchTeamMigrationInput) {
+    const match = await this.matchRepository.findById(matchId);
+    if (!match) throw new Error('Match not found');
+    this.assertFinishedMatch(match);
+
+    const nextHomeId = data.homeTeamId ?? match.homeTeamId;
+    const nextAwayId = data.awayTeamId ?? match.awayTeamId;
+
+    if (nextHomeId === nextAwayId) {
+      throw new Error('Home and Away teams must be different');
+    }
+
+    const teamEventUpdates: Array<{ fromTeamId: string; toTeamId: string }> = [];
+    const opponentGoalkeeperUpdates: Array<{ attackingTeamId: string; goalkeeperId: string }> = [];
+    const playerAssignments: Array<{ teamId: string; playerIds: string[] }> = [];
+
+    if (data.homeTeamId && data.homeTeamId !== match.homeTeamId) {
+      await this.resolveTeamChange(match, 'home', data.homeTeamId);
+      const goalkeeperEventCount = await this.gameEventRepository.countOpponentGoalkeeperEvents(
+        matchId,
+        nextAwayId,
+      );
+      if (goalkeeperEventCount > 0 && !data.homeGoalkeeperId) {
+        throw new Error('Home goalkeeper is required to migrate this match');
+      }
+
+      if (data.homeGoalkeeperId) {
+        const goalkeeper = await this.playerRepository.findById(data.homeGoalkeeperId);
+        if (!goalkeeper) throw new Error('Home goalkeeper not found');
+        opponentGoalkeeperUpdates.push({
+          attackingTeamId: nextAwayId,
+          goalkeeperId: data.homeGoalkeeperId,
+        });
+      }
+
+      const playerIds = await this.gameEventRepository.findPlayerIdsByMatchAndTeam(
+        matchId,
+        match.homeTeamId,
+      );
+      const assignments = new Set(playerIds);
+      if (data.homeGoalkeeperId) assignments.add(data.homeGoalkeeperId);
+      playerAssignments.push({
+        teamId: nextHomeId,
+        playerIds: [...assignments],
+      });
+
+      teamEventUpdates.push({ fromTeamId: match.homeTeamId, toTeamId: nextHomeId });
+    }
+
+    if (data.awayTeamId && data.awayTeamId !== match.awayTeamId) {
+      await this.resolveTeamChange(match, 'away', data.awayTeamId);
+      const goalkeeperEventCount = await this.gameEventRepository.countOpponentGoalkeeperEvents(
+        matchId,
+        nextHomeId,
+      );
+      if (goalkeeperEventCount > 0 && !data.awayGoalkeeperId) {
+        throw new Error('Away goalkeeper is required to migrate this match');
+      }
+
+      if (data.awayGoalkeeperId) {
+        const goalkeeper = await this.playerRepository.findById(data.awayGoalkeeperId);
+        if (!goalkeeper) throw new Error('Away goalkeeper not found');
+        opponentGoalkeeperUpdates.push({
+          attackingTeamId: nextHomeId,
+          goalkeeperId: data.awayGoalkeeperId,
+        });
+      }
+
+      const playerIds = await this.gameEventRepository.findPlayerIdsByMatchAndTeam(
+        matchId,
+        match.awayTeamId,
+      );
+      const assignments = new Set(playerIds);
+      if (data.awayGoalkeeperId) assignments.add(data.awayGoalkeeperId);
+      playerAssignments.push({
+        teamId: nextAwayId,
+        playerIds: [...assignments],
+      });
+
+      teamEventUpdates.push({ fromTeamId: match.awayTeamId, toTeamId: nextAwayId });
+    }
+
+    if (teamEventUpdates.length === 0) {
+      throw new Error('No team changes detected');
+    }
+
+    const matchPatch: Partial<{ homeTeamId: string; awayTeamId: string }> = {};
+    if (data.homeTeamId) matchPatch.homeTeamId = nextHomeId;
+    if (data.awayTeamId) matchPatch.awayTeamId = nextAwayId;
+
+    return this.matchRepository.applyTeamMigration({
+      matchId,
+      matchPatch,
+      teamEventUpdates,
+      opponentGoalkeeperUpdates,
+      playerAssignments,
+    });
   }
 
   async delete(id: string): Promise<Match> {

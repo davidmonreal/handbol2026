@@ -145,6 +145,8 @@ const routeCases: RouteCase[] = [
       getById: vi.fn((req, res) => res.json({ id: req.params.id })),
       create: vi.fn((req, res) => res.status(201).json({ id: 'match-1', ...req.body })),
       update: vi.fn((req, res) => res.json({ id: req.params.id, ...req.body })),
+      previewTeamMigration: vi.fn((req, res) => res.json({ matchId: req.params.id, ...req.body })),
+      applyTeamMigration: vi.fn((req, res) => res.json({ id: req.params.id, ...req.body })),
       delete: vi.fn((_, res) => res.status(204).send()),
     }),
     calls: [
@@ -164,6 +166,18 @@ const routeCases: RouteCase[] = [
         body: { homeTeamId: 'h1', awayTeamId: 'a1' },
       },
       { method: 'patch', path: '/abc', handler: 'update', body: { isFinished: true } },
+      {
+        method: 'post',
+        path: '/abc/team-migration/preview',
+        handler: 'previewTeamMigration',
+        body: { awayTeamId: 'a1' },
+      },
+      {
+        method: 'post',
+        path: '/abc/team-migration/apply',
+        handler: 'applyTeamMigration',
+        body: { awayTeamId: 'a1', awayGoalkeeperId: 'gk-1' },
+      },
       { method: 'delete', path: '/abc', handler: 'delete', expectedStatus: 204 },
     ],
   },

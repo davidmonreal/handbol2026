@@ -54,5 +54,33 @@ export const updateMatchSchema = z
     },
   );
 
+const matchTeamMigrationBaseSchema = z.object({
+  homeTeamId: z.string().optional(),
+  awayTeamId: z.string().optional(),
+});
+
+const matchTeamMigrationRefinement = (data: { homeTeamId?: string; awayTeamId?: string }) =>
+  data.homeTeamId || data.awayTeamId;
+
+export const previewMatchTeamMigrationSchema = matchTeamMigrationBaseSchema.refine(
+  matchTeamMigrationRefinement,
+  {
+    message: 'At least one team change is required',
+    path: ['homeTeamId'],
+  },
+);
+
+export const applyMatchTeamMigrationSchema = matchTeamMigrationBaseSchema
+  .extend({
+    homeGoalkeeperId: z.string().optional(),
+    awayGoalkeeperId: z.string().optional(),
+  })
+  .refine(matchTeamMigrationRefinement, {
+    message: 'At least one team change is required',
+    path: ['homeTeamId'],
+  });
+
 export type CreateMatchInput = z.infer<typeof createMatchSchema>;
 export type UpdateMatchInput = z.infer<typeof updateMatchSchema>;
+export type PreviewMatchTeamMigrationInput = z.infer<typeof previewMatchTeamMigrationSchema>;
+export type ApplyMatchTeamMigrationInput = z.infer<typeof applyMatchTeamMigrationSchema>;
