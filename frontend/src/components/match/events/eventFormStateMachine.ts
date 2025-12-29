@@ -249,7 +249,7 @@ export const eventFormReducer = (state: EventFormState, action: EventFormAction)
         case 'resetAfterSave': {
             const resetState = mergeState(state, {
                 selectedCategory: 'Shot',
-                selectedAction: null,
+                selectedAction: 'Goal',
                 selectedZone: null,
                 selectedTarget: undefined,
                 isCollective: true,
