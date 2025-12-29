@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { useBackNavigation } from '../hooks/useBackNavigation';
 import { useMatch } from '../context/MatchContext';
 import { useSafeTranslation } from '../context/LanguageContext';
@@ -220,7 +220,6 @@ const normalizeTeamData = (data: TeamData | null) => {
 const Statistics = () => {
   const GOALKEEPER_POSITION_ID: PlayerPositionId = 1;
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const location = useLocation();
   const matchId = searchParams.get('matchId');
   const playerId = searchParams.get('playerId');
