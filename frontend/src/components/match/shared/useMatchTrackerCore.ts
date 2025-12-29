@@ -158,15 +158,16 @@ export function useMatchTrackerCore(
     useEffect(() => {
         if (!matchId) return;
 
-        // Skip if already loaded for this match
-        if (contextMatchIdRef.current === matchId && homeTeam && visitorTeam) {
+        const hasContextMatch = contextMatchIdRef.current === matchId && homeTeam && visitorTeam;
+        if (hasContextMatch) {
             setMatchLoaded(true);
-            return;
         }
 
         const loadMatchData = async () => {
             try {
-                setMatchLoaded(false);
+                if (!hasContextMatch) {
+                    setMatchLoaded(false);
+                }
                 const response = await fetch(`${API_BASE_URL}/api/matches/${matchId}`);
 
                 if (response.status === 404) {

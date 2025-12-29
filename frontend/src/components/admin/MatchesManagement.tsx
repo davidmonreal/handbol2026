@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BarChart3, Calendar, Edit2, Volleyball, Youtube } from 'lucide-react';
 import { CrudManager } from './shared/CrudManager';
 import { API_BASE_URL } from '../../config/api';
+import { useDataRefresh } from '../../context/DataRefreshContext';
 import type { Team, CrudConfig } from '../../types';
 
 // Define Match interface locally or import if available
@@ -20,6 +21,7 @@ interface Match {
 
 export const MatchesManagement = () => {
     const navigate = useNavigate();
+    const { refreshToken } = useDataRefresh();
     const [teams, setTeams] = useState<Team[]>([]);
 
     useEffect(() => {
@@ -260,5 +262,5 @@ export const MatchesManagement = () => {
         hideDefaultActions: true,
     };
 
-    return <CrudManager<Match> config={matchesConfig} />;
+    return <CrudManager<Match> config={matchesConfig} refreshToken={refreshToken} />;
 };

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MatchesManagement } from './MatchesManagement';
 import { BrowserRouter } from 'react-router-dom';
+import { DataRefreshProvider } from '../../context/DataRefreshContext';
 
 // Mock API
 const mockFetch = vi.fn();
@@ -29,7 +30,9 @@ describe('MatchesManagement', () => {
     it('renders the component title', async () => {
         render(
             <BrowserRouter>
-                <MatchesManagement />
+                <DataRefreshProvider>
+                    <MatchesManagement />
+                </DataRefreshProvider>
             </BrowserRouter>
         );
         await waitFor(() => expect(screen.getByText('Matches Management')).toBeInTheDocument());
@@ -38,7 +41,9 @@ describe('MatchesManagement', () => {
     it('fetches teams on mount (dependency)', async () => {
         render(
             <BrowserRouter>
-                <MatchesManagement />
+                <DataRefreshProvider>
+                    <MatchesManagement />
+                </DataRefreshProvider>
             </BrowserRouter>
         );
         await waitFor(() => expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/api/teams')));
@@ -73,7 +78,9 @@ describe('MatchesManagement', () => {
 
         render(
             <BrowserRouter>
-                <MatchesManagement />
+                <DataRefreshProvider>
+                    <MatchesManagement />
+                </DataRefreshProvider>
             </BrowserRouter>
         );
 

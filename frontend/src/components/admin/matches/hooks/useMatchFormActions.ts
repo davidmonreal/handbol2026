@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
 import { API_BASE_URL } from '../../../../config/api';
+import { useDataRefresh } from '../../../../context/DataRefreshContext';
 import type { Team } from '../../../../types';
 
 type MatchFormActionsParams = {
@@ -14,6 +15,13 @@ type MatchFormActionsParams = {
     timeValue: string;
     selectedHomeTeamId: string | null;
     selectedAwayTeamId: string | null;
+    initialHomeTeamId: string | null;
+    initialAwayTeamId: string | null;
+    initialDateValue: string | null;
+    initialTimeValue: string | null;
+    initialStatus: 'SCHEDULED' | 'FINISHED' | null;
+    initialHomeScore: string | null;
+    initialAwayScore: string | null;
     homeScore: string;
     awayScore: string;
     shouldMigrateTeams: boolean;
@@ -34,6 +42,13 @@ export const useMatchFormActions = ({
     timeValue,
     selectedHomeTeamId,
     selectedAwayTeamId,
+    initialHomeTeamId,
+    initialAwayTeamId,
+    initialDateValue,
+    initialTimeValue,
+    initialStatus,
+    initialHomeScore,
+    initialAwayScore,
     homeScore,
     awayScore,
     shouldMigrateTeams,
@@ -45,6 +60,7 @@ export const useMatchFormActions = ({
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isResettingClock, setIsResettingClock] = useState(false);
+    const { bumpRefreshToken } = useDataRefresh();
 
     const navigateWithMessage = (message: string) => {
         if (fromPath) {
@@ -117,6 +133,19 @@ export const useMatchFormActions = ({
             const awayTeam = teams.find((t) => t.id === selectedAwayTeamId);
             const successMessage = `Match ${isEditMode ? 'updated' : 'created'}: ${homeTeam?.name || 'Team'} vs ${awayTeam?.name || 'Team'}`;
 
+            const hasChanges = !isEditMode
+                || initialHomeTeamId !== selectedHomeTeamId
+                || initialAwayTeamId !== selectedAwayTeamId
+                || initialDateValue !== dateValue
+                || initialTimeValue !== timeValue
+                || initialStatus !== status
+                || initialHomeScore !== homeScore
+                || initialAwayScore !== awayScore;
+
+            if (hasChanges) {
+                bumpRefreshToken();
+            }
+
             navigateWithMessage(successMessage);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to save match');
@@ -134,6 +163,7 @@ export const useMatchFormActions = ({
         try {
             const res = await fetch(`${API_BASE_URL}/api/matches/${matchId}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('Failed to delete match');
+            bumpRefreshToken();
             navigate('/matches', { state: { message: 'Match deleted' } });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to delete match');
@@ -173,6 +203,7 @@ export const useMatchFormActions = ({
             const homeTeam = teams.find((t) => t.id === selectedHomeTeamId);
             const awayTeam = teams.find((t) => t.id === selectedAwayTeamId);
             const successMessage = `Match updated: ${homeTeam?.name || 'Team'} vs ${awayTeam?.name || 'Team'}`;
+            bumpRefreshToken();
             navigateWithMessage(successMessage);
         }
     };

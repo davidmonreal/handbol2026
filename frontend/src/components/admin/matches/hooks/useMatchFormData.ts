@@ -35,6 +35,11 @@ export const useMatchFormData = ({ matchId, isEditMode }: MatchFormDataParams) =
     const [selectedAwayTeamId, setSelectedAwayTeamId] = useState<string | null>(null);
     const [initialHomeTeamId, setInitialHomeTeamId] = useState<string | null>(null);
     const [initialAwayTeamId, setInitialAwayTeamId] = useState<string | null>(null);
+    const [initialDateValue, setInitialDateValue] = useState<string | null>(null);
+    const [initialTimeValue, setInitialTimeValue] = useState<string | null>(null);
+    const [initialStatus, setInitialStatus] = useState<'SCHEDULED' | 'FINISHED' | null>(null);
+    const [initialHomeScore, setInitialHomeScore] = useState<string | null>(null);
+    const [initialAwayScore, setInitialAwayScore] = useState<string | null>(null);
     const [status, setStatus] = useState<'SCHEDULED' | 'FINISHED'>('SCHEDULED');
     const [homeScore, setHomeScore] = useState<string>('');
     const [awayScore, setAwayScore] = useState<string>('');
@@ -56,21 +61,30 @@ export const useMatchFormData = ({ matchId, isEditMode }: MatchFormDataParams) =
                     const match: Match = await matchRes.json();
 
                     const dateObj = new Date(match.date);
-                    setDateValue(dateObj.toISOString().split('T')[0]);
-                    setTimeValue(
-                        dateObj.toLocaleTimeString('ca-ES', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: false,
-                        }),
-                    );
+                    const nextDateValue = dateObj.toISOString().split('T')[0];
+                    const nextTimeValue = dateObj.toLocaleTimeString('ca-ES', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false,
+                    });
+                    const nextStatus = match.isFinished ? 'FINISHED' : 'SCHEDULED';
+                    const nextHomeScore = match.homeScore?.toString() ?? '';
+                    const nextAwayScore = match.awayScore?.toString() ?? '';
+
+                    setDateValue(nextDateValue);
+                    setTimeValue(nextTimeValue);
                     setSelectedHomeTeamId(match.homeTeamId);
                     setSelectedAwayTeamId(match.awayTeamId);
                     setInitialHomeTeamId(match.homeTeamId);
                     setInitialAwayTeamId(match.awayTeamId);
-                    setStatus(match.isFinished ? 'FINISHED' : 'SCHEDULED');
-                    setHomeScore(match.homeScore?.toString() ?? '');
-                    setAwayScore(match.awayScore?.toString() ?? '');
+                    setInitialDateValue(nextDateValue);
+                    setInitialTimeValue(nextTimeValue);
+                    setInitialStatus(nextStatus);
+                    setInitialHomeScore(nextHomeScore);
+                    setInitialAwayScore(nextAwayScore);
+                    setStatus(nextStatus);
+                    setHomeScore(nextHomeScore);
+                    setAwayScore(nextAwayScore);
                     setHasVideo(!!match.videoUrl);
 
                     try {
@@ -113,6 +127,11 @@ export const useMatchFormData = ({ matchId, isEditMode }: MatchFormDataParams) =
         setSelectedAwayTeamId,
         initialHomeTeamId,
         initialAwayTeamId,
+        initialDateValue,
+        initialTimeValue,
+        initialStatus,
+        initialHomeScore,
+        initialAwayScore,
         status,
         setStatus,
         homeScore,

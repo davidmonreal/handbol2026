@@ -4,6 +4,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { MatchesManagement } from '../../components/admin/MatchesManagement';
 import Statistics from '../../components/Statistics';
 import { MatchProvider } from '../../context/MatchContext';
+import { DataRefreshProvider } from '../../context/DataRefreshContext';
 
 
 // Mock fetch
@@ -90,14 +91,16 @@ describe('Statistics Flow Integration', () => {
 
   it('renders matches list and opens statistics modal', async () => {
     render(
-      <MatchProvider>
-        <MemoryRouter initialEntries={['/matches']}>
-          <Routes>
-            <Route path="/matches" element={<MatchesManagement />} />
-            <Route path="/statistics" element={<Statistics />} />
-          </Routes>
-        </MemoryRouter>
-      </MatchProvider>
+      <DataRefreshProvider>
+        <MatchProvider>
+          <MemoryRouter initialEntries={['/matches']}>
+            <Routes>
+              <Route path="/matches" element={<MatchesManagement />} />
+              <Route path="/statistics" element={<Statistics />} />
+            </Routes>
+          </MemoryRouter>
+        </MatchProvider>
+      </DataRefreshProvider>
     );
 
     // Wait for the stats button to appear (ensures table has rendered)
@@ -161,14 +164,16 @@ describe('Statistics Flow Integration', () => {
     });
 
     render(
-      <MatchProvider>
-        <MemoryRouter initialEntries={['/matches']}>
-          <Routes>
-            <Route path="/matches" element={<MatchesManagement />} />
-            <Route path="/statistics" element={<Statistics />} />
-          </Routes>
-        </MemoryRouter>
-      </MatchProvider>
+      <DataRefreshProvider>
+        <MatchProvider>
+          <MemoryRouter initialEntries={['/matches']}>
+            <Routes>
+              <Route path="/matches" element={<MatchesManagement />} />
+              <Route path="/statistics" element={<Statistics />} />
+            </Routes>
+          </MemoryRouter>
+        </MatchProvider>
+      </DataRefreshProvider>
     );
 
     // Open stats

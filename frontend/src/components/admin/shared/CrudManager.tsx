@@ -165,9 +165,10 @@ const buildEmptyFormData = <T,>(config: CrudConfig<T>) => {
 
 interface CrudManagerProps<T> {
     config: CrudConfig<T>;
+    refreshToken?: number;
 }
 
-export function CrudManager<T extends { id: string }>({ config }: CrudManagerProps<T>) {
+export function CrudManager<T extends { id: string }>({ config, refreshToken }: CrudManagerProps<T>) {
     const [items, setItems] = useState<T[]>([]);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<T | null>(null);
@@ -372,6 +373,12 @@ export function CrudManager<T extends { id: string }>({ config }: CrudManagerPro
             fetchItems(true);
         }
     }, [fetchItems, page]);
+
+    useEffect(() => {
+        if (refreshToken === undefined) return;
+        setPage(0);
+        fetchItems(false, 0);
+    }, [fetchItems, refreshToken]);
 
     const handleLoadMore = () => {
         setPage(prev => prev + 1);

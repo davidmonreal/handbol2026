@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, ChevronRight, Calendar, BarChart3 } from 'lucide-react';
 import { API_BASE_URL } from '../config/api';
 import { useSafeTranslation } from '../context/LanguageContext';
+import { useDataRefresh } from '../context/DataRefreshContext';
 import { ErrorMessage } from './common';
 import { MatchCard } from './match/MatchCard';
 import type { WeeklyInsightsResponse, DashboardSnapshotResponse } from '../types/api.types';
@@ -59,6 +60,7 @@ const MatchCardSkeletonGrid = ({ items = 3 }: { items?: number }) => (
 const Dashboard = () => {
   const navigate = useNavigate();
   const { t } = useSafeTranslation();
+  const { refreshToken } = useDataRefresh();
   const [dashboardData, setDashboardData] = useState<DashboardSnapshotResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorKey, setErrorKey] = useState<string | null>(null);
@@ -79,7 +81,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     loadDashboard();
-  }, []);
+  }, [refreshToken]);
 
   useEffect(() => {
     if (isLoading) {

@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { useMatchFormActions } from './useMatchFormActions';
+import { DataRefreshProvider } from '../../../../context/DataRefreshContext';
 
 vi.mock('../../../../config/api', () => ({
     API_BASE_URL: 'http://localhost:3000',
@@ -34,6 +35,13 @@ describe('useMatchFormActions', () => {
                 timeValue: '12:00',
                 selectedHomeTeamId: 'team-1',
                 selectedAwayTeamId: 'team-2',
+                initialHomeTeamId: 'team-1',
+                initialAwayTeamId: 'team-2',
+                initialDateValue: '2024-01-01',
+                initialTimeValue: '12:00',
+                initialStatus: 'SCHEDULED',
+                initialHomeScore: '0',
+                initialAwayScore: '0',
                 homeScore: '0',
                 awayScore: '0',
                 shouldMigrateTeams: false,
@@ -43,6 +51,7 @@ describe('useMatchFormActions', () => {
                 setInfoMessage,
                 ...overrides,
             }),
+            { wrapper: DataRefreshProvider },
         );
 
         return { ...hook, setError, setInfoMessage, navigate };

@@ -40,6 +40,11 @@ export const MatchFormPage = () => {
         setSelectedAwayTeamId,
         initialHomeTeamId,
         initialAwayTeamId,
+        initialDateValue,
+        initialTimeValue,
+        initialStatus,
+        initialHomeScore,
+        initialAwayScore,
         status,
         setStatus,
         homeScore,
@@ -88,8 +93,15 @@ export const MatchFormPage = () => {
         timeValue,
         selectedHomeTeamId,
         selectedAwayTeamId,
+        initialHomeTeamId,
+        initialAwayTeamId,
         homeScore,
         awayScore,
+        initialDateValue,
+        initialTimeValue,
+        initialStatus,
+        initialHomeScore,
+        initialAwayScore,
         shouldMigrateTeams,
         prepareMigrationPreview,
         applyMigration,
@@ -150,21 +162,19 @@ export const MatchFormPage = () => {
                 />
 
                 {/* Actions */}
-                <div className="flex justify-between items-center pt-4 border-t">
-                    <MatchFormActions
-                        isEditMode={isEditMode}
-                        canResetClock={canResetClock}
-                        isDeleting={isDeleting}
-                        isResettingClock={isResettingClock}
-                        isSaving={isSaving}
-                        isMigrationPreviewLoading={isMigrationPreviewLoading}
-                        isMigrationApplying={isMigrationApplying}
-                        onDelete={handleDelete}
-                        onResetClock={handleResetClock}
-                        onCancel={() => navigate('/matches')}
-                        onSave={handleSave}
-                    />
-                </div>
+                <MatchFormActions
+                    isEditMode={isEditMode}
+                    canResetClock={canResetClock}
+                    isDeleting={isDeleting}
+                    isResettingClock={isResettingClock}
+                    isSaving={isSaving}
+                    isMigrationPreviewLoading={isMigrationPreviewLoading}
+                    isMigrationApplying={isMigrationApplying}
+                    onDelete={handleDelete}
+                    onResetClock={handleResetClock}
+                    onCancel={() => navigate('/matches')}
+                    onSave={handleSave}
+                />
             </div>
             <MatchTeamMigrationModal
                 isOpen={isMigrationModalOpen}
