@@ -1,4 +1,4 @@
-import { User, ArrowUp, ArrowLeftRight, ArrowRight } from 'lucide-react';
+import { User, Users, ArrowUp, ArrowLeftRight, ArrowRight } from 'lucide-react';
 import { SplitToggle } from '../../shared/SplitToggle';
 import type { Translator } from './types';
 

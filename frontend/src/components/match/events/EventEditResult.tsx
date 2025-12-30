@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeftRight, ArrowUp, ArrowRight, User } from 'lucide-react';
+import { ArrowLeftRight, ArrowUp, ArrowRight, User, Users } from 'lucide-react';
 import type { MatchEvent } from '../../../types';
 import { SplitToggle } from '../shared/SplitToggle';
 import { useSafeTranslation } from '../../../context/LanguageContext';

@@ -1,4 +1,4 @@
-import { Target, Check, User, Activity, ArrowUp, ArrowLeftRight, ArrowRight } from 'lucide-react';
+import { Target, Check, User, Users, Activity, ArrowUp, ArrowLeftRight, ArrowRight } from 'lucide-react';
 import type { ZoneType } from '../../../types';
 import { ZONE_CONFIG } from '../../../config/zones';
 import { FLOW_CONFIG } from '../../../config/flows';
