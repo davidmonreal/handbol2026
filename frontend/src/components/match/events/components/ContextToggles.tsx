@@ -27,6 +27,12 @@ export const ContextToggles = ({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <SplitToggle
+                value={isCounterAttack}
+                onChange={onToggleCounterAttack}
+                leftOption={{ label: t('eventForm.context.static'), icon: ArrowLeftRight }}
+                rightOption={{ label: t('eventForm.context.counter'), icon: ArrowUp }}
+            />
+            <SplitToggle
                 value={isCollective}
                 onChange={onToggleCollective}
                 leftOption={{ label: t('eventForm.context.individual'), icon: User }}
@@ -37,12 +43,6 @@ export const ContextToggles = ({
                 onChange={onToggleOpposition}
                 leftOption={{ label: t('eventForm.context.free'), icon: User }}
                 rightOption={{ label: t('eventForm.context.opposition'), icon: [User, Users] }}
-            />
-            <SplitToggle
-                value={isCounterAttack}
-                onChange={onToggleCounterAttack}
-                leftOption={{ label: t('eventForm.context.counter'), icon: ArrowUp }}
-                rightOption={{ label: t('eventForm.context.static'), icon: ArrowLeftRight }}
             />
         </div>
     </div>
