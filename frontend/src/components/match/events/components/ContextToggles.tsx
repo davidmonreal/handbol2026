@@ -35,14 +35,14 @@ export const ContextToggles = ({
             <SplitToggle
                 value={isCollective}
                 onChange={onToggleCollective}
-                leftOption={{ label: t('eventForm.context.individual'), icon: User }}
-                rightOption={{ label: t('eventForm.context.collective'), icon: Users }}
+                leftOption={{ label: t('eventForm.context.collective'), icon: Users }}
+                rightOption={{ label: t('eventForm.context.individual'), icon: User }}
             />
             <SplitToggle
                 value={hasOpposition}
                 onChange={onToggleOpposition}
-                leftOption={{ label: t('eventForm.context.free'), icon: User }}
-                rightOption={{ label: t('eventForm.context.opposition'), icon: [User, Users] }}
+                leftOption={{ label: t('eventForm.context.opposition'), icon: [User, Users] }}
+                rightOption={{ label: t('eventForm.context.free'), icon: User }}
             />
         </div>
     </div>
