@@ -4,6 +4,7 @@ import { ZONE_CONFIG, getZoneLabel } from '../../config/zones';
 import type { ZoneType } from '../../types';
 import type { ZoneDistributionProps } from './types';
 import { calculateZoneColors, getHeatmapColorClasses } from './utils/heatmapUtils';
+import { useSafeTranslation } from '../../context/LanguageContext';
 
 /**
  * ZoneDistribution - Displays shot distribution across court zones
@@ -22,6 +23,7 @@ export function ZoneDistribution({
   isGoalkeeper = false,
   title
 }: ZoneDistributionProps) {
+  const { t } = useSafeTranslation();
   const [mode, setMode] = useState<'flow' | 'goals' | 'defense' | 'fouls'>(isGoalkeeper ? 'goals' : 'flow');
 
   useEffect(() => {
@@ -136,7 +138,7 @@ export function ZoneDistribution({
             </span>
             <span className="text-xs opacity-75">
               {denominator > 0
-                ? `${stats.efficiency.toFixed(0)}% ${mode === 'flow' ? 'danger' : (mode === 'fouls' ? 'fouls' : 'fouls')}`
+                ? `${stats.efficiency.toFixed(0)}% ${mode === 'flow' ? t('stats.zone.metric.danger') : t('stats.zone.metric.fouls')}`
                 : '-'}
             </span>
           </>
@@ -155,12 +157,12 @@ export function ZoneDistribution({
           {(() => {
             const fullTitle = (() => {
               switch (mode) {
-                case 'defense': return 'Defense (Own court zones)';
-                case 'fouls': return 'Fouls Received (Fouls / Plays)';
-                case 'flow': return 'Flow (Goals / Plays)';
+                case 'defense': return t('stats.zone.title.defense');
+                case 'fouls': return t('stats.zone.title.fouls');
+                case 'flow': return t('stats.zone.title.flow');
                 default: return title || (isGoalkeeper
-                  ? 'Saves Distribution (Court Zones)'
-                  : 'Goal Distribution (Rival court zones)');
+                  ? t('stats.zone.title.savesCourt')
+                  : t('stats.zone.title.goalsRival'));
               }
             })();
 
@@ -184,7 +186,7 @@ export function ZoneDistribution({
                 : 'text-gray-500 hover:text-gray-700'
                 }`}
             >
-              Flow
+              {t('stats.zone.toggle.flow')}
             </button>
           )}
 
@@ -195,7 +197,7 @@ export function ZoneDistribution({
               : 'text-gray-500 hover:text-gray-700'
               }`}
           >
-            Shots
+            {t('stats.zone.toggle.shots')}
           </button>
 
           {!isGoalkeeper && foulReceivedZoneStats && (
@@ -206,7 +208,7 @@ export function ZoneDistribution({
                 : 'text-gray-500 hover:text-gray-700'
                 }`}
             >
-              Fouls
+              {t('stats.zone.toggle.fouls')}
             </button>
           )}
 
@@ -221,7 +223,7 @@ export function ZoneDistribution({
                   : 'text-gray-500 hover:text-gray-700'
                 }`}
             >
-              Defense
+              {t('stats.zone.toggle.defense')}
             </button>
           )}
         </div>
@@ -250,10 +252,10 @@ export function ZoneDistribution({
         <div className="text-center">
           {(() => {
             switch (mode) {
-              case 'defense': return 'Viewing defensive fouls / total attacks against us in zone';
-              case 'fouls': return 'Viewing fouls received / (fouls + shots) in zone';
-              case 'flow': return 'Viewing goals / total offensive plays in zone';
-              default: return isGoalkeeper ? 'Viewing saves/shots from zone' : 'Viewing goals/shots from rival court zones (shooter perspective)';
+              case 'defense': return t('stats.zone.legend.defense');
+              case 'fouls': return t('stats.zone.legend.fouls');
+              case 'flow': return t('stats.zone.legend.flow');
+              default: return isGoalkeeper ? t('stats.zone.legend.goalkeeper') : t('stats.zone.legend.shooter');
             }
           })()}
         </div>

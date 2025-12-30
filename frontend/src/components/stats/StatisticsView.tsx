@@ -398,8 +398,19 @@ export function StatisticsView({
   }, [context, filterPlayer, getPlayerInfo, metricsTrendData, playerData]);
 
   const metricsTrendSubtitle = context === 'team'
-    ? 'Current season per match'
-    : 'Current season per match, previous seasons aggregated';
+    ? t('stats.metricsTrend.subtitle.team')
+    : t('stats.metricsTrend.subtitle.player');
+
+  const metricsTrendMatchCount = useMemo(() => (
+    metricsTrendData ? metricsTrendData.points.filter((point) => point.kind === 'match').length : 0
+  ), [metricsTrendData]);
+
+  const shouldHideMetricsTrend = !!metricsTrendData && metricsTrendMatchCount <= 1;
+  const metricsTrendEmptyMessage = shouldHideMetricsTrend
+    ? (context === 'player' || (context === 'team' && filterPlayer)
+        ? t('stats.metricsTrend.pendingPlayer')
+        : t('stats.metricsTrend.pendingTeam'))
+    : undefined;
 
   return (
     <div className="space-y-6">
@@ -426,7 +437,11 @@ export function StatisticsView({
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                 </svg>
-                Switch to {selectedTeamId === matchData.homeTeamId ? formatTeamDisplay(matchData.awayTeam) : formatTeamDisplay(matchData.homeTeam)}
+                {t('stats.switchTo', {
+                  team: selectedTeamId === matchData.homeTeamId
+                    ? formatTeamDisplay(matchData.awayTeam)
+                    : formatTeamDisplay(matchData.homeTeam),
+                })}
               </button>
             </div>
           )}
@@ -440,7 +455,7 @@ export function StatisticsView({
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              Back
+              {t('stats.back')}
             </button>
           )}
         </div>
@@ -474,7 +489,7 @@ export function StatisticsView({
             className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium"
           >
             <Users size={14} />
-            {events.find(e => e.playerId === filterPlayer)?.playerName || 'Player'}
+            {events.find(e => e.playerId === filterPlayer)?.playerName || t('stats.playerFallback')}
             <X size={14} />
           </button>
         )}
@@ -512,6 +527,7 @@ export function StatisticsView({
           highlightMatchId={playWindowMatchId}
           contextLabel={metricsTrendLabel}
           subtitle={metricsTrendSubtitle}
+          emptyMessage={metricsTrendEmptyMessage}
         />
       )}
 
@@ -521,7 +537,9 @@ export function StatisticsView({
           stats={playerStats}
           onPlayerClick={handlePlayerClick}
           selectedPlayerId={filterPlayer}
-          subtitle={filterZone ? `(from ${filterZone})` : subtitle || '(Overall)'}
+          subtitle={filterZone
+            ? t('stats.table.subtitle.fromZone', { zone: filterZone })
+            : (subtitle || t('stats.table.subtitle.overall'))}
         />
       </div>
 

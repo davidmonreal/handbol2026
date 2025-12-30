@@ -10,9 +10,11 @@ import {
   PADDING_TOP,
 } from './goalFlowData';
 import { buildSmoothPath } from './utils/chartPaths';
+import { useSafeTranslation } from '../../context/LanguageContext';
 
 type SeriesConfig = {
   key: keyof MetricsTrendPoint['metrics'];
+  labelKey: string;
   label: string;
   color: string;
   axis: 'percent' | 'plays';
@@ -21,12 +23,12 @@ type SeriesConfig = {
 };
 
 const SERIES: SeriesConfig[] = [
-  { key: 'goalsVsShots', label: 'Goals vs shots', color: '#16a34a', axis: 'percent', strokeWidth: 2.6 },
-  { key: 'goalsVsPlays', label: 'Goals vs plays', color: '#22c55e', axis: 'percent', strokeWidth: 2.6 },
-  { key: 'missesVsPlays', label: 'Misses vs plays', color: '#f97316', axis: 'percent', strokeWidth: 2.6 },
-  { key: 'turnoversVsPlays', label: 'Turnovers vs plays', color: '#eab308', axis: 'percent', strokeWidth: 2.6 },
-  { key: 'foulsVsPlays', label: 'Fouls vs plays', color: '#64748b', axis: 'percent', strokeWidth: 2.6 },
-  { key: 'plays', label: 'Plays', color: '#4f46e5', axis: 'plays', strokeDasharray: '6 6', strokeWidth: 4.1 },
+  { key: 'goalsVsShots', labelKey: 'stats.metricsTrend.series.goalsVsShots', label: 'Goals vs shots', color: '#16a34a', axis: 'percent', strokeWidth: 2.6 },
+  { key: 'goalsVsPlays', labelKey: 'stats.metricsTrend.series.goalsVsPlays', label: 'Goals vs plays', color: '#22c55e', axis: 'percent', strokeWidth: 2.6 },
+  { key: 'missesVsPlays', labelKey: 'stats.metricsTrend.series.missesVsPlays', label: 'Misses vs plays', color: '#f97316', axis: 'percent', strokeWidth: 2.6 },
+  { key: 'turnoversVsPlays', labelKey: 'stats.metricsTrend.series.turnoversVsPlays', label: 'Turnovers vs plays', color: '#eab308', axis: 'percent', strokeWidth: 2.6 },
+  { key: 'foulsVsPlays', labelKey: 'stats.metricsTrend.series.foulsVsPlays', label: 'Fouls vs plays', color: '#64748b', axis: 'percent', strokeWidth: 2.6 },
+  { key: 'plays', labelKey: 'stats.metricsTrend.series.plays', label: 'Plays', color: '#4f46e5', axis: 'plays', strokeDasharray: '6 6', strokeWidth: 4.1 },
 ];
 
 const PERCENT_TICKS = [0, 25, 50, 75, 100];
@@ -72,13 +74,16 @@ export function MetricsTrendChart({
   highlightMatchId,
   contextLabel,
   subtitle,
+  emptyMessage,
 }: {
   data: MetricsTrendData;
   highlightMatchId?: string | null;
   contextLabel?: string;
   subtitle?: string;
+  emptyMessage?: string;
 }) {
-  const resolvedSubtitle = subtitle ?? 'Current season per match';
+  const { t } = useSafeTranslation();
+  const resolvedSubtitle = subtitle ?? t('stats.metricsTrend.subtitle.team');
   const points = data.points;
   const width = VIEWBOX_WIDTH - PADDING_LEFT - PADDING_RIGHT;
   const height = VIEWBOX_HEIGHT - PADDING_TOP - PADDING_BOTTOM;
@@ -189,61 +194,70 @@ export function MetricsTrendChart({
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 text-indigo-600">
-          <TrendingUp className="w-4 h-4" aria-hidden />
-        </span>
-        <div>
-          <h3 className="text-lg font-semibold text-gray-800">
-            Metric evolution
-            {contextLabel ? (
-              <span className="font-normal text-gray-600"> - {contextLabel}</span>
-            ) : null}
-          </h3>
-          <p className="text-sm text-gray-500">{resolvedSubtitle}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 text-indigo-600">
+            <TrendingUp className="w-4 h-4" aria-hidden />
+          </span>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800">
+            {t('stats.metricsTrend.title')}
+              {contextLabel ? (
+                <span className="font-normal text-gray-600"> - {contextLabel}</span>
+              ) : null}
+            </h3>
+            <p className="text-sm text-gray-500">{resolvedSubtitle}</p>
+          </div>
         </div>
+        {emptyMessage ? (
+          <div className="text-xs sm:text-sm text-gray-500 text-right max-w-[280px]">
+            {emptyMessage}
+          </div>
+        ) : null}
       </div>
 
-      <div className="flex flex-wrap gap-2 text-xs text-gray-600">
-        {SERIES.map((series) => {
-          const isPlays = series.key === 'plays';
-          const isVisible = isPlays || visibleSeries.has(series.key);
-          return (
-            <button
-              key={series.key}
-              type="button"
-              onClick={() => !isPlays && toggleSeries(series.key)}
-              disabled={isPlays}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors ${
-                isPlays
-                  ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
-                  : isVisible
-                    ? 'border-slate-200 bg-white text-slate-700'
-                    : 'border-slate-200 bg-slate-50 text-slate-400'
-              }`}
+      {!emptyMessage ? (
+        <>
+          <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+            {SERIES.map((series) => {
+              const isPlays = series.key === 'plays';
+              const isVisible = isPlays || visibleSeries.has(series.key);
+              return (
+                <button
+                  key={series.key}
+                  type="button"
+                  onClick={() => !isPlays && toggleSeries(series.key)}
+                  disabled={isPlays}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors ${
+                    isPlays
+                      ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                      : isVisible
+                        ? 'border-slate-200 bg-white text-slate-700'
+                        : 'border-slate-200 bg-slate-50 text-slate-400'
+                  }`}
+                >
+                  <span
+                    className="inline-flex w-4 h-0.5 rounded-full"
+                    style={{
+                      backgroundColor: series.color,
+                      opacity: isVisible ? 1 : 0.35,
+                      height: series.strokeWidth ? `${series.strokeWidth}px` : '2px',
+                    }}
+                  />
+              <span>{t(series.labelKey)}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div ref={containerRef} className="relative w-full" aria-label="Metrics trend chart">
+            <svg
+              viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+              preserveAspectRatio="xMidYMin meet"
+              className="w-full h-[22rem] md:h-[26rem]"
+              onMouseMove={handleMouseMove}
+              onMouseLeave={clearHover}
             >
-              <span
-                className="inline-flex w-4 h-0.5 rounded-full"
-                style={{
-                  backgroundColor: series.color,
-                  opacity: isVisible ? 1 : 0.35,
-                  height: series.strokeWidth ? `${series.strokeWidth}px` : '2px',
-                }}
-              />
-              <span>{series.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div ref={containerRef} className="relative w-full" aria-label="Metrics trend chart">
-        <svg
-          viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
-          preserveAspectRatio="xMidYMin meet"
-          className="w-full h-[22rem] md:h-[26rem]"
-          onMouseMove={handleMouseMove}
-          onMouseLeave={clearHover}
-        >
           {PERCENT_TICKS.map((tick) => {
             const y = toPercentY(tick);
             return (
@@ -417,33 +431,35 @@ export function MetricsTrendChart({
             );
           })}
 
-        </svg>
-        {hoveredPoint && hoverPosition && hoveredSeries.length > 0 && (
-          <div
-            className="pointer-events-none absolute z-10 rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-xs text-slate-700 shadow-sm"
-            style={{
-              left: Math.min(hoverPosition.x + 16, containerSize.width - 180),
-              top: Math.max(hoverPosition.y - 24, 8),
-            }}
-          >
-            <div className="text-[11px] font-semibold text-slate-700">{hoveredPoint.label}</div>
-            <div className="mt-1 space-y-0.5">
-              {hoveredSeries.map(({ series, value }) => (
-                <div key={series.key} className="flex items-center gap-2">
-                  <span
-                    className="inline-flex h-2 w-2 rounded-full"
-                    style={{ backgroundColor: series.color }}
-                  />
-                  <span className="text-[11px] text-slate-500">{series.label}</span>
-                  <span className="ml-auto text-[11px] font-semibold text-slate-700">
-                    {formatValue(series, value)}
-                  </span>
+            </svg>
+            {hoveredPoint && hoverPosition && hoveredSeries.length > 0 && (
+              <div
+                className="pointer-events-none absolute z-10 rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-xs text-slate-700 shadow-sm"
+                style={{
+                  left: Math.min(hoverPosition.x + 16, containerSize.width - 180),
+                  top: Math.max(hoverPosition.y - 24, 8),
+                }}
+              >
+                <div className="text-[11px] font-semibold text-slate-700">{hoveredPoint.label}</div>
+                <div className="mt-1 space-y-0.5">
+                  {hoveredSeries.map(({ series, value }) => (
+                    <div key={series.key} className="flex items-center gap-2">
+                      <span
+                        className="inline-flex h-2 w-2 rounded-full"
+                        style={{ backgroundColor: series.color }}
+                      />
+                  <span className="text-[11px] text-slate-500">{t(series.labelKey)}</span>
+                      <span className="ml-auto text-[11px] font-semibold text-slate-700">
+                        {formatValue(series, value)}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      ) : null}
     </div>
   );
 }

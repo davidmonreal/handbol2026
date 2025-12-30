@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Triangle } from 'lucide-react';
 import type { ZoneType } from '../../types';
+import { useSafeTranslation } from '../../context/LanguageContext';
 import { useStatisticsCalculator } from './hooks/useStatisticsCalculator';
 import { StatCard } from './StatCard';
 import { GoalHeatmap } from './GoalHeatmap';
@@ -34,6 +35,7 @@ export function StatisticsPanel({
   className = '',
   onZoneFilter,
 }: StatisticsPanelProps) {
+  const { t } = useSafeTranslation();
   const [selectedZone, setSelectedZone] = useState<ZoneType | '7m' | null>(null);
 
   // Calculate all statistics from events
@@ -102,7 +104,7 @@ export function StatisticsPanel({
         {data.isGoalkeeper ? (
           <>
             <StatCard
-              label="Saves vs. regular shots"
+              label={t('stats.summary.savesVsRegular')}
               value={(() => {
                 let regularShots = 0;
                 let regularConceded = 0;
@@ -121,7 +123,7 @@ export function StatisticsPanel({
               className="w-full"
             />
             <StatCard
-              label="Saves vs. 6m shots"
+              label={t('stats.summary.savesVs6m')}
               value={(() => {
                 let shots = 0;
                 let conceded = 0;
@@ -140,7 +142,7 @@ export function StatisticsPanel({
               className="w-full"
             />
             <StatCard
-              label="Saves vs. 9m shots"
+              label={t('stats.summary.savesVs9m')}
               value={(() => {
                 let shots = 0;
                 let conceded = 0;
@@ -159,7 +161,7 @@ export function StatisticsPanel({
               className="w-full"
             />
             <StatCard
-              label="Saves vs. penalty shots"
+              label={t('stats.summary.savesVsPenalty')}
               value={(() => {
                 const penaltyStats = filteredStats.zoneStats.get('7m');
                 const penaltyShots = penaltyStats ? penaltyStats.shots : 0;
@@ -176,7 +178,7 @@ export function StatisticsPanel({
         ) : (
           <div className="col-span-1 md:col-span-2 grid grid-cols-3 gap-3 md:grid-cols-5 md:gap-4">
             <StatCard
-              label="Goals vs shots"
+              label={t('stats.summary.goalsVsShots')}
               value={renderSummaryValue(
                 `${filteredStats.totalGoals}/${filteredStats.totalShots} (${filteredStats.efficiency.toFixed(0)}%)`,
                 getTrendIndicator(summaryRatios.goalsVsShots, summaryBaselines?.goalsVsShots ?? null),
@@ -185,7 +187,7 @@ export function StatisticsPanel({
               className="min-w-fit"
             />
             <StatCard
-              label="Goals vs plays"
+              label={t('stats.summary.goalsVsPlays')}
               value={renderSummaryValue(
                 `${filteredStats.totalGoals} (${filteredStats.goalsPercentage.toFixed(0)}%)`,
                 getTrendIndicator(summaryRatios.goalsVsPlays, summaryBaselines?.goalsVsPlays ?? null),
@@ -194,7 +196,7 @@ export function StatisticsPanel({
               className="min-w-fit"
             />
             <StatCard
-              label="Misses vs. plays"
+              label={t('stats.summary.missesVsPlays')}
               value={renderSummaryValue(
                 `${filteredStats.totalMisses} (${filteredStats.missesPercentage.toFixed(0)}%)`,
                 getTrendIndicator(summaryRatios.missesVsPlays, summaryBaselines?.missesVsPlays ?? null),
@@ -203,7 +205,7 @@ export function StatisticsPanel({
               className="min-w-fit"
             />
             <StatCard
-              label="Turnovers vs. plays"
+              label={t('stats.summary.turnoversVsPlays')}
               value={renderSummaryValue(
                 `${filteredStats.totalTurnovers} (${filteredStats.turnoversPercentage.toFixed(0)}%)`,
                 getTrendIndicator(summaryRatios.turnoversVsPlays, summaryBaselines?.turnoversVsPlays ?? null),
@@ -212,7 +214,7 @@ export function StatisticsPanel({
               className="min-w-fit"
             />
             <StatCard
-              label="Fouls vs. plays"
+              label={t('stats.summary.foulsVsPlays')}
               value={renderSummaryValue(
                 `${filteredStats.totalFouls} (${filteredStats.foulsPercentage.toFixed(0)}%)`,
                 getTrendIndicator(summaryRatios.foulsVsPlays, summaryBaselines?.foulsVsPlays ?? null),
@@ -231,7 +233,7 @@ export function StatisticsPanel({
           isGoalkeeper={data.isGoalkeeper}
         />
         <ZoneDistribution
-          title={data.isGoalkeeper ? 'Saves Distribution (Saves / Shots)' : 'Shot Distribution (Goals / Shots)'}
+          title={data.isGoalkeeper ? t('stats.zone.title.savesShots') : t('stats.zone.title.shotsGoals')}
           isGoalkeeper={data.isGoalkeeper}
           zoneStats={stats.zoneStats}
           foulZoneStats={data.isGoalkeeper || data.context === 'player' ? undefined : stats.foulZoneStats}

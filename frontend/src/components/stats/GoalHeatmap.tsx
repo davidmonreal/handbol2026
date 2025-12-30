@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
 import type { GoalHeatmapProps } from './types';
 import { calculateZoneColors, getHeatmapColorClasses } from './utils/heatmapUtils';
+import { useSafeTranslation } from '../../context/LanguageContext';
 
 /**
  * GoalHeatmap - Displays the 3x3 grid of goal target zones (1-9)
  * Shows number of goals/saves and shots for each zone
  */
 export function GoalHeatmap({ goalTargetStats, className = '', isGoalkeeper = false }: GoalHeatmapProps) {
+  const { t } = useSafeTranslation();
   const [colorMode, setColorMode] = useState<'shots' | 'goals'>('shots');
 
   // Calculate colors based on distribution
@@ -25,7 +27,7 @@ export function GoalHeatmap({ goalTargetStats, className = '', isGoalkeeper = fa
     <div className={`bg-white rounded-xl shadow-lg p-6 ${className}`}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-gray-800">
-          {isGoalkeeper ? 'Saves Distribution' : 'Goal Distribution'}
+          {isGoalkeeper ? t('stats.heatmap.title.saves') : t('stats.heatmap.title.goals')}
         </h3>
 
         {/* Toggle Color Mode */}
@@ -37,7 +39,7 @@ export function GoalHeatmap({ goalTargetStats, className = '', isGoalkeeper = fa
                 : 'text-gray-500 hover:text-gray-700'
               }`}
           >
-            By Shots
+            {t('stats.heatmap.toggle.byShots')}
           </button>
           <button
             onClick={() => setColorMode('goals')}
@@ -46,7 +48,7 @@ export function GoalHeatmap({ goalTargetStats, className = '', isGoalkeeper = fa
                 : 'text-gray-500 hover:text-gray-700'
               }`}
           >
-            {isGoalkeeper ? 'By Saves' : 'By Goals'}
+            {isGoalkeeper ? t('stats.heatmap.toggle.bySaves') : t('stats.heatmap.toggle.byGoals')}
           </button>
         </div>
       </div>
@@ -84,8 +86,8 @@ export function GoalHeatmap({ goalTargetStats, className = '', isGoalkeeper = fa
       </div>
       <p className="text-xs text-gray-500 mt-2 text-center">
         {colorMode === 'shots'
-          ? 'Color intensity based on shot volume'
-          : (isGoalkeeper ? 'Color intensity based on number of saves' : 'Color intensity based on number of goals')
+          ? t('stats.heatmap.note.shots')
+          : (isGoalkeeper ? t('stats.heatmap.note.saves') : t('stats.heatmap.note.goals'))
         }
       </p>
     </div>

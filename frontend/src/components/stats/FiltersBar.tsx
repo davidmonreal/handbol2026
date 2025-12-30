@@ -1,6 +1,7 @@
 import { User, Users, Shield, Activity, TrendingUp } from 'lucide-react';
 import { DropdownSelect } from '../common';
 import type { PlayWindowRange } from './hooks/usePlayWindow';
+import { useSafeTranslation } from '../../context/LanguageContext';
 
 interface FiltersBarProps {
   filterOpposition: boolean | null;
@@ -27,9 +28,12 @@ export function FiltersBar({
   onPlayWindowChange,
   playWindowPlaceholder,
 }: FiltersBarProps) {
+  const { t } = useSafeTranslation();
   return (
     <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full">
-      <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Filters:</span>
+      <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+        {t('stats.filters.label')}
+      </span>
       
       {/* Opposition Group */}
       <div className="flex bg-gray-100 rounded-lg p-0.5 gap-1">
@@ -42,7 +46,7 @@ export function FiltersBar({
           }`}
         >
           <User size={12} />
-          Free
+          {t('stats.filters.free')}
         </button>
         <button
           onClick={() => setFilterOpposition(filterOpposition === true ? null : true)}
@@ -53,7 +57,7 @@ export function FiltersBar({
           }`}
         >
           <Shield size={12} />
-          Opposition
+          {t('stats.filters.opposition')}
         </button>
       </div>
 
@@ -70,7 +74,7 @@ export function FiltersBar({
           }`}
         >
           <User size={12} />
-          Individual
+          {t('stats.filters.individual')}
         </button>
         <button
           onClick={() => setFilterCollective(filterCollective === true ? null : true)}
@@ -81,7 +85,7 @@ export function FiltersBar({
           }`}
         >
           <Users size={12} />
-          Collective
+          {t('stats.filters.collective')}
         </button>
       </div>
 
@@ -98,7 +102,7 @@ export function FiltersBar({
           }`}
         >
           <Activity size={12} />
-          Static
+          {t('stats.filters.static')}
         </button>
         <button
           onClick={() => setFilterCounterAttack(filterCounterAttack === true ? null : true)}
@@ -109,7 +113,7 @@ export function FiltersBar({
           }`}
         >
           <TrendingUp size={12} />
-          Counter
+          {t('stats.filters.counter')}
         </button>
       </div>
       {/* Spacer to push dropdown right on larger screens */}

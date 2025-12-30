@@ -1,6 +1,7 @@
 import { Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { PlayerStatistics } from './types';
+import { useSafeTranslation } from '../../context/LanguageContext';
 
 interface PlayerStatisticsTableProps {
   stats: Map<string, PlayerStatistics>;
@@ -20,8 +21,10 @@ export function PlayerStatisticsTable({
   stats,
   onPlayerClick,
   selectedPlayerId,
-  subtitle = '(Overall)',
+  subtitle,
 }: PlayerStatisticsTableProps) {
+  const { t } = useSafeTranslation();
+  const resolvedSubtitle = subtitle ?? t('stats.table.subtitle.overall');
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'goals', direction: 'desc' });
 
   const playerStats = useMemo(() => {
@@ -352,28 +355,28 @@ export function PlayerStatisticsTable({
     <div className="bg-white rounded-xl shadow-lg overflow-hidden">
       <h3 className="text-lg font-bold text-gray-800 p-6 flex items-center gap-2">
         <Users className="text-green-600" />
-        Player Statistics {subtitle}
+        {t('stats.table.title')} {resolvedSubtitle}
       </h3>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead>
             <tr className="border-b-2 border-gray-300 text-gray-600 text-xs uppercase">
-              {renderSortableHeader('Player', 'playerName', 'left', 'pl-3')}
-              {renderSortableHeader('Total', 'goals')}
-              {renderSortableHeader('6m Goals', 'goals6m', 'center', 'bg-blue-50 px-2')}
-              {renderSortableHeader('6m Eff%', 'eff6m', 'center', 'bg-blue-50 px-2')}
-              {renderSortableHeader('9m Goals', 'goals9m', 'center', 'bg-indigo-50 px-2')}
-              {renderSortableHeader('9m Eff%', 'eff9m', 'center', 'bg-indigo-50 px-2')}
-              {renderSortableHeader('7m Goals', 'goals7m', 'center', 'bg-purple-50 px-2')}
-              {renderSortableHeader('7m Eff%', 'eff7m', 'center', 'bg-purple-50 px-2')}
-              {renderSortableHeader('With Opp', 'goalsWithOpp', 'center', 'bg-orange-50 px-2')}
-              {renderSortableHeader('No Opp', 'goalsNoOpp', 'center', 'bg-orange-50 px-2')}
-              {renderSortableHeader('Collective', 'goalsCollective', 'center', 'bg-purple-50 px-2')}
-              {renderSortableHeader('Individual', 'goalsIndividual', 'center', 'bg-purple-50 px-2')}
-              {renderSortableHeader('Counter', 'goalsCounter', 'center', 'bg-cyan-50 px-2')}
-              {renderSortableHeader('Static', 'goalsStatic', 'center', 'bg-cyan-50 px-2')}
-              {renderSortableHeader('Turnovers', 'turnovers', 'center', 'bg-red-50 px-2')}
-              {renderSortableHeader('Fouls Rec.', 'foulsRec', 'center', 'bg-yellow-50 px-2')}
+              {renderSortableHeader(t('stats.table.headers.player'), 'playerName', 'left', 'pl-3')}
+              {renderSortableHeader(t('stats.table.headers.total'), 'goals')}
+              {renderSortableHeader(t('stats.table.headers.goals6m'), 'goals6m', 'center', 'bg-blue-50 px-2')}
+              {renderSortableHeader(t('stats.table.headers.eff6m'), 'eff6m', 'center', 'bg-blue-50 px-2')}
+              {renderSortableHeader(t('stats.table.headers.goals9m'), 'goals9m', 'center', 'bg-indigo-50 px-2')}
+              {renderSortableHeader(t('stats.table.headers.eff9m'), 'eff9m', 'center', 'bg-indigo-50 px-2')}
+              {renderSortableHeader(t('stats.table.headers.goals7m'), 'goals7m', 'center', 'bg-purple-50 px-2')}
+              {renderSortableHeader(t('stats.table.headers.eff7m'), 'eff7m', 'center', 'bg-purple-50 px-2')}
+              {renderSortableHeader(t('stats.table.headers.withOpp'), 'goalsWithOpp', 'center', 'bg-orange-50 px-2')}
+              {renderSortableHeader(t('stats.table.headers.noOpp'), 'goalsNoOpp', 'center', 'bg-orange-50 px-2')}
+              {renderSortableHeader(t('stats.table.headers.collective'), 'goalsCollective', 'center', 'bg-purple-50 px-2')}
+              {renderSortableHeader(t('stats.table.headers.individual'), 'goalsIndividual', 'center', 'bg-purple-50 px-2')}
+              {renderSortableHeader(t('stats.table.headers.counter'), 'goalsCounter', 'center', 'bg-cyan-50 px-2')}
+              {renderSortableHeader(t('stats.table.headers.static'), 'goalsStatic', 'center', 'bg-cyan-50 px-2')}
+              {renderSortableHeader(t('stats.table.headers.turnovers'), 'turnovers', 'center', 'bg-red-50 px-2')}
+              {renderSortableHeader(t('stats.table.headers.foulsRec'), 'foulsRec', 'center', 'bg-yellow-50 px-2')}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -386,7 +389,7 @@ export function PlayerStatisticsTable({
             {sortedPlayerStats.length === 0 && (
               <tr>
                 <td colSpan={16} className="py-8 text-center text-gray-400 italic">
-                  No player data available
+                  {t('stats.table.empty')}
                 </td>
               </tr>
             )}

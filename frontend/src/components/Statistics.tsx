@@ -527,7 +527,7 @@ const Statistics = () => {
       if (categoryLabel) parts.push(categoryLabel);
       if (currentTeam?.name) parts.push(currentTeam.name);
       const displayName = parts.join(' ');
-      return `Match Statistics: ${displayName || 'Team'}`;
+      return t('stats.page.title.match', { team: displayName || t('stats.page.teamFallback') });
     }
     if (playerId && playerData) {
       const renderPositionBadges = () =>
@@ -548,15 +548,15 @@ const Statistics = () => {
         });
       return (
         <div className="flex items-center gap-2">
-          <span>{playerData.name} - Statistics</span>
+          <span>{t('stats.page.title.player', { player: playerData.name })}</span>
           {renderPositionBadges()}
         </div>
       );
     }
     if (teamId && teamData) {
-      return `${teamData.name} - Statistics`;
+      return t('stats.page.title.team', { team: teamData.name });
     }
-    return 'Team Statistics';
+    return t('stats.page.title.default');
   }, [
     matchId,
     playerId,
@@ -579,11 +579,15 @@ const Statistics = () => {
   });
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-500">Loading statistics...</div>;
+    return <div className="p-8 text-center text-gray-500">{t('stats.page.loading')}</div>;
   }
 
   if (!matchId && !playerId && !teamId && !activeTeamId) {
-    return <div className="p-8 text-center text-gray-500">Please select a team in the Match tab first or navigate from a match.</div>;
+    return (
+      <div className="p-8 text-center text-gray-500">
+        {t('stats.page.missingTeam')}
+      </div>
+    );
   }
 
   const matchDataForView = matchId ? normalizeMatchData(matchData) : undefined;
@@ -602,7 +606,11 @@ const Statistics = () => {
         foulEvents={foulStatsEvents}
         context={context}
         title={title}
-        subtitle={playerId ? `#${playerData?.number} • All Time Stats` : teamSubtitle}
+        subtitle={playerId
+          ? (playerData?.number
+            ? t('stats.page.subtitle.player', { number: playerData.number })
+            : t('stats.page.subtitle.playerNoNumber'))
+          : teamSubtitle}
         matchData={matchDataForView}
         teamData={teamDataForView}
         playerData={playerId ? playerData : undefined}
