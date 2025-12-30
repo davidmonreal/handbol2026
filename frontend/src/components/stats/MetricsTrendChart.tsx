@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type MouseEvent } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { TrendingUp } from 'lucide-react';
 import type { MetricsTrendData, MetricsTrendPoint } from './types';
 import {
@@ -21,12 +21,12 @@ type SeriesConfig = {
 };
 
 const SERIES: SeriesConfig[] = [
-  { key: 'goalsVsShots', label: 'Goals vs shots', color: '#16a34a', axis: 'percent' },
-  { key: 'goalsVsPlays', label: 'Goals vs plays', color: '#22c55e', axis: 'percent' },
-  { key: 'missesVsPlays', label: 'Misses vs plays', color: '#f97316', axis: 'percent' },
-  { key: 'turnoversVsPlays', label: 'Turnovers vs plays', color: '#eab308', axis: 'percent' },
-  { key: 'foulsVsPlays', label: 'Fouls vs plays', color: '#64748b', axis: 'percent' },
-  { key: 'plays', label: 'Plays', color: '#4f46e5', axis: 'plays', strokeDasharray: '6 6', strokeWidth: 3.5 },
+  { key: 'goalsVsShots', label: 'Goals vs shots', color: '#16a34a', axis: 'percent', strokeWidth: 2.6 },
+  { key: 'goalsVsPlays', label: 'Goals vs plays', color: '#22c55e', axis: 'percent', strokeWidth: 2.6 },
+  { key: 'missesVsPlays', label: 'Misses vs plays', color: '#f97316', axis: 'percent', strokeWidth: 2.6 },
+  { key: 'turnoversVsPlays', label: 'Turnovers vs plays', color: '#eab308', axis: 'percent', strokeWidth: 2.6 },
+  { key: 'foulsVsPlays', label: 'Fouls vs plays', color: '#64748b', axis: 'percent', strokeWidth: 2.6 },
+  { key: 'plays', label: 'Plays', color: '#4f46e5', axis: 'plays', strokeDasharray: '6 6', strokeWidth: 4.1 },
 ];
 
 const PERCENT_TICKS = [0, 25, 50, 75, 100];
@@ -89,6 +89,7 @@ export function MetricsTrendChart({
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 
   const maxPlays = useMemo(() => (
     points.reduce((max, point) => Math.max(max, point.metrics.plays), 0)
@@ -96,15 +97,15 @@ export function MetricsTrendChart({
 
   const playsTicks = useMemo(() => buildPlaysTicks(maxPlays), [maxPlays]);
 
-  const toX = (index: number) => {
+  const toX = useCallback((index: number) => {
     if (points.length <= 1) return PADDING_LEFT + width * 0.5;
     return PADDING_LEFT + (index / (points.length - 1)) * width;
-  };
-  const toPercentY = (value: number) => PADDING_TOP + height - (value / 100) * height;
-  const toPlaysY = (value: number) => {
+  }, [points.length, width]);
+  const toPercentY = useCallback((value: number) => PADDING_TOP + height - (value / 100) * height, [height]);
+  const toPlaysY = useCallback((value: number) => {
     if (maxPlays <= 0) return PADDING_TOP + height;
     return PADDING_TOP + height - (value / maxPlays) * height;
-  };
+  }, [height, maxPlays]);
 
   const labelStep = Math.max(1, Math.ceil(points.length / 8));
   const currentSeasonStartIndex = points.findIndex(
@@ -133,6 +134,9 @@ export function MetricsTrendChart({
   const handleMouseMove = (event: MouseEvent<SVGSVGElement>) => {
     if (!containerRef.current || points.length === 0) return;
     const rect = containerRef.current.getBoundingClientRect();
+    if (rect.width !== containerSize.width || rect.height !== containerSize.height) {
+      setContainerSize({ width: rect.width, height: rect.height });
+    }
     const relativeX = event.clientX - rect.left;
     const relativeY = event.clientY - rect.top;
     const chartX = (relativeX / rect.width) * VIEWBOX_WIDTH;
@@ -153,10 +157,22 @@ export function MetricsTrendChart({
     setHoverPosition(null);
   };
 
+  useLayoutEffect(() => {
+    if (!containerRef.current) return;
+    const updateSize = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      setContainerSize({ width: rect.width, height: rect.height });
+    };
+    updateSize();
+    const observer = new ResizeObserver(() => updateSize());
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   const hoveredSeries = useMemo(() => {
-    if (!hoveredPoint || !hoverPosition || !containerRef.current) return [];
-    const rect = containerRef.current.getBoundingClientRect();
-    const chartY = (hoverPosition.y / rect.height) * VIEWBOX_HEIGHT;
+    if (!hoveredPoint || !hoverPosition || containerSize.height === 0) return [];
+    const chartY = (hoverPosition.y / containerSize.height) * VIEWBOX_HEIGHT;
     const threshold = 12;
 
     return SERIES.reduce<Array<{ series: SeriesConfig; value: number; y: number }>>((acc, series) => {
@@ -169,7 +185,7 @@ export function MetricsTrendChart({
       }
       return acc;
     }, []);
-  }, [hoverPosition, hoveredPoint, visibleSeries, toPercentY, toPlaysY]);
+  }, [hoverPosition, hoveredPoint, visibleSeries, toPercentY, toPlaysY, containerSize.height]);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
@@ -406,7 +422,7 @@ export function MetricsTrendChart({
           <div
             className="pointer-events-none absolute z-10 rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-xs text-slate-700 shadow-sm"
             style={{
-              left: Math.min(hoverPosition.x + 16, (containerRef.current?.clientWidth ?? 0) - 180),
+              left: Math.min(hoverPosition.x + 16, containerSize.width - 180),
               top: Math.max(hoverPosition.y - 24, 8),
             }}
           >

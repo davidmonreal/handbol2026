@@ -5,6 +5,8 @@ interface SplitToggleProps {
   onChange: (value: boolean) => void;
   leftOption: { label: string; icon: LucideIcon | LucideIcon[] };
   rightOption: { label: string; icon: LucideIcon | LucideIcon[] };
+  leftValue?: boolean;
+  rightValue?: boolean;
   colorClass?: 'purple' | 'orange' | 'cyan';
 }
 
@@ -13,6 +15,8 @@ export const SplitToggle = ({
   onChange,
   leftOption,
   rightOption,
+  leftValue = false,
+  rightValue = true,
   colorClass = 'purple',
 }: SplitToggleProps) => {
   const colorStyles: Record<'purple' | 'orange' | 'cyan', { active: string; inactive: string; border: string }> = {
@@ -42,11 +46,14 @@ export const SplitToggle = ({
     return `${palette.active} ${palette.border}`;
   };
 
+  const isLeftActive = value === leftValue;
+  const isRightActive = value === rightValue;
+
   return (
     <div className="grid grid-cols-2 gap-0 rounded-xl overflow-hidden shadow-sm">
       <button
-        onClick={() => onChange(false)}
-        className={`px-2 py-2.5 font-bold border border-r-0 rounded-l-xl transition-all flex flex-col items-center justify-center gap-1.5 ${getStateClasses(!value)}`}
+        onClick={() => onChange(leftValue)}
+        className={`px-2 py-2.5 font-bold border border-r-0 rounded-l-xl transition-all flex flex-col items-center justify-center gap-1.5 ${getStateClasses(isLeftActive)}`}
       >
         {Array.isArray(leftOption.icon) ? (
           <div className="flex items-center gap-1">
@@ -59,8 +66,8 @@ export const SplitToggle = ({
       </button>
 
       <button
-        onClick={() => onChange(true)}
-        className={`px-2 py-2.5 font-bold border rounded-r-xl transition-all flex flex-col items-center justify-center gap-1.5 ${getStateClasses(value)}`}
+        onClick={() => onChange(rightValue)}
+        className={`px-2 py-2.5 font-bold border rounded-r-xl transition-all flex flex-col items-center justify-center gap-1.5 ${getStateClasses(isRightActive)}`}
       >
         {Array.isArray(rightOption.icon) ? (
           <div className="flex items-center gap-1">

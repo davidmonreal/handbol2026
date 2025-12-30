@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 import { MatchProvider } from '../../../context/MatchContext';
@@ -78,9 +78,7 @@ describe('EventEditResult', () => {
         // but since there is another "Save" (result), we need to be specific.
         // The result buttons are in a grid, the save button is in the footer.
         // Let's use the text but filter for the one that is likely the submit button.
-        const buttons = screen.getAllByText('Save');
-        const saveActionButton = buttons[buttons.length - 1]; // Usually the last one in DOM order
-        fireEvent.click(saveActionButton);
+        fireEvent.click(screen.getByText('Save Changes'));
 
         await waitFor(() => {
             expect(mockOnSave).toHaveBeenCalled();
@@ -101,8 +99,8 @@ describe('EventEditResult', () => {
         );
 
         // Should show context toggles
-        expect(screen.getByText(/Individual/)).toBeInTheDocument();
-        expect(screen.getByText(/Free/)).toBeInTheDocument();
+        expect(screen.getByText(/Collective/)).toBeInTheDocument();
+        expect(screen.getByText(/Opposition/)).toBeInTheDocument();
         expect(screen.getByText(/Static/)).toBeInTheDocument();
     });
 
@@ -130,9 +128,7 @@ describe('EventEditResult', () => {
         fireEvent.click(otherPlayerButton);
 
         // Save
-        const buttons = screen.getAllByText('Save');
-        const saveActionButton = buttons[buttons.length - 1];
-        fireEvent.click(saveActionButton);
+        fireEvent.click(screen.getByText('Save Changes'));
 
         expect(mockOnSave).toHaveBeenCalledWith(expect.objectContaining({
             playerId: 'player-2'

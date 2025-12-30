@@ -75,4 +75,20 @@ describe('SplitToggle', () => {
     const button = screen.getByText('Multiple').closest('button');
     expect(button).toBeInTheDocument();
   });
+
+  it('supports custom left/right values', () => {
+    const handleChange = vi.fn();
+    render(
+      <SplitToggle
+        {...defaultProps}
+        value={true}
+        onChange={handleChange}
+        leftValue={true}
+        rightValue={false}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Collective').closest('button')!);
+    expect(handleChange).toHaveBeenCalledWith(false);
+  });
 });
