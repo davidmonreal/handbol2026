@@ -41,8 +41,8 @@ export const ContextToggles = ({
             <SplitToggle
                 value={isCounterAttack}
                 onChange={onToggleCounterAttack}
-                leftOption={{ label: t('eventForm.context.static'), icon: ArrowLeftRight }}
-                rightOption={{ label: t('eventForm.context.counter'), icon: ArrowUp }}
+                leftOption={{ label: t('eventForm.context.counter'), icon: ArrowUp }}
+                rightOption={{ label: t('eventForm.context.static'), icon: ArrowLeftRight }}
             />
         </div>
     </div>
