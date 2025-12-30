@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeftRight, ArrowUp, User, Users } from 'lucide-react';
+import { ArrowLeftRight, ArrowUp, ArrowRight, User } from 'lucide-react';
 import type { MatchEvent } from '../../../types';
 import { SplitToggle } from '../shared/SplitToggle';
 import { useSafeTranslation } from '../../../context/LanguageContext';
@@ -94,8 +94,8 @@ export const EventEditResult = ({ event, team, onSave, onCancel, onDelete }: Eve
           onChange={setIsCollective}
           leftValue={true}
           rightValue={false}
-          leftOption={{ label: t('eventForm.context.collective'), icon: Users }}
-          rightOption={{ label: t('eventForm.context.individual'), icon: User }}
+          leftOption={{ label: t('eventForm.context.collective'), icon: [User, ArrowRight, User] }}
+          rightOption={{ label: t('eventForm.context.individual'), icon: [User, ArrowRight] }}
         />
         <SplitToggle
           value={hasOpposition}

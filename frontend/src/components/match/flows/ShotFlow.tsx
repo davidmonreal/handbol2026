@@ -1,4 +1,4 @@
-import { Target, Check, User, Activity, ArrowUp, ArrowLeftRight, Users } from 'lucide-react';
+import { Target, Check, User, Activity, ArrowUp, ArrowLeftRight, ArrowRight } from 'lucide-react';
 import type { ZoneType } from '../../../types';
 import { ZONE_CONFIG } from '../../../config/zones';
 import { FLOW_CONFIG } from '../../../config/flows';
@@ -75,8 +75,8 @@ export const ShotFlow = ({
                 <SplitToggle
                   value={isCollective}
                   onChange={(val) => !val ? onToggleCollective() : onToggleCollective()} // Toggle logic needs to match boolean
-                  leftOption={{ label: 'Individual', icon: User }}
-                  rightOption={{ label: 'Collective', icon: Users }}
+                  leftOption={{ label: 'Individual', icon: [User, ArrowRight] }}
+                  rightOption={{ label: 'Collective', icon: [User, ArrowRight, User] }}
                 />
 
                 <SplitToggle

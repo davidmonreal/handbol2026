@@ -1,4 +1,4 @@
-import { User, Users, ArrowUp, ArrowLeftRight } from 'lucide-react';
+import { User, ArrowUp, ArrowLeftRight, ArrowRight } from 'lucide-react';
 import { SplitToggle } from '../../shared/SplitToggle';
 import type { Translator } from './types';
 
@@ -37,8 +37,8 @@ export const ContextToggles = ({
                 onChange={onToggleCollective}
                 leftValue={true}
                 rightValue={false}
-                leftOption={{ label: t('eventForm.context.collective'), icon: Users }}
-                rightOption={{ label: t('eventForm.context.individual'), icon: User }}
+                leftOption={{ label: t('eventForm.context.collective'), icon: [User, ArrowRight, User] }}
+                rightOption={{ label: t('eventForm.context.individual'), icon: [User, ArrowRight] }}
             />
             <SplitToggle
                 value={hasOpposition}

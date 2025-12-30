@@ -202,7 +202,7 @@ export const initializeState = ({ event, initialState }: InitializeParams): Even
         selectedZone: event?.zone || null,
         selectedTarget: event?.goalTarget,
         isCollective: event?.isCollective ?? true,
-        hasOpposition: event?.hasOpposition ?? false,
+        hasOpposition: event?.hasOpposition ?? true,
         isCounterAttack: event?.isCounterAttack ?? false,
         showDeleteConfirmation: false,
     };
@@ -253,7 +253,7 @@ export const eventFormReducer = (state: EventFormState, action: EventFormAction)
                 selectedZone: null,
                 selectedTarget: undefined,
                 isCollective: true,
-                hasOpposition: false,
+                hasOpposition: true,
                 isCounterAttack: false,
                 showDeleteConfirmation: false,
                 selectedPlayerId: action.resetPlayer ? '' : state.selectedPlayerId,
