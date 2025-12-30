@@ -548,13 +548,13 @@ const Statistics = () => {
         });
       return (
         <div className="flex items-center gap-2">
-          <span>{t('stats.page.title.player', { player: playerData.name })}</span>
+          <span>{t('stats.page.title.player', { player: playerData.name ?? t('stats.playerFallback') })}</span>
           {renderPositionBadges()}
         </div>
       );
     }
     if (teamId && teamData) {
-      return t('stats.page.title.team', { team: teamData.name });
+      return t('stats.page.title.team', { team: teamData.name ?? t('stats.page.teamFallback') });
     }
     return t('stats.page.title.default');
   }, [

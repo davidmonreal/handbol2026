@@ -245,7 +245,13 @@ export const eventFormReducer = (state: EventFormState, action: EventFormAction)
         case 'toggleOpposition':
             return applyFormRules(mergeState(state, { hasOpposition: action.value }));
         case 'toggleCounterAttack':
-            return applyFormRules(mergeState(state, { isCounterAttack: action.value }));
+            return applyFormRules(
+                mergeState(state, {
+                    isCounterAttack: action.value,
+                    isCollective: action.value ? false : state.isCollective,
+                    hasOpposition: action.value ? false : state.hasOpposition,
+                }),
+            );
         case 'resetAfterSave': {
             const resetState = mergeState(state, {
                 selectedCategory: 'Shot',
