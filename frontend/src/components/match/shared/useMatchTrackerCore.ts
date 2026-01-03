@@ -288,10 +288,11 @@ export function useMatchTrackerCore(
 
     const handleSaveEvent = useCallback(
         async (event: MatchEvent, opponentGkId?: string) => {
+            const normalisedOpponentGkId = opponentGkId?.trim() ? opponentGkId : undefined;
             // 1. Handle Goalkeeper Persistence/Update
             // Only update global persistence if we are creating a NEW event
-            if (!editingEvent && opponentGkId && opponentTeam && matchId) {
-                const gk = opponentTeam.players.find((p) => p.id === opponentGkId);
+            if (!editingEvent && normalisedOpponentGkId && opponentTeam && matchId) {
+                const gk = opponentTeam.players.find((p) => p.id === normalisedOpponentGkId);
                 if (gk) {
                     setSelectedOpponentGoalkeeper(gk);
                     localStorage.setItem(`goalkeeper-${matchId}-${activeTeamId}`, gk.id);
@@ -302,7 +303,7 @@ export function useMatchTrackerCore(
             if (editingEvent) {
                 await updateEvent(editingEvent.id, {
                     ...event,
-                    opponentGoalkeeperId: opponentGkId,
+                    opponentGoalkeeperId: normalisedOpponentGkId,
                 });
                 setEditingEvent(null);
             } else {
@@ -314,7 +315,7 @@ export function useMatchTrackerCore(
                     timestamp,
                     videoTimestamp,
                     defenseFormation,
-                    opponentGoalkeeperId: opponentGkId,
+                    opponentGoalkeeperId: normalisedOpponentGkId,
                 };
                 addEvent(newEvent);
             }

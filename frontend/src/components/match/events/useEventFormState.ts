@@ -45,6 +45,7 @@ type UseEventFormStateParams = {
         opponentGoalkeeperId?: string;
     };
     locked?: boolean;
+    requireOpponentGoalkeeper?: boolean;
     onSave: (event: MatchEvent, opponentGkId?: string) => void | Promise<void>;
     onSaved?: () => void;
     onSaveMessage?: (message: string, variant?: 'success' | 'error') => void;
@@ -66,6 +67,7 @@ export const useEventFormState = ({
     teamId,
     initialState,
     locked = false,
+    requireOpponentGoalkeeper = false,
     onSave,
     onSaved,
     onSaveMessage,
@@ -105,7 +107,12 @@ export const useEventFormState = ({
 
     const save = async () => {
         if (locked || !state.selectedPlayerId) return;
+        if (requireOpponentGoalkeeper && !state.selectedOpponentGkId) {
+            onSaveMessage?.(t('eventForm.goalkeeperRequired'), 'error');
+            return;
+        }
 
+        const opponentGkId = state.selectedOpponentGkId || undefined;
         const updatedEvent: MatchEvent = buildEventFromForm(
             {
                 teamId,
@@ -117,13 +124,13 @@ export const useEventFormState = ({
                 isCollective: state.isCollective,
                 hasOpposition: state.hasOpposition,
                 isCounterAttack: state.isCounterAttack,
-                opponentGoalkeeperId: state.selectedOpponentGkId || undefined,
+                opponentGoalkeeperId: opponentGkId,
             },
             { baseEvent: event || null },
         );
 
         try {
-            await Promise.resolve(onSave(updatedEvent, state.selectedOpponentGkId));
+            await Promise.resolve(onSave(updatedEvent, opponentGkId));
             onSaveMessage?.(t('eventForm.successMessage'), 'success');
             onSaved?.();
             dispatch({ type: 'resetAfterSave', resetPlayer: !event });

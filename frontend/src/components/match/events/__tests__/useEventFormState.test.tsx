@@ -24,6 +24,7 @@ describe('useEventFormState', () => {
         const { result } = renderHook(() =>
             useEventFormState({
                 teamId: 'team-1',
+                requireOpponentGoalkeeper: true,
                 onSave,
                 onSaved,
                 onSaveMessage,
@@ -35,6 +36,7 @@ describe('useEventFormState', () => {
 
         act(() => {
             result.current.dispatchers.selectPlayer('player-1');
+            result.current.dispatchers.selectOpponentGk('gk-1');
             result.current.dispatchers.selectAction('Goal');
             result.current.dispatchers.selectZone('6m-LW');
             result.current.dispatchers.selectTarget(1);
@@ -51,7 +53,7 @@ describe('useEventFormState', () => {
                 zone: '6m-LW',
                 goalTarget: 1,
             }),
-            '',
+            'gk-1',
         );
         expect(onSaveMessage).toHaveBeenCalled();
         expect(onSaved).toHaveBeenCalled();
@@ -69,6 +71,7 @@ describe('useEventFormState', () => {
         const { result } = renderHook(() =>
             useEventFormState({
                 teamId: 'team-1',
+                requireOpponentGoalkeeper: true,
                 onSave,
                 onCancel: vi.fn(),
                 t,
@@ -76,6 +79,7 @@ describe('useEventFormState', () => {
         );
 
         act(() => result.current.dispatchers.selectPlayer('player-1'));
+        act(() => result.current.dispatchers.selectOpponentGk('gk-1'));
         act(() => result.current.dispatchers.selectAction('Goal'));
         act(() => result.current.dispatchers.selectZone('6m-LB'));
         await act(async () => {
@@ -84,8 +88,34 @@ describe('useEventFormState', () => {
 
         expect(onSave).toHaveBeenCalledWith(
             expect.objectContaining({ playerId: 'player-1', action: 'Goal', zone: '6m-LB' }),
-            '',
+            'gk-1',
         );
+    });
+
+    it('blocks save when opponent goalkeeper is required', async () => {
+        const onSave = vi.fn();
+        const onSaveMessage = vi.fn();
+
+        const { result } = renderHook(() =>
+            useEventFormState({
+                teamId: 'team-1',
+                requireOpponentGoalkeeper: true,
+                onSave,
+                onSaveMessage,
+                onCancel: vi.fn(),
+                t,
+            }),
+        );
+
+        act(() => result.current.dispatchers.selectPlayer('player-1'));
+        act(() => result.current.dispatchers.selectAction('Goal'));
+
+        await act(async () => {
+            await result.current.dispatchers.save();
+        });
+
+        expect(onSave).not.toHaveBeenCalled();
+        expect(onSaveMessage).toHaveBeenCalledWith('eventForm.goalkeeperRequired', 'error');
     });
 
     it('resetFormPreservingOpponentGk keeps selected GK while resetting other fields', () => {

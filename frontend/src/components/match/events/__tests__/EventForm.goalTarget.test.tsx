@@ -5,7 +5,15 @@ import { EventForm } from '../EventForm';
 
 const baseProps = {
   team: { id: 'team-1', name: 'Home', color: '', players: [] },
-  opponentTeam: { id: 'team-2', name: 'Away', color: '', players: [] },
+  opponentTeam: {
+    id: 'team-2',
+    name: 'Away',
+    color: '',
+    players: [
+      { id: 'gk-1', name: 'Goalkeeper One', number: 1, position: 'GK', isGoalkeeper: true },
+    ],
+  },
+  initialState: { opponentGoalkeeperId: 'gk-1' },
   onSave: vi.fn(),
   onCancel: vi.fn(),
   onDelete: vi.fn(),

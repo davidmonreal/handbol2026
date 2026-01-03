@@ -76,4 +76,16 @@ describe('game-event schema', () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it('normalises empty active goalkeeper ids', () => {
+    const result = createGameEventSchema.safeParse({
+      ...basePayload,
+      activeGoalkeeperId: '',
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.activeGoalkeeperId).toBeUndefined();
+    }
+  });
 });

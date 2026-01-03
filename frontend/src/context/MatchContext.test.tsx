@@ -598,6 +598,68 @@ describe('MatchContext', () => {
                 expect(result.current.events[0]?.timestamp).toBe(123);
             });
         });
+
+        it('should wait for pending video calibration before saving an event', async () => {
+            mockFetch
+                .mockResolvedValueOnce(mockMatchDetailsResponse() as any)
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => []
+                });
+
+            const { result } = renderHook(() => useMatch(), { wrapper });
+
+            await act(async () => {
+                await result.current.setMatchData(
+                    'match-1',
+                    { id: 'team1', name: 'Team 1', color: 'red', players: [] },
+                    { id: 'team2', name: 'Team 2', color: 'blue', players: [] }
+                , false, { firstHalfVideoStart: 1 });
+            });
+
+            let resolveCalibration: ((value: { ok: boolean; text: () => Promise<string> }) => void) | null = null;
+            const calibrationPromise = new Promise<{ ok: boolean; text: () => Promise<string> }>((resolve) => {
+                resolveCalibration = resolve;
+            });
+
+            mockFetch
+                .mockImplementationOnce(() => calibrationPromise as any)
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({ id: 'new-event' })
+                });
+
+            act(() => {
+                result.current.setVideoCalibration(1, 1);
+            });
+
+            await act(async () => {
+                const addPromise = result.current.addEvent({
+                    id: 'e1',
+                    timestamp: 100,
+                    playerId: 'p1',
+                    teamId: 'team1',
+                    category: 'Shot',
+                    action: 'Goal'
+                });
+
+                await Promise.resolve();
+                const postCallsBefore = mockFetch.mock.calls.filter(([url, init]) => {
+                    if (typeof url !== 'string') return false;
+                    return url.includes('/api/game-events') && (init as RequestInit | undefined)?.method === 'POST';
+                });
+                expect(postCallsBefore).toHaveLength(0);
+
+                resolveCalibration?.({ ok: true, text: async () => '' });
+                await addPromise;
+            });
+
+            const postCallsAfter = mockFetch.mock.calls.filter(([url, init]) => {
+                if (typeof url !== 'string') return false;
+                return url.includes('/api/game-events') && (init as RequestInit | undefined)?.method === 'POST';
+            });
+            expect(postCallsAfter).toHaveLength(1);
+        });
     });
 
     describe('deleteEvent', () => {

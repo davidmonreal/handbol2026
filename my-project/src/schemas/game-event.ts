@@ -19,6 +19,8 @@ const turnoverSubtypeSchema = z.enum(TURNOVER_SUBTYPES);
 const sanctionSubtypeSchema = z.enum(SANCTION_TYPES);
 const sanctionTypeSchema = z.enum(SANCTION_TYPES);
 
+const emptyToUndefined = (value: unknown) => (value === '' || value === null ? undefined : value);
+
 const baseEventSchema = z.object({
   matchId: z.string().min(1, 'matchId is required'),
   timestamp: z.coerce.number().nonnegative('timestamp must be zero or positive'),
@@ -34,7 +36,7 @@ const baseEventSchema = z.object({
   hasOpposition: z.coerce.boolean().optional(),
   isCounterAttack: z.coerce.boolean().optional(),
   videoTimestamp: z.coerce.number().nonnegative().optional(),
-  activeGoalkeeperId: z.string().optional(),
+  activeGoalkeeperId: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
 });
 
 export const createGameEventSchema = baseEventSchema;

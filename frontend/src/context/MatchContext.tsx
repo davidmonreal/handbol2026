@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { MatchEvent, DefenseType, ZoneType, SanctionType } from '../types';
 import { goalZoneToTarget } from '../utils/eventTransformers';
@@ -96,6 +96,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
   const [selectedOpponentGoalkeeper, setSelectedOpponentGoalkeeper] = useState<Player | null>(null);
   const [homeEventsLocked, setHomeEventsLocked] = useState(false);
   const [awayEventsLocked, setAwayEventsLocked] = useState(false);
+  const pendingVideoCalibrationRef = useRef<Promise<void> | null>(null);
   const addEvent = async (event: MatchEvent) => {
     // Allow event creation after either live kickoff or video calibration.
     if (!realTimeFirstHalfStart && !firstHalfVideoStart) {
@@ -110,6 +111,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     // Ensure timestamp defaults to current clock if caller didn't set it
     const timestamp = event.timestamp ?? time;
     const eventWithTimestamp = { ...event, timestamp };
+    const activeGoalkeeperId = eventWithTimestamp.opponentGoalkeeperId || selectedOpponentGoalkeeper?.id;
 
     // Prevent adding if team locked
     if ((event.teamId === homeTeam?.id && homeEventsLocked) || (event.teamId === visitorTeam?.id && awayEventsLocked)) {
@@ -128,6 +130,17 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
 
     // Persist to backend if we have a matchId
     if (matchId) {
+      const pendingCalibration = pendingVideoCalibrationRef.current;
+      if (pendingCalibration) {
+        try {
+          await pendingCalibration;
+        } finally {
+          if (pendingVideoCalibrationRef.current === pendingCalibration) {
+            pendingVideoCalibrationRef.current = null;
+          }
+        }
+      }
+
       try {
         const response = await fetch(`${API_BASE_URL}/api/game-events`, {
           method: 'POST',
@@ -148,12 +161,13 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
             isCounterAttack: eventWithTimestamp.isCounterAttack,
             goalZone: eventWithTimestamp.goalZoneTag,
             sanctionType: eventWithTimestamp.sanctionType,
-            activeGoalkeeperId: eventWithTimestamp.opponentGoalkeeperId ?? selectedOpponentGoalkeeper?.id,
+            activeGoalkeeperId,
           }),
         });
 
         if (!response.ok) {
-          console.error('Failed to save event to backend');
+          const errorText = await response.text();
+          console.error('Failed to save event to backend', errorText || response.statusText);
         } else {
           try {
             const createdEvent = await response.json();
@@ -238,7 +252,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
             isCounterAttack: updatedEvent.isCounterAttack,
             goalZone: updatedEvent.goalZoneTag,
             sanctionType: updatedEvent.sanctionType,
-            activeGoalkeeperId: updatedEvent.opponentGoalkeeperId,
+            activeGoalkeeperId: updatedEvent.opponentGoalkeeperId || undefined,
           }),
         });
 
@@ -330,15 +344,23 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
         ? { firstHalfVideoStart: timestamp, secondHalfVideoStart: null }
         : { secondHalfVideoStart: timestamp };
 
-    void Promise.resolve(
-      fetch(`${API_BASE_URL}/api/matches/${matchId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }),
-    ).catch((error) => {
-      console.error('Failed to save video calibration', error);
-    });
+    const persistCalibration = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/matches/${matchId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Failed to save video calibration', errorText || response.statusText);
+        }
+      } catch (error) {
+        console.error('Failed to save video calibration', error);
+      }
+    };
+
+    pendingVideoCalibrationRef.current = persistCalibration();
   }, [matchId]);
 
   // Live mode calibration uses wall-clock time to drive the match timer.

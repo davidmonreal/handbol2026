@@ -39,6 +39,7 @@ interface EventFormProps {
         playerId?: string;
         opponentGoalkeeperId?: string;
     };
+    requireOpponentGoalkeeper?: boolean;
     onSave: (event: MatchEvent, opponentGkId?: string) => void;
     onSaved?: () => void;
     onSaveMessage?: (message: string, variant?: 'success' | 'error') => void;
@@ -56,6 +57,7 @@ type EventFormViewProps = {
     controller: EventFormController;
     handlers: EventFormHandlers;
     t: (key: string) => string;
+    requireOpponentGoalkeeper: boolean;
 };
 
 type OpponentGoalkeeperSectionProps = {
@@ -229,7 +231,7 @@ const ContextToggleSection = ({
 type FooterActionsSectionProps = {
     event?: MatchEvent | null;
     locked: boolean;
-    isPlayerSelected: boolean;
+    isSaveDisabled: boolean;
     onCancel: () => void;
     onSave: () => void;
     onDelete?: () => void;
@@ -239,7 +241,7 @@ type FooterActionsSectionProps = {
 const FooterActionsSection = ({
     event,
     locked,
-    isPlayerSelected,
+    isSaveDisabled,
     onCancel,
     onSave,
     onDelete,
@@ -273,7 +275,7 @@ const FooterActionsSection = ({
             <button
                 onClick={onSave}
                 className="px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 text-white hover:bg-indigo-700"
-                disabled={!isPlayerSelected || locked}
+                disabled={isSaveDisabled}
             >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -289,6 +291,7 @@ export const EventForm = ({
     team,
     opponentTeam,
     initialState,
+    requireOpponentGoalkeeper: requireOpponentGoalkeeperProp,
     onSave,
     onSaved,
     onSaveMessage,
@@ -298,12 +301,14 @@ export const EventForm = ({
     controller: injectedController,
 }: EventFormProps) => {
     const { t } = useSafeTranslation();
+    const requireOpponentGoalkeeper = requireOpponentGoalkeeperProp ?? true;
 
     const internalController = useEventFormState({
         event,
         teamId: team.id,
         initialState,
         locked,
+        requireOpponentGoalkeeper,
         onSave,
         onSaved,
         onSaveMessage,
@@ -343,6 +348,7 @@ export const EventForm = ({
             controller={controller}
             handlers={handlers}
             t={t}
+            requireOpponentGoalkeeper={requireOpponentGoalkeeper}
         />
     );
 };
@@ -355,6 +361,7 @@ const EventFormView = ({
     controller,
     handlers,
     t,
+    requireOpponentGoalkeeper,
 }: EventFormViewProps) => {
     const {
         state: {
@@ -381,6 +388,8 @@ const EventFormView = ({
     const sortedPlayers = [...team.players].sort((a, b) => a.number - b.number);
     const opponentGoalkeepers = opponentTeam?.players.filter(p => p.isGoalkeeper) || [];
     const isPlayerSelected = !!selectedPlayerId;
+    const isOpponentGoalkeeperSelected = !!selectedOpponentGkId;
+    const isSaveDisabled = locked || !isPlayerSelected || (requireOpponentGoalkeeper && !isOpponentGoalkeeperSelected);
     const lockClass = locked ? 'opacity-50 pointer-events-none' : '';
 
     const scrollCategoryIntoView = () => {
@@ -466,7 +475,7 @@ const EventFormView = ({
             <FooterActionsSection
                 event={event}
                 locked={locked}
-                isPlayerSelected={isPlayerSelected}
+                isSaveDisabled={isSaveDisabled}
                 onCancel={handlers.onResetAndCancel}
                 onSave={handlers.onSave}
                 onDelete={handlers.onRequestDelete}
