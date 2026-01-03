@@ -399,6 +399,49 @@ describe('MatchContext', () => {
         });
     });
 
+    describe('setVideoCalibration', () => {
+        it('should persist video calibration when a match is loaded', async () => {
+            mockFetch
+                .mockResolvedValueOnce(mockMatchDetailsResponse() as any)
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => []
+                });
+
+            const { result } = renderHook(() => useMatch(), { wrapper });
+
+            await act(async () => {
+                await result.current.setMatchData(
+                    'match-1',
+                    { id: 'team1', name: 'Team 1', color: 'red', players: [] },
+                    { id: 'team2', name: 'Team 2', color: 'blue', players: [] }
+                );
+            });
+
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({})
+            });
+
+            act(() => {
+                result.current.setVideoCalibration(1, 42);
+            });
+
+            await waitFor(() => {
+                const patchCall = mockFetch.mock.calls.find(([url, init]) => {
+                    if (typeof url !== 'string') return false;
+                    if (!url.includes('/api/matches/match-1')) return false;
+                    const method = (init as RequestInit | undefined)?.method;
+                    return method === 'PATCH';
+                });
+                expect(patchCall).toBeDefined();
+                const [, init] = patchCall as [string, RequestInit];
+                const body = JSON.parse(init.body as string);
+                expect(body).toEqual({ firstHalfVideoStart: 42, secondHalfVideoStart: null });
+            });
+        });
+    });
+
     describe('addEvent', () => {
         it('should update score when adding goal event', async () => {
             mockFetch
@@ -421,10 +464,15 @@ describe('MatchContext', () => {
                 expect(result.current.firstHalfVideoStart).toBe(1);
             });
 
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ id: 'new-event' })
-            });
+            mockFetch
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({})
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({ id: 'new-event' })
+                });
 
             act(() => {
                 result.current.setVideoCalibration(1, 1);
@@ -467,10 +515,15 @@ describe('MatchContext', () => {
                 );
             });
 
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ id: 'new-event' })
-            });
+            mockFetch
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({})
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({ id: 'new-event' })
+                });
 
             await act(async () => {
                 await result.current.addEvent({
@@ -515,10 +568,15 @@ describe('MatchContext', () => {
                 result.current.setTime(123); // Clock is running at 02:03
             });
 
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ id: 'new-event' })
-            });
+            mockFetch
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({})
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({ id: 'new-event' })
+                });
 
             act(() => {
                 result.current.setVideoCalibration(1, 1);

@@ -322,7 +322,24 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setSecondHalfVideoStart(timestamp);
     }
-  }, []);
+
+    if (!matchId) return;
+
+    const payload =
+      half === 1
+        ? { firstHalfVideoStart: timestamp, secondHalfVideoStart: null }
+        : { secondHalfVideoStart: timestamp };
+
+    void Promise.resolve(
+      fetch(`${API_BASE_URL}/api/matches/${matchId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }),
+    ).catch((error) => {
+      console.error('Failed to save video calibration', error);
+    });
+  }, [matchId]);
 
   // Live mode calibration uses wall-clock time to drive the match timer.
   const setRealTimeCalibration = async (half: 1 | 2, timestamp: number, boundary: 'start' | 'end' = 'start') => {

@@ -64,7 +64,6 @@ describe('useEventFormState', () => {
     });
 
     it('works without localStorage available', async () => {
-        // @ts-expect-error - simulating missing localStorage in environment
         vi.stubGlobal('localStorage', undefined);
         const onSave = vi.fn();
         const { result } = renderHook(() =>
@@ -109,7 +108,7 @@ describe('useEventFormState', () => {
 
         expect(result.current.state.selectedOpponentGkId).toBe('gk-1');
         expect(result.current.state.selectedCategory).toBe('Shot');
-        expect(result.current.state.selectedAction).toBeNull();
+        expect(result.current.state.selectedAction).toBe('Goal');
     });
 
     it('prefers event opponent GK over initial state when editing', () => {

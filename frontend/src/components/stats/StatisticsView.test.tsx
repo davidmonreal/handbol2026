@@ -5,7 +5,14 @@ import { StatisticsView } from './StatisticsView';
 import type { MatchEvent } from '../../types';
 
 vi.mock('../../context/LanguageContext', () => ({
-  useSafeTranslation: () => ({ t: (key: string) => key }),
+  useSafeTranslation: () => ({
+    t: (key: string, params?: Record<string, string | number>) => {
+      if (params && typeof params.team === 'string') {
+        return `${key} ${params.team}`;
+      }
+      return key;
+    },
+  }),
 }));
 
 // Mock data
@@ -67,7 +74,7 @@ describe('StatisticsView', () => {
         matchData={mockMatchData}
       />
     );
-    expect(screen.getByText('Switch to Away Team')).toBeInTheDocument();
+    expect(screen.getByText('stats.switchTo Away Team')).toBeInTheDocument();
   });
 
   it('handles team switching (uncontrolled)', () => {
@@ -79,10 +86,10 @@ describe('StatisticsView', () => {
       />
     );
 
-    const switchButton = screen.getByText('Switch to Away Team');
+    const switchButton = screen.getByText('stats.switchTo Away Team');
     fireEvent.click(switchButton);
 
-    expect(screen.getByText('Switch to Home Team')).toBeInTheDocument();
+    expect(screen.getByText('stats.switchTo Home Team')).toBeInTheDocument();
   });
 
   it('handles team switching (controlled)', () => {
@@ -97,7 +104,7 @@ describe('StatisticsView', () => {
       />
     );
 
-    const switchButton = screen.getByText('Switch to Away Team');
+    const switchButton = screen.getByText('stats.switchTo Away Team');
     fireEvent.click(switchButton);
 
     expect(handleTeamChange).toHaveBeenCalledWith('team2');
@@ -113,7 +120,7 @@ describe('StatisticsView', () => {
       />
     );
 
-    const backButton = screen.getByText('Back');
+    const backButton = screen.getByText('stats.back');
     expect(backButton).toBeInTheDocument();
     fireEvent.click(backButton);
     expect(handleBack).toHaveBeenCalled();
@@ -131,7 +138,7 @@ describe('StatisticsView', () => {
     // Assuming FiltersBar renders buttons for zones or we can simulate zone selection via StatisticsPanel
     // Since StatisticsPanel is a child, we might need to integration test or rely on implementation details
     // For now, let's just check if the main components render
-    expect(screen.getByText('Filters:')).toBeInTheDocument();
+    expect(screen.getByText('stats.filters.label')).toBeInTheDocument();
   });
 
   describe('formatTeamDisplay function', () => {
@@ -163,7 +170,7 @@ describe('StatisticsView', () => {
         />
       );
 
-      expect(screen.getByText('Switch to La Roca Cadet M A')).toBeInTheDocument();
+      expect(screen.getByText('stats.switchTo La Roca Cadet M A')).toBeInTheDocument();
     });
 
     it('should display full team info in Switch button', () => {
@@ -175,7 +182,7 @@ describe('StatisticsView', () => {
         />
       );
 
-      expect(screen.getByText('Switch to La Roca Cadet M A')).toBeInTheDocument();
+      expect(screen.getByText('stats.switchTo La Roca Cadet M A')).toBeInTheDocument();
     });
 
     it('should handle team without club', () => {
@@ -195,7 +202,7 @@ describe('StatisticsView', () => {
         />
       );
 
-      expect(screen.getByText('Switch to La Roca Cadet M A')).toBeInTheDocument();
+      expect(screen.getByText('stats.switchTo La Roca Cadet M A')).toBeInTheDocument();
     });
 
     it('should handle team without category', () => {
@@ -215,7 +222,7 @@ describe('StatisticsView', () => {
         />
       );
 
-      expect(screen.getByText('Switch to La Roca Cadet M A')).toBeInTheDocument();
+      expect(screen.getByText('stats.switchTo La Roca Cadet M A')).toBeInTheDocument();
     });
 
     it('should handle team with only name', () => {
@@ -236,7 +243,7 @@ describe('StatisticsView', () => {
         />
       );
 
-      expect(screen.getByText('Switch to La Roca Cadet M A')).toBeInTheDocument();
+      expect(screen.getByText('stats.switchTo La Roca Cadet M A')).toBeInTheDocument();
     });
 
     it('should update team display when switching teams', () => {
@@ -248,13 +255,13 @@ describe('StatisticsView', () => {
         />
       );
 
-      expect(screen.getByText('Switch to La Roca Cadet M A')).toBeInTheDocument();
+      expect(screen.getByText('stats.switchTo La Roca Cadet M A')).toBeInTheDocument();
 
       // Click switch button
-      const switchButton = screen.getByText('Switch to La Roca Cadet M A');
+      const switchButton = screen.getByText('stats.switchTo La Roca Cadet M A');
       fireEvent.click(switchButton);
 
-      expect(screen.getByText('Switch to AB Investiments Joventut Mataró Cadet M Groc')).toBeInTheDocument();
+      expect(screen.getByText('stats.switchTo AB Investiments Joventut Mataró Cadet M Groc')).toBeInTheDocument();
     });
   });
 
@@ -303,11 +310,11 @@ describe('StatisticsView', () => {
     );
 
     // Toggle button should be present because foulEvents provide defensive stats
-    expect(screen.getByText('Defense')).toBeInTheDocument();
+    expect(screen.getByText('stats.zone.toggle.defense')).toBeInTheDocument();
 
     // Check for Fouls and Flow buttons which should be present by default as they come from main events
-    expect(screen.getByRole('button', { name: 'Fouls' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Flow' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'stats.zone.toggle.fouls' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'stats.zone.toggle.flow' })).toBeInTheDocument();
   });
 
   it('hides foul toggle for player context even if foulEvents exist', () => {
@@ -319,11 +326,11 @@ describe('StatisticsView', () => {
       />
     );
 
-    expect(screen.queryByText('Defense')).not.toBeInTheDocument();
+    expect(screen.queryByText('stats.zone.toggle.defense')).not.toBeInTheDocument();
 
     // Fouls and Flow should still be present for players as they are offensive stats
-    expect(screen.getByRole('button', { name: 'Fouls' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Flow' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'stats.zone.toggle.fouls' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'stats.zone.toggle.flow' })).toBeInTheDocument();
   });
 
   it('shows goalkeeper efficiency pills and hides flow/fouls toggles for GK view', () => {
@@ -385,13 +392,13 @@ describe('StatisticsView', () => {
       />
     );
 
-    expect(screen.getByText('Saves vs. regular shots')).toBeInTheDocument();
-    expect(screen.getByText('Saves vs. 6m shots')).toBeInTheDocument();
-    expect(screen.getByText('Saves vs. 9m shots')).toBeInTheDocument();
-    expect(screen.getByText('Saves vs. penalty shots')).toBeInTheDocument();
+    expect(screen.getByText('stats.summary.savesVsRegular')).toBeInTheDocument();
+    expect(screen.getByText('stats.summary.savesVs6m')).toBeInTheDocument();
+    expect(screen.getByText('stats.summary.savesVs9m')).toBeInTheDocument();
+    expect(screen.getByText('stats.summary.savesVsPenalty')).toBeInTheDocument();
 
-    expect(screen.queryByRole('button', { name: 'Flow' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Fouls' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'stats.zone.toggle.flow' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'stats.zone.toggle.fouls' })).not.toBeInTheDocument();
   });
 
   it('shows shot summary cards for field players', () => {
@@ -423,8 +430,8 @@ describe('StatisticsView', () => {
       />
     );
 
-    expect(screen.getByText('Goals vs shots')).toBeInTheDocument();
-    expect(screen.queryByText('Saves vs. regular shots')).not.toBeInTheDocument();
+    expect(screen.getByText('stats.summary.goalsVsShots')).toBeInTheDocument();
+    expect(screen.queryByText('stats.summary.savesVsRegular')).not.toBeInTheDocument();
   });
 
   it('keeps field player view when position data exists, even if events reference the player as goalkeeper', () => {
@@ -457,7 +464,7 @@ describe('StatisticsView', () => {
       />
     );
 
-    expect(screen.queryByText('Saves vs. regular shots')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Flow' })).toBeInTheDocument();
+    expect(screen.queryByText('stats.summary.savesVsRegular')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'stats.zone.toggle.flow' })).toBeInTheDocument();
   });
 });
