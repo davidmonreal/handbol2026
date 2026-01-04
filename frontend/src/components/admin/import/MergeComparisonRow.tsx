@@ -204,6 +204,11 @@ export const MergeComparisonRow = ({
         return existingPlayer.teams?.find((team) => team.id === selectedTeam.id)?.position;
     };
 
+    const getTeamNumber = () => {
+        if (!existingPlayer || !selectedTeam) return undefined;
+        return existingPlayer.teams?.find((team) => team.id === selectedTeam.id)?.number;
+    };
+
     const formatPositionLabel = (position?: number) => {
         const match = PLAYER_POSITIONS.find((pos) => pos.id === position);
         return match ? t(match.tKey) : t('positions.unset');
@@ -220,6 +225,10 @@ export const MergeComparisonRow = ({
             case 'name':
                 return player.name || '-';
             case 'number':
+                if (existing) {
+                    const number = getTeamNumber();
+                    return number === undefined ? '-' : `#${number}`;
+                }
                 return `#${player.number}`;
             case 'handedness':
                 if (!player.handedness) return '-';

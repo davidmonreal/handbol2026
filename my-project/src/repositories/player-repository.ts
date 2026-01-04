@@ -7,11 +7,11 @@ export class PlayerRepository {
       select: {
         id: true,
         name: true,
-        number: true,
         handedness: true,
         isGoalkeeper: true,
         teams: {
           select: {
+            number: true,
             position: true,
             team: {
               select: {
@@ -78,11 +78,11 @@ export class PlayerRepository {
       select: {
         id: true,
         name: true,
-        number: true,
         handedness: true,
         isGoalkeeper: true,
         teams: {
           select: {
+            number: true,
             position: true,
             team: {
               select: {
@@ -113,11 +113,11 @@ export class PlayerRepository {
       select: {
         id: true,
         name: true,
-        number: true,
         handedness: true,
         isGoalkeeper: true,
         teams: {
           select: {
+            number: true,
             position: true,
             team: {
               select: {
@@ -140,7 +140,6 @@ export class PlayerRepository {
       select: {
         id: true,
         name: true,
-        number: true,
         handedness: true,
         isGoalkeeper: true,
       },

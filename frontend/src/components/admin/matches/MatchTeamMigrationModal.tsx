@@ -70,7 +70,7 @@ export const MatchTeamMigrationModal = ({
                                                 key={player.id}
                                                 className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
                                             >
-                                                #{player.number} {player.name}
+                                                {player.name}
                                             </span>
                                         ))}
                                         {remainingPlayers > 0 && (
@@ -105,7 +105,7 @@ export const MatchTeamMigrationModal = ({
                                         <option value="">{t('matchMigration.goalkeeperPlaceholder')}</option>
                                         {goalkeeperCandidates.map((entry) => (
                                             <option key={entry.player.id} value={entry.player.id}>
-                                                #{entry.player.number} {entry.player.name}
+                                                {entry.number === undefined ? '-' : `#${entry.number}`} {entry.player.name}
                                             </option>
                                         ))}
                                     </select>

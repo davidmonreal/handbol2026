@@ -30,9 +30,10 @@ export class TeamRepository {
         players: {
           select: {
             id: true,
+            number: true,
             position: true,
             player: {
-              select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+              select: { id: true, name: true, handedness: true, isGoalkeeper: true },
             },
           },
         },
@@ -80,6 +81,25 @@ export class TeamRepository {
     return assignment !== null;
   }
 
+  async isNumberAssigned(teamId: string, number: number, playerId?: string): Promise<boolean> {
+    const assignment = await prisma.playerTeamSeason.findFirst({
+      where: playerId ? { teamId, number, playerId: { not: playerId } } : { teamId, number },
+      select: { id: true },
+    });
+    return assignment !== null;
+  }
+
+  async findPlayerNumbers(
+    teamId: string,
+    playerIds: string[],
+  ): Promise<Array<{ playerId: string; number: number }>> {
+    if (playerIds.length === 0) return [];
+    return prisma.playerTeamSeason.findMany({
+      where: { teamId, playerId: { in: playerIds } },
+      select: { playerId: true, number: true },
+    });
+  }
+
   async create(data: {
     name: string;
     category: string;
@@ -104,9 +124,10 @@ export class TeamRepository {
         players: {
           select: {
             id: true,
+            number: true,
             position: true,
             player: {
-              select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+              select: { id: true, name: true, handedness: true, isGoalkeeper: true },
             },
           },
         },
@@ -139,9 +160,10 @@ export class TeamRepository {
         players: {
           select: {
             id: true,
+            number: true,
             position: true,
             player: {
-              select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+              select: { id: true, name: true, handedness: true, isGoalkeeper: true },
             },
           },
         },
@@ -179,28 +201,31 @@ export class TeamRepository {
     teamId: string,
     playerId: string,
     position: number,
+    number: number,
   ): Promise<PlayerTeamSeason> {
     return prisma.playerTeamSeason.create({
       data: {
         teamId,
         playerId,
+        number,
         position,
       },
       select: {
         id: true,
         teamId: true,
         playerId: true,
+        number: true,
         position: true,
-        player: { select: { id: true, name: true, number: true } },
+        player: { select: { id: true, name: true } },
         team: { select: { id: true, name: true } },
       },
     });
   }
 
-  async updatePlayerPosition(
+  async updatePlayerAssignment(
     teamId: string,
     playerId: string,
-    position: number,
+    data: { position?: number; number?: number },
   ): Promise<PlayerTeamSeason> {
     const assignment = await prisma.playerTeamSeason.findFirst({
       where: { teamId, playerId },
@@ -213,13 +238,14 @@ export class TeamRepository {
 
     return prisma.playerTeamSeason.update({
       where: { id: assignment.id },
-      data: { position },
+      data,
       select: {
         id: true,
         teamId: true,
         playerId: true,
+        number: true,
         position: true,
-        player: { select: { id: true, name: true, number: true } },
+        player: { select: { id: true, name: true } },
         team: { select: { id: true, name: true } },
       },
     });

@@ -149,8 +149,9 @@ export function useMatchTrackerCore(
 
     // Cleanup banner timeout on unmount
     useEffect(() => {
+        const timeout = bannerTimeoutRef.current;
         return () => {
-            if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
+            if (timeout) clearTimeout(timeout);
         };
     }, []);
 

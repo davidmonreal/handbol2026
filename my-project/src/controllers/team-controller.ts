@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { Team } from '@prisma/client';
 import { BaseController } from './base-controller';
 import { TeamService } from '../services/team-service';
-import { assignPlayerSchema, updatePlayerPositionSchema } from '../schemas';
+import { assignPlayerSchema, updatePlayerAssignmentSchema } from '../schemas';
 
 export class TeamController extends BaseController<Team> {
   constructor(private teamService: TeamService) {
@@ -26,14 +26,20 @@ export class TeamController extends BaseController<Team> {
           .status(400)
           .json({ error: parsed.error.issues[0]?.message ?? 'Invalid assignment payload' });
       }
-      const { playerId, position } = parsed.data;
-      const assignment = await this.teamService.assignPlayer(req.params.id, playerId, position);
+      const { playerId, position, number } = parsed.data;
+      const assignment = await this.teamService.assignPlayer(
+        req.params.id,
+        playerId,
+        position,
+        number,
+      );
       res.status(201).json(assignment);
     } catch (error) {
       if (
         error instanceof Error &&
         (error.message === 'Player not found' ||
-          error.message === 'Player already assigned to this team')
+          error.message === 'Player already assigned to this team' ||
+          error.message === 'Player number already assigned to this team')
       ) {
         return res.status(400).json({ error: error.message });
       }
@@ -55,16 +61,16 @@ export class TeamController extends BaseController<Team> {
 
   updatePlayerPosition = async (req: Request, res: Response) => {
     try {
-      const parsed = updatePlayerPositionSchema.safeParse(req.body);
+      const parsed = updatePlayerAssignmentSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({
           error: parsed.error.issues[0]?.message ?? 'Invalid position payload',
         });
       }
-      const assignment = await this.teamService.updatePlayerPosition(
+      const assignment = await this.teamService.updatePlayerAssignment(
         req.params.id,
         req.params.playerId,
-        parsed.data.position,
+        parsed.data,
       );
       res.json(assignment);
     } catch (error) {
@@ -72,6 +78,12 @@ export class TeamController extends BaseController<Team> {
         return res.status(404).json({ error: error.message });
       }
       if (error instanceof Error && error.message === 'Invalid position') {
+        return res.status(400).json({ error: error.message });
+      }
+      if (
+        error instanceof Error &&
+        error.message === 'Player number already assigned to this team'
+      ) {
         return res.status(400).json({ error: error.message });
       }
       res.status(500).json({ error: 'Failed to update player position' });

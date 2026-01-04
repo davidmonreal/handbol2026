@@ -8,18 +8,19 @@ import type { PlayerPositionId } from '../constants/playerPositions';
 
 interface PlayerFormData {
     name: string;
-    number: number | '';
     handedness: 'RIGHT' | 'LEFT';
     isGoalkeeper: boolean;
 }
 
 interface PlayerTeamAssignment {
     team: Pick<Team, 'id' | 'name' | 'category' | 'club'>;
+    number?: number;
     position?: number;
 }
 
 interface TeamPlayer {
     player?: Player;
+    number?: number;
     position?: number;
 }
 
@@ -46,7 +47,6 @@ export const usePlayerForm = (playerId?: string) => {
     // Form State
     const [formData, setFormData] = useState<PlayerFormData>({
         name: '',
-        number: '',
         handedness: 'RIGHT',
         isGoalkeeper: false
     });
@@ -97,13 +97,13 @@ export const usePlayerForm = (playerId?: string) => {
 
                 setFormData({
                     name: player.name,
-                    number: player.number,
                     handedness: player.handedness as 'RIGHT' | 'LEFT',
                     isGoalkeeper: player.isGoalkeeper
                 });
                 playerTeams =
                     player.teams?.map((pt) => ({
                         team: pt.team as Team,
+                        number: pt.number,
                         position: pt.position,
                     })) || [];
             }
@@ -126,7 +126,6 @@ export const usePlayerForm = (playerId?: string) => {
         // Reset warning when name changes significantly, but we rely on useEffect for logic
     };
 
-    const setNumber = (number: number | '') => setFormData(prev => ({ ...prev, number }));
     const setHandedness = (handedness: 'RIGHT' | 'LEFT') => setFormData(prev => ({ ...prev, handedness }));
     const setIsGoalkeeper = (isGoalkeeper: boolean) => setFormData(prev => ({ ...prev, isGoalkeeper }));
 
@@ -172,17 +171,23 @@ export const usePlayerForm = (playerId?: string) => {
     }, [formData.name, isEditMode]);
 
 
-    const savePlayer = async (selectedTeamId?: string | null, selectedPosition?: PlayerPositionId | null) => {
-        if (!formData.name || formData.number === '') throw new Error('Name and Number required');
+    const savePlayer = async (
+        selectedTeamId?: string | null,
+        selectedPosition?: PlayerPositionId | null,
+        selectedNumber?: number | null
+    ) => {
+        if (!formData.name) throw new Error('Name required');
         if (selectedTeamId && (selectedPosition === undefined || selectedPosition === null)) {
             throw new Error('Position required');
+        }
+        if (selectedTeamId && (selectedNumber === undefined || selectedNumber === null)) {
+            throw new Error('Number required');
         }
 
         setIsSaving(true);
         try {
             const payload = {
-                ...formData,
-                number: Number(formData.number)
+                ...formData
             };
 
             const url = isEditMode ? `${API_BASE_URL}/api/players/${playerId}` : `${API_BASE_URL}/api/players`;
@@ -204,7 +209,8 @@ export const usePlayerForm = (playerId?: string) => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         playerId: savedPlayer.id,
-                        position: selectedPosition ?? DEFAULT_FIELD_POSITION
+                        position: selectedPosition ?? DEFAULT_FIELD_POSITION,
+                        number: selectedNumber
                     })
                 });
             }
@@ -265,6 +271,7 @@ export const usePlayerForm = (playerId?: string) => {
             playerTeams:
                 player.teams?.map((pt) => ({
                     team: pt.team as Pick<Team, 'id' | 'name' | 'category' | 'club'>,
+                    number: pt.number,
                     position: pt.position,
                 })) || [],
         }));
@@ -304,10 +311,15 @@ export const usePlayerForm = (playerId?: string) => {
         // Fallback: if route not found (older backend), reassign by delete+create
         if (res.status === 404 || res.status === 405) {
             await fetch(patchUrl, { method: 'DELETE' }).catch(() => {});
+            const fallbackPayload: Record<string, unknown> = { playerId, position };
+            const existingNumber = previousTeams.find((pt) => pt.team.id === teamId)?.number;
+            if (typeof existingNumber === 'number') {
+                fallbackPayload.number = existingNumber;
+            }
             res = await fetch(`${API_BASE_URL}/api/teams/${teamId}/players`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerId, position }),
+                body: JSON.stringify(fallbackPayload),
             });
             text = await res.text();
             payload = parseJson(text);
@@ -316,6 +328,44 @@ export const usePlayerForm = (playerId?: string) => {
         if (!res.ok) {
             setData((prev) => ({ ...prev, playerTeams: previousTeams }));
             throw new Error((payload as { error?: string }).error || text || 'Failed to update position');
+        }
+        await refreshPlayerTeams();
+    };
+
+    const updateTeamNumberHandler = async (teamId: string, number: number) => {
+        if (!playerId) {
+            throw new Error('Save player before updating number');
+        }
+        const patchUrl = `${API_BASE_URL}/api/teams/${teamId}/players/${playerId}`;
+        const sendPatch = async () =>
+            fetch(patchUrl, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ number }),
+            });
+
+        const previousTeams = data.playerTeams;
+        setData((prev) => ({
+            ...prev,
+            playerTeams: prev.playerTeams.map((pt) =>
+                pt.team.id === teamId ? { ...pt, number } : pt,
+            ),
+        }));
+
+        const res = await sendPatch();
+        const text = await res.text();
+        const parseJson = (raw: string) => {
+            try {
+                return raw ? JSON.parse(raw) : {};
+            } catch {
+                return {};
+            }
+        };
+        const payload = parseJson(text);
+
+        if (!res.ok) {
+            setData((prev) => ({ ...prev, playerTeams: previousTeams }));
+            throw new Error((payload as { error?: string }).error || text || 'Failed to update number');
         }
         await refreshPlayerTeams();
     };
@@ -341,7 +391,6 @@ export const usePlayerForm = (playerId?: string) => {
         duplicateState,
         handlers: {
             setName,
-            setNumber,
             setHandedness,
             setIsGoalkeeper,
             ignoreMatch,
@@ -350,6 +399,7 @@ export const usePlayerForm = (playerId?: string) => {
             createTeam: createTeamHandler,
             removeTeam: removeTeamHandler,
             updateTeamPosition: updateTeamPositionHandler,
+            updateTeamNumber: updateTeamNumberHandler,
             fetchTeamPlayers
         }
     };

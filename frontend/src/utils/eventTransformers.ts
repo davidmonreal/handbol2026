@@ -45,7 +45,6 @@ export interface BackendEvent {
     playerId?: string | null;
     player?: {
         name: string;
-        number: number;
     };
     teamId: string;
     type: string;
@@ -70,7 +69,7 @@ export const transformBackendEvent = (e: BackendEvent): MatchEvent => ({
     videoTimestamp: e.videoTimestamp,
     playerId: e.playerId ?? null,
     playerName: e.player?.name,
-    playerNumber: e.player?.number,
+    playerNumber: undefined,
     teamId: e.teamId,
     matchId: e.matchId,
     category: e.type,

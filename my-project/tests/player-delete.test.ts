@@ -40,7 +40,6 @@ describe('PlayerController - Delete Operations', () => {
       const deletedPlayer = {
         id: playerId,
         name: 'test-player',
-        number: 10,
         handedness: 'RIGHT',
         isGoalkeeper: false,
       };
@@ -91,7 +90,6 @@ describe('PlayerController - Delete Operations', () => {
       const deletedPlayer = {
         id: playerId,
         name: 'test-Player With Relations',
-        number: 7,
         handedness: 'LEFT',
         isGoalkeeper: true,
       };

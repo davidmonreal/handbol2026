@@ -115,13 +115,18 @@ describe('TeamController', () => {
 
   it('assignPlayer assigns a player', async () => {
     req.params = { id: '1' };
-    req.body = { playerId: 'p1', position: PLAYER_POSITION.LATERAL_ESQ };
-    const assignment = { playerId: 'p1', teamId: '1', position: PLAYER_POSITION.LATERAL_ESQ };
+    req.body = { playerId: 'p1', position: PLAYER_POSITION.LATERAL_ESQ, number: 7 };
+    const assignment = {
+      playerId: 'p1',
+      teamId: '1',
+      position: PLAYER_POSITION.LATERAL_ESQ,
+      number: 7,
+    };
     vi.mocked(service.assignPlayer).mockResolvedValue(assignment as any);
 
     await controller.assignPlayer(req as Request, res as Response);
 
-    expect(service.assignPlayer).toHaveBeenCalledWith('1', 'p1', PLAYER_POSITION.LATERAL_ESQ);
+    expect(service.assignPlayer).toHaveBeenCalledWith('1', 'p1', PLAYER_POSITION.LATERAL_ESQ, 7);
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith(assignment);
   });
@@ -137,20 +142,18 @@ describe('TeamController', () => {
     expect(res.json).toHaveBeenCalledWith({ error: expect.any(String) });
   });
 
-  it('updatePlayerPosition updates position', async () => {
+  it('updatePlayerPosition updates assignment', async () => {
     req.params = { id: '1', playerId: 'p1' };
     req.body = { position: PLAYER_POSITION.GOALKEEPER };
     const updated = { id: 'a1', teamId: '1', playerId: 'p1', position: PLAYER_POSITION.GOALKEEPER };
-    vi.mocked(service.updatePlayerPosition).mockResolvedValue(updated as any);
+    vi.mocked(service.updatePlayerAssignment).mockResolvedValue(updated as any);
 
     // @ts-expect-error partial req/res
     await controller.updatePlayerPosition(req as Request, res as Response);
 
-    expect(service.updatePlayerPosition).toHaveBeenCalledWith(
-      '1',
-      'p1',
-      PLAYER_POSITION.GOALKEEPER,
-    );
+    expect(service.updatePlayerAssignment).toHaveBeenCalledWith('1', 'p1', {
+      position: PLAYER_POSITION.GOALKEEPER,
+    });
     expect(res.json).toHaveBeenCalledWith(updated);
   });
 

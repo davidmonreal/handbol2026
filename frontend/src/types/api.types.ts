@@ -5,13 +5,13 @@
 
 export interface PlayerApiResponse {
     id: string;
-    number: number;
     name: string;
     isGoalkeeper?: boolean;
 }
 
 export interface TeamPlayerApiResponse {
     player: PlayerApiResponse;
+    number?: number;
     position?: number;
 }
 

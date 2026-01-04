@@ -92,7 +92,7 @@ export function StatisticsView({
 
   const getPlayerInfo = (playerId: string): {
     name: string;
-    number: number;
+    number?: number;
     isGoalkeeper?: boolean;
     positionIds?: number[];
   } => {
@@ -103,7 +103,7 @@ export function StatisticsView({
       const homePlayer = matchData.homeTeam.players.find((p: any) => p.player.id === playerId);
       if (homePlayer) return {
         name: homePlayer.player.name,
-        number: homePlayer.player.number,
+        number: homePlayer.number,
         isGoalkeeper,
         positionIds,
       };
@@ -112,7 +112,7 @@ export function StatisticsView({
       const awayPlayer = matchData.awayTeam.players.find((p: any) => p.player.id === playerId);
       if (awayPlayer) return {
         name: awayPlayer.player.name,
-        number: awayPlayer.player.number,
+        number: awayPlayer.number,
         isGoalkeeper,
         positionIds,
       };
@@ -123,7 +123,7 @@ export function StatisticsView({
       const teamPlayer = teamData.players.find((p: any) => p.player.id === playerId);
       if (teamPlayer) return {
         name: teamPlayer.player.name,
-        number: teamPlayer.player.number,
+        number: teamPlayer.number,
         isGoalkeeper,
         positionIds,
       };
@@ -132,7 +132,7 @@ export function StatisticsView({
     if (playerData && playerData.id === playerId) {
       return {
         name: playerData.name,
-        number: playerData.number,
+        number: undefined,
         isGoalkeeper,
         positionIds,
       };
@@ -142,7 +142,7 @@ export function StatisticsView({
     const event = events.find(e => e.playerId === playerId);
     return {
       name: event?.playerName || 'Unknown',
-      number: event?.playerNumber || 0,
+      number: event?.playerNumber,
       isGoalkeeper,
       positionIds,
     };

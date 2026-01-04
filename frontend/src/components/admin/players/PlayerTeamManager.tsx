@@ -15,6 +15,7 @@ import type { Player } from '../../../types';
 interface PlayerTeamEntry {
     id?: string;
     team: Pick<Team, 'id' | 'name' | 'category' | 'club'>;
+    number?: number;
     position?: number;
     player?: Player;
 }
@@ -34,12 +35,15 @@ interface PlayerTeamManagerProps {
     selectedCategory: string;
     selectedTeamId: string | null;
     selectedPosition: PlayerPositionId;
+    selectedNumber: number | '';
     onSelectedClubChange: (id: string | null) => void;
     onSelectedCategoryChange: (cat: string) => void;
     onSelectedTeamChange: (id: string | null) => void;
     onSelectedPositionChange: (pos: PlayerPositionId) => void;
+    onSelectedNumberChange: (value: number | '') => void;
     onUpdateTeamPosition: (teamId: string, position: PlayerPositionId) => Promise<void>;
-    collision: { player?: Player } | null;
+    onUpdateTeamNumber: (teamId: string, number: number) => Promise<void>;
+    collision: { player?: Player; number?: number } | null;
     acceptNumberConflict: boolean;
     onAcceptNumberConflictChange: (value: boolean) => void;
 }
@@ -57,11 +61,14 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
     selectedCategory,
     selectedTeamId,
     selectedPosition,
+    selectedNumber,
     onSelectedClubChange,
     onSelectedCategoryChange,
     onSelectedTeamChange,
     onSelectedPositionChange,
+    onSelectedNumberChange,
     onUpdateTeamPosition,
+    onUpdateTeamNumber,
     collision,
     acceptNumberConflict,
     onAcceptNumberConflictChange
@@ -141,6 +148,35 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                                         <span className="text-indigo-600">{pt.team.name}</span>
                                     </span>
                                     <div className="flex items-center gap-2">
+                                        <input
+                                            key={`${pt.team.id}-${pt.number ?? 'unset'}`}
+                                            type="number"
+                                            defaultValue={pt.number ?? ''}
+                                            onBlur={(event) => {
+                                                const value = event.target.value;
+                                                if (value === '') return;
+                                                const nextNumber = Number(value);
+                                                if (!Number.isInteger(nextNumber) || nextNumber < 0 || nextNumber > 99) {
+                                                    alert(t('playerTeam.invalidNumber'));
+                                                    return;
+                                                }
+                                                if (pt.number === nextNumber) return;
+                                                onUpdateTeamNumber(pt.team.id, nextNumber).catch((err) => {
+                                                    console.error('Failed to update number', err);
+                                                    const message = err instanceof Error ? err.message : '';
+                                                    const fallback = t('playerTeam.updateNumberError');
+                                                    const normalised = message === 'Failed to update number' ||
+                                                        message === 'Save player before updating number'
+                                                        ? fallback
+                                                        : message || fallback;
+                                                    alert(normalised);
+                                                });
+                                            }}
+                                            className="w-16 rounded border border-indigo-200 bg-white px-2 py-1 text-center text-sm font-mono text-gray-800 focus:border-indigo-400 focus:outline-none"
+                                            placeholder="#"
+                                            min={0}
+                                            max={99}
+                                        />
                                         <DropdownSelect
                                             label={null}
                                             options={positionOptions}
@@ -231,6 +267,19 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                     placeholder={t('positions.unset')}
                 />
             </div>
+            <div className="mt-4 max-w-xs">
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('playerTeam.numberLabel')}</label>
+                <input
+                    type="number"
+                    value={selectedNumber}
+                    onChange={(event) =>
+                        onSelectedNumberChange(event.target.value === '' ? '' : Number(event.target.value))}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-center font-mono text-lg text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder={t('playerTeam.numberPlaceholder')}
+                    min={0}
+                    max={99}
+                />
+            </div>
             <p className="text-sm text-gray-500 mt-2">
                 {t('playerTeam.helperText')}
             </p>
@@ -243,7 +292,7 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                             {t('playerTeam.numberConflictPrefix')}{' '}
                             <strong>{collision.player.name}</strong>{' '}
                             {t('playerTeam.numberConflictMiddle')}{' '}
-                            <strong>{collision.player.number}</strong>{' '}
+                            <strong>{collision.number ?? '-'}</strong>{' '}
                             {t('playerTeam.numberConflictSuffix')}
                         </div>
                         <label className="mt-2 inline-flex items-center gap-2 text-sm text-red-800">

@@ -9,7 +9,7 @@ export const GOALKEEPER_POSITION_ID = 1;
 
 export interface TransformedPlayer {
     id: string;
-    number: number;
+    number?: number;
     name: string;
     position: string;
     isGoalkeeper: boolean;
@@ -47,7 +47,7 @@ export function transformTeam(
             const positionLabel = resolvePlayerPositionLabel(p.position, p.player?.isGoalkeeper);
             return {
                 id: p.player.id,
-                number: p.player.number,
+                number: p.number,
                 name: p.player.name,
                 position: positionLabel,
                 isGoalkeeper: positionId === GOALKEEPER_POSITION_ID || p.player?.isGoalkeeper === true,

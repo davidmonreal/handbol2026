@@ -15,9 +15,7 @@ describe('PlayerService', () => {
   });
 
   it('getAll calls repository.findAll', async () => {
-    const mockPlayers = [
-      { id: '1', name: 'test-Alice', number: 10, handedness: 'RIGHT', isGoalkeeper: false },
-    ];
+    const mockPlayers = [{ id: '1', name: 'test-Alice', handedness: 'RIGHT', isGoalkeeper: false }];
     vi.mocked(repository.findAll).mockResolvedValue(mockPlayers);
 
     const result = await service.getAll();
@@ -30,7 +28,6 @@ describe('PlayerService', () => {
     const mockPlayer = {
       id: '1',
       name: 'test-Alice',
-      number: 10,
       handedness: 'RIGHT',
       isGoalkeeper: false,
     };
@@ -43,7 +40,7 @@ describe('PlayerService', () => {
   });
 
   it('create calls repository.create with valid data', async () => {
-    const newPlayerData = { name: 'test-Bob', number: 7, handedness: 'LEFT', isGoalkeeper: false };
+    const newPlayerData = { name: 'test-Bob', handedness: 'LEFT', isGoalkeeper: false };
     const createdPlayer = { id: '2', ...newPlayerData };
     vi.mocked(repository.create).mockResolvedValue(createdPlayer);
 
@@ -53,40 +50,9 @@ describe('PlayerService', () => {
     expect(result).toEqual(createdPlayer);
   });
 
-  it('create allows zero dorsal numbers', async () => {
-    const zeroNumberData = {
-      name: 'test-Unknown',
-      number: 0,
-      handedness: 'RIGHT',
-      isGoalkeeper: false,
-    };
-    const created = { id: 'new', ...zeroNumberData };
-    vi.mocked(repository.create).mockResolvedValue(created);
-
-    const result = await service.create(zeroNumberData);
-
-    expect(repository.create).toHaveBeenCalledWith(zeroNumberData);
-    expect(result).toEqual(created);
-  });
-
-  it('create throws error if number is negative', async () => {
-    const invalidData = {
-      name: 'test-Invalid',
-      number: -1,
-      handedness: 'RIGHT',
-      isGoalkeeper: false,
-    };
-
-    await expect(service.create(invalidData)).rejects.toThrow(
-      'Player number must be zero or positive',
-    );
-    expect(repository.create).not.toHaveBeenCalled();
-  });
-
   it('create throws error if handedness is invalid', async () => {
     const invalidData = {
       name: 'test-Invalid',
-      number: 10,
       handedness: 'MIDDLE' as unknown as 'LEFT' | 'RIGHT',
       isGoalkeeper: false,
     };
@@ -100,7 +66,6 @@ describe('PlayerService', () => {
     const updatedPlayer = {
       id: '1',
       name: 'test-Alice Updated',
-      number: 10,
       handedness: 'RIGHT',
       isGoalkeeper: false,
     };
@@ -112,20 +77,10 @@ describe('PlayerService', () => {
     expect(result).toEqual(updatedPlayer);
   });
 
-  it('update throws error if number is negative', async () => {
-    const invalidData = { number: -5 };
-
-    await expect(service.update('1', invalidData)).rejects.toThrow(
-      'Player number must be zero or positive',
-    );
-    expect(repository.update).not.toHaveBeenCalled();
-  });
-
   it('delete calls repository.delete', async () => {
     const deletedPlayer = {
       id: '1',
       name: 'test-Alice',
-      number: 10,
       handedness: 'RIGHT',
       isGoalkeeper: false,
     };

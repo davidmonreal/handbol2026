@@ -8,13 +8,8 @@ describe('player schema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects player numbers above 99', () => {
-    const result = createPlayerSchema.safeParse(makePlayerPayload({ number: 120 }));
-    expect(result.success).toBe(false);
-  });
-
-  it('rejects non-numeric player numbers on update', () => {
-    const result = updatePlayerSchema.safeParse({ number: 'not-a-number' });
-    expect(result.success).toBe(false);
+  it('accepts updates without handedness', () => {
+    const result = updatePlayerSchema.safeParse({ name: 'test-Alex' });
+    expect(result.success).toBe(true);
   });
 });

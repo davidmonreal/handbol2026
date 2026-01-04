@@ -33,7 +33,7 @@ describe('GameEventRepository', () => {
       where: { teamId: 't1', playerId: 'p1' },
       include: {
         player: {
-          select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+          select: { id: true, name: true, handedness: true, isGoalkeeper: true },
         },
         match: {
           select: {
@@ -72,10 +72,10 @@ describe('GameEventRepository', () => {
       where: { matchId: 'm1' },
       include: {
         player: {
-          select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+          select: { id: true, name: true, handedness: true, isGoalkeeper: true },
         },
         activeGoalkeeper: {
-          select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+          select: { id: true, name: true, handedness: true, isGoalkeeper: true },
         },
       },
       orderBy: { timestamp: 'asc' },
@@ -92,7 +92,7 @@ describe('GameEventRepository', () => {
       where: { id: 'e1' },
       include: {
         player: {
-          select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+          select: { id: true, name: true, handedness: true, isGoalkeeper: true },
         },
         match: {
           select: {

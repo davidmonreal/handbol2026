@@ -114,16 +114,17 @@ describe('TeamRepository', () => {
       id: 'a1',
       teamId: 't1',
       playerId: 'p1',
+      number: 7,
       position: PLAYER_POSITION.CENTRAL,
       player: { id: 'p1', name: 'test-Marc' },
       team: { id: 't1', name: 'test-Cadet A' },
     };
     vi.mocked(prisma.playerTeamSeason.create).mockResolvedValue(mockAssignment);
 
-    const result = await repository.assignPlayer('t1', 'p1', PLAYER_POSITION.CENTRAL);
+    const result = await repository.assignPlayer('t1', 'p1', PLAYER_POSITION.CENTRAL, 7);
 
     expect(prisma.playerTeamSeason.create).toHaveBeenCalledWith({
-      data: { teamId: 't1', playerId: 'p1', position: PLAYER_POSITION.CENTRAL },
+      data: { teamId: 't1', playerId: 'p1', position: PLAYER_POSITION.CENTRAL, number: 7 },
       select: expect.anything(),
     });
     expect(result).toEqual(mockAssignment);
@@ -158,7 +159,7 @@ describe('TeamRepository', () => {
     );
   });
 
-  it('updatePlayerPosition updates assignment position', async () => {
+  it('updatePlayerAssignment updates assignment fields', async () => {
     vi.mocked(prisma.playerTeamSeason.findFirst).mockResolvedValue({
       id: 'a1',
       teamId: 't1',
@@ -168,25 +169,29 @@ describe('TeamRepository', () => {
       id: 'a1',
       teamId: 't1',
       playerId: 'p1',
+      number: 7,
       position: PLAYER_POSITION.CENTRAL,
     };
     vi.mocked(prisma.playerTeamSeason.update).mockResolvedValue(updatedAssignment as any);
 
-    const result = await repository.updatePlayerPosition('t1', 'p1', PLAYER_POSITION.CENTRAL);
+    const result = await repository.updatePlayerAssignment('t1', 'p1', {
+      position: PLAYER_POSITION.CENTRAL,
+      number: 7,
+    });
 
     expect(prisma.playerTeamSeason.update).toHaveBeenCalledWith({
       where: { id: 'a1' },
-      data: { position: PLAYER_POSITION.CENTRAL },
+      data: { position: PLAYER_POSITION.CENTRAL, number: 7 },
       select: expect.anything(),
     });
     expect(result).toEqual(updatedAssignment);
   });
 
-  it('updatePlayerPosition throws if not assigned', async () => {
+  it('updatePlayerAssignment throws if not assigned', async () => {
     vi.mocked(prisma.playerTeamSeason.findFirst).mockResolvedValue(null);
 
     await expect(
-      repository.updatePlayerPosition('t1', 'p1', PLAYER_POSITION.CENTRAL),
+      repository.updatePlayerAssignment('t1', 'p1', { position: PLAYER_POSITION.CENTRAL }),
     ).rejects.toThrow('Player not assigned to this team');
     expect(prisma.playerTeamSeason.update).not.toHaveBeenCalled();
   });

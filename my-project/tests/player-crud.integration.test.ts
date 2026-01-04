@@ -67,7 +67,6 @@ describe.sequential('Player CRUD integration', () => {
   it('creates and retrieves a player by id', async () => {
     const payload = {
       name: testPlayerName('integration'),
-      number: 42,
       handedness: Handedness.RIGHT,
       isGoalkeeper: false,
     };
@@ -85,7 +84,6 @@ describe.sequential('Player CRUD integration', () => {
   it('updates an existing player', async () => {
     const payload = {
       name: testPlayerName('update'),
-      number: 8,
       handedness: Handedness.LEFT,
       isGoalkeeper: false,
     };
@@ -95,10 +93,9 @@ describe.sequential('Player CRUD integration', () => {
 
     const updateRes = await request(app)
       .put(`/api/players/${createRes.body.id}`)
-      .send({ number: 99, isGoalkeeper: true });
+      .send({ isGoalkeeper: true });
 
     expect(updateRes.status).toBe(200);
-    expect(updateRes.body.number).toBe(99);
     expect(updateRes.body.isGoalkeeper).toBe(true);
   }, 15000);
 
@@ -106,7 +103,7 @@ describe.sequential('Player CRUD integration', () => {
     const marker = testPlayerName('search');
     const createRes = await request(app)
       .post('/api/players')
-      .send({ name: marker, number: 31, handedness: Handedness.RIGHT, isGoalkeeper: false });
+      .send({ name: marker, handedness: Handedness.RIGHT, isGoalkeeper: false });
     expect(createRes.status).toBe(201);
     createdPlayerIds.push(createRes.body.id);
 
@@ -123,7 +120,6 @@ describe.sequential('Player CRUD integration', () => {
   it('deletes players and cascades team assignments', async () => {
     const payload = {
       name: testPlayerName('delete'),
-      number: 73,
       handedness: Handedness.RIGHT,
       isGoalkeeper: false,
     };
@@ -134,10 +130,20 @@ describe.sequential('Player CRUD integration', () => {
 
     const team = (await prisma.team.findFirst()) ?? (await createTeamForCascadeCheck());
 
+    const existingNumbers = await prisma.playerTeamSeason.findMany({
+      where: { teamId: team.id },
+      select: { number: true },
+    });
+    const usedNumbers = new Set(existingNumbers.map((entry) => entry.number));
+    const availableNumber = Array.from({ length: 100 }, (_, index) => index).find(
+      (value) => !usedNumbers.has(value),
+    );
+
     await prisma.playerTeamSeason.create({
       data: {
         playerId,
         teamId: team.id,
+        number: availableNumber ?? 0,
         position: PLAYER_POSITION.CENTRAL,
       },
     });

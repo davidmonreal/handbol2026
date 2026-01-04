@@ -31,10 +31,10 @@ export interface Season {
 export interface Player {
     id: string;
     name: string;
-    number: number;
     handedness: string;
     isGoalkeeper: boolean;
     teams?: {
+        number?: number;
         position?: number;
         team: {
             id: string;
@@ -56,7 +56,7 @@ export interface Team {
     season?: { id: string; name: string };
     color: string;
     // Players with their position in this specific team
-    players?: { id?: string; player: Player; position?: number }[];
+    players?: { id?: string; player: Player; number?: number; position?: number }[];
     isMyTeam?: boolean;
 }
 
@@ -77,7 +77,7 @@ export interface Match {
     realTimeSecondHalfEnd?: number;
 }
 
-export type MatchMigrationPlayer = { id: string; name: string; number: number };
+export type MatchMigrationPlayer = { id: string; name: string };
 export type MatchMigrationTeamSummary = { id: string; name: string; category?: string; clubName?: string };
 export type MatchMigrationChange = {
     side: 'home' | 'away';

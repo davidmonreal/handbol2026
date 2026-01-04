@@ -46,7 +46,6 @@ model Team {
 model Player {
   id                     String             @id @default(uuid())
   name                   String
-  number                 Int
   handedness             Handedness         @default(RIGHT)
   isGoalkeeper           Boolean            @default(false)
   activeGoalkeeperEvents GameEvent[]        @relation("ActiveGoalkeeper")
@@ -58,11 +57,13 @@ model PlayerTeamSeason {
   id       String @id @default(uuid())
   playerId String
   teamId   String
+  number   Int
   position Int    @default(0)
   player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
   team     Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@unique([playerId, teamId])
+  @@unique([teamId, number])
   @@index([playerId])
   @@index([teamId])
 }

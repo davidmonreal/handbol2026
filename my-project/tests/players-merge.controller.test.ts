@@ -37,7 +37,7 @@ describe('mergePlayer controller', () => {
   it('marks goalkeeper when old team assignments include goalkeeper position', async () => {
     req.body = {
       oldPlayerId: 'old-1',
-      newPlayerData: { name: 'test-New GK', number: 1, handedness: 'RIGHT' },
+      newPlayerData: { name: 'test-New GK', handedness: 'RIGHT' },
     };
 
     mockFindById
@@ -56,7 +56,7 @@ describe('mergePlayer controller', () => {
       playerTeamSeason: {
         findMany: vi
           .fn()
-          .mockResolvedValue([{ teamId: 't1', position: PLAYER_POSITION.GOALKEEPER }]),
+          .mockResolvedValue([{ teamId: 't1', number: 1, position: PLAYER_POSITION.GOALKEEPER }]),
         create: vi.fn(),
         findFirst: vi.fn(),
         deleteMany: vi.fn(),
@@ -118,7 +118,12 @@ describe('mergePlayer controller', () => {
     await mergePlayer(req as Request, res as Response);
 
     expect(tx.playerTeamSeason.create).toHaveBeenCalledWith({
-      data: { playerId: 'new-2', teamId: 'team-1', position: PLAYER_POSITION.GOALKEEPER },
+      data: {
+        playerId: 'new-2',
+        teamId: 'team-1',
+        number: 12,
+        position: PLAYER_POSITION.GOALKEEPER,
+      },
     });
     expect(tx.player.update).toHaveBeenCalledWith({
       where: { id: 'new-2' },

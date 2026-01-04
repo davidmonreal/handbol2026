@@ -7,9 +7,7 @@ import { useSafeTranslation } from '../../../context/LanguageContext';
 
 interface PlayerBasicInfoProps {
     name: string;
-    number: number | '';
     onNameChange: (name: string) => void;
-    onNumberChange: (num: number | '') => void;
     isEditMode: boolean;
     duplicateState: {
         matches: DuplicateMatch[];
@@ -21,9 +19,7 @@ interface PlayerBasicInfoProps {
 
 export const PlayerBasicInfo: React.FC<PlayerBasicInfoProps> = ({
     name,
-    number,
     onNameChange,
-    onNumberChange,
     isEditMode,
     duplicateState,
     onIgnoreMatch
@@ -32,8 +28,8 @@ export const PlayerBasicInfo: React.FC<PlayerBasicInfoProps> = ({
     const { t } = useSafeTranslation();
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2">
+        <div className="grid grid-cols-1 gap-6">
+            <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                     {t('playerForm.fullNameLabel')}
                 </label>
@@ -63,19 +59,6 @@ export const PlayerBasicInfo: React.FC<PlayerBasicInfoProps> = ({
                         )}
                     </div>
                 )}
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('playerForm.numberLabel')}
-                </label>
-                <input
-                    type="number"
-                    value={number}
-                    onChange={(e) => onNumberChange(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-center font-mono text-lg"
-                    placeholder={t('playerForm.numberPlaceholder')}
-                />
-            </div>
 
             {/* Full Width Duplicate Warning */}
             {!isEditMode && duplicateState.hasWarning && (
@@ -87,9 +70,8 @@ export const PlayerBasicInfo: React.FC<PlayerBasicInfoProps> = ({
                         <div key={idx} className="bg-white p-4 flex items-center justify-between gap-4 border-b last:border-b-0 border-gray-100">
                             <div className="flex-1 min-w-0">
                                 <div className="font-medium text-gray-900 flex items-center gap-2">
-                                    {match.name}
-                                    {match.number && <span className="text-gray-500">#{match.number}</span>}
-                                </div>
+                                {match.name}
+                            </div>
                                 {match.teams && match.teams.length > 0 ? (
                                     <div className="text-sm text-gray-500 mt-0.5">
                                         {match.teams.map(t => `${t.club} ${toTitleCase(t.name)}`).join(', ')}

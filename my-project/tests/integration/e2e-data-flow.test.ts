@@ -72,7 +72,7 @@ describe('End-to-End Data Flow Verification', () => {
         expect(player).toHaveProperty('player');
         expect(player.player).toHaveProperty('id');
         expect(player.player).toHaveProperty('name');
-        expect(player.player).toHaveProperty('number');
+        expect(player).toHaveProperty('number');
       }
 
       // Verify away team structure
@@ -108,7 +108,6 @@ describe('End-to-End Data Flow Verification', () => {
         if (event.playerId) {
           expect(event).toHaveProperty('player');
           expect(event.player).toHaveProperty('name');
-          expect(event.player).toHaveProperty('number');
         }
 
         // Verify Shot events have required fields
@@ -192,7 +191,6 @@ describe('End-to-End Data Flow Verification', () => {
 
         expect(player).toHaveProperty('id');
         expect(player).toHaveProperty('name');
-        expect(player).toHaveProperty('number');
         expect(player).toHaveProperty('handedness');
         expect(player).toHaveProperty('teams');
 
@@ -283,7 +281,6 @@ describe('End-to-End Data Flow Verification', () => {
 
       if (eventWithThisPlayer) {
         expect(eventWithThisPlayer.player.name).toBe(playerFromList.name);
-        expect(eventWithThisPlayer.player.number).toBe(playerFromList.number);
       }
     });
 

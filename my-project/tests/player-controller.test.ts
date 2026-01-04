@@ -30,7 +30,6 @@ describe('PlayerController', () => {
       {
         id: '1',
         name: 'test-Alice',
-        number: 10,
         handedness: Handedness.RIGHT,
         isGoalkeeper: false,
       },
@@ -49,7 +48,6 @@ describe('PlayerController', () => {
       {
         id: '1',
         name: 'test-Alice',
-        number: 10,
         handedness: Handedness.RIGHT,
         isGoalkeeper: false,
       },
@@ -90,7 +88,6 @@ describe('PlayerController', () => {
     const mockPlayer = {
       id: '1',
       name: 'test-Alice',
-      number: 10,
       handedness: Handedness.RIGHT,
       isGoalkeeper: false,
     };
@@ -113,11 +110,10 @@ describe('PlayerController', () => {
   });
 
   it('create creates a new player', async () => {
-    req.body = { name: 'test-Bob', number: '7', handedness: 'LEFT' };
+    req.body = { name: 'test-Bob', handedness: 'LEFT' };
     const createdPlayer = {
       id: '2',
       name: 'test-Bob',
-      number: 7,
       handedness: Handedness.LEFT,
       isGoalkeeper: false,
     };
@@ -127,7 +123,6 @@ describe('PlayerController', () => {
 
     expect(service.create).toHaveBeenCalledWith({
       name: 'test-Bob',
-      number: 7,
       handedness: 'LEFT',
       isGoalkeeper: false,
     });
@@ -136,11 +131,10 @@ describe('PlayerController', () => {
   });
 
   it('create creates a new goalkeeper', async () => {
-    req.body = { name: 'test-Nico', number: '1', handedness: 'RIGHT', isGoalkeeper: true };
+    req.body = { name: 'test-Nico', handedness: 'RIGHT', isGoalkeeper: true };
     const createdPlayer = {
       id: '3',
       name: 'test-Nico',
-      number: 1,
       handedness: Handedness.RIGHT,
       isGoalkeeper: true,
     };
@@ -150,7 +144,6 @@ describe('PlayerController', () => {
 
     expect(service.create).toHaveBeenCalledWith({
       name: 'test-Nico',
-      number: 1,
       handedness: 'RIGHT',
       isGoalkeeper: true,
     });
@@ -158,18 +151,8 @@ describe('PlayerController', () => {
     expect(res.json).toHaveBeenCalledWith(createdPlayer);
   });
 
-  it('create returns 400 for invalid number', async () => {
-    req.body = { name: 'test-Invalid', number: '0', handedness: 'RIGHT' };
-    vi.mocked(service.create).mockRejectedValue(new Error('Player number must be positive'));
-
-    await controller.create(req as Request, res as Response);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Player number must be positive' });
-  });
-
   it('create returns 400 for invalid handedness', async () => {
-    req.body = { name: 'test-Invalid', number: '8', handedness: 'MIDDLE' };
+    req.body = { name: 'test-Invalid', handedness: 'MIDDLE' };
     vi.mocked(service.create).mockRejectedValue(new Error('Handedness must be LEFT or RIGHT'));
 
     await controller.create(req as Request, res as Response);
@@ -184,7 +167,6 @@ describe('PlayerController', () => {
     const updatedPlayer = {
       id: '1',
       name: 'test-Alice Updated',
-      number: 10,
       handedness: Handedness.RIGHT,
       isGoalkeeper: false,
     };
@@ -202,7 +184,6 @@ describe('PlayerController', () => {
     const updatedPlayer = {
       id: '1',
       name: 'test-Alice',
-      number: 10,
       handedness: Handedness.RIGHT,
       isGoalkeeper: true,
     };
@@ -219,7 +200,6 @@ describe('PlayerController', () => {
     const mockDeleteResult = {
       id: '1',
       name: 'test-Deleted',
-      number: 10,
       handedness: Handedness.RIGHT,
       isGoalkeeper: false,
     };

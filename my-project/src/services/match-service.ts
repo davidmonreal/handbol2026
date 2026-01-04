@@ -206,7 +206,7 @@ export class MatchService extends BaseService<Match> {
       fromTeam: ReturnType<MatchService['buildTeamSummary']>;
       toTeam: ReturnType<MatchService['buildTeamSummary']>;
       eventCount: number;
-      players: Array<{ id: string; name: string; number: number }>;
+      players: Array<{ id: string; name: string }>;
       requiresGoalkeeper: boolean;
       goalkeeperEventCount: number;
     }> = [];
@@ -231,7 +231,6 @@ export class MatchService extends BaseService<Match> {
         players: players.map((player) => ({
           id: player.id,
           name: player.name,
-          number: player.number,
         })),
         requiresGoalkeeper: goalkeeperEventCount > 0,
         goalkeeperEventCount,
@@ -258,7 +257,6 @@ export class MatchService extends BaseService<Match> {
         players: players.map((player) => ({
           id: player.id,
           name: player.name,
-          number: player.number,
         })),
         requiresGoalkeeper: goalkeeperEventCount > 0,
         goalkeeperEventCount,
@@ -290,7 +288,7 @@ export class MatchService extends BaseService<Match> {
 
     const teamEventUpdates: Array<{ fromTeamId: string; toTeamId: string }> = [];
     const opponentGoalkeeperUpdates: Array<{ attackingTeamId: string; goalkeeperId: string }> = [];
-    const playerAssignments: Array<{ teamId: string; playerIds: string[] }> = [];
+    const assignmentGroups: Array<{ fromTeamId: string; teamId: string; playerIds: string[] }> = [];
 
     if (data.homeTeamId && data.homeTeamId !== match.homeTeamId) {
       await this.resolveTeamChange(match, 'home', data.homeTeamId);
@@ -317,7 +315,8 @@ export class MatchService extends BaseService<Match> {
       );
       const assignments = new Set(playerIds);
       if (data.homeGoalkeeperId) assignments.add(data.homeGoalkeeperId);
-      playerAssignments.push({
+      assignmentGroups.push({
+        fromTeamId: match.homeTeamId,
         teamId: nextHomeId,
         playerIds: [...assignments],
       });
@@ -350,7 +349,8 @@ export class MatchService extends BaseService<Match> {
       );
       const assignments = new Set(playerIds);
       if (data.awayGoalkeeperId) assignments.add(data.awayGoalkeeperId);
-      playerAssignments.push({
+      assignmentGroups.push({
+        fromTeamId: match.awayTeamId,
         teamId: nextAwayId,
         playerIds: [...assignments],
       });
@@ -365,6 +365,42 @@ export class MatchService extends BaseService<Match> {
     const matchPatch: Partial<{ homeTeamId: string; awayTeamId: string }> = {};
     if (data.homeTeamId) matchPatch.homeTeamId = nextHomeId;
     if (data.awayTeamId) matchPatch.awayTeamId = nextAwayId;
+
+    const playerAssignments = await Promise.all(
+      assignmentGroups.map(async (group) => {
+        const { fromTeamId, teamId, playerIds } = group;
+        if (playerIds.length === 0) return { teamId, players: [] };
+
+        const numbers = await this.teamRepository.findPlayerNumbers(fromTeamId, playerIds);
+        const numberByPlayerId = new Map(numbers.map((entry) => [entry.playerId, entry.number]));
+
+        const missingNumbers = playerIds.filter((playerId) => !numberByPlayerId.has(playerId));
+        if (missingNumbers.length > 0) {
+          throw new Error('Players are missing numbers in the source team');
+        }
+
+        const existingAssignments = await this.teamRepository.findPlayerNumbers(teamId, playerIds);
+        const existingByPlayerId = new Set(existingAssignments.map((entry) => entry.playerId));
+
+        const playersToAssign = playerIds.filter((playerId) => !existingByPlayerId.has(playerId));
+        const players = await Promise.all(
+          playersToAssign.map(async (playerId) => {
+            const number = numberByPlayerId.get(playerId) as number;
+            const isNumberTaken = await this.teamRepository.isNumberAssigned(
+              teamId,
+              number,
+              playerId,
+            );
+            if (isNumberTaken) {
+              throw new Error('Player number already assigned to this team');
+            }
+            return { playerId, number };
+          }),
+        );
+
+        return { teamId, players };
+      }),
+    );
 
     return this.matchRepository.applyTeamMigration({
       matchId,

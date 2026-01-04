@@ -28,11 +28,10 @@ describe('PlayerRepository', () => {
       {
         id: '1',
         name: 'test-Alice',
-        number: 10,
         handedness: 'RIGHT' as const,
         isGoalkeeper: false,
       },
-      { id: '2', name: 'test-Bob', number: 7, handedness: 'LEFT' as const, isGoalkeeper: false },
+      { id: '2', name: 'test-Bob', handedness: 'LEFT' as const, isGoalkeeper: false },
     ];
     vi.mocked(prisma.player.findMany).mockResolvedValue(mockPlayers);
 
@@ -43,11 +42,11 @@ describe('PlayerRepository', () => {
       select: {
         id: true,
         name: true,
-        number: true,
         handedness: true,
         isGoalkeeper: true,
         teams: {
           select: {
+            number: true,
             position: true,
             team: {
               select: {
@@ -73,7 +72,6 @@ describe('PlayerRepository', () => {
         {
           id: '1',
           name: 'test-Alice',
-          number: 10,
           handedness: 'RIGHT' as const,
           isGoalkeeper: false,
         },
@@ -97,7 +95,6 @@ describe('PlayerRepository', () => {
         {
           id: '1',
           name: 'test-Alice',
-          number: 10,
           handedness: 'RIGHT' as const,
           isGoalkeeper: false,
         },
@@ -146,7 +143,6 @@ describe('PlayerRepository', () => {
     const mockPlayer = {
       id: '1',
       name: 'test-Player 1',
-      number: 10,
       handedness: 'RIGHT' as const,
       isGoalkeeper: false,
     };
@@ -159,11 +155,11 @@ describe('PlayerRepository', () => {
       select: {
         id: true,
         name: true,
-        number: true,
         handedness: true,
         isGoalkeeper: true,
         teams: {
           select: {
+            number: true,
             position: true,
             team: {
               select: {
@@ -183,7 +179,6 @@ describe('PlayerRepository', () => {
   it('create creates a new player', async () => {
     const newPlayer = {
       name: 'test-New Player',
-      number: 11,
       handedness: 'LEFT' as const,
       isGoalkeeper: false,
     };
@@ -203,7 +198,6 @@ describe('PlayerRepository', () => {
     const updatedPlayer = {
       id: '1',
       name: 'test-Alice Updated',
-      number: 10,
       handedness: 'RIGHT' as const,
       isGoalkeeper: false,
     };
@@ -222,7 +216,6 @@ describe('PlayerRepository', () => {
     const deletedPlayer = {
       id: '1',
       name: 'test-Alice',
-      number: 10,
       handedness: 'RIGHT' as const,
       isGoalkeeper: false,
     };

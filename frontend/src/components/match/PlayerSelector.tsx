@@ -2,7 +2,7 @@ import { Users } from 'lucide-react';
 
 interface MatchPlayer {
   id: string;
-  number: number;
+  number?: number;
   name: string;
   position?: string;
   isGoalkeeper?: boolean;
@@ -23,7 +23,11 @@ interface PlayerSelectorProps {
 
 export const PlayerSelector = ({ team, selectedPlayerId, onPlayerSelect }: PlayerSelectorProps) => {
   // Sort players by jersey number
-  const sortedPlayers = [...team.players].sort((a, b) => a.number - b.number);
+  const sortedPlayers = [...team.players].sort((a, b) => {
+    const numA = typeof a.number === 'number' ? a.number : Number.MAX_SAFE_INTEGER;
+    const numB = typeof b.number === 'number' ? b.number : Number.MAX_SAFE_INTEGER;
+    return numA - numB;
+  });
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
@@ -41,7 +45,7 @@ export const PlayerSelector = ({ team, selectedPlayerId, onPlayerSelect }: Playe
               : 'border-gray-100 hover:bg-gray-50'
               }`}
           >
-            <div className="font-bold text-lg">{player.number}</div>
+            <div className="font-bold text-lg">{player.number ?? '-'}</div>
             <div className="text-sm truncate hidden md:block">{player.name}</div>
           </button>
         ))}

@@ -99,7 +99,6 @@ describe('Statistics', () => {
             const mockPlayerData = {
                 id: 'player-1',
                 name: 'test-player',
-                number: 10,
                 isGoalkeeper: false
             };
 
@@ -241,7 +240,7 @@ describe('Statistics', () => {
                 type: 'Shot',
                 subtype: 'Goal',
                 zone: '6m-CB',
-                player: { name: 'Player 1', number: 10 }
+                player: { name: 'Player 1' }
             };
 
             mockFetch

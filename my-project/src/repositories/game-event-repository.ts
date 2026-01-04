@@ -12,7 +12,7 @@ export class GameEventRepository {
       where,
       include: {
         player: {
-          select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+          select: { id: true, name: true, handedness: true, isGoalkeeper: true },
         },
         match: {
           select: {
@@ -46,10 +46,10 @@ export class GameEventRepository {
       where: { matchId },
       include: {
         player: {
-          select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+          select: { id: true, name: true, handedness: true, isGoalkeeper: true },
         },
         activeGoalkeeper: {
-          select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+          select: { id: true, name: true, handedness: true, isGoalkeeper: true },
         },
       },
       orderBy: { timestamp: 'asc' },
@@ -61,7 +61,7 @@ export class GameEventRepository {
       where: { id },
       include: {
         player: {
-          select: { id: true, name: true, number: true, handedness: true, isGoalkeeper: true },
+          select: { id: true, name: true, handedness: true, isGoalkeeper: true },
         },
         match: {
           select: {

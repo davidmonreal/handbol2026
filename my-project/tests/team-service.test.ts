@@ -85,7 +85,6 @@ describe('TeamService', () => {
     const mockPlayer = {
       id: 'p1',
       name: 'test-Marc',
-      number: 7,
       handedness: Handedness.RIGHT,
       isGoalkeeper: false,
     };
@@ -99,12 +98,14 @@ describe('TeamService', () => {
     vi.mocked(playerRepository.findById).mockResolvedValue(mockPlayer);
     vi.mocked(teamRepository.isPlayerAssigned).mockResolvedValue(false);
     vi.mocked(teamRepository.hasGoalkeeperAssignment).mockResolvedValue(false);
+    vi.mocked(teamRepository.isNumberAssigned).mockResolvedValue(false);
     vi.mocked(teamRepository.assignPlayer).mockResolvedValue(mockAssignment);
     vi.mocked(playerRepository.update).mockResolvedValue(mockPlayer);
 
-    const result = await service.assignPlayer('t1', 'p1', PLAYER_POSITION.CENTRAL);
+    const result = await service.assignPlayer('t1', 'p1', PLAYER_POSITION.CENTRAL, 7);
 
     expect(playerRepository.findById).toHaveBeenCalledWith('p1');
+    expect(teamRepository.isNumberAssigned).toHaveBeenCalledWith('t1', 7);
     expect(playerRepository.update).toHaveBeenCalledWith('p1', { isGoalkeeper: false });
     expect(result).toEqual(mockAssignment);
   });
@@ -112,7 +113,7 @@ describe('TeamService', () => {
   it('assignPlayer throws error if player not found', async () => {
     vi.mocked(playerRepository.findById).mockResolvedValue(null);
 
-    await expect(service.assignPlayer('t1', 'p1', PLAYER_POSITION.CENTRAL)).rejects.toThrow(
+    await expect(service.assignPlayer('t1', 'p1', PLAYER_POSITION.CENTRAL, 7)).rejects.toThrow(
       'Player not found',
     );
     expect(teamRepository.assignPlayer).not.toHaveBeenCalled();
@@ -123,7 +124,6 @@ describe('TeamService', () => {
     const mockPlayer = {
       id: 'p1',
       name: 'test-Marc',
-      number: 7,
       handedness: Handedness.RIGHT,
       isGoalkeeper: false,
     };
@@ -131,7 +131,7 @@ describe('TeamService', () => {
     vi.mocked(playerRepository.findById).mockResolvedValue(mockPlayer);
     vi.mocked(teamRepository.isPlayerAssigned).mockResolvedValue(true);
 
-    await expect(service.assignPlayer('t1', 'p1', PLAYER_POSITION.CENTRAL)).rejects.toThrow(
+    await expect(service.assignPlayer('t1', 'p1', PLAYER_POSITION.CENTRAL, 7)).rejects.toThrow(
       'Player already assigned to this team',
     );
     expect(teamRepository.assignPlayer).not.toHaveBeenCalled();
@@ -139,7 +139,7 @@ describe('TeamService', () => {
   });
 
   it('assignPlayer rejects invalid position', async () => {
-    await expect(service.assignPlayer('t1', 'p1', 999)).rejects.toThrow('Invalid position');
+    await expect(service.assignPlayer('t1', 'p1', 999, 7)).rejects.toThrow('Invalid position');
     expect(playerRepository.findById).not.toHaveBeenCalled();
     expect(teamRepository.assignPlayer).not.toHaveBeenCalled();
     expect(playerRepository.update).not.toHaveBeenCalled();
@@ -149,7 +149,6 @@ describe('TeamService', () => {
     const mockPlayer = {
       id: 'p1',
       name: 'test-Marc',
-      number: 7,
       handedness: Handedness.RIGHT,
       isGoalkeeper: false,
     };
@@ -163,19 +162,19 @@ describe('TeamService', () => {
     vi.mocked(playerRepository.findById).mockResolvedValue(mockPlayer);
     vi.mocked(teamRepository.isPlayerAssigned).mockResolvedValue(false);
     vi.mocked(teamRepository.hasGoalkeeperAssignment).mockResolvedValue(true);
+    vi.mocked(teamRepository.isNumberAssigned).mockResolvedValue(false);
     vi.mocked(teamRepository.assignPlayer).mockResolvedValue(mockAssignment);
     vi.mocked(playerRepository.update).mockResolvedValue({ ...mockPlayer, isGoalkeeper: true });
 
-    await service.assignPlayer('t1', 'p1', PLAYER_POSITION.GOALKEEPER);
+    await service.assignPlayer('t1', 'p1', PLAYER_POSITION.GOALKEEPER, 7);
 
     expect(playerRepository.update).toHaveBeenCalledWith('p1', { isGoalkeeper: true });
   });
 
-  it('updatePlayerPosition validates position and delegates', async () => {
+  it('updatePlayerAssignment validates position and delegates', async () => {
     const mockPlayer = {
       id: 'p1',
       name: 'test-Marc',
-      number: 7,
       handedness: Handedness.RIGHT,
       isGoalkeeper: false,
     };
@@ -185,24 +184,26 @@ describe('TeamService', () => {
       playerId: 'p1',
       position: PLAYER_POSITION.CENTRAL,
     };
-    vi.mocked(teamRepository.updatePlayerPosition).mockResolvedValue(updatedAssignment as any);
+    vi.mocked(teamRepository.updatePlayerAssignment).mockResolvedValue(updatedAssignment as any);
     vi.mocked(teamRepository.hasGoalkeeperAssignment).mockResolvedValue(false);
     vi.mocked(playerRepository.update).mockResolvedValue(mockPlayer);
 
-    const result = await service.updatePlayerPosition('t1', 'p1', PLAYER_POSITION.CENTRAL);
+    const result = await service.updatePlayerAssignment('t1', 'p1', {
+      position: PLAYER_POSITION.CENTRAL,
+    });
 
-    expect(teamRepository.updatePlayerPosition).toHaveBeenCalledWith(
-      't1',
-      'p1',
-      PLAYER_POSITION.CENTRAL,
-    );
+    expect(teamRepository.updatePlayerAssignment).toHaveBeenCalledWith('t1', 'p1', {
+      position: PLAYER_POSITION.CENTRAL,
+    });
     expect(playerRepository.update).toHaveBeenCalledWith('p1', { isGoalkeeper: false });
     expect(result).toEqual(updatedAssignment);
   });
 
-  it('updatePlayerPosition rejects invalid position', async () => {
-    await expect(service.updatePlayerPosition('t1', 'p1', 999)).rejects.toThrow('Invalid position');
-    expect(teamRepository.updatePlayerPosition).not.toHaveBeenCalled();
+  it('updatePlayerAssignment rejects invalid position', async () => {
+    await expect(service.updatePlayerAssignment('t1', 'p1', { position: 999 })).rejects.toThrow(
+      'Invalid position',
+    );
+    expect(teamRepository.updatePlayerAssignment).not.toHaveBeenCalled();
     expect(playerRepository.update).not.toHaveBeenCalled();
   });
 
@@ -210,7 +211,6 @@ describe('TeamService', () => {
     const mockPlayer = {
       id: 'p1',
       name: 'test-Marc',
-      number: 7,
       handedness: Handedness.RIGHT,
       isGoalkeeper: false,
     };

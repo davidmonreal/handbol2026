@@ -15,7 +15,7 @@ interface MergePlayerRequest {
   oldPlayerId: string;
   newPlayerData: {
     name: string;
-    number: number;
+    number?: number;
     handedness?: string;
     isGoalkeeper?: boolean;
     position?: number;
@@ -56,7 +56,6 @@ export const mergePlayer = async (req: Request, res: Response) => {
       const newPlayer = await tx.player.create({
         data: {
           name: newPlayerData.name,
-          number: newPlayerData.number,
           handedness: newPlayerData.handedness as 'LEFT' | 'RIGHT',
           isGoalkeeper: false,
         },
@@ -89,6 +88,7 @@ export const mergePlayer = async (req: Request, res: Response) => {
           data: {
             playerId: newPlayer.id,
             teamId: pt.teamId,
+            number: pt.number,
             position: pt.position ?? PLAYER_POSITION.UNSET,
           },
         });
@@ -104,10 +104,14 @@ export const mergePlayer = async (req: Request, res: Response) => {
         });
 
         if (!existingAssociation) {
+          if (newPlayerData.number === undefined) {
+            throw new Error('Player number is required when teamId is provided');
+          }
           await tx.playerTeamSeason.create({
             data: {
               playerId: newPlayer.id,
               teamId,
+              number: newPlayerData.number,
               position: resolvedPosition,
             },
           });

@@ -83,14 +83,14 @@ describe('VideoMatchTracker timestamp persistence', () => {
                             name: 'test-Home Team',
                             category: 'Cadet M',
                             club: { name: 'test-Club A' },
-                            players: [{ player: { id: 'p1', number: 1, name: 'test-Player 1' }, position: 4 }],
+                            players: [{ player: { id: 'p1', name: 'test-Player 1' }, number: 1, position: 4 }],
                         },
                         awayTeam: {
                             id: 'away-1',
                             name: 'test-Away Team',
                             category: 'Cadet M',
                             club: { name: 'test-Club B' },
-                            players: [{ player: { id: 'p2', number: 2, name: 'test-Player 2' }, position: 4 }],
+                            players: [{ player: { id: 'p2', name: 'test-Player 2' }, number: 2, position: 4 }],
                         },
                     }),
                 });

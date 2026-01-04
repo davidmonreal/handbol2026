@@ -29,7 +29,6 @@ export const batchCreatePlayers = async (req: Request, res: Response) => {
         const shouldMarkGoalkeeper = isGoalkeeperPosition(resolvedPosition);
         const player = await playerService.create({
           name: playerData.name,
-          number: playerData.number,
           handedness: playerData.handedness || 'RIGHT', // Default to RIGHT if not provided by AI
           isGoalkeeper: shouldMarkGoalkeeper,
         });
@@ -77,11 +76,14 @@ export const batchCreateWithTeam = async (req: Request, res: Response) => {
         const resolvedPosition = resolvePlayerPosition(playerData.position, {
           isGoalkeeper: playerData.isGoalkeeper,
         });
+        const parsedNumber = Number(playerData.number);
+        if (!Number.isInteger(parsedNumber) || parsedNumber < 0 || parsedNumber > 99) {
+          throw new Error('Player number must be between 0 and 99');
+        }
         const shouldMarkGoalkeeper = isGoalkeeperPosition(resolvedPosition);
         // Create player with validation
         const player = await playerService.create({
           name: playerData.name,
-          number: playerData.number,
           handedness: playerData.handedness || 'RIGHT', // Default to RIGHT if not provided by AI
           isGoalkeeper: shouldMarkGoalkeeper,
         });
@@ -92,6 +94,7 @@ export const batchCreateWithTeam = async (req: Request, res: Response) => {
           data: {
             playerId: player.id,
             teamId,
+            number: parsedNumber,
             position: resolvedPosition,
           },
         });

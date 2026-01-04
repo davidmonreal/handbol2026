@@ -14,7 +14,6 @@ import { PLAYER_POSITION } from '../src/types/player-position';
 interface MockPlayer {
   id: string;
   name: string;
-  number: number;
   handedness: Handedness;
   isGoalkeeper: boolean;
 }
@@ -23,6 +22,7 @@ interface MockPlayerTeamSeason {
   id: string;
   playerId: string;
   teamId: string;
+  number: number;
   position: number;
 }
 
@@ -59,11 +59,10 @@ describe('Batch Player Creation (Player Import)', () => {
         {
           id: '1',
           name: 'test-Marc Rodríguez',
-          number: 7,
           handedness: 'RIGHT',
           isGoalkeeper: false,
         },
-        { id: '2', name: 'test-Joan Garcia', number: 12, handedness: 'RIGHT', isGoalkeeper: false },
+        { id: '2', name: 'test-Joan Garcia', handedness: 'RIGHT', isGoalkeeper: false },
       ];
 
       // Mock player creation
@@ -93,7 +92,6 @@ describe('Batch Player Creation (Player Import)', () => {
       expect(prisma.player.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           name: 'test-Marc Rodríguez',
-          number: 7,
           handedness: 'RIGHT',
           isGoalkeeper: false,
         }),
@@ -102,7 +100,6 @@ describe('Batch Player Creation (Player Import)', () => {
       expect(prisma.player.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           name: 'test-Joan Garcia',
-          number: 12,
           handedness: 'RIGHT',
           isGoalkeeper: false,
         }),
@@ -113,7 +110,6 @@ describe('Batch Player Creation (Player Import)', () => {
       const mockPlayer: MockPlayer = {
         id: '1',
         name: 'test-Pol Martínez',
-        number: 9,
         handedness: Handedness.LEFT,
         isGoalkeeper: false,
       };
@@ -123,7 +119,7 @@ describe('Batch Player Creation (Player Import)', () => {
       );
 
       const playersWithHandedness = [
-        makePlayerPayload({ name: 'test-Pol Martínez', number: 9, handedness: 'LEFT' }),
+        makePlayerPayload({ name: 'test-Pol Martínez', handedness: 'LEFT' }),
       ];
 
       const response = await request(app)
@@ -162,7 +158,6 @@ describe('Batch Player Creation (Player Import)', () => {
       const successfulPlayer = {
         id: '1',
         name: 'test-Success Player',
-        number: 10,
         handedness: Handedness.RIGHT,
         isGoalkeeper: false,
       };
@@ -204,14 +199,12 @@ describe('Batch Player Creation (Player Import)', () => {
         {
           id: 'p1',
           name: 'test-Anna López',
-          number: 5,
           handedness: Handedness.RIGHT,
           isGoalkeeper: false,
         },
         {
           id: 'p2',
           name: 'test-Laura Sánchez',
-          number: 13,
           handedness: Handedness.RIGHT,
           isGoalkeeper: true,
         },
@@ -222,12 +215,14 @@ describe('Batch Player Creation (Player Import)', () => {
           id: 'pts1',
           playerId: 'p1',
           teamId: 'team-1',
+          number: 5,
           position: PLAYER_POSITION.UNSET,
         },
         {
           id: 'pts2',
           playerId: 'p2',
           teamId: 'team-1',
+          number: 13,
           position: PLAYER_POSITION.GOALKEEPER,
         },
       ];
@@ -285,7 +280,6 @@ describe('Batch Player Creation (Player Import)', () => {
       const mockPlayer: MockPlayer = {
         id: 'p99',
         name: 'test-Pos Test',
-        number: 20,
         handedness: Handedness.RIGHT,
         isGoalkeeper: false,
       };
@@ -294,6 +288,7 @@ describe('Batch Player Creation (Player Import)', () => {
         id: 'pts99',
         playerId: 'p99',
         teamId: 'team-1',
+        number: 20,
         position: PLAYER_POSITION.PIVOT,
       };
 
@@ -318,6 +313,7 @@ describe('Batch Player Creation (Player Import)', () => {
         data: expect.objectContaining({
           teamId: 'team-1',
           position: PLAYER_POSITION.PIVOT,
+          number: 20,
         }),
       });
     });
@@ -353,7 +349,6 @@ describe('Batch Player Creation (Player Import)', () => {
       const mockPlayer: MockPlayer = {
         id: '1',
         name: '',
-        number: 7,
         handedness: Handedness.RIGHT,
         isGoalkeeper: false,
       };
@@ -363,7 +358,7 @@ describe('Batch Player Creation (Player Import)', () => {
       );
 
       const playersWithMissingName = [
-        { ...makePlayerPayload({ number: 7 }), name: undefined as unknown as string },
+        { ...makePlayerPayload(), name: undefined as unknown as string },
       ];
 
       const response = await request(app)

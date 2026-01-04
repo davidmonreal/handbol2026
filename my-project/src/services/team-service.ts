@@ -131,6 +131,7 @@ export class TeamService extends BaseService<Team> {
     teamId: string,
     playerId: string,
     position: number,
+    number: number,
   ): Promise<PlayerTeamSeason> {
     if (!isValidPlayerPosition(position)) {
       throw new Error('Invalid position');
@@ -148,7 +149,12 @@ export class TeamService extends BaseService<Team> {
       throw new Error('Player already assigned to this team');
     }
 
-    const assignment = await this.teamRepository.assignPlayer(teamId, playerId, position);
+    const isNumberTaken = await this.teamRepository.isNumberAssigned(teamId, number);
+    if (isNumberTaken) {
+      throw new Error('Player number already assigned to this team');
+    }
+
+    const assignment = await this.teamRepository.assignPlayer(teamId, playerId, position, number);
     await this.syncPlayerGoalkeeperStatus(playerId);
     return assignment;
   }
@@ -159,15 +165,25 @@ export class TeamService extends BaseService<Team> {
     return assignment;
   }
 
-  async updatePlayerPosition(
+  async updatePlayerAssignment(
     teamId: string,
     playerId: string,
-    position: number,
+    data: { position?: number; number?: number },
   ): Promise<PlayerTeamSeason> {
-    if (!isValidPlayerPosition(position)) {
+    if (data.position !== undefined && !isValidPlayerPosition(data.position)) {
       throw new Error('Invalid position');
     }
-    const assignment = await this.teamRepository.updatePlayerPosition(teamId, playerId, position);
+    if (data.number !== undefined) {
+      const isNumberTaken = await this.teamRepository.isNumberAssigned(
+        teamId,
+        data.number,
+        playerId,
+      );
+      if (isNumberTaken) {
+        throw new Error('Player number already assigned to this team');
+      }
+    }
+    const assignment = await this.teamRepository.updatePlayerAssignment(teamId, playerId, data);
     await this.syncPlayerGoalkeeperStatus(playerId);
     return assignment;
   }

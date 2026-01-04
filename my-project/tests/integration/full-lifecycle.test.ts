@@ -127,7 +127,6 @@ describe('Full Application Lifecycle Integration Test', () => {
         .post('/api/players')
         .send({
           name: `test-fl-player-${runId}`,
-          number: 10,
           handedness: 'RIGHT',
         });
 
@@ -140,6 +139,7 @@ describe('Full Application Lifecycle Integration Test', () => {
       const res = await request(app).post(`/api/teams/${homeTeamId}/players`).send({
         playerId,
         position: PLAYER_POSITION.CENTRAL,
+        number: 10,
       });
 
       expect(res.status).toBe(201);

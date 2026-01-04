@@ -212,7 +212,7 @@ describe('MatchService', () => {
       vi.mocked(gameEventRepository.countByMatchAndTeam).mockResolvedValue(3);
       vi.mocked(gameEventRepository.findPlayerIdsByMatchAndTeam).mockResolvedValue(['p1', 'p2']);
       vi.mocked(playerRepository.findByIds).mockResolvedValue([
-        { id: 'p1', name: 'test-Player 1', number: 10 },
+        { id: 'p1', name: 'test-Player 1' },
       ] as any);
       vi.mocked(gameEventRepository.countOpponentGoalkeeperEvents).mockResolvedValue(2);
 
@@ -220,7 +220,7 @@ describe('MatchService', () => {
 
       expect(preview.changes).toHaveLength(1);
       expect(preview.changes[0].eventCount).toBe(3);
-      expect(preview.changes[0].players).toEqual([{ id: 'p1', name: 'test-Player 1', number: 10 }]);
+      expect(preview.changes[0].players).toEqual([{ id: 'p1', name: 'test-Player 1' }]);
       expect(preview.changes[0].requiresGoalkeeper).toBe(true);
     });
 
@@ -238,6 +238,13 @@ describe('MatchService', () => {
       vi.mocked(gameEventRepository.countOpponentGoalkeeperEvents).mockResolvedValue(1);
       vi.mocked(playerRepository.findById).mockResolvedValue({ id: 'gk-1' } as any);
       vi.mocked(gameEventRepository.findPlayerIdsByMatchAndTeam).mockResolvedValue(['p1']);
+      vi.mocked(teamRepository.findPlayerNumbers)
+        .mockResolvedValueOnce([
+          { playerId: 'p1', number: 7 },
+          { playerId: 'gk-1', number: 1 },
+        ])
+        .mockResolvedValueOnce([]);
+      vi.mocked(teamRepository.isNumberAssigned).mockResolvedValue(false);
       vi.mocked(matchRepository.applyTeamMigration).mockResolvedValue({ id: 'm1' } as any);
 
       const result = await service.applyTeamMigration('m1', {
@@ -250,6 +257,15 @@ describe('MatchService', () => {
           matchId: 'm1',
           teamEventUpdates: [{ fromTeamId: 'away-1', toTeamId: 'away-2' }],
           opponentGoalkeeperUpdates: [{ attackingTeamId: 'home-1', goalkeeperId: 'gk-1' }],
+          playerAssignments: [
+            {
+              teamId: 'away-2',
+              players: [
+                { playerId: 'p1', number: 7 },
+                { playerId: 'gk-1', number: 1 },
+              ],
+            },
+          ],
         }),
       );
       expect(result).toEqual({ id: 'm1' });

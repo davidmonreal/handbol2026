@@ -73,18 +73,15 @@ describe('usePlayerForm Hook', () => {
 
         act(() => {
             result.current.handlers.setName('New Name');
-            result.current.handlers.setNumber(10);
         });
 
         expect(result.current.formData.name).toBe('New Name');
-        expect(result.current.formData.number).toBe(10);
     });
 
     it('creates a player and assigns to a team when provided', async () => {
         const mockPlayer = {
             id: 'player-1',
             name: 'test-Player',
-            number: 7,
             handedness: 'RIGHT',
             isGoalkeeper: false,
         };
@@ -112,11 +109,10 @@ describe('usePlayerForm Hook', () => {
 
         act(() => {
             result.current.handlers.setName('test-Player');
-            result.current.handlers.setNumber(7);
         });
 
         await act(async () => {
-            await result.current.handlers.savePlayer('team-1', DEFAULT_FIELD_POSITION);
+            await result.current.handlers.savePlayer('team-1', DEFAULT_FIELD_POSITION, 7);
         });
 
         expect(mockFetch).toHaveBeenCalledWith(
@@ -142,7 +138,6 @@ describe('usePlayerForm Hook', () => {
                     json: async () => ({
                         id: 'player-1',
                         name: 'test-Updated Player',
-                        number: 9,
                         handedness: 'LEFT',
                         isGoalkeeper: false,
                     }),
@@ -154,7 +149,6 @@ describe('usePlayerForm Hook', () => {
                     json: async () => ({
                         id: 'player-1',
                         name: 'test-Existing Player',
-                        number: 4,
                         handedness: 'RIGHT',
                         isGoalkeeper: false,
                         teams: [],
@@ -172,7 +166,6 @@ describe('usePlayerForm Hook', () => {
 
         act(() => {
             result.current.handlers.setName('test-Updated Player');
-            result.current.handlers.setNumber(9);
         });
 
         await act(async () => {

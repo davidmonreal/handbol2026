@@ -6,14 +6,14 @@ describe('Player Info Resolution Tests', () => {
     const mockMatchData = {
         homeTeam: {
             players: [
-                { player: { id: 'p1', name: 'Home Player 1', number: 10 } },
-                { player: { id: 'p2', name: 'Home Player 2', number: 20 } },
+                { player: { id: 'p1', name: 'Home Player 1' }, number: 10 },
+                { player: { id: 'p2', name: 'Home Player 2' }, number: 20 },
             ]
         },
         awayTeam: {
             players: [
-                { player: { id: 'p3', name: 'Away Player 1', number: 30 } },
-                { player: { id: 'p4', name: 'Away Player 2', number: 40 } },
+                { player: { id: 'p3', name: 'Away Player 1' }, number: 30 },
+                { player: { id: 'p4', name: 'Away Player 2' }, number: 40 },
             ]
         }
     };
@@ -25,7 +25,7 @@ describe('Player Info Resolution Tests', () => {
 
     const mockContextTeam = {
         players: [
-            { id: 'p1', name: 'Context Player 1', number: 10 },
+            { player: { id: 'p1', name: 'Context Player 1' }, number: 10 },
         ]
     };
 
@@ -44,29 +44,29 @@ describe('Player Info Resolution Tests', () => {
         // 1. Try to find in matchData (API structure)
         if (matchId && matchData) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const findInTeam = (team: any) => team?.players?.find((p: any) => p.player?.id === playerId)?.player;
+            const findInTeam = (team: any) => team?.players?.find((p: any) => p.player?.id === playerId);
 
             const homePlayer = findInTeam(matchData.homeTeam);
-            if (homePlayer) return { name: homePlayer.name, number: homePlayer.number };
+            if (homePlayer) return { name: homePlayer.player.name, number: homePlayer.number };
 
             const awayPlayer = findInTeam(matchData.awayTeam);
-            if (awayPlayer) return { name: awayPlayer.name, number: awayPlayer.number };
+            if (awayPlayer) return { name: awayPlayer.player.name, number: awayPlayer.number };
         }
 
         // 2. Try to find in events
         const sourceEvents = matchId ? matchEvents : events;
         const eventWithPlayer = sourceEvents.find(e => e.playerId === playerId && e.playerName);
         if (eventWithPlayer) {
-            return { name: eventWithPlayer.playerName!, number: eventWithPlayer.playerNumber || 0 };
+            return { name: eventWithPlayer.playerName!, number: eventWithPlayer.playerNumber };
         }
 
         // 3. Fallback to context/mock data (simplified for test)
         if (activeTeamId) {
-            const player = mockContextTeam.players.find(p => p.id === playerId);
-            return player ? { name: player.name, number: player.number } : { name: 'Unknown', number: 0 };
+        const player = mockContextTeam.players.find(p => p.player.id === playerId);
+        return player ? { name: player.player.name, number: player.number } : { name: 'Unknown', number: undefined };
         }
 
-        return { name: 'Unknown', number: 0 };
+        return { name: 'Unknown', number: undefined };
     };
 
     it('should resolve player from matchData home team', () => {
@@ -96,6 +96,6 @@ describe('Player Info Resolution Tests', () => {
     it('should return Unknown if player not found anywhere', () => {
         const info = getPlayerInfo('non-existent', 'match-1', mockMatchData, [], [], null);
         expect(info.name).toBe('Unknown');
-        expect(info.number).toBe(0);
+        expect(info.number).toBeUndefined();
     });
 });

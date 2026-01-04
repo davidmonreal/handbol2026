@@ -56,11 +56,6 @@ export const PlayersManagement = () => {
                 ),
             },
             {
-                key: 'number',
-                label: 'Number',
-                render: (player) => `#${player.number}`,
-            },
-            {
                 key: 'clubDisplay',
                 label: 'Club',
                 render: (player) => {

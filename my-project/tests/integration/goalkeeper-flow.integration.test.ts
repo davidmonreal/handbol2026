@@ -28,7 +28,7 @@ describe('Goalkeeper Flow Integration', () => {
 
   it('Complete Goalkeeper Flow: Create -> Record Event -> Verify Stats', async () => {
     // 1. Create Goalkeeper
-    const gkData = { name: 'test-Nico', number: 1, handedness: 'RIGHT', isGoalkeeper: true };
+    const gkData = { name: 'test-Nico', handedness: 'RIGHT', isGoalkeeper: true };
     const createdGk = { id: 'gk-1', ...gkData };
 
     vi.mocked(playerService.create).mockResolvedValue(createdGk);

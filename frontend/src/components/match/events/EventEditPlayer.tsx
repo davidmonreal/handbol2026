@@ -4,7 +4,7 @@ import { useSafeTranslation } from '../../../context/LanguageContext';
 
 interface Player {
     id: string;
-    number: number;
+    number?: number;
     name: string;
     position: string;
     isGoalkeeper?: boolean;
@@ -63,7 +63,9 @@ export const EventEditPlayer = ({ event, team, onSave, onCancel }: EventEditPlay
                                 : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
                                 }`}
                         >
-                            <span className="font-bold min-w-[2ch]">#{player.number}</span>
+                            <span className="font-bold min-w-[2ch]">
+                                {player.number === undefined ? '-' : `#${player.number}`}
+                            </span>
                             <span className="flex-1 truncate">{player.name}{positionLabel}</span>
                         </button>
                     );

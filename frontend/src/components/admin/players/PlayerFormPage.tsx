@@ -46,7 +46,14 @@ export const PlayerFormPage = () => {
     const [selectedPosition, setSelectedPosition] = useState<PlayerPositionId>(
         formData.isGoalkeeper ? PLAYER_POSITIONS[0].id : DEFAULT_FIELD_POSITION
     );
+    const [selectedNumber, setSelectedNumber] = useState<number | ''>('');
     const [acceptedConflictKey, setAcceptedConflictKey] = useState<string | null>(null);
+
+    const handleSelectedTeamChange = (teamId: string | null) => {
+        setSelectedTeamId(teamId);
+        setSelectedNumber('');
+        setAcceptedConflictKey(null);
+    };
 
     // Fetch team players when selection changes to check for number collisions
     useEffect(() => {
@@ -55,11 +62,11 @@ export const PlayerFormPage = () => {
         }
     }, [selectedTeamId, handlers]); // handlers.fetchTeamPlayers is stable
 
-    const teamCollision = formData.number !== '' && data.currentTeamPlayers
-        ? data.currentTeamPlayers.find((p) => p?.player?.number === Number(formData.number)) ?? null
+    const teamCollision = selectedNumber !== '' && data.currentTeamPlayers
+        ? data.currentTeamPlayers.find((p) => p?.number === Number(selectedNumber)) ?? null
         : null;
     const collisionKey = teamCollision?.player
-        ? `${teamCollision.player.id}:${teamCollision.player.number}:${selectedTeamId ?? ''}`
+        ? `${teamCollision.player.id}:${teamCollision.number ?? 0}:${selectedTeamId ?? ''}`
         : null;
     const acceptNumberConflict = Boolean(collisionKey && acceptedConflictKey === collisionKey);
     const handleAcceptNumberConflictChange = (checked: boolean) => {
@@ -68,7 +75,7 @@ export const PlayerFormPage = () => {
 
     const handleSave = async () => {
         try {
-            await handlers.savePlayer(selectedTeamId, selectedPosition);
+            await handlers.savePlayer(selectedTeamId, selectedPosition, selectedNumber === '' ? null : selectedNumber);
             handleBack();
         } catch (err) {
             console.error(err);
@@ -117,7 +124,8 @@ export const PlayerFormPage = () => {
                     disabled={
                         isSaving ||
                         (!isEditMode && duplicateState.hasWarning) ||
-                        (Boolean(teamCollision) && !acceptNumberConflict)
+                        (Boolean(teamCollision) && !acceptNumberConflict) ||
+                        (Boolean(selectedTeamId) && selectedNumber === '')
                     }
                     className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium shadow-sm"
                 >
@@ -135,9 +143,7 @@ export const PlayerFormPage = () => {
                         </h2>
                         <PlayerBasicInfo
                             name={formData.name}
-                            number={formData.number}
                             onNameChange={handlers.setName}
-                            onNumberChange={handlers.setNumber}
                             isEditMode={isEditMode}
                             duplicateState={duplicateState}
                             onIgnoreMatch={handlers.ignoreMatch}
@@ -177,11 +183,14 @@ export const PlayerFormPage = () => {
                             selectedCategory={selectedCategory}
                             selectedTeamId={selectedTeamId}
                             selectedPosition={selectedPosition}
+                            selectedNumber={selectedNumber}
                             onSelectedClubChange={setSelectedClubId}
                             onSelectedCategoryChange={setSelectedCategory}
-                            onSelectedTeamChange={setSelectedTeamId}
+                            onSelectedTeamChange={handleSelectedTeamChange}
                             onSelectedPositionChange={setSelectedPosition}
+                            onSelectedNumberChange={setSelectedNumber}
                             onUpdateTeamPosition={handlers.updateTeamPosition}
+                            onUpdateTeamNumber={handlers.updateTeamNumber}
                             collision={teamCollision}
                             acceptNumberConflict={acceptNumberConflict}
                             onAcceptNumberConflictChange={handleAcceptNumberConflictChange}

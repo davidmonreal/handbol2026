@@ -379,7 +379,7 @@ describe('StatisticsView', () => {
 
     const teamData = {
       players: [
-        { player: { id: 'gk1', name: 'Goalkeeper One', number: 1, isGoalkeeper: true }, position: 1 },
+        { player: { id: 'gk1', name: 'Goalkeeper One', isGoalkeeper: true }, number: 1, position: 1 },
       ],
     };
 
@@ -417,7 +417,6 @@ describe('StatisticsView', () => {
     const playerData = {
       id: 'p2',
       name: 'Field Player',
-      number: 11,
       teams: [{ position: 2 }],
     };
 
@@ -451,7 +450,6 @@ describe('StatisticsView', () => {
     const playerData = {
       id: 'p1',
       name: 'Field Player',
-      number: 7,
       teams: [{ position: 2 }],
     };
 

@@ -40,7 +40,7 @@ export class StatisticsEngine {
     private events: MatchEvent[];
     private isGoalkeeperMode: boolean;
     private comparison?: ComparisonData;
-    private playerResolver?: (playerId: string) => { name: string; number: number; isGoalkeeper?: boolean };
+    private playerResolver?: (playerId: string) => { name: string; number?: number; isGoalkeeper?: boolean };
 
     // Performance Optimization:
     // We cache the result of the calculation. 
@@ -52,7 +52,7 @@ export class StatisticsEngine {
         events: MatchEvent[],
         isGoalkeeperMode: boolean = false,
         comparison?: ComparisonData,
-        playerResolver?: (playerId: string) => { name: string; number: number; isGoalkeeper?: boolean }
+        playerResolver?: (playerId: string) => { name: string; number?: number; isGoalkeeper?: boolean }
     ) {
         this.events = events;
         this.isGoalkeeperMode = isGoalkeeperMode;
@@ -454,7 +454,7 @@ export class StatisticsEngine {
 
         const firstEvent = events[0];
         let playerName = firstEvent.playerName || 'Unknown';
-        let playerNumber = firstEvent.playerNumber || 0;
+        let playerNumber = firstEvent.playerNumber;
 
         if (this.playerResolver) {
             const info = this.playerResolver(playerId);
@@ -564,7 +564,7 @@ export class StatisticsEngine {
 
     private createEmptyPlayerStats(playerId: string): PlayerStatistics {
         let name = 'Unknown GK';
-        let number = 0;
+        let number: number | undefined;
         if (this.playerResolver) {
             const info = this.playerResolver(playerId);
             if (info) {

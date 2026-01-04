@@ -123,7 +123,7 @@ const routeCases: RouteCase[] = [
         method: 'post',
         path: '/abc/players',
         handler: 'assignPlayer',
-        body: { playerId: 'p1' },
+        body: { playerId: 'p1', number: 7 },
         expectedStatus: 201,
       },
       {

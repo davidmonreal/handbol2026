@@ -121,7 +121,6 @@ describe('Zone and Player Data Transformation Tests', () => {
                 player: {
                     id: 'player-1',
                     name: 'Joan Garcia',
-                    number: 10,
                 },
             };
 
@@ -129,14 +128,14 @@ describe('Zone and Player Data Transformation Tests', () => {
                 id: backendEvent.id,
                 playerId: backendEvent.playerId,
                 playerName: backendEvent.player?.name,
-                playerNumber: backendEvent.player?.number,
+                playerNumber: undefined,
                 teamId: backendEvent.teamId,
                 category: backendEvent.type,
                 action: backendEvent.subtype,
             };
 
             expect(transformedEvent.playerName).toBe('Joan Garcia');
-            expect(transformedEvent.playerNumber).toBe(10);
+            expect(transformedEvent.playerNumber).toBeUndefined();
         });
 
         it('should handle events without player data', () => {
@@ -146,7 +145,7 @@ describe('Zone and Player Data Transformation Tests', () => {
                 subtype: string;
                 playerId: null;
                 teamId: string;
-                player: null | { name: string; number: number };
+                player: null | { name: string };
             } = {
                 id: 'event-1',
                 type: 'Shot',
@@ -160,7 +159,7 @@ describe('Zone and Player Data Transformation Tests', () => {
                 id: backendEvent.id,
                 playerId: backendEvent.playerId,
                 playerName: backendEvent.player?.name,
-                playerNumber: backendEvent.player?.number,
+                playerNumber: undefined,
                 teamId: backendEvent.teamId,
             };
 
@@ -214,7 +213,7 @@ describe('Zone and Player Data Transformation Tests', () => {
                 timestamp: backendEvent.timestamp,
                 playerId: backendEvent.playerId,
                 playerName: backendEvent.player?.name,
-                playerNumber: backendEvent.player?.number,
+                playerNumber: undefined,
                 teamId: backendEvent.teamId,
                 category: backendEvent.type,
                 action: backendEvent.subtype || backendEvent.type,
@@ -233,7 +232,7 @@ describe('Zone and Player Data Transformation Tests', () => {
             expect(transformedEvent.zone).toBe('6m-CB');
             expect(transformedEvent.goalTarget).toBe(5);
             expect(transformedEvent.playerName).toBe('Marc Lopez');
-            expect(transformedEvent.playerNumber).toBe(7);
+            expect(transformedEvent.playerNumber).toBeUndefined();
             expect(transformedEvent.context.isCollective).toBe(true);
         });
 

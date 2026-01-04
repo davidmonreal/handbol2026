@@ -122,7 +122,8 @@ describe('useMatchTeamMigration', () => {
                         id: 'home-2',
                         players: [
                             {
-                                player: { id: 'gk-1', name: 'Goalkeeper', number: 1, isGoalkeeper: true },
+                                player: { id: 'gk-1', name: 'Goalkeeper', isGoalkeeper: true },
+                                number: 1,
                                 position: 1,
                             },
                         ],
@@ -186,7 +187,8 @@ describe('useMatchTeamMigration', () => {
                         id: 'home-2',
                         players: [
                             {
-                                player: { id: 'gk-2', name: 'Keeper', number: 16, isGoalkeeper: true },
+                                player: { id: 'gk-2', name: 'Keeper', isGoalkeeper: true },
+                                number: 16,
                                 position: 1,
                             },
                         ],

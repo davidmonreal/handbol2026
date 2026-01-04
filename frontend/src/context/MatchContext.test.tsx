@@ -20,7 +20,7 @@ const mockMatchData = {
         category: 'Cadet M',
         club: { name: 'Club A' },
         players: [
-            { player: { id: 'p1', name: 'Player 1', number: 10, isGoalkeeper: false }, position: 4 }
+            { player: { id: 'p1', name: 'Player 1', isGoalkeeper: false }, number: 10, position: 4 }
         ]
     },
     awayTeam: {
@@ -29,7 +29,7 @@ const mockMatchData = {
         category: 'Juvenil M',
         club: { name: 'Club B' },
         players: [
-            { player: { id: 'p2', name: 'Player 2', number: 12, isGoalkeeper: true }, position: 1 }
+            { player: { id: 'p2', name: 'Player 2', isGoalkeeper: true }, number: 12, position: 1 }
         ]
     }
 };
@@ -42,7 +42,7 @@ const mockEvents = [
         teamId: 'team-home',
         type: 'Shot',
         subtype: 'Goal',
-        player: { name: 'Player 1', number: 10 }
+        player: { name: 'Player 1' }
     },
     {
         id: 'e2',
@@ -51,7 +51,7 @@ const mockEvents = [
         teamId: 'team-away',
         type: 'Shot',
         subtype: 'Save',
-        player: { name: 'Player 2', number: 12 }
+        player: { name: 'Player 2' }
     }
 ];
 
@@ -102,7 +102,7 @@ describe('MatchContext', () => {
                         players: mockMatchData.homeTeam.players.map(p => ({
                             id: p.player.id,
                             name: p.player.name,
-                            number: p.player.number,
+                            number: p.number,
                             position: PLAYER_POSITION_ABBR[p.position as keyof typeof PLAYER_POSITION_ABBR],
                             isGoalkeeper: p.player.isGoalkeeper
                         }))
@@ -116,7 +116,7 @@ describe('MatchContext', () => {
                         players: mockMatchData.awayTeam.players.map(p => ({
                             id: p.player.id,
                             name: p.player.name,
-                            number: p.player.number,
+                            number: p.number,
                             position: PLAYER_POSITION_ABBR[p.position as keyof typeof PLAYER_POSITION_ABBR],
                             isGoalkeeper: p.player.isGoalkeeper
                         }))
@@ -676,7 +676,7 @@ describe('MatchContext', () => {
                             teamId: 'team-home',
                             type: 'Shot',
                             subtype: 'Goal',
-                            player: { name: 'Player 1', number: 10 }
+                            player: { name: 'Player 1' }
                         },
                         {
                             id: 'e2',
@@ -685,7 +685,7 @@ describe('MatchContext', () => {
                             teamId: 'team-away',
                             type: 'Shot',
                             subtype: 'Save',
-                            player: { name: 'Player 2', number: 12 }
+                            player: { name: 'Player 2' }
                         }
                     ]
                 });
@@ -750,7 +750,7 @@ describe('MatchContext', () => {
                             teamId: 'team-home',
                             type: 'Shot',
                             subtype: 'Goal',
-                            player: { name: 'Player 1', number: 10 }
+                            player: { name: 'Player 1' }
                         }
                     ]
                 });

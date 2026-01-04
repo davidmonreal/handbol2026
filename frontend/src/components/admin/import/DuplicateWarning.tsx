@@ -3,10 +3,9 @@ import { AlertTriangle } from 'lucide-react';
 interface DuplicateMatch {
     id: string;
     name: string;
-    number: number;
     distance: number;
     similarity: number;
-    teams?: { id: string; name: string; club: string }[];
+    teams?: { id: string; name: string; club: string; number?: number }[];
 }
 
 interface DuplicateInfo {
@@ -33,7 +32,7 @@ export const DuplicateWarning = ({ duplicate, onReviewClick }: DuplicateWarningP
                         {duplicate.matches.slice(0, 2).map((match, i) => (
                             <div key={i} className="flex items-center justify-between bg-white bg-opacity-50 rounded px-2 py-1">
                                 <span className="font-medium">
-                                    {match.name} <span className="text-amber-600">#{match.number}</span>
+                                    {match.name}
                                 </span>
                                 <span className="bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full font-semibold">
                                     {Math.round(match.similarity * 100)}%
@@ -41,6 +40,15 @@ export const DuplicateWarning = ({ duplicate, onReviewClick }: DuplicateWarningP
                             </div>
                         ))}
                     </div>
+                    {duplicate.matches[0]?.teams && duplicate.matches[0].teams.length > 0 && (
+                        <div className="text-xs text-amber-800">
+                            {duplicate.matches[0].teams.slice(0, 2).map((team) => (
+                                <span key={team.id} className="mr-2">
+                                    {team.club} {team.name}{team.number === undefined ? '' : ` #${team.number}`}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                     {/* Single review button */}
                     <button
                         onClick={onReviewClick}

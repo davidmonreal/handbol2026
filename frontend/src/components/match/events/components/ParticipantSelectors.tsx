@@ -49,7 +49,7 @@ export const OpponentGoalkeeperSelector = ({
                                         : 'bg-orange-100 text-orange-800'
                                 }`}
                             >
-                                {gk.number}
+                                {gk.number ?? '-'}
                             </span>
                             <span
                                 className={`text-xs font-semibold truncate ${
@@ -113,7 +113,7 @@ export const PlayerGrid = ({ players, selectedPlayerId, onSelect, t }: PlayerGri
                                     : 'bg-gray-100 text-gray-900'
                             }`}
                         >
-                            {player.number}
+                            {player.number ?? '-'}
                         </span>
                         <span
                             className={`text-xs font-semibold truncate ${

@@ -87,12 +87,18 @@ function areNamesSimilar(name1: string, name2: string, threshold: number): boole
 export interface SimilarPlayer {
   id: string;
   name: string;
-  number: number;
   distance: number;
   similarity: number;
   handedness?: string;
   isGoalkeeper?: boolean;
-  teams?: Array<{ id: string; name: string; club: string; category?: string; position?: number }>;
+  teams?: Array<{
+    id: string;
+    name: string;
+    club: string;
+    category?: string;
+    number?: number;
+    position?: number;
+  }>;
 }
 
 /**
@@ -107,12 +113,12 @@ export async function findSimilarPlayers(
     select: {
       id: true,
       name: true,
-      number: true,
       handedness: true,
       isGoalkeeper: true,
       teams: {
         select: {
           id: true,
+          number: true,
           position: true,
           team: {
             select: {
@@ -142,7 +148,6 @@ export async function findSimilarPlayers(
       return {
         id: player.id,
         name: player.name,
-        number: player.number,
         handedness: player.handedness,
         isGoalkeeper: player.isGoalkeeper,
         distance,
@@ -152,6 +157,7 @@ export async function findSimilarPlayers(
           name: t.team.name,
           club: t.team.club.name,
           category: t.team.category,
+          number: t.number,
           position: t.position ?? undefined,
         })),
       };

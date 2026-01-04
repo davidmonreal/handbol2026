@@ -47,12 +47,12 @@ const MATCH_WITH_PLAYERS_SELECT = {
       club: { select: { id: true, name: true } },
       players: {
         select: {
+          number: true,
           position: true,
           player: {
             select: {
               id: true,
               name: true,
-              number: true,
               handedness: true,
               isGoalkeeper: true,
             },
@@ -69,12 +69,12 @@ const MATCH_WITH_PLAYERS_SELECT = {
       club: { select: { id: true, name: true } },
       players: {
         select: {
+          number: true,
           position: true,
           player: {
             select: {
               id: true,
               name: true,
-              number: true,
               handedness: true,
               isGoalkeeper: true,
             },
@@ -165,7 +165,10 @@ export class MatchRepository {
     matchPatch: Partial<{ homeTeamId: string; awayTeamId: string }>;
     teamEventUpdates: Array<{ fromTeamId: string; toTeamId: string }>;
     opponentGoalkeeperUpdates: Array<{ attackingTeamId: string; goalkeeperId: string }>;
-    playerAssignments: Array<{ teamId: string; playerIds: string[] }>;
+    playerAssignments: Array<{
+      teamId: string;
+      players: Array<{ playerId: string; number: number }>;
+    }>;
   }): Promise<Match> {
     const { matchId, matchPatch, teamEventUpdates, opponentGoalkeeperUpdates, playerAssignments } =
       params;
@@ -198,13 +201,13 @@ export class MatchRepository {
       }
 
       for (const assignment of playerAssignments) {
-        if (assignment.playerIds.length === 0) continue;
+        if (assignment.players.length === 0) continue;
         await tx.playerTeamSeason.createMany({
-          data: assignment.playerIds.map((playerId) => ({
+          data: assignment.players.map(({ playerId, number }) => ({
             playerId,
             teamId: assignment.teamId,
+            number,
           })),
-          skipDuplicates: true,
         });
       }
 

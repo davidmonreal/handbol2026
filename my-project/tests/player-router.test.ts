@@ -51,7 +51,7 @@ describe('createPlayerRouter', () => {
   });
 
   it('wires POST /players to controller.create', async () => {
-    const payload = { name: 'test-New Player', number: 9, handedness: 'RIGHT' };
+    const payload = { name: 'test-New Player', handedness: 'RIGHT' };
     const response = await request(app).post('/players').send(payload);
 
     expect(response.status).toBe(201);
@@ -61,7 +61,7 @@ describe('createPlayerRouter', () => {
   });
 
   it('wires PUT /players/:id to controller.update', async () => {
-    const payload = { name: 'test-Updated', number: 5 };
+    const payload = { name: 'test-Updated' };
     const response = await request(app).put('/players/abc').send(payload);
 
     expect(response.status).toBe(200);

@@ -15,7 +15,6 @@ describe('PlayersManagement UI flows', () => {
     const playerRow: Player = {
         id: 'player-1',
         name: 'test-player',
-        number: 18,
         handedness: 'RIGHT',
         isGoalkeeper: false,
         teams: [],

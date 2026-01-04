@@ -18,13 +18,12 @@ export interface ExtractedPlayer {
 export interface DuplicateMatch {
     id: string;
     name: string;
-    number: number;
     distance: number;
     similarity: number;
     handedness?: Handedness;
     isGoalkeeper?: boolean;
     position?: number;
-    teams?: { id: string; name: string; club: string; category?: string; position?: number }[];
+    teams?: { id: string; name: string; club: string; category?: string; number?: number; position?: number }[];
 }
 
 export interface DuplicateInfo {

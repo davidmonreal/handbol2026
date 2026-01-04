@@ -31,7 +31,8 @@ type BackendMatchRef = {
 type ApiEvent = TransformerBackendEvent & { match?: BackendMatchRef };
 
 type PlayerSummary = {
-  player: { id: string; name: string; number: number; isGoalkeeper?: boolean };
+  player: { id: string; name: string; isGoalkeeper?: boolean };
+  number?: number;
   position?: number;
 };
 
@@ -59,7 +60,6 @@ type TeamData = {
 type PlayerData = {
   id?: string;
   name?: string;
-  number?: number;
   teams?: { position?: number }[];
 };
 
@@ -607,9 +607,7 @@ const Statistics = () => {
         context={context}
         title={title}
         subtitle={playerId
-          ? (playerData?.number
-            ? t('stats.page.subtitle.player', { number: playerData.number })
-            : t('stats.page.subtitle.playerNoNumber'))
+          ? t('stats.page.subtitle.player')
           : teamSubtitle}
         matchData={matchDataForView}
         teamData={teamDataForView}

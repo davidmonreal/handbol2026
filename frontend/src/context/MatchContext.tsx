@@ -521,7 +521,6 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
           sanctionType?: string;
           player?: {
             name: string;
-            number: number;
           };
         }
         const backendEvents: BackendEvent[] = await response.json();
@@ -535,7 +534,7 @@ export const MatchProvider = ({ children }: { children: ReactNode }) => {
           timestamp: e.timestamp,
           playerId: e.playerId,
           playerName: e.player?.name || 'Unknown',
-          playerNumber: e.player?.number || 0,
+          playerNumber: undefined,
           teamId: e.teamId,
           category: e.type,
           action: e.subtype || e.type,  // This is the problem! If subtype is empty, it uses type

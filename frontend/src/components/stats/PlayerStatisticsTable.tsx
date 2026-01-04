@@ -191,7 +191,12 @@ export function PlayerStatisticsTable({
                 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
                 ${stat.playerId === selectedPlayerId ? 'bg-blue-200 text-blue-800' : 'bg-gray-100 text-gray-600'}
               `}>
-                {stat.playerNumber}
+                {(() => {
+                  if (!stat.playerName) return '-';
+                  const parts = stat.playerName.split(' ').filter(Boolean);
+                  const initials = parts.slice(0, 2).map(part => part[0].toUpperCase()).join('');
+                  return initials || '-';
+                })()}
               </div>
               <span className="font-medium text-gray-900 truncate max-w-[120px]" title={stat.playerName}>
                 {(() => {

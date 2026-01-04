@@ -41,10 +41,10 @@ const createTeamWithPlayer = async (label: string) => {
   });
   createdTeamIds.push(team.id);
 
+  const playerNumber = Math.floor(Math.random() * 80) + 1;
   const player = await prisma.player.create({
     data: {
       name: testPlayerName(`match-event-flow-${label}`, String(now)),
-      number: Math.floor(Math.random() * 80) + 1,
     },
   });
   createdPlayerIds.push(player.id);
@@ -53,6 +53,7 @@ const createTeamWithPlayer = async (label: string) => {
     data: {
       playerId: player.id,
       teamId: team.id,
+      number: playerNumber,
       position: label === 'Home' ? PLAYER_POSITION.CENTRAL : PLAYER_POSITION.PIVOT,
     },
   });

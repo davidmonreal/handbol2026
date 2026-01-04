@@ -24,6 +24,7 @@ export const TeamPlayersPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [playerLoadError, setPlayerLoadError] = useState<string | null>(null);
     const [pendingPositions, setPendingPositions] = useState<Record<string, number>>({});
+    const [pendingNumbers, setPendingNumbers] = useState<Record<string, number | ''>>({});
     const positionOptions = PLAYER_POSITIONS.map((pos) => ({
         value: pos.id,
         label: t(pos.tKey),
@@ -139,9 +140,17 @@ export const TeamPlayersPage = () => {
         })
     );
 
-    const handleAssignPlayer = async (player: Player & { position?: number }) => {
+    const handleAssignPlayer = async (player: Player & { position?: number; number?: number }) => {
         if (!id) return;
         try {
+            if (player.number === undefined) {
+                alert(t('teamPlayers.numberRequired'));
+                return;
+            }
+            if (!Number.isInteger(player.number) || player.number < 0 || player.number > 99) {
+                alert(t('teamPlayers.invalidNumber'));
+                return;
+            }
             const response = await fetch(`${API_BASE_URL}/api/teams/${id}/players`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -151,6 +160,7 @@ export const TeamPlayersPage = () => {
                         player.position ??
                         pendingPositions[player.id] ??
                         getDefaultPosition(player),
+                    number: player.number,
                 }),
             });
 
@@ -196,8 +206,8 @@ export const TeamPlayersPage = () => {
     const assignedPlayersSorted = (team?.players || [])
         .filter(p => p.player)
         .sort((a, b) => {
-            const numA = a.player?.number ?? Number.MAX_SAFE_INTEGER;
-            const numB = b.player?.number ?? Number.MAX_SAFE_INTEGER;
+            const numA = typeof a.number === 'number' ? a.number : Number.MAX_SAFE_INTEGER;
+            const numB = typeof b.number === 'number' ? b.number : Number.MAX_SAFE_INTEGER;
             if (numA !== numB) return numA - numB;
             return (a.player?.name || '').localeCompare(b.player?.name || '');
         });
@@ -230,10 +240,10 @@ export const TeamPlayersPage = () => {
     }
 
     // Helper to render player item content
-    const renderPlayerItem = (player: Player) => (
+    const renderPlayerItem = (player: Player, number?: number) => (
         <div className="flex-1">
             <div className="font-medium flex items-center gap-2 text-lg text-gray-900">
-                #{player.number} • {player.name}
+                {number === undefined ? player.name : `#${number} • ${player.name}`}
             </div>
             {player.teams && player.teams.length > 0 && (
                 <div className="mt-1 flex flex-col gap-0.5">
@@ -335,11 +345,26 @@ export const TeamPlayersPage = () => {
                                                 }}
                                                 placeholder={t('positions.unset')}
                                             />
+                                            <input
+                                                type="number"
+                                                value={pendingNumbers[player.id] ?? ''}
+                                                onChange={(event) =>
+                                                    setPendingNumbers((prev) => ({
+                                                        ...prev,
+                                                        [player.id]: event.target.value === '' ? '' : Number(event.target.value),
+                                                    }))
+                                                }
+                                                className="w-16 rounded-lg border border-gray-300 px-2 py-1 text-center text-sm font-mono text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                placeholder={t('teamPlayers.numberPlaceholder')}
+                                                min={0}
+                                                max={99}
+                                            />
                                             <AddIconButton
                                                 onClick={() =>
                                                     handleAssignPlayer({
                                                         ...player,
                                                         position: pendingPositions[player.id] ?? getDefaultPosition(player),
+                                                        number: pendingNumbers[player.id] === '' ? undefined : Number(pendingNumbers[player.id]),
                                                     })
                                                 }
                                                 title={t('teamPlayers.addToTeam')}
@@ -369,13 +394,13 @@ export const TeamPlayersPage = () => {
                             </div>
                         ) : (
                             <div className="divide-y divide-gray-200">
-                                {assignedPlayersSorted.map(({ player, position }) => (
+                                {assignedPlayersSorted.map(({ player, position, number }) => (
                                     <div
                                         key={player.id}
                                         className="p-4 flex justify-between items-center bg-white hover:bg-gray-50 transition-colors"
                                     >
                                         <div className="flex items-center gap-3 flex-1">
-                                            <div>{renderPlayerItem(player)}</div>
+                                            <div>{renderPlayerItem(player, number)}</div>
                                             <div className="flex items-center gap-2">
                                                 {renderPositionBadges(getPlayerPositionIds(player, position))}
                                             </div>
