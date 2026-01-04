@@ -59,6 +59,7 @@ export const PlayerBasicInfo: React.FC<PlayerBasicInfoProps> = ({
                         )}
                     </div>
                 )}
+            </div>
 
             {/* Full Width Duplicate Warning */}
             {!isEditMode && duplicateState.hasWarning && (
