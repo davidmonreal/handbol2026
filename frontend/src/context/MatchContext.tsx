@@ -24,7 +24,7 @@ interface MatchMeta {
 
 interface Player {
   id: string;
-  number: number;
+  number?: number;
   name: string;
   position: string;
   isGoalkeeper?: boolean;

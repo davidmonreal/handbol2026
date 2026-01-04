@@ -385,7 +385,11 @@ const EventFormView = ({
     const categoryRef = useRef<HTMLDivElement>(null);
     const formTopRef = useRef<HTMLDivElement>(null);
 
-    const sortedPlayers = [...team.players].sort((a, b) => a.number - b.number);
+    const sortedPlayers = [...team.players].sort((a, b) => {
+        const numA = typeof a.number === 'number' ? a.number : Number.MAX_SAFE_INTEGER;
+        const numB = typeof b.number === 'number' ? b.number : Number.MAX_SAFE_INTEGER;
+        return numA - numB;
+    });
     const opponentGoalkeepers = opponentTeam?.players.filter(p => p.isGoalkeeper) || [];
     const isPlayerSelected = !!selectedPlayerId;
     const isOpponentGoalkeeperSelected = !!selectedOpponentGkId;

@@ -230,9 +230,14 @@ export const usePlayerImport = () => {
             const existingTeamPosition = selectedTeamId
                 ? existing.teams?.find((team) => team.id === selectedTeamId)?.position
                 : undefined;
+            const existingTeamNumber = selectedTeamId
+                ? existing.teams?.find((team) => team.id === selectedTeamId)?.number
+                : undefined;
 
             if (choices.get('name') === 'existing') newExtractedPlayers[index].name = existing.name;
-            if (choices.get('number') === 'existing') newExtractedPlayers[index].number = existing.number;
+            if (choices.get('number') === 'existing' && existingTeamNumber !== undefined) {
+                newExtractedPlayers[index].number = existingTeamNumber;
+            }
             if (choices.get('handedness') === 'existing' && existing.handedness) newExtractedPlayers[index].handedness = existing.handedness;
             if (choices.get('isGoalkeeper') === 'existing' && existing.isGoalkeeper !== undefined) newExtractedPlayers[index].isGoalkeeper = existing.isGoalkeeper;
             if (choices.get('position') === 'existing') newExtractedPlayers[index].position = existingTeamPosition;

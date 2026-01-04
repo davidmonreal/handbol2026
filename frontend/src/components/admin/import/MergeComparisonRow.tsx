@@ -229,7 +229,7 @@ export const MergeComparisonRow = ({
                     const number = getTeamNumber();
                     return number === undefined ? '-' : `#${number}`;
                 }
-                return `#${player.number}`;
+                return `#${newPlayer.number}`;
             case 'handedness':
                 if (!player.handedness) return '-';
                 return player.handedness === 'RIGHT' ? 'Right' : 'Left';

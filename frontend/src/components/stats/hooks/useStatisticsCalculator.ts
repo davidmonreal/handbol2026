@@ -22,7 +22,7 @@ export function useStatisticsCalculator(
     comparison?: ComparisonData,
     isGoalkeeper: boolean = false,
     foulEvents?: MatchEvent[],
-    playerResolver?: (playerId: string) => { name: string; number: number; isGoalkeeper?: boolean },
+    playerResolver?: (playerId: string) => { name: string; number?: number; isGoalkeeper?: boolean },
     gkEvents?: MatchEvent[]
 ): CalculatedStats {
     // 1. Instantiate the engine. 
