@@ -258,27 +258,30 @@ export const PlayerTeamManager: React.FC<PlayerTeamManagerProps> = ({
                     disabled={!selectedClubId}
                 />
             </div>
-            <div className="mt-4 max-w-xs">
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('positions.label')}</label>
-                <DropdownSelect
-                    options={positionOptions}
-                    value={selectedPosition}
-                    onChange={(val) => onSelectedPositionChange((val ?? 0) as PlayerPositionId)}
-                    placeholder={t('positions.unset')}
-                />
-            </div>
-            <div className="mt-4 max-w-xs">
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('playerTeam.numberLabel')}</label>
-                <input
-                    type="number"
-                    value={selectedNumber}
-                    onChange={(event) =>
-                        onSelectedNumberChange(event.target.value === '' ? '' : Number(event.target.value))}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-center font-mono text-lg text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder={t('playerTeam.numberPlaceholder')}
-                    min={0}
-                    max={99}
-                />
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('positions.label')}</label>
+                    <DropdownSelect
+                        options={positionOptions}
+                        value={selectedPosition}
+                        onChange={(val) => onSelectedPositionChange((val ?? 0) as PlayerPositionId)}
+                        placeholder={t('positions.unset')}
+                        buttonClassName="w-full h-11"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('playerTeam.numberLabel')}</label>
+                    <input
+                        type="number"
+                        value={selectedNumber}
+                        onChange={(event) =>
+                            onSelectedNumberChange(event.target.value === '' ? '' : Number(event.target.value))}
+                        className="w-full h-11 rounded-xl border border-gray-300 px-3.5 py-2 text-center font-mono text-lg text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder={t('playerTeam.numberPlaceholder')}
+                        min={0}
+                        max={99}
+                    />
+                </div>
             </div>
             <p className="text-sm text-gray-500 mt-2">
                 {t('playerTeam.helperText')}
